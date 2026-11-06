@@ -37,7 +37,10 @@ object WikidataFamilies {
         WikidataTemplate("wf.$id", prompt, topic, where, minLinks, limit)
 
     private fun person(occ: String) = "?item wdt:P31 wd:Q5 ; wdt:P106 wd:$occ ."
-    private fun personFrom(occ: String, country: String) = "?item wdt:P31 wd:Q5 ; wdt:P106 wd:$occ ; wdt:P27 wd:$country ."
+    // Dutch citizenship is mostly recorded as the Kingdom of the Netherlands (Q29999), not the country Q55.
+    private fun personFrom(occ: String, country: String) =
+        if (country == "Q55") "VALUES ?ctz { wd:Q55 wd:Q29999 } ?item wdt:P31 wd:Q5 ; wdt:P106 wd:$occ ; wdt:P27 ?ctz ."
+        else "?item wdt:P31 wd:Q5 ; wdt:P106 wd:$occ ; wdt:P27 wd:$country ."
     private fun film(genre: String) = "?item wdt:P31 wd:Q11424 ; wdt:P136 wd:$genre ."
     private fun game(platform: String) = "?item wdt:P31 wd:Q7889 ; wdt:P400 wd:$platform ."
 
@@ -80,7 +83,7 @@ object WikidataFamilies {
             Triple("Q2526255", "film director", 40), Triple("Q2252262", "rapper", 20), Triple("Q855091", "guitarist", 25),
             Triple("Q11063", "astronomer", 20), Triple("Q188094", "economist", 25), Triple("Q1281618", "sculptor", 20),
             Triple("Q33231", "photographer", 15), Triple("Q11900058", "explorer", 20), Triple("Q10841764", "Formula One driver", 15),
-            Triple("Q148401", "magician", 8), Triple("Q864503", "biologist", 20), Triple("Q212980", "psychologist", 20),
+            Triple("Q864503", "biologist", 20), Triple("Q212980", "psychologist", 20),
             Triple("Q177220", "singer", 60), Triple("Q10800557", "film actor", 60), Triple("Q937857", "footballer", 60),
             Triple("Q11338576", "boxer", 20), Triple("Q245068", "comedian", 25), Triple("Q3501317", "fashion designer", 15),
             Triple("Q3499072", "chef", 10), Triple("Q1114448", "cartoonist", 15),

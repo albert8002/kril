@@ -2,6 +2,8 @@ package app.coredump.snapshot
 
 import app.coredump.core.PackCodec
 import app.coredump.core.Prompt
+import app.coredump.core.SourceKind
+import app.coredump.core.stableHash
 import app.coredump.data.WikiNet
 import app.coredump.data.WikidataTemplates
 import app.coredump.data.WikipediaTemplates
@@ -45,7 +47,7 @@ fun main(args: Array<String>) {
             val res = http.send(req, HttpResponse.BodyHandlers.ofString())
             val code = res.statusCode()
             if (code in 200..299) return res.body()
-            if ((code == 429 || code == 503) && attempt < 1) {
+            if ((code == 429 || code == 503 || code == 502) && attempt < 1) {
                 val wait = res.headers().firstValue("Retry-After").orElse("5").toLongOrNull()?.coerceIn(1, 10) ?: 5
                 Thread.sleep(wait * 1000)
                 return@repeat
@@ -56,7 +58,7 @@ fun main(args: Array<String>) {
     }
 
     fun get(url: String, accept: String = "application/json") = send(
-        HttpRequest.newBuilder(URI(url)).timeout(Duration.ofSeconds(50))
+        HttpRequest.newBuilder(URI(url)).timeout(Duration.ofSeconds(65))
             .header("User-Agent", WikiNet.USER_AGENT).header("Accept", accept).GET().build()
     )
 
@@ -74,42 +76,47 @@ fun main(args: Array<String>) {
     // ---- relay self-test first (fast, independent of Wikimedia)
     relaySelfTest(http, ::log)
 
-    // ---- wikidata: 3 workers (WDQS allows a few concurrent queries per client)
-    val wd = Collections.synchronizedList(ArrayList<Prompt>())
-    val pool = Executors.newFixedThreadPool(3)
-    for (t in WikidataTemplates.all) pool.submit {
-        if (overBudget()) { log("SNAP skip (budget) ${t.id}"); return@submit }
-        val t0 = System.currentTimeMillis()
-        try {
-            val body = get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}", "application/sparql-results+json")
-            val p = WikidataTemplates.parse(t, body)
-            val ms = System.currentTimeMillis() - t0
-            val keep = p.size >= WikidataTemplates.minAnswers(t)
-            if (keep) wd += p
-            log("SNAP wikidata  ${t.id.padEnd(30)} ${if (keep) "OK  " else "SMALL"} ${p.size.toString().padStart(5)}  ${ms}ms  top: ${p.entries.take(3).joinToString { it.name }}")
-        } catch (e: Exception) {
-            log("SNAP wikidata  ${t.id.padEnd(30)} FAIL ${System.currentTimeMillis() - t0}ms ${e::class.simpleName}: ${e.message?.take(160)}")
+    // ---- previous snapshot (restored from the CI cache): keep what is fresh, fetch what is missing or stale
+    val stateFile = File(dir, "snap_state.tsv")          // id \t fetchedAtMs \t templateHash \t kept(1/0)
+    class St(val at: Long, val hash: Int, val kept: Boolean)
+    val state = java.util.concurrent.ConcurrentHashMap<String, St>()
+    runCatching {
+        if (stateFile.exists()) for (l in stateFile.readLines()) {
+            val f = l.split('\t'); if (f.size >= 4) state[f[0]] = St(f[1].toLong(), f[2].toInt(), f[3] == "1")
         }
-        Thread.sleep(250)
     }
-    pool.shutdown()
-    pool.awaitTermination(budgetMs + 120_000, TimeUnit.MILLISECONDS)
-
-    // ---- verification self-test (same query the app sends for unlisted answers)
-    val dog = WikidataTemplates.all.first { it.id == "wd.dog" }
-    val cheese = WikidataTemplates.all.first { it.id == "wd.cheese" }
-    for ((t, q) in listOf(dog to "Kai Ken", dog to "Shikoku", dog to "banana", cheese to "Tête de Moine", cheese to "toaster")) {
-        try {
-            val body = get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.verifyQuery(t.where, q))}", "application/sparql-results+json")
-            val v = WikidataTemplates.parseVerify(body, q)
-            log("SNAP verify ${t.id} '$q' -> ${v?.let { "${it.label} (${it.links} sitelinks)" } ?: "rejected"}")
-        } catch (e: Exception) { log("SNAP verify ${t.id} '$q' -> FAIL ${e.message?.take(160)}") }
+    fun loadPrev(name: String, kind: SourceKind): MutableMap<String, Prompt> {
+        val m = java.util.concurrent.ConcurrentHashMap<String, Prompt>()
+        runCatching { File(dir, name).takeIf { it.exists() }?.let { f -> PackCodec.parse(f.readText(), kind).forEach { m[it.id] = it } } }
+        return m
     }
+    val wdOut = loadPrev("live_wikidata.json", SourceKind.WIKIDATA)
+    val wpOut = loadPrev("live_wikipedia.json", SourceKind.WIKIPEDIA)
+    // older caches have no state file: trust their prompts with the file's own timestamp
+    fun fileAt(name: String) = runCatching { PackCodec.cacheTime(File(dir, name).readText()) }.getOrNull() ?: System.currentTimeMillis()
+    log("SNAP restored ${wdOut.size} wikidata + ${wpOut.size} wikipedia prompts, ${state.size} state rows")
+    val freshMs = 10L * 24 * 3600 * 1000
+    fun hashWd(t: app.coredump.data.WikidataTemplate) = stableHash("${t.where}|${t.prompt}|${t.limit}|${t.minLinks}|${t.topic}")
+    fun hashWp(t: app.coredump.data.WikipediaTemplate) = stableHash("${t.page}|${t.prompt}|${t.max}|${t.topic}")
+    fun isFresh(id: String, hash: Int, have: Boolean): Boolean {
+        val st = state[id] ?: return false
+        return st.hash == hash && System.currentTimeMillis() - st.at < freshMs && (have || !st.kept)
+    }
+    for (id in wdOut.keys) WikidataTemplates.all.firstOrNull { it.id == id }?.let { t ->
+        state.putIfAbsent(id, St(fileAt("live_wikidata.json"), hashWd(t), true)) }
+    for (id in wpOut.keys) WikipediaTemplates.all.firstOrNull { it.id == id }?.let { t ->
+        state.putIfAbsent(id, St(fileAt("live_wikipedia.json"), hashWp(t), true)) }
+    // drop outputs whose template was removed or changed
+    val wdIds = WikidataTemplates.all.associateBy { it.id }
+    wdOut.keys.retainAll { id -> wdIds[id]?.let { state[id]?.hash == hashWd(it) } == true }
+    val wpIds = WikipediaTemplates.all.associateBy { it.id }
+    wpOut.keys.retainAll { id -> wpIds[id]?.let { state[id]?.hash == hashWp(it) } == true }
 
-    // ---- wikipedia
-    val wp = ArrayList<Prompt>()
+    // ---- wikipedia first (19 small pages, capped at 4 minutes)
+    val wpEnd = System.currentTimeMillis() + 4 * 60_000
     for (t in WikipediaTemplates.all) {
-        if (overBudget()) { log("SNAP skip (budget) ${t.id}"); continue }
+        if (isFresh(t.id, hashWp(t), t.id in wpOut)) continue
+        if (System.currentTimeMillis() > wpEnd || overBudget()) { log("SNAP skip (budget) ${t.id}"); continue }
         try {
             val body = get("${WikiNet.WP_API}?action=parse&format=json&formatversion=2&redirects=1&prop=text&page=${enc(t.page)}")
             val html = WikipediaTemplates.parseHtml(body) ?: error("no html")
@@ -124,8 +131,10 @@ fun main(args: Array<String>) {
                 Thread.sleep(300)
             }
             val p = WikipediaTemplates.rank(t, items, links)
-            if (p.size >= 24) wp += p
-            log("SNAP wikipedia ${t.id.padEnd(30)} OK   ${p.size.toString().padStart(5)}  ranked ${links.size}/${items.size}" +
+            val keep = p.size >= 24 && rankErr == null
+            if (keep) wpOut[t.id] = p else wpOut.remove(t.id)
+            if (rankErr == null) state[t.id] = St(System.currentTimeMillis(), hashWp(t), keep)
+            log("SNAP wikipedia ${t.id.padEnd(30)} ${if (keep) "OK  " else "SMALL"} ${p.size.toString().padStart(5)}  ranked ${links.size}/${items.size}" +
                 (rankErr?.let { "  rankErr: $it" } ?: "") + "  top: ${p.entries.take(3).joinToString { it.name }}")
         } catch (e: Exception) {
             log("SNAP wikipedia ${t.id.padEnd(30)} FAIL ${e.message?.take(200)}")
@@ -133,19 +142,60 @@ fun main(args: Array<String>) {
         Thread.sleep(300)
     }
 
+    // ---- verification self-test (same query the app sends for unlisted answers)
+    val dog = WikidataTemplates.all.first { it.id == "wd.dog" }
+    val cheese = WikidataTemplates.all.first { it.id == "wd.cheese" }
+    for ((t, q) in listOf(dog to "Kai Ken", dog to "Shikoku Ken", dog to "banana", cheese to "Tête de Moine", cheese to "toaster")) {
+        try {
+            val body = get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.verifyQuery(t.where, q))}", "application/sparql-results+json")
+            val v = WikidataTemplates.parseVerify(body, q)
+            log("SNAP verify ${t.id} '$q' -> ${v?.let { "${it.label} (${it.links} sitelinks)" } ?: "rejected"}")
+        } catch (e: Exception) { log("SNAP verify ${t.id} '$q' -> FAIL ${e.message?.take(160)}") }
+    }
+
+    // ---- wikidata: missing first, then stale; 3 workers, then one retry pass for failures
+    val todo = WikidataTemplates.all.filter { !isFresh(it.id, hashWd(it), it.id in wdOut) }
+        .sortedBy { state[it.id]?.at ?: 0L }
+    log("SNAP wikidata todo ${todo.size}/${WikidataTemplates.all.size}")
+    val failed = Collections.synchronizedList(ArrayList<app.coredump.data.WikidataTemplate>())
+    fun fetchWd(t: app.coredump.data.WikidataTemplate, pass: Int) {
+        if (overBudget()) { log("SNAP skip (budget) ${t.id}"); return }
+        val t0 = System.currentTimeMillis()
+        try {
+            val body = get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}", "application/sparql-results+json")
+            val p = WikidataTemplates.parse(t, body)
+            val ms = System.currentTimeMillis() - t0
+            val keep = p.size >= WikidataTemplates.minAnswers(t)
+            if (keep) wdOut[t.id] = p else wdOut.remove(t.id)
+            state[t.id] = St(System.currentTimeMillis(), hashWd(t), keep)
+            log("SNAP wikidata  ${t.id.padEnd(30)} ${if (keep) "OK  " else "SMALL"} ${p.size.toString().padStart(5)}  ${ms}ms  top: ${p.entries.take(3).joinToString { it.name }}")
+        } catch (e: Exception) {
+            if (pass == 0) failed += t
+            log("SNAP wikidata  ${t.id.padEnd(30)} FAIL${pass} ${System.currentTimeMillis() - t0}ms ${e::class.simpleName}: ${e.message?.take(120)}")
+        }
+        Thread.sleep(250)
+    }
+    val pool = Executors.newFixedThreadPool(3)
+    for (t in todo) pool.submit { fetchWd(t, 0) }
+    pool.shutdown()
+    pool.awaitTermination(budgetMs + 120_000, TimeUnit.MILLISECONDS)
+    for (t in failed.toList()) { Thread.sleep(1500); fetchWd(t, 1) }
+
     val now = System.currentTimeMillis()
     val written = ArrayList<String>()
-    val wdSorted = wd.sortedBy { it.id }
+    val wdSorted = wdOut.values.sortedBy { it.id }
+    val wpSorted = wpOut.values.sortedBy { it.id }
     if (wdSorted.isNotEmpty()) { File(dir, "live_wikidata.json").writeText(PackCodec.encodeRanked(wdSorted, now)); written += "live_wikidata.json" }
-    if (wp.isNotEmpty()) { File(dir, "live_wikipedia.json").writeText(PackCodec.encodeRanked(wp, now)); written += "live_wikipedia.json" }
+    if (wpSorted.isNotEmpty()) { File(dir, "live_wikipedia.json").writeText(PackCodec.encodeRanked(wpSorted, now)); written += "live_wikipedia.json" }
+    stateFile.writeText(state.entries.sortedBy { it.key }.joinToString("\n") { (k, v) -> "$k\t${v.at}\t${v.hash}\t${if (v.kept) 1 else 0}" })
 
     val index = File(dir, "index.json")
     val files = Regex("\"([^\"]+\\.json)\"").findAll(if (index.exists()) index.readText() else "").map { it.groupValues[1] }.toMutableList()
     for (w in written) if (w !in files) files += w
     index.writeText("{\"packs\":[" + files.joinToString(",") { "\"$it\"" } + "]}")
 
-    log("SNAP SUMMARY wikidata ${wd.size}/${WikidataTemplates.all.size} prompts (${wd.sumOf { it.size }} answers), " +
-        "wikipedia ${wp.size}/${WikipediaTemplates.all.size} prompts (${wp.sumOf { it.size }} answers), " +
+    log("SNAP SUMMARY wikidata ${wdSorted.size}/${WikidataTemplates.all.size} prompts (${wdSorted.sumOf { it.size }} answers), " +
+        "wikipedia ${wpSorted.size}/${WikipediaTemplates.all.size} prompts (${wpSorted.sumOf { it.size }} answers), " +
         "${(System.currentTimeMillis() - t0All) / 1000}s; index=$files")
 }
 

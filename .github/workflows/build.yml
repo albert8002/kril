@@ -22,32 +22,29 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
-      - name: Week key
-        id: week
-        run: echo "key=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
-      - name: Restore this week's snapshot
-        id: snapcache
+      - name: Restore previous snapshot
         uses: actions/cache/restore@v4
         with:
           path: snapshot-out
-          key: snap-${{ steps.week.outputs.key }}-${{ hashFiles('composeApp/src/commonMain/kotlin/app/coredump/data/Wiki*.kt', 'snapshot/src/**') }}
-      - name: Fetch + rank live Wikidata / Wikipedia lists
-        if: steps.snapcache.outputs.cache-hit != 'true'
+          key: snap-r${{ github.run_id }}
+          restore-keys: snap-
+      - name: Fetch + rank live Wikidata / Wikipedia lists (incremental)
         continue-on-error: true
         timeout-minutes: 22
         env:
-          SNAP_BUDGET_MIN: "16"
+          SNAP_BUDGET_MIN: "15"
         run: |
           set -o pipefail
           chmod +x gradlew
           mkdir -p snapshot-out
+          ls -la snapshot-out || true
           ./gradlew :snapshot:run --args="$GITHUB_WORKSPACE/snapshot-out" 2>&1 | tee build.log
-      - name: Save snapshot (only if it is substantial)
-        if: steps.snapcache.outputs.cache-hit != 'true' && hashFiles('snapshot-out/live_wikidata.json') != ''
+      - name: Save snapshot
+        if: hashFiles('snapshot-out/live_wikidata.json') != ''
         uses: actions/cache/save@v4
         with:
           path: snapshot-out
-          key: snap-${{ steps.week.outputs.key }}-${{ hashFiles('composeApp/src/commonMain/kotlin/app/coredump/data/Wiki*.kt', 'snapshot/src/**') }}
+          key: snap-r${{ github.run_id }}-${{ github.run_attempt }}
       - name: Merge snapshot into bundled packs
         run: |
           python3 - <<'PY'

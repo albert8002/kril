@@ -64,7 +64,6 @@ object WikidataTemplates {
         WikidataTemplate("wd.browser", "Name a web browser", "CODE", instSub("Q6368")),
         WikidataTemplate("wd.editor", "Name a text editor", "CODE", instSub("Q522972")),
         WikidataTemplate("wd.website", "Name a website", "CODE", inst("Q35127"), minLinks = 12),
-        WikidataTemplate("wd.console", "Name a video game console", "CODE", instSub("Q8076")),
         WikidataTemplate("wd.videogame", "Name a video game", "CULTURE", inst("Q7889"), minLinks = 25),
         WikidataTemplate("wd.compsci", "Name a computer scientist", "CODE",
             "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q82594 .", minLinks = 10),
@@ -77,7 +76,6 @@ object WikidataTemplates {
         WikidataTemplate("wd.metal", "Name a heavy metal band", "CULTURE",
             "?item wdt:P31 wd:Q5741069 ; wdt:P136 wd:Q38848 ."),
         WikidataTemplate("wd.genre", "Name a music genre", "CULTURE", inst("Q188451"), minLinks = 6),
-        WikidataTemplate("wd.opera", "Name an opera", "CULTURE", inst("Q1344"), minLinks = 8),
         WikidataTemplate("wd.filmseries", "Name a film series or franchise", "CULTURE", inst("Q24856"), minLinks = 10),
         WikidataTemplate("wd.boardgame", "Name a board game", "CULTURE", inst("Q131436")),
         WikidataTemplate("wd.magazine", "Name a magazine", "CULTURE", inst("Q41298"), minLinks = 8),
@@ -93,7 +91,8 @@ object WikidataTemplates {
         WikidataTemplate("wd.mname", "Name a male given name", "MISC", inst("Q12308941"), minLinks = 10),
         WikidataTemplate("wd.sport", "Name a sport", "SPORT", inst("Q31629"), minLinks = 3),
         WikidataTemplate("wd.club", "Name a football (soccer) club", "SPORT", inst("Q476028"), minLinks = 20),
-        WikidataTemplate("wd.megacity", "Name a city with over a million people", "GEOGRAPHY", inst("Q1637706")),
+        WikidataTemplate("wd.megacity", "Name a city with over a million people", "GEOGRAPHY",
+            "VALUES ?cls { wd:Q515 wd:Q1549591 wd:Q1637706 wd:Q200250 wd:Q5119 } ?item wdt:P31 ?cls ; wdt:P1082 ?pop . FILTER(?pop >= 1000000)"),
         WikidataTemplate("wd.peak7k", "Name a mountain over 7,000 metres", "GEOGRAPHY",
             "?item wdt:P31 wd:Q8502 ; wdt:P2044 ?elev . FILTER(?elev > 7000)"),
         WikidataTemplate("wd.lake", "Name a lake", "GEOGRAPHY", inst("Q23397"), minLinks = 15),
@@ -152,6 +151,10 @@ object WikidataTemplates {
         s.orEmpty().split(if ('|' in s.orEmpty()) "|" else ", ").map { it.trim() }.filter { it.isNotEmpty() }
 
     /** One-request check of an unlisted answer: Wikidata entity search, constrained by the prompt's pattern. */
+    /** For checking one found item: also accept subclasses (many foods, breeds and genres are modelled as P279). */
+    fun relax(where: String): String =
+        where.replaceFirst(Regex("""\?item wdt:P31(/wdt:P279\*)? """), "?item (wdt:P31|wdt:P279)/wdt:P279* ")
+
     fun verifyQuery(where: String, input: String): String {
         val term = input.trim().take(60).replace("\\", " ").replace("\"", " ")
         return """
@@ -163,7 +166,8 @@ object WikidataTemplates {
                                 mwapi:language "en" .
                 ?item wikibase:apiOutputItem mwapi:item .
               }
-              $where
+              hint:Prior hint:runFirst "true".
+              ${relax(where)}
               ?item wikibase:sitelinks ?links .
               SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
             } ORDER BY DESC(?links) LIMIT 5
