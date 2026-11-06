@@ -29,13 +29,17 @@ fun main(args: Array<String>) {
 
     fun enc(s: String) = URLEncoder.encode(s, Charsets.UTF_8)
 
+    val budgetMs = (System.getenv("SNAP_BUDGET_MIN")?.toLongOrNull() ?: 15L) * 60_000
+    val t0All = System.currentTimeMillis()
+    fun overBudget() = System.currentTimeMillis() - t0All > budgetMs
+
     fun send(req: HttpRequest): String {
-        repeat(3) { attempt ->
+        repeat(2) { attempt ->
             val res = http.send(req, HttpResponse.BodyHandlers.ofString())
             val code = res.statusCode()
             if (code in 200..299) return res.body()
-            if ((code == 429 || code == 503) && attempt < 2) {
-                val wait = res.headers().firstValue("Retry-After").orElse("5").toLongOrNull()?.coerceIn(1, 30) ?: 5
+            if ((code == 429 || code == 503) && attempt < 1) {
+                val wait = res.headers().firstValue("Retry-After").orElse("5").toLongOrNull()?.coerceIn(1, 10) ?: 5
                 Thread.sleep(wait * 1000)
                 return@repeat
             }
@@ -45,12 +49,12 @@ fun main(args: Array<String>) {
     }
 
     fun get(url: String, accept: String = "application/json") = send(
-        HttpRequest.newBuilder(URI(url)).timeout(Duration.ofSeconds(90))
+        HttpRequest.newBuilder(URI(url)).timeout(Duration.ofSeconds(45))
             .header("User-Agent", WikiNet.USER_AGENT).header("Accept", accept).GET().build()
     )
 
     fun postForm(url: String, form: Map<String, String>) = send(
-        HttpRequest.newBuilder(URI(url)).timeout(Duration.ofSeconds(90))
+        HttpRequest.newBuilder(URI(url)).timeout(Duration.ofSeconds(45))
             .header("User-Agent", WikiNet.USER_AGENT)
             .header("Accept", "application/sparql-results+json")
             .header("Content-Type", "application/x-www-form-urlencoded")
@@ -59,10 +63,26 @@ fun main(args: Array<String>) {
     )
 
     println("UA: ${WikiNet.USER_AGENT}")
+    // ---- probes: raw status + headers, to diagnose blocking vs throttling
+    for ((name, url) in listOf(
+        "wdqs" to "${WikiNet.WDQS}?format=json&query=${enc("SELECT ?x WHERE { wd:Q42 wdt:P31 ?x }")}",
+        "wpapi" to "${WikiNet.WP_API}?action=query&meta=siteinfo&format=json",
+    )) {
+        for (ua in listOf(WikiNet.USER_AGENT, "CoreDumpTrivia/1.0 (Kotlin Multiplatform; open-source trivia game)")) {
+            try {
+                val t = System.currentTimeMillis()
+                val r = http.send(HttpRequest.newBuilder(URI(url)).timeout(Duration.ofSeconds(30)).header("User-Agent", ua).GET().build(),
+                    HttpResponse.BodyHandlers.ofString())
+                println("SNAP probe $name ua='${ua.take(40)}' -> ${r.statusCode()} in ${System.currentTimeMillis() - t}ms " +
+                    "retry-after=${r.headers().firstValue("retry-after").orElse("-")} body=${r.body().replace(Regex("\\s+"), " ").take(140)}")
+            } catch (e: Exception) { println("SNAP probe $name -> ${e::class.simpleName}: ${e.message}") }
+        }
+    }
 
     // ---- wikidata
     val wd = ArrayList<Prompt>()
     for (t in WikidataTemplates.all) {
+        if (overBudget()) { println("SNAP budget exhausted before ${t.id}"); break }
         val t0 = System.currentTimeMillis()
         try {
             val body = get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}", "application/sparql-results+json")
@@ -71,7 +91,7 @@ fun main(args: Array<String>) {
             if (p.size >= 5) wd += p
             println("SNAP wikidata  ${t.id.padEnd(18)} OK   ${p.size.toString().padStart(5)} answers  ${ms}ms  top: ${p.entries.take(4).joinToString { it.name }}")
         } catch (e: Exception) {
-            println("SNAP wikidata  ${t.id.padEnd(18)} FAIL ${e.message?.take(200)}")
+            println("SNAP wikidata  ${t.id.padEnd(18)} FAIL ${System.currentTimeMillis() - t0}ms ${e::class.simpleName}: ${e.message?.take(200)}")
         }
         Thread.sleep(400)
     }
@@ -79,6 +99,7 @@ fun main(args: Array<String>) {
     // ---- wikipedia
     val wp = ArrayList<Prompt>()
     for (t in WikipediaTemplates.all) {
+        if (overBudget()) { println("SNAP budget exhausted before ${t.id}"); break }
         try {
             val body = get("${WikiNet.WP_API}?action=parse&format=json&formatversion=2&redirects=1&prop=text&page=${enc(t.page)}")
             val html = WikipediaTemplates.parseHtml(body) ?: error("no html")
