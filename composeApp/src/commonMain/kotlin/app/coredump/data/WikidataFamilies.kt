@@ -5,6 +5,9 @@ package app.coredump.data
  * Built into the app by the CI snapshot; lists with fewer than [WikidataFamilies.MIN_ANSWERS] answers are dropped.
  */
 object WikidataFamilies {
+    /** "a" or "an" + word (by first letter). */
+    private fun an(w: String) = (if (w.firstOrNull()?.lowercaseChar() in setOf('a', 'e', 'i', 'o', 'u')) "an " else "a ") + w
+
     const val MIN_ANSWERS = 24
 
     private class Country(val q: String, val name: String, val cityPop: Int)
@@ -105,7 +108,7 @@ object WikidataFamilies {
             Triple("Q1054574", "romance film", 15), Triple("Q93204", "documentary film", 8), Triple("Q846544", "disaster film", 5),
             Triple("Q1535153", "superhero film", 8), Triple("Q1200678", "mystery film", 8), Triple("Q496523", "heist film", 5),
             Triple("Q1342372", "zombie film", 4), Triple("Q853630", "slasher film", 4), Triple("Q185867", "film noir", 5),
-        )) add(t("film.${slug(label)}", "Name a $label", if (g in setOf("Q1342372", "Q853630")) "OCCULT" else "CULTURE", film(g), min))
+        )) add(t("film.${slug(label)}", "Name ${an(label)}", if (g in setOf("Q1342372", "Q853630")) "OCCULT" else "CULTURE", film(g), min))
         add(t("film.animated", "Name an animated film", "CULTURE", "?item wdt:P31 wd:Q202866 .", 15))
         for ((aw, label) in listOf("Q102427" to "a Best Picture Oscar winner", "Q103916" to "a Best Actor Oscar winner",
             "Q103618" to "a Best Actress Oscar winner"))
@@ -114,16 +117,16 @@ object WikidataFamilies {
 
         // ---- video games
         for ((g, label) in listOf("Q828322" to "platform game", "Q185029" to "first-person shooter", "Q744038" to "role-playing video game"))
-            add(t("gamegenre.${slug(label)}", "Name a $label", "CULTURE", "?item wdt:P31 wd:Q7889 ; wdt:P136 wd:$g .", 10))
+            add(t("gamegenre.${slug(label)}", "Name ${an(label)}", "CULTURE", "?item wdt:P31 wd:Q7889 ; wdt:P136 wd:$g .", 10))
 
         // ---- music
         for ((g, label, min) in listOf(
             Triple("Q3071", "punk rock", 8), Triple("Q11365", "grunge", 5), Triple("Q187760", "new wave", 8), Triple("Q1298934", "synth-pop", 8), Triple("Q49451", "progressive rock", 8),
             Triple("Q186472", "emo", 4), Triple("Q213665", "K-pop", 8), Triple("Q164444", "funk", 5), Triple("Q58339", "disco", 5),
-        )) add(t("band.${slug(label)}", "Name a $label band", "CULTURE",
+        )) add(t("band.${slug(label)}", "Name ${an(label)} band", "CULTURE",
             "?item wdt:P136 wd:$g . ?item wdt:P31/wdt:P279* wd:Q215380 .", min))
         for ((g, label) in listOf("Q8341" to "jazz musician", "Q9759" to "blues musician", "Q83440" to "country music singer", "Q9794" to "reggae artist"))
-            add(t("artist.${slug(label)}", "Name a $label", "CULTURE", "?item wdt:P31 wd:Q5 ; wdt:P136 wd:$g .", 12))
+            add(t("artist.${slug(label)}", "Name ${an(label)}", "CULTURE", "?item wdt:P31 wd:Q5 ; wdt:P136 wd:$g .", 12))
 
         // ---- awards
         for ((q, label) in listOf("Q38104" to "Physics", "Q37922" to "Literature", "Q35637" to "Peace"))
