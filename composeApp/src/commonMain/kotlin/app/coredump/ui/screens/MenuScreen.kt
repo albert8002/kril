@@ -100,11 +100,14 @@ fun MenuScreen(model: AppModel) {
                 when (st.state) {
                     SyncState.SYNCING -> { Spinner(C.amber, 11.sp); TText(" ${st.done}/${st.total}", size = 11.sp, color = C.amber) }
                     SyncState.OK -> TText("✓ ${st.count}", size = 11.sp, color = C.amber)
-                    SyncState.ERROR -> TText("✗ offline · ${st.count} cached", size = 11.sp, color = C.blood)
+                    SyncState.ERROR -> TText("✗ sync failed · ${st.count} kept", size = 11.sp, color = C.blood)
                     SyncState.OFF -> TText("off", size = 11.sp, color = C.line)
                     SyncState.IDLE -> TText("· ${st.count}", size = 11.sp, color = C.dim)
                 }
-                if (st.detail.isNotEmpty() && st.state != SyncState.SYNCING) TText("  ${st.detail}", size = 10.sp, color = C.line)
+                if (st.detail.isNotEmpty() && st.state == SyncState.OK) TText("  ${st.detail}", size = 10.sp, color = C.line, maxLines = 1)
+            }
+            if (st.state == SyncState.ERROR && st.detail.isNotEmpty()) {
+                TText("           ${st.detail}", size = 10.sp, color = C.bloodDim, maxLines = 2)
             }
         }
         Spacer(Modifier.height(18.dp))

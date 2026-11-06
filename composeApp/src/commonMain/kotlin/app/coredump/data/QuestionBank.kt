@@ -2,9 +2,7 @@ package app.coredump.data
 
 import app.coredump.core.PackCodec
 import app.coredump.core.Prompt
-import app.coredump.core.RawAnswer
 import app.coredump.core.SourceKind
-import app.coredump.core.Tiering
 import app.coredump.platform.Platform
 import app.coredump.res.Res
 import io.ktor.client.HttpClient
@@ -12,14 +10,14 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.client.request.forms.submitForm
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.parameters
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,9 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
@@ -166,6 +162,8 @@ class QuestionBank(private val scope: CoroutineScope) {
                 log("[FAIL] /packs/$f: ${it.message}"); emptyList()
             }
             out += prompts
+            // build-time snapshot of a live source: remember its age so boot doesn't refetch a fresh one
+            PackCodec.cacheTime(text)?.let { at -> prompts.firstOrNull()?.source?.let { bundledAt[it] = at } }
             log("[ OK ] mount /packs/$f  ${prompts.size} prompts / ${prompts.sumOf { it.size }} answers")
         }
         return out
@@ -180,10 +178,12 @@ class QuestionBank(private val scope: CoroutineScope) {
         PackCodec.parse(t, kind)
     }.getOrElse { emptyList() }
 
+    private val bundledAt = HashMap<SourceKind, Long>()
+
     private fun isStale(kind: SourceKind, now: Long, maxAge: Long): Boolean {
-        val t = Platform.readText(cacheFile(kind)) ?: return true
-        val at = PackCodec.cacheTime(t) ?: return true
-        return now - at > maxAge
+        val cached = Platform.readText(cacheFile(kind))?.let { PackCodec.cacheTime(it) }
+        val at = maxOf(cached ?: 0L, bundledAt[kind] ?: 0L)
+        return at == 0L || now - at > maxAge
     }
 
     private fun writeCache(kind: SourceKind, prompts: List<Prompt>) {
@@ -191,115 +191,133 @@ class QuestionBank(private val scope: CoroutineScope) {
         runCatching { Platform.writeText(cacheFile(kind), PackCodec.encodeRanked(prompts, Platform.epochMillis())) }
     }
 
+    // ---------------- http helpers ----------------
+
+    /** Short human-readable reason for the last failure of each source (shown in the UI). */
+    private val lastError = HashMap<SourceKind, String>()
+
+    private class Fail(msg: String) : Exception(msg)
+
+    /** Runs a request; on 429/503 waits Retry-After (≤ 20 s) and retries once. Throws [Fail] with a readable reason. */
+    private suspend fun call(kind: SourceKind, block: suspend () -> HttpResponse): String {
+        repeat(2) { attempt ->
+            val res = try { block() } catch (e: Throwable) {
+                throw Fail("${e::class.simpleName ?: "error"}: ${e.message?.take(70) ?: "no message"}")
+            }
+            val code = res.status.value
+            if (res.status.isSuccess()) return res.bodyAsText()
+            val body = runCatching { res.bodyAsText() }.getOrDefault("")
+            if ((code == 429 || code == 503) && attempt == 0) {
+                val wait = res.headers["Retry-After"]?.toLongOrNull()?.coerceIn(1, 20) ?: 5
+                delay(wait * 1000)
+                return@repeat
+            }
+            val hint = body.replace(Regex("<[^>]+>"), " ").replace(Regex("\\s+"), " ").trim().take(80)
+            throw Fail("HTTP $code${if (hint.isNotEmpty()) " · $hint" else ""}")
+        }
+        throw Fail("HTTP 429 · rate limited")
+    }
+
+    private fun failDetail(ok: Int, failed: Int, kind: SourceKind): String {
+        val base = if (failed > 0) "$ok ok · $failed failed" else "$ok ok"
+        val err = lastError[kind]
+        return if (failed > 0 && err != null) "$base · $err" else base
+    }
+
     // ---------------- wikidata ----------------
 
     private suspend fun syncWikidata() {
         val templates = WikidataTemplates.all
+        lastError.remove(SourceKind.WIKIDATA)
         status(SourceKind.WIKIDATA) { it.copy(state = SyncState.SYNCING, done = 0, total = templates.size, detail = "") }
-        val gate = Semaphore(2) // WDQS asks clients to keep concurrency low
         val got = ArrayList<Prompt>()
-        val gotLock = Mutex()
         var errors = 0
-        coroutineScope {
-          templates.map { t ->
-            async {
-                gate.withPermit {
-                    val p = runCatching { fetchWikidata(t) }.getOrNull()
-                    if (p != null && p.size >= 5) {
-                        putAll(listOf(p))
-                        gotLock.withLock { got += p }
-                    } else errors++
-                    status(SourceKind.WIKIDATA) { it.copy(done = it.done + 1) }
-                }
-            }
-          }.awaitAll()
+        // WDQS: sequential, polite gap; stop early if the service is clearly blocking us.
+        for (t in templates) {
+            val p = try { fetchWikidata(t) } catch (e: Fail) { lastError[SourceKind.WIKIDATA] = e.message ?: "error"; null }
+            if (p != null && p.size >= 5) { putAll(listOf(p)); got += p } else errors++
+            status(SourceKind.WIKIDATA) { it.copy(done = it.done + 1) }
+            if (got.isEmpty() && errors >= 4) break
+            delay(250)
         }
         writeCache(SourceKind.WIKIDATA, merged(SourceKind.WIKIDATA, got))
         status(SourceKind.WIKIDATA) {
             it.copy(state = if (got.isEmpty()) SyncState.ERROR else SyncState.OK,
-                detail = if (errors > 0) "${got.size} ok · $errors failed" else "${got.size} ok")
+                detail = failDetail(got.size, templates.size - got.size, SourceKind.WIKIDATA))
         }
     }
 
-    private suspend fun fetchWikidata(t: WikidataTemplate): Prompt? {
-        val res = http.get("https://query.wikidata.org/sparql") {
-            parameter("query", WikidataTemplates.query(t))
-            parameter("format", "json")
-            header("Accept", "application/sparql-results+json")
-            header("User-Agent", USER_AGENT)
+    private suspend fun fetchWikidata(t: WikidataTemplate): Prompt {
+        val body = call(SourceKind.WIKIDATA) {
+            http.get(WikiNet.WDQS) {
+                parameter("query", WikidataTemplates.query(t))
+                parameter("format", "json")
+                header("Accept", "application/sparql-results+json")
+                header("User-Agent", WikiNet.USER_AGENT)
+            }
         }
-        if (!res.status.isSuccess()) return null
-        return WikidataTemplates.parse(t, res.bodyAsText())
+        return WikidataTemplates.parse(t, body)
     }
 
     // ---------------- wikipedia ----------------
 
     private suspend fun syncWikipedia() {
         val templates = WikipediaTemplates.all
+        lastError.remove(SourceKind.WIKIPEDIA)
         status(SourceKind.WIKIPEDIA) { it.copy(state = SyncState.SYNCING, done = 0, total = templates.size, detail = "") }
         val got = ArrayList<Prompt>()
         var errors = 0
         for (t in templates) {
-            val p = runCatching { fetchWikipedia(t) }.getOrNull()
+            val p = try { fetchWikipedia(t) } catch (e: Fail) { lastError[SourceKind.WIKIPEDIA] = e.message ?: "error"; null }
             if (p != null && p.size >= 8) { putAll(listOf(p)); got += p } else errors++
             status(SourceKind.WIKIPEDIA) { it.copy(done = it.done + 1) }
+            if (got.isEmpty() && errors >= 4) break
+            delay(300)
         }
         writeCache(SourceKind.WIKIPEDIA, merged(SourceKind.WIKIPEDIA, got))
         status(SourceKind.WIKIPEDIA) {
             it.copy(state = if (got.isEmpty()) SyncState.ERROR else SyncState.OK,
-                detail = if (errors > 0) "${got.size} ok · $errors failed" else "${got.size} ok")
+                detail = failDetail(got.size, templates.size - got.size, SourceKind.WIKIPEDIA))
         }
     }
 
+    /** 1 request for the list page + 1–2 SPARQL requests for the ranking. */
     private suspend fun fetchWikipedia(t: WikipediaTemplate): Prompt? {
-        val res = http.get(WP_API) {
-            parameter("action", "parse")
-            parameter("page", t.page)
-            parameter("prop", "text")
-            parameter("format", "json")
-            parameter("formatversion", "2")
-            parameter("redirects", "1")
-            header("User-Agent", USER_AGENT)
+        val body = call(SourceKind.WIKIPEDIA) {
+            http.get(WikiNet.WP_API) {
+                parameter("action", "parse")
+                parameter("page", t.page)
+                parameter("prop", "text")
+                parameter("format", "json")
+                parameter("formatversion", "2")
+                parameter("redirects", "1")
+                header("User-Agent", WikiNet.USER_AGENT)
+                header("Api-User-Agent", WikiNet.USER_AGENT)
+            }
         }
-        if (!res.status.isSuccess()) return null
-        val html = WikipediaTemplates.parseHtml(res.bodyAsText()) ?: return null
+        val html = WikipediaTemplates.parseHtml(body) ?: throw Fail("parse: no html")
         val items = WikipediaTemplates.extract(html, t.max)
-        if (items.size < 8) return null
+        if (items.size < 8) throw Fail("parse: only ${items.size} items")
 
-        // page views, 20 titles per request, following "continue"
-        val views = HashMap<String, Long>()
-        for (chunk in items.chunked(20)) {
-            var cont: Map<String, String> = emptyMap()
-            var hops = 0
-            do {
-                val r = http.get(WP_API) {
-                    parameter("action", "query")
-                    parameter("prop", "pageviews")
-                    parameter("pvipdays", "30")
-                    parameter("titles", chunk.joinToString("|") { it.title })
-                    parameter("redirects", "1")
-                    parameter("format", "json")
-                    parameter("formatversion", "2")
-                    for ((k, v) in cont) parameter(k, v)
-                    header("User-Agent", USER_AGENT)
+        val links = HashMap<String, Int>()
+        for (chunk in items.chunked(300)) {
+            val res = runCatching {
+                call(SourceKind.WIKIPEDIA) {
+                    http.submitForm(
+                        url = WikiNet.WDQS,
+                        formParameters = parameters {
+                            append("query", WikipediaTemplates.sitelinksQuery(chunk.map { it.title }))
+                            append("format", "json")
+                        },
+                    ) {
+                        header("Accept", "application/sparql-results+json")
+                        header("User-Agent", WikiNet.USER_AGENT)
+                    }
                 }
-                if (!r.status.isSuccess()) break
-                val v = WikipediaTemplates.parseViews(r.bodyAsText())
-                for (item in chunk) {
-                    val resolved = WikipediaTemplates.resolve(item.title, v.normalized)
-                    val n = v.views[resolved] ?: continue
-                    views[item.title] = maxOf(views[item.title] ?: 0L, n)
-                }
-                cont = v.cont
-                hops++
-            } while (v.cont.containsKey("pvipcontinue") && hops < 4)
-            delay(60) // be polite
+            }.getOrNull() ?: continue   // unranked items still play; they just keep page order
+            links.putAll(WikipediaTemplates.parseSitelinks(res))
         }
-        val ranked = items.sortedByDescending { views[it.title] ?: 0L }.map { item ->
-            val alias = item.title.substringBefore(" (").trim()
-            RawAnswer(item.text, if (!alias.equals(item.text, ignoreCase = true)) listOf(alias) else emptyList())
-        }
-        return Prompt(t.id, t.prompt, t.topic, SourceKind.WIKIPEDIA, Tiering.build(ranked, t.id))
+        return WikipediaTemplates.rank(t, items, links)
     }
 
     // ---------------- remote packs ----------------
@@ -314,7 +332,7 @@ class QuestionBank(private val scope: CoroutineScope) {
             val url = queue.removeFirst().trim()
             if (url.isEmpty() || !visited.add(url)) continue
             runCatching {
-                val res = http.get(url) { header("User-Agent", USER_AGENT) }
+                val res = http.get(url) { header("User-Agent", WikiNet.USER_AGENT) }
                 if (!res.status.isSuccess()) error("HTTP ${res.status.value}")
                 val text = res.bodyAsText()
                 val root = Json.parseToJsonElement(text).jsonObject
@@ -346,8 +364,6 @@ class QuestionBank(private val scope: CoroutineScope) {
     }
 
     companion object {
-        const val USER_AGENT = "CoreDumpTrivia/1.0 (Kotlin Multiplatform; open-source trivia game)"
-        const val WP_API = "https://en.wikipedia.org/w/api.php"
         const val DAY = 24L * 3600 * 1000
         const val WEEK = 7 * DAY
     }

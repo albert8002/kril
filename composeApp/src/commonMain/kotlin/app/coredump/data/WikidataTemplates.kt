@@ -15,6 +15,15 @@ import kotlinx.serialization.json.jsonPrimitive
  * Familiarity = number of Wikipedia language editions linking the item ("sitelinks").
  * More sitelinks = more familiar = lower tier.
  */
+/** Shared by the app and the CI snapshot tool. Wikimedia blocks clients without contact info in the UA. */
+object WikiNet {
+    const val VERSION = "1.1"
+    const val CONTACT = "https://github.com/albert8002/kril"
+    const val USER_AGENT = "CoreDumpTrivia/$VERSION ($CONTACT)"
+    const val WDQS = "https://query.wikidata.org/sparql"
+    const val WP_API = "https://en.wikipedia.org/w/api.php"
+}
+
 class WikidataTemplate(
     val id: String,
     val prompt: String,

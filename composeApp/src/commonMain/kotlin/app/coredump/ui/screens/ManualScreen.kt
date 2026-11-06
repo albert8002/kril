@@ -64,9 +64,9 @@ fun ManualScreen(model: AppModel) {
                 for (l in listOf(
                     "LOCAL      hand-ranked packs shipped in the app. offline.",
                     "WIKIDATA   live SPARQL lists. rarity = how many wikipedias cover it.",
-                    "WIKIPEDIA  scraped \"List of …\" pages. rarity = page views, 30 days.",
+                    "WIKIPEDIA  scraped \"List of …\" pages. rarity = how many wikipedias cover it.",
                     "REMOTE     any JSON pack URL you add in config.",
-                    "all lists + rankings are prefetched at boot and cached for a week.",
+                    "a snapshot of all live lists ships inside the app; boot refreshes it weekly.",
                 )) TText(l, size = 11.sp, color = C.amber)
             }
             Spacer(Modifier.height(12.dp))

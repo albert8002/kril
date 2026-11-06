@@ -13,10 +13,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  android:
+  snapshot:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Fetch + rank live Wikidata / Wikipedia lists
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew :snapshot:run --args="$GITHUB_WORKSPACE/composeApp/src/commonMain/composeResources/files/packs" 2>&1 | tee build.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: live-packs
+          path: composeApp/src/commonMain/composeResources/files/packs/
+      - name: Publish snapshot log
+        if: always()
+        run: bash .github/publish-log.sh snapshot "${{ job.status }}" "${{ github.token }}"
+
+  android:
+    needs: [ snapshot ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: live-packs
+          path: composeApp/src/commonMain/composeResources/files/packs/
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -38,9 +67,15 @@ jobs:
         run: bash .github/publish-log.sh android "${{ job.status }}" "${{ github.token }}"
 
   ios:
+    needs: [ snapshot ]
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: live-packs
+          path: composeApp/src/commonMain/composeResources/files/packs/
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -85,6 +120,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
+          pattern: CoreDump-*
           path: out
           merge-multiple: true
       - uses: softprops/action-gh-release@v2

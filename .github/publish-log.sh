@@ -8,7 +8,7 @@ cd "$WORK"
 git init -q && git checkout -q -b log
 echo "status=${STATUS} run=${GITHUB_RUN_NUMBER} sha=${GITHUB_SHA}" > status.txt
 if [ -f "$LOG" ]; then
-  grep -nE "^e: |error:|Error:|FAILURE|What went wrong|Unresolved|BUILD FAILED|\*\* BUILD" "$LOG" | head -400 > errors.txt || true
+  grep -nE "^e: |error:|Error:|FAILURE|What went wrong|Unresolved|BUILD FAILED|\*\* BUILD|SNAP " "$LOG" | head -400 > errors.txt || true
   tail -n 1500 "$LOG" > tail.txt
 else
   echo "no build.log (step did not run)" > errors.txt

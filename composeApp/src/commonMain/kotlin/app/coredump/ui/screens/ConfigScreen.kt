@@ -71,7 +71,7 @@ fun ConfigScreen(model: AppModel) {
                 Toggle("wikidata live lists", s.useWikidata, { v -> model.update { it.copy(useWikidata = v) } },
                     "SPARQL · rarity = wikipedia language editions")
                 Toggle("wikipedia list scraping", s.useWikipedia, { v -> model.update { it.copy(useWikipedia = v) } },
-                    "\"List of …\" pages · rarity = 30-day page views")
+                    "\"List of …\" pages · rarity = wikipedia language editions")
                 Spacer(Modifier.height(8.dp))
                 TText("remote pack URLs (one per line, JSON pack or index)", size = 11.sp, color = C.dim)
                 Spacer(Modifier.height(4.dp))
@@ -89,10 +89,11 @@ fun ConfigScreen(model: AppModel) {
                     KV(k.tag, when (st.state) {
                         SyncState.SYNCING -> "syncing ${st.done}/${st.total}"
                         SyncState.OK -> "${st.count} prompts ✓ ${st.detail}"
-                        SyncState.ERROR -> "offline · ${st.count} cached"
+                        SyncState.ERROR -> "failed · ${st.count} kept"
                         SyncState.OFF -> "off"
                         SyncState.IDLE -> "${st.count} prompts"
                     }, if (st.state == SyncState.ERROR) C.blood else C.amber)
+                    if (st.state == SyncState.ERROR && st.detail.isNotEmpty()) TText("  ${st.detail}", size = 10.sp, color = C.blood)
                 }
                 Spacer(Modifier.height(8.dp))
                 Row {

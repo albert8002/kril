@@ -1,5 +1,9 @@
 package app.coredump.data
 
+import app.coredump.core.Prompt
+import app.coredump.core.RawAnswer
+import app.coredump.core.SourceKind
+import app.coredump.core.Tiering
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -10,7 +14,8 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Live prompts scraped from Wikipedia "List of ..." pages.
- * Familiarity = article page views over the last 30 days.
+ * Familiarity = number of Wikipedia language editions of each article (Wikidata sitelinks),
+ * fetched for the whole list in ONE SPARQL request (page views would cost ~30 requests per list).
  */
 class WikipediaTemplate(
     val id: String,
@@ -121,6 +126,45 @@ object WikipediaTemplates {
         // formatversion=2 gives a string; v1 gives {"*": "..."}
         return runCatching { text.jsonPrimitive.contentOrNull }.getOrNull()
             ?: (text as? JsonObject)?.get("*")?.jsonPrimitive?.contentOrNull
+    }
+
+    /** SPARQL that maps English article titles to their sitelink counts. Send as POST (long). */
+    fun sitelinksQuery(titles: List<String>): String {
+        val values = titles.joinToString(" ") { "\"" + sparqlEscape(it) + "\"@en" }
+        return """
+            SELECT ?name ?links WHERE {
+              VALUES ?name { $values }
+              ?article schema:name ?name ; schema:isPartOf <https://en.wikipedia.org/> ; schema:about ?item .
+              ?item wikibase:sitelinks ?links .
+            }
+        """.trimIndent()
+    }
+
+    private fun sparqlEscape(s: String): String =
+        s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ")
+
+    /** title -> sitelinks from a SPARQL JSON result. */
+    fun parseSitelinks(body: String): Map<String, Int> {
+        val out = HashMap<String, Int>()
+        val bindings = Json.parseToJsonElement(body).jsonObject["results"]?.jsonObject?.get("bindings")?.jsonArray ?: return out
+        for (b in bindings) {
+            val o = b.jsonObject
+            val name = o["name"]?.jsonObject?.get("value")?.jsonPrimitive?.contentOrNull ?: continue
+            val links = o["links"]?.jsonObject?.get("value")?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: continue
+            out[name] = maxOf(out[name] ?: 0, links)
+        }
+        return out
+    }
+
+    /** Ranks scraped items by sitelinks (unknown = 0, keeps page order as tie-break) and builds the prompt. */
+    fun rank(t: WikipediaTemplate, items: List<WikiItem>, links: Map<String, Int>): Prompt {
+        val ranked = items.withIndex()
+            .sortedWith(compareByDescending<IndexedValue<WikiItem>> { links[it.value.title] ?: 0 }.thenBy { it.index })
+            .map { (_, item) ->
+                val alias = item.title.substringBefore(" (").trim()
+                RawAnswer(item.text, if (!alias.equals(item.text, ignoreCase = true)) listOf(alias) else emptyList())
+            }
+        return Prompt(t.id, t.prompt, t.topic, SourceKind.WIKIPEDIA, Tiering.build(ranked, t.id))
     }
 
     /** Page views result: title -> summed views. Also returns the continue params, if any. */
