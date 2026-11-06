@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- terminal frame -->
+    <path android:strokeColor="#FFFFB000" android:strokeWidth="3" android:fillColor="#00000000"
+        android:pathData="M30,34 L78,34 L78,74 L30,74 Z" />
+    <!-- prompt chevron -->
+    <path android:strokeColor="#FFFFB000" android:strokeWidth="4" android:fillColor="#00000000"
+        android:strokeLineCap="square" android:pathData="M38,46 L46,54 L38,62" />
+    <!-- block cursor -->
+    <path android:fillColor="#FFFFD58A" android:pathData="M52,58 L64,58 L64,63 L52,63 Z" />
+    <!-- scanlines -->
+    <path android:fillColor="#33000000" android:pathData="M30,40 L78,40 L78,41 L30,41 Z M30,48 L78,48 L78,49 L30,49 Z M30,56 L78,56 L78,57 L30,57 Z M30,64 L78,64 L78,65 L30,65 Z" />
+</vector>
