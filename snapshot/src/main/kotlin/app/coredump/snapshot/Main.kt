@@ -97,7 +97,7 @@ fun main(args: Array<String>) {
     log("SNAP restored ${wdOut.size} wikidata + ${wpOut.size} wikipedia prompts, ${state.size} state rows")
     val freshMs = 10L * 24 * 3600 * 1000
     fun hashWd(t: app.coredump.data.WikidataTemplate) = stableHash("${t.where}|${t.prompt}|${t.limit}|${t.minLinks}|${t.topic}")
-    fun hashWp(t: app.coredump.data.WikipediaTemplate) = stableHash("${t.page}|${t.prompt}|${t.max}|${t.topic}")
+    fun hashWp(t: app.coredump.data.WikipediaTemplate) = stableHash("${t.page}|${t.prompt}|${t.max}|${t.topic}|x${WikipediaTemplates.EXTRACT_VERSION}")
     fun isFresh(id: String, hash: Int, have: Boolean): Boolean {
         val st = state[id] ?: return false
         return st.hash == hash && System.currentTimeMillis() - st.at < freshMs && (have || !st.kept)

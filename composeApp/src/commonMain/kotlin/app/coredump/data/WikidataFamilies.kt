@@ -16,16 +16,16 @@ object WikidataFamilies {
         Country("Q668", "India", 400000), Country("Q155", "Brazil", 200000), Country("Q16", "Canada", 30000),
         Country("Q408", "Australia", 20000), Country("Q96", "Mexico", 150000), Country("Q159", "Russia", 150000),
         Country("Q55", "the Netherlands", 40000), Country("Q34", "Sweden", 15000), Country("Q20", "Norway", 8000),
-        Country("Q36", "Poland", 40000), Country("Q39", "Switzerland", 10000), Country("Q40", "Austria", 10000),
-        Country("Q31", "Belgium", 20000), Country("Q45", "Portugal", 20000), Country("Q41", "Greece", 20000),
+        Country("Q36", "Poland", 40000), Country("Q39", "Switzerland", 10000), Country("Q40", "Austria", 5000),
+        Country("Q31", "Belgium", 20000), Country("Q45", "Portugal", 8000), Country("Q41", "Greece", 20000),
         Country("Q43", "Turkey", 150000), Country("Q79", "Egypt", 150000), Country("Q258", "South Africa", 60000),
         Country("Q1033", "Nigeria", 200000), Country("Q414", "Argentina", 50000), Country("Q298", "Chile", 30000),
         Country("Q739", "Colombia", 60000), Country("Q252", "Indonesia", 300000), Country("Q928", "the Philippines", 150000),
         Country("Q881", "Vietnam", 100000), Country("Q869", "Thailand", 50000), Country("Q884", "South Korea", 150000),
         Country("Q794", "Iran", 150000), Country("Q843", "Pakistan", 200000), Country("Q212", "Ukraine", 50000),
-        Country("Q27", "Ireland", 5000), Country("Q35", "Denmark", 10000), Country("Q33", "Finland", 10000),
+        Country("Q27", "Ireland", 5000), Country("Q35", "Denmark", 10000), Country("Q33", "Finland", 5000),
         Country("Q213", "the Czech Republic", 20000), Country("Q28", "Hungary", 20000), Country("Q218", "Romania", 40000),
-        Country("Q664", "New Zealand", 10000), Country("Q801", "Israel", 20000), Country("Q851", "Saudi Arabia", 60000),
+        Country("Q664", "New Zealand", 3000), Country("Q801", "Israel", 20000), Country("Q851", "Saudi Arabia", 60000),
         Country("Q114", "Kenya", 30000), Country("Q1028", "Morocco", 60000), Country("Q419", "Peru", 50000),
     )
     private val byQ = countries.associateBy { it.q }
@@ -46,7 +46,7 @@ object WikidataFamilies {
 
     val all: List<WikidataTemplate> = buildList {
         // ---- cities per country
-        for (k in countries) add(t("city.${slug(k.name)}", "Name a city in ${k.name}", "GEOGRAPHY",
+        for (k in countries) if (k.q != "Q27") add(t("city.${slug(k.name)}", "Name a city in ${k.name}", "GEOGRAPHY",
             "?item wdt:P17 wd:${k.q} ; wdt:P1082 ?pop . FILTER(?pop >= ${k.cityPop}) ?item wdt:P31/wdt:P279* wd:Q515 ."))
 
         // ---- rivers / mountains / islands / lakes per country
@@ -112,10 +112,13 @@ object WikidataFamilies {
             "Q8006" to "Akira Kurosawa", "Q95008" to "John Carpenter", "Q56008" to "Tim Burton", "Q55424" to "David Cronenberg",
             "Q56005" to "Ridley Scott", "Q25089" to "Woody Allen", "Q43203" to "Clint Eastwood", "Q7546" to "Ingmar Bergman",
             "Q7371" to "Federico Fellini", "Q53001" to "Jean-Luc Godard", "Q56094" to "Francis Ford Coppola"))
-            add(t("dir.${slug(name)}", "Name a film directed by $name", "CULTURE", "?item wdt:P31 wd:Q11424 ; wdt:P57 wd:$q ."))
+            // matched by English label (safer than hand-typed QIDs); any film subclass counts
+            add(t("dir.${slug(name)}", "Name a film directed by $name", "CULTURE",
+                "?dir rdfs:label \"$name\"@en ; wdt:P31 wd:Q5 . ?item wdt:P57 ?dir ; wdt:P31/wdt:P279* wd:Q11424 ."))
         for ((aw, label) in listOf("Q102427" to "a Best Picture Oscar winner", "Q103916" to "a Best Actor Oscar winner",
             "Q103618" to "a Best Actress Oscar winner", "Q103360" to "a Best Director Oscar winner"))
-            add(t("oscar.${aw.lowercase()}", "Name $label", "CULTURE", "?item wdt:P166 wd:$aw ."))
+            add(t("oscar.${aw.lowercase()}", "Name $label", "CULTURE",
+                if (aw == "Q102427") "?item wdt:P166 wd:$aw ; wdt:P31/wdt:P279* wd:Q11424 ." else "?item wdt:P166 wd:$aw ; wdt:P31 wd:Q5 ."))
 
         // ---- video games
         for ((q, name) in listOf("Q172742" to "NES", "Q183259" to "Super Nintendo", "Q184839" to "Nintendo 64",
@@ -147,26 +150,23 @@ object WikidataFamilies {
         // ---- sport leagues
         for ((q, label) in listOf("Q155223" to "NBA", "Q1215884" to "NFL", "Q1163715" to "MLB", "Q1215892" to "NHL",
             "Q9448" to "Premier League", "Q82595" to "Bundesliga", "Q324867" to "La Liga", "Q15804" to "Serie A", "Q13394" to "Ligue 1"))
-            add(t("league.${slug(label)}", "Name a team that has played in the $label", "SPORT", "?item wdt:P118 wd:$q ."))
+            add(t("league.${slug(label)}", "Name a team that has played in the $label", "SPORT",
+                "?item wdt:P118 wd:$q . FILTER EXISTS { VALUES ?k { wd:Q12973014 wd:Q847017 } ?item wdt:P31/wdt:P279* ?k . }"))
 
         // ---- breeds, varieties, misc classes
         add(t("cat", "Name a cat breed", "NATURE", "?item wdt:P31 wd:Q43577 ."))
         add(t("horse", "Name a horse breed", "NATURE", "?item wdt:P31 wd:Q1160573 .", 3))
-        add(t("grape", "Name a wine grape variety", "FOOD", "?item wdt:P31 wd:Q10978 .", 3))
-        for ((q, name) in listOf("Q183" to "Germany", "Q145" to "the United Kingdom", "Q142" to "France", "Q17" to "Japan"))
+        for ((q, name) in listOf("Q183" to "Germany", "Q145" to "the United Kingdom", "Q142" to "France"))
             add(t("dogfrom.${slug(name)}", "Name a dog breed from $name", "NATURE", "?item wdt:P31 wd:Q39367 ; wdt:P495 wd:$q ."))
-        for ((q, name) in listOf("Q142" to "France", "Q38" to "Italy", "Q39" to "Switzerland", "Q29" to "Spain", "Q145" to "the United Kingdom"))
+        for ((q, name) in listOf("Q142" to "France", "Q38" to "Italy"))
             add(t("cheesefrom.${slug(name)}", "Name a cheese from $name", "FOOD", "?item wdt:P31/wdt:P279* wd:Q10943 ; wdt:P495 wd:$q ."))
         add(t("mineral", "Name a mineral", "SCIENCE", "?item wdt:P31 wd:Q12089225 .", 5))
-        add(t("typeface", "Name a typeface", "CODE", "?item wdt:P31 wd:Q17451 .", 3))
+        add(t("typeface", "Name a typeface", "CODE", "?item wdt:P31/wdt:P279* wd:Q17451 .", 3))
         add(t("crypto", "Name a cryptocurrency", "CODE", "?item wdt:P31 wd:Q13479982 .", 3))
         add(t("social", "Name a social network", "CODE", "?item wdt:P31 wd:Q3220391 .", 5))
         add(t("gamegenre", "Name a video game genre", "CULTURE", "?item wdt:P31 wd:Q659563 .", 5))
-        add(t("martial", "Name a martial art", "SPORT", "?item wdt:P31/wdt:P279* wd:Q11417 .", 5))
         add(t("cardgame", "Name a card game", "CULTURE", "?item wdt:P31 wd:Q142714 .", 3))
-        add(t("star", "Name a star (astronomy)", "SCIENCE", "?item wdt:P31 wd:Q523 .", 15))
         add(t("exoplanet", "Name an exoplanet", "SCIENCE", "?item wdt:P31 wd:Q44559 .", 5))
-        add(t("galaxy", "Name a galaxy", "SCIENCE", "?item wdt:P31 wd:Q318 .", 8))
         add(t("asteroid", "Name an asteroid", "SCIENCE", "?item wdt:P31 wd:Q3863 .", 15))
         add(t("comet", "Name a comet", "SCIENCE", "?item wdt:P31 wd:Q3559 .", 5))
     }

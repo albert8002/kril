@@ -29,8 +29,10 @@ class WikipediaTemplate(
 class WikiItem(val title: String, val text: String)
 
 object WikipediaTemplates {
+    /** Bumped when [extract] changes, so cached lists from older extractors are refetched. */
+    const val EXTRACT_VERSION = 2
+
     val all: List<WikipediaTemplate> = listOf(
-        WikipediaTemplate("wp.unix", "Name a Unix or Linux command", "CODE", "List of Unix commands"),
         WikipediaTemplate("wp.editors", "Name a text editor", "CODE", "List of text editors"),
         WikipediaTemplate("wp.hash", "Name a hash function", "CODE", "List of hash functions"),
         WikipediaTemplate("wp.distros", "Name a Linux distribution", "CODE", "List of Linux distributions"),
@@ -38,8 +40,6 @@ object WikipediaTemplates {
         WikipediaTemplate("wp.robots", "Name a fictional robot or android", "CULTURE", "List of fictional robots and androids"),
         WikipediaTemplate("wp.cryptids", "Name a cryptid", "OCCULT", "List of cryptids"),
         WikipediaTemplate("wp.haunted", "Name a reportedly haunted place", "OCCULT", "List of reportedly haunted locations"),
-        WikipediaTemplate("wp.horror80s", "Name a horror film from the 1980s", "OCCULT", "List of horror films of the 1980s"),
-        WikipediaTemplate("wp.horror90s", "Name a horror film from the 1990s", "OCCULT", "List of horror films of the 1990s"),
         WikipediaTemplate("wp.horrorauthors", "Name a horror fiction author", "OCCULT", "List of horror fiction authors"),
         WikipediaTemplate("wp.games", "Name a best-selling video game", "CULTURE", "List of best-selling video games"),
         WikipediaTemplate("wp.chess", "Name a chess opening", "CULTURE", "List of chess openings"),
@@ -59,6 +59,8 @@ object WikipediaTemplates {
     private val tag = Regex("<[^>]+>")
     private val segStart = Regex("""<(li|tr)[\s>]""")
     private val h2 = Regex("""<h2[\s>]""")
+    private val cell = Regex("""<t[dh][\s>]""")
+    private val leadJunk = Regex("""[\s"'“”‘’«»*•·\-–—|]+""")
 
     /** Pulls list items out of article HTML. Tables win over bullet lists when the page has many rows. */
     fun extract(html0: String, max: Int): List<WikiItem> {
@@ -80,8 +82,23 @@ object WikipediaTemplates {
         for ((n, m) in starts.withIndex()) {
             if (m.groupValues[1] != wanted) continue
             val end = if (n + 1 < starts.size) starts[n + 1].range.first else body.length
-            val seg = body.substring(m.range.first, end)
+            var seg = body.substring(m.range.first, end)
+            if (wanted == "tr") {
+                // the answer is the first cell with a link; skip leading number/image cells,
+                // but give up on the row if a text cell comes first (an unlinked name: later links are countries, makers…)
+                val cells = cell.findAll(seg).toList()
+                var pick: String? = null
+                for ((ci, c) in cells.withIndex()) {
+                    val cs = seg.substring(c.range.first, if (ci + 1 < cells.size) cells[ci + 1].range.first else seg.length)
+                    if (anchor.findAll(cs).any { ':' !in decodeTitle(it.groupValues[1]) }) { pick = cs; break }
+                    if (entities(tag.replace(cs, "")).any { it.isLetter() }) break
+                }
+                seg = pick ?: continue
+            }
             val a = anchor.findAll(seg).firstOrNull { ':' !in decodeTitle(it.groupValues[1]) } ?: continue
+            // the link must BE the item, not a word in its description ("Foo – a bread from [Italy]")
+            val before = entities(tag.replace(seg.substring(0, a.range.first), "")).replace(leadJunk, "")
+            if (before.isNotEmpty()) continue
             val title = decodeTitle(a.groupValues[1])
             var text = entities(tag.replace(a.groupValues[2], "")).trim()
             if (text.length < 2) text = title.substringBefore(" (").trim()
