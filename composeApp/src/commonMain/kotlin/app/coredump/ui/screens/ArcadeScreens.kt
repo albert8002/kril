@@ -446,7 +446,7 @@ private fun ArcadeStageRow(model: AppModel, r: app.coredump.core.RoundView) {
             }
             Column(horizontalAlignment = Alignment.End) {
                 TText(tierLine(r.me.tier), size = 10.sp, color = tierColor(r.me.tier), weight = FontWeight.Bold)
-                TText("+${r.me.points}", size = 14.sp, color = C.white, weight = FontWeight.Bold)
+                TText(signed(r.me.points), size = 14.sp, color = if (r.me.points < 0) C.blood else C.white, weight = FontWeight.Bold)
             }
         }
         AnimatedVisibility(open, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) { RoundDetails(model, r) }

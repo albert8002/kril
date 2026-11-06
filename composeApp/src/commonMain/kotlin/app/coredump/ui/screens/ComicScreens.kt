@@ -296,7 +296,7 @@ private fun ComicVerdict(v: RoundView) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TierBadge(me.tier, 12.sp)
                 Spacer(Modifier.weight(1f))
-                Display("+${me.points}", 26.sp, C.hot)
+                Display(signed(me.points), 26.sp, C.hot)
             }
         }
     }
@@ -382,7 +382,7 @@ private fun ComicRoundPanel(model: AppModel, r: RoundView) {
                 TText(r.prompt.uppercase(), size = 10.sp, color = C.dim, maxLines = 2, weight = FontWeight.Bold)
                 TText(answerText(r.me.tier, r.me.canonical, r.me.input).uppercase(), size = 15.sp, color = tierColor(r.me.tier), weight = FontWeight.Bold, maxLines = 1)
             }
-            Display("+${r.me.points}", 20.sp, C.amber)
+            Display(signed(r.me.points), 20.sp, if (r.me.points < 0) C.blood else C.amber)
         }
         AnimatedVisibility(open, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) { RoundDetails(model, r) }
     }

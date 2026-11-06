@@ -371,7 +371,8 @@ private fun QuestLogRow(model: AppModel, r: RoundView) {
             TText(if (open) "▼" else "▶", Modifier.width(18.dp), size = 11.sp)
             TText("T${r.index + 1} ", size = 12.sp, color = C.dim)
             TText(answerText(r.me.tier, r.me.canonical, r.me.input).uppercase(), Modifier.weight(1f), size = 13.sp, maxLines = 1)
-            TText(if (r.me.points > 0) "-${r.me.points}" else "MISS", size = 13.sp)
+            TText(when { r.me.tier == Tier.SKIPPED -> "FLED"; r.me.tier.isValid -> "-${r.me.tier.points}"; else -> "MISS" } +
+                if (r.me.penalty > 0) " (−${r.me.penalty})" else "", size = 13.sp)
         }
         TText(r.prompt, Modifier.padding(start = 18.dp), size = 10.sp, color = C.dim, maxLines = 1)
         AnimatedVisibility(open, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) { RoundDetails(model, r) }

@@ -8,12 +8,14 @@ package app.coredump.data
 object WikidataPool {
 
     private fun t(id: String, prompt: String, topic: String, where: String, minLinks: Int = 0, limit: Int = 800) =
-        WikidataTemplate("wx.$id", prompt, topic, where, minLinks, limit, if (id in everyday) 2 else WikidataTemplates.FAMOUS_MIN)
+        WikidataTemplate("wx.$id", prompt, topic, where, minLinks, limit,
+            when { id == "br.hotelchain" -> 0; id in everyday -> 2; else -> WikidataTemplates.FAMOUS_MIN })
 
     /** Everyday-object lists: few answers have many Wikipedia pages, but people know them. */
     private val everyday = setOf("ev.hat", "ev.shoe", "ev.cardgame", "fd.coffee", "fd.noodle", "fd.tea", "br.supermarket",
         "br.hotelchain", "br.retail", "lm.amusement", "pl.themepark", "pl.zoo", "ge.beach", "lm.fountain", "lm.lighthouse",
-        "an.kangaroo", "th.candy", "th.snack", "th.softdrink", "th.beer", "th.spice", "th.toy")
+        "an.kangaroo", "th.candy", "th.snack", "th.toy", "th.comic", "th.tvchannel", "nx.badminton", "nx.fencer",
+        "nx.handball", "nx.tabletennis")
 
     private fun inst(q: String) = "?item wdt:P31 wd:$q ."
     private fun instSub(q: String) = "?item wdt:P31/wdt:P279* wd:$q ."
@@ -28,7 +30,6 @@ object WikidataPool {
         Triple("pigeon", "Name a pigeon or dove", arrayOf("Columbidae", "Columbiformes")),
         Triple("mustelid", "Name a weasel, otter, badger or relative", arrayOf("Mustelidae")),
         Triple("cephalopod", "Name an octopus, squid or cuttlefish", arrayOf("Cephalopoda", "cephalopod")),
-        Triple("bovid", "Name an antelope, wild goat or wild cattle", arrayOf("Bovidae")),
         Triple("monkey", "Name a monkey species", arrayOf("Cercopithecidae", "Atelidae", "Cebidae")),
         Triple("woodpecker", "Name a woodpecker", arrayOf("Picidae", "woodpecker")),
         Triple("hummingbird", "Name a hummingbird", arrayOf("Trochilidae", "hummingbird")),
@@ -42,7 +43,6 @@ object WikidataPool {
         Triple("ape", "Name an ape", arrayOf("Hominoidea", "ape")),
         Triple("owl", "Name an owl", arrayOf("Strigiformes", "owl")),
         Triple("gull", "Name a gull or tern", arrayOf("Laridae")),
-        Triple("heron", "Name a heron or egret", arrayOf("Ardeidae")),
         Triple("bee", "Name a bee", arrayOf("Apidae", "bee")),
     )
 
@@ -90,28 +90,21 @@ object WikidataPool {
         Triple("manga", "Name a manga", inst("Q21198342") to 30),
         Triple("anime", "Name an anime series", inst("Q63952888") to 25),
         Triple("toy", "Name a toy", subOf("Q11422") to 20),
-        Triple("spice", "Name a spice", instSub("Q42527") to 20),
         Triple("rock", "Name a type of rock", subOf("Q8063") to 20),
         Triple("spacecraft", "Name a spacecraft or space probe", instSub("Q40218") to 30),
-        Triple("rocket", "Name a rocket", instSub("Q41291") to 20),
-        Triple("ballet", "Name a ballet", inst("Q2742") to 15),
         Triple("weapon", "Name a type of weapon", subOf("Q728") to 30),
         Triple("instrument2", "Name a musical instrument (any culture)", subOf("Q34379") to 20),
         Triple("game", "Name a game (any kind)", subOf("Q11410") to 30),
-        Triple("ballgame", "Name a ball game", subOf("Q1186224") to 15),
         Triple("dog2", "Name a dog breed (any country)", inst("Q39367") to 15),
         Triple("fruit", "Name a fruit (botanical or culinary)", subOf("Q1364") to 25),
         Triple("vegetable", "Name a vegetable", subOf("Q11004") to 20),
         Triple("dessert", "Name a dessert", anyOfPool("Q182940") to 15),
         Triple("snack", "Name a snack", anyOfPool("Q749316") to 10),
         Triple("candy", "Name a sweet or candy", anyOfPool("Q185583") to 10),
-        Triple("beer", "Name a beer brand", inst("Q14943511") to 10),
-        Triple("softdrink", "Name a soft drink brand", instSub("Q147538") to 10),
         Triple("chain", "Name a restaurant chain", instSub("Q18534") to 15),
         Triple("magazine2", "Name a famous magazine", inst("Q41298") to 25),
         Triple("tvchannel", "Name a TV channel", inst("Q2001305") to 25),
         Triple("radio", "Name a radio station", inst("Q14350") to 20),
-        Triple("app", "Name an app or online service", instSub("Q1371849") to 30),
         Triple("emoji", "Name a famous internet meme", inst("Q2927074") to 15),
     )
 

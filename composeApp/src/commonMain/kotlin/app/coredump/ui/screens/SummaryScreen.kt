@@ -73,6 +73,9 @@ fun totalsOf(st: app.coredump.game.MatchState): RunTotals {
         rounds.maxByOrNull { it.me.tier.ordinal }?.me?.tier)
 }
 
+/** Points with a sign: "+60", "0", "−3". */
+fun signed(n: Int): String = when { n > 0 -> "+$n"; n < 0 -> "−${-n}"; else -> "0" }
+
 /** 1 decimal, e.g. 42.3 */
 fun oneDecimal(x: Double): String = ((x * 10).toInt() / 10.0).toString()
 
@@ -210,14 +213,14 @@ private fun RoundRow(model: AppModel, r: RoundView, multi: Boolean) {
             TText("  ${answerText(r.me.tier, r.me.canonical, r.me.input)}", Modifier.weight(1f), size = 13.sp,
                 color = tierColor(r.me.tier), weight = FontWeight.Bold, maxLines = 1)
             TierBadge(r.me.tier, 10.sp, animate = false)
-            TText(" +${r.me.points}".padStart(5), size = 12.sp, color = tierColor(r.me.tier))
+            TText(" " + signed(r.me.points).padStart(4), size = 12.sp, color = tierColor(r.me.tier))
         }
         val opp = r.opp
         if (multi && opp != null) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TText("  ${opp.player}: ${answerText(opp.tier, opp.canonical, opp.input)}", Modifier.weight(1f), size = 11.sp,
                     color = C.dim, maxLines = 1)
-                TText("+${opp.points}", size = 11.sp, color = C.dim)
+                TText(signed(opp.points), size = 11.sp, color = C.dim)
             }
         }
         AnimatedVisibility(open, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {

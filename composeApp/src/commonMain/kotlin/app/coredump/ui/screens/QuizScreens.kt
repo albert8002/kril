@@ -343,7 +343,7 @@ private fun ResultCard(v: RoundView) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TierBadge(me.tier, 11.sp)
             Spacer(Modifier.width(8.dp))
-            TText("+${me.points} pts", Modifier.box(Th.style, Color.Transparent, C.hot.copy(alpha = 0.14f), pill = true)
+            TText(signed(me.points) + " pts", Modifier.box(Th.style, Color.Transparent, C.hot.copy(alpha = 0.14f), pill = true)
                 .padding(horizontal = 10.dp, vertical = 4.dp), size = 13.sp, color = C.hot, weight = FontWeight.Bold)
         }
     }
@@ -472,7 +472,7 @@ private fun QuizRoundCard(model: AppModel, r: RoundView) {
                 TText("${r.index + 1}. ${r.prompt}", size = 12.sp, color = C.dim, maxLines = 2)
                 TText(answerText(r.me.tier, r.me.canonical, r.me.input), size = 16.sp, weight = FontWeight.Bold, color = if (r.me.tier.isValid) C.amber else C.blood, maxLines = 1)
             }
-            TText("+${r.me.points}", size = 15.sp, color = C.hot, weight = FontWeight.Bold)
+            TText(signed(r.me.points), size = 15.sp, color = if (r.me.points < 0) C.blood else C.hot, weight = FontWeight.Bold)
             TText(if (open) "  ˄" else "  ˅", size = 14.sp, color = C.dim)
         }
         AnimatedVisibility(open, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) { RoundDetails(model, r) }

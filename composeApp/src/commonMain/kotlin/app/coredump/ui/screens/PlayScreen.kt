@@ -5,6 +5,9 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -183,12 +186,16 @@ fun SuggestionChip(st: MatchState, a: AnswerState) {
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ConfirmCard(c: Confirm, a: AnswerState) {
     val pop = remember(c) { Animatable(0.85f) }
+    val view = remember { BringIntoViewRequester() }
     LaunchedEffect(c) { pop.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 600f)) }
+    // the keyboard is closed when the question appears; then make sure both buttons are on screen
+    LaunchedEffect(c) { delay(350); runCatching { view.bringIntoView() } }
     Column(
-        Modifier.fillMaxWidth().graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+        Modifier.fillMaxWidth().bringIntoViewRequester(view).graphicsLayer { scaleX = pop.value; scaleY = pop.value }
             .box(Th.style, C.hot, C.panel, 1.5.dp, glow = Th.style == Style.NEON || Th.style == Style.COMIC)
             .padding(horizontal = if (Th.style == Style.COMIC) 22.dp else 14.dp, vertical = 12.dp),
     ) {
@@ -335,6 +342,8 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
     LaunchedEffect(st.missTick) {
         if (st.missTick > 0) { fx.glitch(); haptic(false) }
     }
+    // autocorrect question: close the keyboard so "Yes" / "No, search" are visible
+    LaunchedEffect(st.confirm) { if (st.confirm != null) { keyboard?.hide(); haptic(false) } }
     var rain by remember { mutableStateOf(false) }
     LaunchedEffect(st.reveal) {
         val v = st.reveal ?: return@LaunchedEffect
@@ -554,7 +563,7 @@ private fun TerminalReveal(v: RoundView, misses: Int) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TierBadge(me.tier)
             Spacer(Modifier.width(12.dp))
-            TText("+${me.points}", Modifier.graphicsLayer { scaleX = pop.value; scaleY = pop.value; alpha = (2.2f - pop.value).coerceIn(0f, 1f) },
+            TText(signed(me.points), Modifier.graphicsLayer { scaleX = pop.value; scaleY = pop.value; alpha = (2.2f - pop.value).coerceIn(0f, 1f) },
                 size = 22.sp, color = c, weight = FontWeight.Bold, glow = 1.6f)
             Spacer(Modifier.weight(1f))
             TText(me.tier.addr, size = 11.sp, color = C.line)

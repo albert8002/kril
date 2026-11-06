@@ -38,10 +38,8 @@ object WikipediaTemplates {
         WikipediaTemplate("wp.horrorauthors", "Name a horror fiction author", "OCCULT", "List of horror fiction authors"),
         WikipediaTemplate("wp.games", "Name a best-selling video game", "CULTURE", "List of best-selling video games"),
         WikipediaTemplate("wp.cheeses", "Name a cheese", "FOOD", "List of cheeses"),
-        WikipediaTemplate("wp.sauces", "Name a sauce", "FOOD", "List of sauces"),
         WikipediaTemplate("wp.breads", "Name a type of bread", "FOOD", "List of breads"),
         WikipediaTemplate("wp.pasta", "Name a type of pasta", "FOOD", "List of pasta"),
-        WikipediaTemplate("wp.japanese", "Name a Japanese dish", "FOOD", "List of Japanese dishes"),
         WikipediaTemplate("wp.dogs", "Name a dog breed", "NATURE", "List of dog breeds"),
     )
 

@@ -451,7 +451,7 @@ private fun GazetteRow(model: AppModel, r: RoundView) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
             TText(answerText(r.me.tier, r.me.canonical, r.me.input), size = 15.sp, color = tierColor(r.me.tier), weight = FontWeight.Bold, maxLines = 1)
             DottedLeader(Modifier.weight(1f).padding(horizontal = 6.dp))
-            TText(if (r.me.points > 0) "+${r.me.points}" else "—", size = 14.sp, color = C.amber, weight = FontWeight.Bold)
+            TText(if (r.me.points != 0) signed(r.me.points) else "—", size = 14.sp, color = C.amber, weight = FontWeight.Bold)
         }
         r.opp?.let { o ->
             TText("${o.player}: ${answerText(o.tier, o.canonical, o.input)} (+${o.points})", size = 11.sp, color = C.dim, maxLines = 1)
