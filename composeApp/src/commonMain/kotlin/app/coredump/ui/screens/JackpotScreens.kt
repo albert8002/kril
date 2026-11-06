@@ -94,22 +94,27 @@ import kotlin.random.Random
 // credits on an LED counter, a row of bulbs as the timer, three reels that spin and stop on the verdict, and a
 // cash-out ticket with a barcode at the end.
 
-private val SYM = listOf("7", "★", "♦", "♣", "♥", "♠", "◆", "✦")
+// Plain geometric symbols only: card suits turn into colour emoji on some phones.
+private val SYM = listOf("7", "★", "◆", "●", "▲", "BAR", "✦", "■")
 
 /** The three reel symbols a tier lands on (three of a kind = rare). */
 private fun reelsFor(t: Tier): List<String> = when (t) {
     Tier.ZERO_DAY -> listOf("7", "7", "7")
     Tier.HEISENBUG -> listOf("★", "★", "★")
-    Tier.MEMORY_LEAK -> listOf("♦", "♦", "♦")
-    Tier.LEGACY -> listOf("♣", "♣", "♣")
-    Tier.COPYPASTA -> listOf("♥", "♥", "♣")
-    Tier.HELLO_WORLD -> listOf("♠", "♥", "♠")
-    else -> listOf("7", "♣", "✗")
+    Tier.MEMORY_LEAK -> listOf("◆", "◆", "◆")
+    Tier.LEGACY -> listOf("BAR", "BAR", "BAR")
+    Tier.COPYPASTA -> listOf("●", "●", "▲")
+    Tier.HELLO_WORLD -> listOf("▲", "●", "▲")
+    else -> listOf("7", "●", "✗")
 }
 
 private fun symbolColor(s: String): Color = when (s) {
     "7" -> Color(0xFFE53935)
     "★" -> Color(0xFFFFC93C)
+    "◆" -> Color(0xFF4FC3F7)
+    "●" -> Color(0xFFFF5A7A)
+    "▲" -> Color(0xFF66D17A)
+    "✦" -> Color(0xFFB79CFF)
     "✗" -> C.blood
     else -> C.amber
 }
@@ -127,7 +132,7 @@ private fun jackpotLabel(it: Item): String = when (it.key) {
 }
 
 private fun symbolFor(key: String): String = when (key) {
-    "daily" -> "7"; "solo" -> "♦"; "duel" -> "♠"; "stats" -> "★"; "browse" -> "♣"; "theme" -> "♥"; "settings" -> "◆"; else -> "?"
+    "daily" -> "7"; "solo" -> "◆"; "duel" -> "▲"; "stats" -> "★"; "browse" -> "BAR"; "theme" -> "✦"; "settings" -> "■"; else -> "●"
 }
 
 /** Frame with a ring of bulbs chasing around it. */
@@ -187,7 +192,7 @@ private fun Reel(final: String, seed: Int, modifier: Modifier = Modifier, spinKe
                 .graphicsLayer { translationY = -spin.value * (strip.size - 1) * cell }) {
                 for (s in strip) {
                     Box(Modifier.fillMaxWidth().height(h), contentAlignment = Alignment.Center) {
-                        TText(s, size = textSize, color = symbolColor(s), weight = FontWeight.Bold)
+                        TText(s, size = if (s.length > 1) textSize * 0.5f else textSize, color = symbolColor(s), weight = FontWeight.Bold)
                     }
                 }
             }
@@ -443,8 +448,9 @@ private fun JackpotRow(model: AppModel, r: RoundView) {
     var open by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().clickable(remember { MutableInteractionSource() }, null) { open = !open }.padding(vertical = 7.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Row(Modifier.width(74.dp)) {
-                for (s in reelsFor(r.me.tier)) TText(s, Modifier.width(22.dp), size = 15.sp, color = symbolColor(s), weight = FontWeight.Bold, align = TextAlign.Center)
+            Row(Modifier.width(76.dp), verticalAlignment = Alignment.CenterVertically) {
+                for (s in reelsFor(r.me.tier)) TText(s, Modifier.width(24.dp), size = if (s.length > 1) 8.sp else 15.sp, color = symbolColor(s),
+                    weight = FontWeight.Bold, align = TextAlign.Center)
             }
             Column(Modifier.weight(1f)) {
                 TText(r.prompt, size = 10.sp, color = C.dim, maxLines = 2)

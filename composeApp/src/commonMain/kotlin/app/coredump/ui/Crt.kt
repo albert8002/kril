@@ -107,7 +107,12 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
     LaunchedEffect(fx.flashTick) {
         if (fx.flashTick == 0) return@LaunchedEffect
         launch {
-            flash.snapTo(if (motion) (if (style == Style.TERMINAL || style == Style.NEON) 0.85f else 0.45f) else 0.25f)
+            val peak = when (style) {
+                Style.TERMINAL, Style.NEON -> 0.85f
+                Style.PIXEL, Style.COMIC, Style.JACKPOT, Style.METRO -> 0.45f
+                else -> 0.3f    // calmer themes: a soft wash of colour
+            }
+            flash.snapTo(if (motion) peak else 0.25f)
             flash.animateTo(0f, tween(650))
         }
     }

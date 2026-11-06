@@ -439,7 +439,7 @@ fun TButton(
 fun TLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = C.dim, size: TextUnit = 13.sp) {
     val haptic = rememberHaptic()
     val prefix = when (Th.style) {
-        Style.TERMINAL -> "› "; Style.PIXEL -> "> "; Style.COMIC -> "✦ "; Style.METRO -> "→ "; Style.JACKPOT -> "♦ "; Style.ORACLE -> "✧ "
+        Style.TERMINAL -> "› "; Style.PIXEL -> "> "; Style.COMIC -> "✦ "; Style.METRO -> "→ "; Style.JACKPOT -> "◆ "; Style.ORACLE -> "✧ "
         else -> ""
     }
     val suffix = when (Th.style) { Style.CLEAN, Style.NEON, Style.PAPER, Style.ABYSS -> "  →"; else -> "" }
@@ -591,8 +591,7 @@ fun DesktopTitleBar(title: String, color: Color = C.hot, modifier: Modifier = Mo
             .padding(start = 6.dp, end = 3.dp, top = 3.dp, bottom = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        androidx.compose.foundation.text.BasicText(title, Modifier.weight(1f), maxLines = 1,
-            style = TextStyle(color = ink, fontFamily = LocalDisplay.current, fontSize = 13.sp, fontWeight = FontWeight.Bold))
+        TText(title, Modifier.weight(1f), size = 13.sp, color = ink, weight = FontWeight.Bold, maxLines = 1)
         if (extra != null) extra()
         if (onClose != null) {
             val haptic = rememberHaptic()

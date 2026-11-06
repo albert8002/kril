@@ -118,7 +118,7 @@ fun SplitFlap(text: String, textSize: TextUnit = 18.sp, ink: Color = C.hot, tile
     LaunchedEffect(chars, motion) {
         if (!motion) { shown = chars; return@LaunchedEffect }
         delay(delayMs)
-        for (k in 0..(chars.length + 6)) { shown = scrambleFlaps(chars, k - 6); delay(42) }
+        for (k in 0..(chars.length + 4)) { shown = scrambleFlaps(chars, k - 4); delay(34) }
         shown = chars
     }
     val d = LocalDensity.current
@@ -203,7 +203,7 @@ private fun MetroRow(index: Int, item: Item) {
         LineBullet("${index + 1}", if (index == 0) C.hot else LINES[index % LINES.size])
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            SplitFlap(metroLabel(item), 13.sp, ink = if (index == 0) C.hot else C.amber, tile = C.bg, delayMs = 70L * index)
+            SplitFlap(metroLabel(item), 13.sp, ink = if (index == 0) C.hot else C.amber, tile = C.bg, delayMs = 40L * index)
             Spacer(Modifier.height(4.dp))
             TText(item.hint, size = 11.sp, color = C.dim, maxLines = 1)
         }
