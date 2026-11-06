@@ -80,7 +80,7 @@ fun main(args: Array<String>) {
         log("POOL checking ${list.size} templates")
         val ok = java.util.concurrent.atomic.AtomicInteger()
         val bad = java.util.concurrent.atomic.AtomicInteger()
-        val ex = Executors.newFixedThreadPool(3)
+        val ex = Executors.newFixedThreadPool(2)
         for (t in list) ex.submit {
             if (overBudget()) { log("POOL ${t.id.padEnd(30)} SKIP budget"); return@submit }
             val t0 = System.currentTimeMillis()
@@ -88,7 +88,7 @@ fun main(args: Array<String>) {
                 val body = get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}", "application/sparql-results+json")
                 val p = WikidataTemplates.parse(t, body)
                 val fam = WikidataTemplates.famousCount(body)
-                val keep = p.size >= WikidataTemplates.minAnswers(t) && fam >= WikidataTemplates.FAMOUS_MIN
+                val keep = p.size >= WikidataTemplates.minAnswers(t) && fam >= t.famousMin
                 (if (keep) ok else bad).incrementAndGet()
                 log("POOL ${t.id.padEnd(30)} ${if (keep) "OK     " else if (p.size >= WikidataTemplates.minAnswers(t)) "OBSCURE" else "SMALL  "} ${p.size.toString().padStart(5)} fam=${fam.toString().padStart(4)} ${(System.currentTimeMillis() - t0).toString().padStart(6)}ms [${p.topic}${if (p.niche) " niche" else ""}${if (p.people) " people" else ""}] ${t.prompt} :: ${p.entries.take(8).joinToString(" | ") { it.name }}")
             } catch (e: Exception) {
@@ -197,7 +197,7 @@ fun main(args: Array<String>) {
             val p = WikidataTemplates.parse(t, body)
             val fam = WikidataTemplates.famousCount(body)
             val ms = System.currentTimeMillis() - t0
-            val keep = p.size >= WikidataTemplates.minAnswers(t) && fam >= WikidataTemplates.FAMOUS_MIN
+            val keep = p.size >= WikidataTemplates.minAnswers(t) && fam >= t.famousMin
             if (keep) wdOut[t.id] = p else wdOut.remove(t.id)
             state[t.id] = St(System.currentTimeMillis(), hashWd(t), keep)
             log("SNAP wikidata  ${t.id.padEnd(30)} ${if (keep) "OK  " else if (p.size >= WikidataTemplates.minAnswers(t)) "OBSCURE" else "SMALL"} ${p.size.toString().padStart(5)} fam=${fam.toString().padStart(3)}  ${ms}ms  top: ${p.entries.take(5).joinToString { it.name }}")
@@ -226,7 +226,7 @@ fun main(args: Array<String>) {
                 val body = get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}", "application/sparql-results+json")
                 val p = WikidataTemplates.parse(t, body)
                 val fam = WikidataTemplates.famousCount(body)
-                if (p.size >= WikidataTemplates.minAnswers(t) && fam >= WikidataTemplates.FAMOUS_MIN) ok++ else small++
+                if (p.size >= WikidataTemplates.minAnswers(t) && fam >= t.famousMin) ok++ else small++
                 log("SNAP pool  ${t.id.padEnd(34)} ${p.size.toString().padStart(5)} fam=${fam.toString().padStart(3)}  ${System.currentTimeMillis() - t0}ms  top: ${p.entries.take(5).joinToString { it.name }}")
             } catch (e: Exception) {
                 fail++

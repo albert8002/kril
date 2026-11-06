@@ -99,7 +99,7 @@ jobs:
         run: |
           set -o pipefail
           chmod +x gradlew
-          ./gradlew :snapshot:run --args="--pool-check" 2>&1 | tee build.log
+          ./gradlew :snapshot:run --args="--pool-check wx.nx.,wx.th.,wx.an.,wx.an2.,wx.pl.,wx.ev.,wx.fd.,wx.br.,wx.lm.,wx.ge." 2>&1 | tee build.log
       - name: Publish pool check log
         if: always()
         run: |

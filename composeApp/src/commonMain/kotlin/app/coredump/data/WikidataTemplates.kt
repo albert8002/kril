@@ -36,6 +36,9 @@ class WikidataTemplate(
     val where: String,
     val minLinks: Int = 0,
     val limit: Int = 1500,
+    /** Widely known answers (≥ [WikidataTemplates.FAMOUS_LINKS] sitelinks) needed to keep the list. Everyday things
+     *  (hats, noodles, zoos) have few Wikipedia pages each, so their lists use a lower bar. */
+    val famousMin: Int = WikidataTemplates.FAMOUS_MIN,
 )
 
 object WikidataTemplates {

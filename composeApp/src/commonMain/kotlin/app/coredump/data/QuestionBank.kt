@@ -402,7 +402,7 @@ class QuestionBank(private val scope: CoroutineScope) {
                             var fetched: Pair<Prompt, Int>? = null
                             var err: Throwable? = null
                             try { fetched = fetchWikidata(t) } catch (e: CancellationException) { throw e } catch (e: Throwable) { err = e }
-                            val p = fetched?.takeIf { it.second >= WikidataTemplates.FAMOUS_MIN && it.first.size >= WikidataTemplates.minAnswers(t) }?.first
+                            val p = fetched?.takeIf { it.second >= t.famousMin && it.first.size >= WikidataTemplates.minAnswers(t) }?.first
                             mx.withLock {
                                 when {
                                     err != null -> { failures++; lastErr = err.message ?: err::class.simpleName; skip[t.id] = now + 2 * DAY }
@@ -669,7 +669,7 @@ class QuestionBank(private val scope: CoroutineScope) {
         /** Lists fetched per batch (daily and on request). */
         const val DAILY_BATCH = 30
         /** Lists fetched at the same time. */
-        const val PARALLEL = 3
+        const val PARALLEL = 2
         const val MAX_LIBRARY_FILES = 80
         const val DAY = 24L * 3600 * 1000
         const val WEEK = 7 * DAY
