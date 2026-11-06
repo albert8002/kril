@@ -126,10 +126,10 @@ fun TierBadge(tier: Tier, size: TextUnit = 13.sp, animate: Boolean = true) {
                 // glow for the rarest
                 if (heat >= 5 && style != Style.PIXEL) {
                     drawRoundRect(colors.last().copy(alpha = 0.25f + 0.2f * (if (motion) beat else 0.5f)),
-                        Offset(-4.dp.toPx(), -4.dp.toPx()), Size(size.width + 8.dp.toPx(), size.height + 8.dp.toPx()),
-                        CornerRadius(size.height), style = Stroke(3.dp.toPx()))
+                        Offset(-4.dp.toPx(), -4.dp.toPx()), Size(this.size.width + 8.dp.toPx(), this.size.height + 8.dp.toPx()),
+                        CornerRadius(this.size.height), style = Stroke(3.dp.toPx()))
                 }
-                drawPath(path, Brush.linearGradient(colors, start = Offset.Zero, end = Offset(size.width, size.height)))
+                drawPath(path, Brush.linearGradient(colors, start = Offset.Zero, end = Offset(this.size.width, this.size.height)))
                 if (style != Style.PIXEL) drawPath(path, Color.White.copy(alpha = 0.18f), style = Stroke(1.dp.toPx()))
                 if (motion && heat >= 3) shine(path, sweep, if (heat >= 5) 0.75f else 0.5f)
                 drawContent()
@@ -139,8 +139,8 @@ fun TierBadge(tier: Tier, size: TextUnit = 13.sp, animate: Boolean = true) {
                         val (a, b, c) = sparkSeed[i]
                         val phase = ((sweep + c) % 1f)
                         val tw = sin(phase * PI).toFloat()
-                        val x = size.width * (a * 1.2f - 0.1f)
-                        val y = if (b > 0.5f) -size.height * 0.25f * b else size.height * (1f + 0.25f * b)
+                        val x = this.size.width * (a * 1.2f - 0.1f)
+                        val y = if (b > 0.5f) -this.size.height * 0.25f * b else this.size.height * (1f + 0.25f * b)
                         twinkle(Offset(x, y), 4.dp.toPx() * tw, Color.White.copy(alpha = 0.9f * tw))
                     }
                 }
@@ -188,21 +188,21 @@ fun RankBadge(rank: Rank, modifier: Modifier = Modifier, size: TextUnit = 24.sp)
                 val path = badgePath(style, pill)
                 if (level >= 4 && style != Style.PIXEL) {
                     drawRoundRect(colors.last().copy(alpha = 0.18f + 0.22f * (if (motion) beat else 0.5f)),
-                        Offset(-6.dp.toPx(), -6.dp.toPx()), Size(size.width + 12.dp.toPx(), size.height + 12.dp.toPx()),
-                        CornerRadius(if (pill) size.height else 10.dp.toPx()), style = Stroke(5.dp.toPx()))
+                        Offset(-6.dp.toPx(), -6.dp.toPx()), Size(this.size.width + 12.dp.toPx(), this.size.height + 12.dp.toPx()),
+                        CornerRadius(if (pill) this.size.height else 10.dp.toPx()), style = Stroke(5.dp.toPx()))
                 }
-                drawPath(path, Brush.linearGradient(colors, start = Offset.Zero, end = Offset(size.width, size.height)))
+                drawPath(path, Brush.linearGradient(colors, start = Offset.Zero, end = Offset(this.size.width, this.size.height)))
                 drawPath(path, Color.White.copy(alpha = 0.25f), style = Stroke(1.5.dp.toPx()))
                 if (motion && level >= 1) shine(path, sweep, 0.35f + 0.08f * level)
                 drawContent()
                 if (motion && level >= 4) {
                     val n = 3 + level
-                    val cx = size.width / 2f
-                    val cy = size.height / 2f
+                    val cx = this.size.width / 2f
+                    val cy = this.size.height / 2f
                     for (i in 0 until n) {
                         val a = (orbit + i.toFloat() / n) * 2 * PI
-                        val rx = size.width * 0.58f
-                        val ry = size.height * 0.95f
+                        val rx = this.size.width * 0.58f
+                        val ry = this.size.height * 0.95f
                         val tw = (0.5f + 0.5f * sin(a * 3 + i)).toFloat()
                         twinkle(Offset(cx + (cos(a) * rx).toFloat(), cy + (sin(a) * ry).toFloat()), 5.dp.toPx() * tw,
                             lerp(Color.White, colors.last(), 0.3f).copy(alpha = 0.9f * tw))
