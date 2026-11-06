@@ -551,7 +551,8 @@ fun TermInput(
     }
     val frame = when (style) {
         Style.PAPER -> Modifier.drawBehind {
-            drawRect(C_line(), Offset(0f, size.height - 1.5.dp.toPx()), Size(size.width, 1.5.dp.toPx()))
+            val box = this.size
+            drawRect(C_line(), Offset(0f, box.height - 1.5.dp.toPx()), Size(box.width, 1.5.dp.toPx()))
         }.padding(horizontal = 2.dp, vertical = 12.dp)
         Style.PIXEL -> Modifier.box(style, C.amber, C.panel).padding(horizontal = 14.dp, vertical = 14.dp)
         Style.NEON -> Modifier.box(style, C.amber.copy(alpha = 0.7f), C.panel.copy(alpha = 0.8f), 1.5.dp, glow = true)
