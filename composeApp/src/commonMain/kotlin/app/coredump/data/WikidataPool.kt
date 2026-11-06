@@ -19,26 +19,26 @@ object WikidataPool {
             "?item wdt:P171+ ?t ; wdt:P105 wd:Q7432 ."
 
     private val animals = listOf(
-        Triple("bat", "Name a bat species", arrayOf("Chiroptera")),
-        Triple("pigeon", "Name a pigeon or dove", arrayOf("Columbidae")),
+        Triple("bat", "Name a bat species", arrayOf("Chiroptera", "bat")),
+        Triple("pigeon", "Name a pigeon or dove", arrayOf("Columbidae", "Columbiformes")),
         Triple("mustelid", "Name a weasel, otter, badger or relative", arrayOf("Mustelidae")),
-        Triple("cephalopod", "Name an octopus, squid or cuttlefish", arrayOf("Cephalopoda")),
+        Triple("cephalopod", "Name an octopus, squid or cuttlefish", arrayOf("Cephalopoda", "cephalopod")),
         Triple("bovid", "Name an antelope, wild goat or wild cattle", arrayOf("Bovidae")),
         Triple("monkey", "Name a monkey species", arrayOf("Cercopithecidae", "Atelidae", "Cebidae")),
-        Triple("woodpecker", "Name a woodpecker", arrayOf("Picidae")),
-        Triple("hummingbird", "Name a hummingbird", arrayOf("Trochilidae")),
+        Triple("woodpecker", "Name a woodpecker", arrayOf("Picidae", "woodpecker")),
+        Triple("hummingbird", "Name a hummingbird", arrayOf("Trochilidae", "hummingbird")),
         Triple("crow", "Name a crow, raven, jay or magpie", arrayOf("Corvidae")),
         Triple("salmonid", "Name a salmon, trout or char", arrayOf("Salmonidae")),
-        Triple("penguin", "Name a penguin", arrayOf("Spheniscidae")),
-        Triple("bear", "Name a bear", arrayOf("Ursidae")),
+        Triple("penguin", "Name a penguin", arrayOf("Spheniscidae", "penguin")),
+        Triple("bear", "Name a bear", arrayOf("Ursidae", "bear")),
         Triple("crocodile", "Name a crocodile, alligator or caiman", arrayOf("Crocodilia")),
-        Triple("seal", "Name a seal, sea lion or walrus", arrayOf("Pinnipedia")),
+        Triple("seal", "Name a seal, sea lion or walrus", arrayOf("Pinnipedia", "pinniped")),
         Triple("kangaroo", "Name a kangaroo or wallaby", arrayOf("Macropodidae")),
-        Triple("ape", "Name an ape", arrayOf("Hominoidea")),
-        Triple("owl", "Name an owl", arrayOf("Strigiformes")),
+        Triple("ape", "Name an ape", arrayOf("Hominoidea", "ape")),
+        Triple("owl", "Name an owl", arrayOf("Strigiformes", "owl")),
         Triple("gull", "Name a gull or tern", arrayOf("Laridae")),
         Triple("heron", "Name a heron or egret", arrayOf("Ardeidae")),
-        Triple("bee", "Name a bee", arrayOf("Apidae")),
+        Triple("bee", "Name a bee", arrayOf("Apidae", "bee")),
     )
 
     private val jobs = listOf(

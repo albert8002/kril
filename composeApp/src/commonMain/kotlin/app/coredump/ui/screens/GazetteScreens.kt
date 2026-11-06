@@ -304,8 +304,6 @@ fun GazettePlay(model: AppModel, session: MatchSession, st: MatchState, a: Answe
                         Stamp(v.me.tier, v.index, Modifier.align(Alignment.TopEnd).padding(top = 4.dp))
                     }
                     RevealExtras(v, session.isMulti)
-                    Spacer(Modifier.height(10.dp))
-                    DiscardAction(model, session, v.index)
                 }
                 Phase.ERROR -> Panel("Stop the presses", color = C.blood, titleColor = C.blood) { TText(st.message ?: "unknown fault", size = 14.sp, color = C.blood) }
                 else -> Unit

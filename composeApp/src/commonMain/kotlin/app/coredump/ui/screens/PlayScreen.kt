@@ -318,6 +318,7 @@ fun PlayActions(model: AppModel, session: MatchSession, st: MatchState, modifier
     Column(modifier.fillMaxWidth()) {
         when (st.phase) {
             Phase.REVEAL -> {
+                st.reveal?.let { DiscardAction(model, session, it.index, Modifier.padding(bottom = 8.dp)) }
                 if (st.canAdvance) {
                     TButton(
                         if (st.isLast) Th.say("DUMP CORE ▸", when (Th.style) { Style.NEON -> "FINISH"; Style.PIXEL -> "END BATTLE"; else -> "See results" })
@@ -444,8 +445,6 @@ private fun TerminalPlay(model: AppModel, session: MatchSession, st: MatchState,
                 Phase.REVEAL -> st.reveal?.let { v ->
                     TerminalReveal(v, st.attempts.size)
                     RevealExtras(v, session.isMulti)
-                    Spacer(Modifier.height(10.dp))
-                    DiscardAction(model, session, v.index)
                 }
                 Phase.ERROR -> Panel("KERNEL PANIC", color = C.blood, titleColor = C.blood) {
                     TText(st.message ?: "unknown fault", size = 14.sp, color = C.blood)

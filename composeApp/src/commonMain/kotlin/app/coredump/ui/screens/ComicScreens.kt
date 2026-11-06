@@ -206,8 +206,6 @@ fun ComicPlay(model: AppModel, session: MatchSession, st: MatchState, a: AnswerS
                     Phase.REVEAL -> st.reveal?.let { v ->
                         ComicVerdict(v)
                         RevealExtras(v, session.isMulti)
-                        Spacer(Modifier.height(10.dp))
-                        DiscardAction(model, session, v.index)
                     }
                     Phase.ERROR -> Panel("BUSTED", color = C.blood, titleColor = C.blood) { TText(st.message ?: "unknown fault", size = 14.sp, color = C.blood) }
                     else -> Unit

@@ -273,8 +273,6 @@ fun QuestPlay(model: AppModel, session: MatchSession, st: MatchState, a: AnswerS
                         }
                     }
                     RevealExtras(v, session.isMulti)
-                    Spacer(Modifier.height(10.dp))
-                    DiscardAction(model, session, v.index)
                 }
                 Phase.ERROR -> DialogueBox(more = false) { TText(st.message ?: "unknown fault", size = 14.sp, color = C.blood) }
                 else -> Unit

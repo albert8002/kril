@@ -67,13 +67,21 @@ import kotlin.math.sin
 
 /** Chunky tile with a darker base; pressing pushes the face down onto it. */
 @Composable
-private fun Tile3D(accent: Color, modifier: Modifier = Modifier, depth: Dp = 5.dp, onClick: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+private fun Tile3D(
+    accent: Color,
+    modifier: Modifier = Modifier,
+    depth: Dp = 5.dp,
+    faceColor: Color? = null,
+    baseColor: Color? = null,
+    onClick: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
     val haptic = rememberHaptic()
     val down by animateDpAsState(if (pressed) depth else 0.dp, tween(70))
-    val face = lerp(C.panel, accent, 0.13f)
-    val base = lerp(C.panel, accent, 0.45f)
+    val face = faceColor ?: lerp(C.panel, accent, 0.13f)
+    val base = baseColor ?: lerp(C.panel, accent, 0.45f)
     Box(modifier.clickable(src, null) { haptic(true); onClick() }) {
         Box(Modifier.matchParentSize().padding(top = depth).box(Th.style, Color.Transparent, base))
         Column(Modifier.fillMaxWidth().padding(bottom = depth).offset(y = down).box(Th.style, accent.copy(alpha = 0.35f), face)
@@ -129,8 +137,9 @@ fun QuizMenu(model: AppModel) {
             Spacer(Modifier.height(4.dp))
             TText(if (streakDays > 0) "Keep your $streakDays-day streak going" else "Start a streak today", size = 13.sp, color = ink.copy(alpha = 0.85f))
             Spacer(Modifier.height(14.dp))
-            Tile3D(ink, Modifier.fillMaxWidth(), depth = 4.dp, onClick = { items["daily"]?.action?.invoke() }) {
-                TText(if (played != null) "Play again" else "Play now", Modifier.fillMaxWidth(), size = 16.sp, color = ink,
+            Tile3D(ink, Modifier.fillMaxWidth(), depth = 4.dp, faceColor = ink, baseColor = lerp(C.hot, Color.Black, 0.35f),
+                onClick = { items["daily"]?.action?.invoke() }) {
+                TText(if (played != null) "Play again" else "Play now", Modifier.fillMaxWidth(), size = 16.sp, color = C.hot,
                     weight = FontWeight.Bold, align = TextAlign.Center)
             }
         }
@@ -236,8 +245,6 @@ fun QuizPlay(model: AppModel, session: MatchSession, st: MatchState, a: AnswerSt
                     ResultCard(v)
                     Column(Modifier.fillMaxWidth()) {
                         RevealExtras(v, session.isMulti)
-                        Spacer(Modifier.height(10.dp))
-                        DiscardAction(model, session, v.index)
                     }
                 }
                 Phase.ERROR -> Panel("Something went wrong", color = C.blood, titleColor = C.blood) { TText(st.message ?: "unknown fault", size = 14.sp, color = C.blood) }

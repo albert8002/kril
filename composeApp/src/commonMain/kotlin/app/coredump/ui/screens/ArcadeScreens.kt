@@ -217,9 +217,13 @@ fun ArcadePlay(model: AppModel, session: MatchSession, st: MatchState, a: Answer
         }
         // pause / quit
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            TLink("EXIT", { session.pause(); model.confirmQuit = true }, color = C.dim, size = 11.sp)
+            TText("◂ EXIT", Modifier.clickable(remember { MutableInteractionSource() }, null) { session.pause(); model.confirmQuit = true }
+                .padding(vertical = 6.dp), size = 11.sp, color = C.dim, weight = FontWeight.Bold, spacing = 2.sp)
             Spacer(Modifier.weight(1f))
-            if (st.canPause && st.phase == Phase.TYPING && !st.paused) TLink("PAUSE", { session.pause() }, color = C.dim, size = 11.sp)
+            if (st.canPause && st.phase == Phase.TYPING && !st.paused) {
+                TText("PAUSE ‖", Modifier.clickable(remember { MutableInteractionSource() }, null) { session.pause() }
+                    .padding(vertical = 6.dp), size = 11.sp, color = C.dim, weight = FontWeight.Bold, spacing = 2.sp)
+            }
         }
         // smooth neon time bar
         if (st.seconds > 0) {
@@ -268,8 +272,6 @@ fun ArcadePlay(model: AppModel, session: MatchSession, st: MatchState, a: Answer
                             DecodeText(headline(v.me), size = 26.sp, color = tierColor(v.me.tier), durationMs = 450)
                         }
                         RevealExtras(v, session.isMulti)
-                        Spacer(Modifier.height(10.dp))
-                        DiscardAction(model, session, v.index)
                     }
                     Phase.ERROR -> Panel("ERROR", color = C.blood, titleColor = C.blood) { TText(st.message ?: "unknown fault", size = 14.sp, color = C.blood) }
                     else -> Unit
