@@ -1,10 +1,14 @@
 package app.coredump.data
 
+import app.coredump.core.AnswerIndex
+import app.coredump.core.Edits
+import app.coredump.core.Norm
 import app.coredump.core.Prompt
 import app.coredump.core.RawAnswer
 import app.coredump.core.SourceKind
 import app.coredump.core.Tiering
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -39,7 +43,13 @@ object WikidataTemplates {
     private fun instSub(q: String) = "?item wdt:P31/wdt:P279* wd:$q ."
     private fun sub(q: String) = "?item wdt:P279+ wd:$q ."
 
-    val all: List<WikidataTemplate> = listOf(
+    /** Hand-picked templates + programmatic families. */
+    val all: List<WikidataTemplate> by lazy { base + WikidataFamilies.all }
+
+    /** Minimum list size to keep a fetched prompt. */
+    fun minAnswers(t: WikidataTemplate): Int = if (t.id.startsWith("wf.")) WikidataFamilies.MIN_ANSWERS else 5
+
+    val base: List<WikidataTemplate> = listOf(
         WikidataTemplate("wd.dog", "Name a dog breed", "NATURE", inst("Q39367")),
         WikidataTemplate("wd.cheese", "Name a cheese", "FOOD", instSub("Q10943")),
         WikidataTemplate("wd.cocktail", "Name a cocktail", "FOOD", instSub("Q134768")),
@@ -93,35 +103,92 @@ object WikidataTemplates {
         WikidataTemplate("wd.instrument", "Name a musical instrument", "CULTURE", sub("Q34379"), minLinks = 8),
     )
 
+    /**
+     * Rank query. The inner sub-select (pattern + sitelinks, sorted, limited) runs first; English labels and
+     * aliases come from the label service afterwards. (Joining rdfs:label directly made WDQS scan every label
+     * and time out.)
+     */
     fun query(t: WikidataTemplate): String {
         val filter = if (t.minLinks > 0) "FILTER(?links >= ${t.minLinks})" else ""
         return """
-            SELECT ?item ?label ?links (GROUP_CONCAT(DISTINCT ?alt; separator="|") AS ?alts) WHERE {
+            SELECT ?item ?itemLabel ?itemAltLabel ?links WHERE {
               { SELECT DISTINCT ?item ?links WHERE { ${t.where} ?item wikibase:sitelinks ?links . $filter }
                 ORDER BY DESC(?links) LIMIT ${t.limit} }
-              ?item rdfs:label ?label . FILTER(LANG(?label) = "en")
-              OPTIONAL { ?item skos:altLabel ?alt . FILTER(LANG(?alt) = "en") }
-            } GROUP BY ?item ?label ?links ORDER BY DESC(?links)
+              SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+            } ORDER BY DESC(?links)
         """.trimIndent()
     }
 
     private val json = Json { ignoreUnknownKeys = true }
     private val qid = Regex("""^Q\d+$""")
 
-    /** Parses a SPARQL JSON result into a ranked prompt. */
+    private fun JsonObject.v(key: String): String? = this[key]?.jsonObject?.get("value")?.jsonPrimitive?.contentOrNull
+
+    /** Parses a SPARQL JSON result into a ranked prompt (with sitelink cut-offs for scoring unlisted answers). */
     fun parse(t: WikidataTemplate, body: String): Prompt {
         val bindings = json.parseToJsonElement(body).jsonObject["results"]!!.jsonObject["bindings"]!!.jsonArray
         val raw = ArrayList<RawAnswer>(bindings.size)
+        val linksByKey = HashMap<String, Int>()
         for (b in bindings) {
             val o = b.jsonObject
-            val label = o["label"]?.jsonObject?.get("value")?.jsonPrimitive?.contentOrNull?.trim() ?: continue
+            val label = (o.v("itemLabel") ?: o.v("label"))?.trim() ?: continue
             if (label.isEmpty() || qid.matches(label) || label.length > 60) continue
-            val alts = o["alts"]?.jsonObject?.get("value")?.jsonPrimitive?.contentOrNull.orEmpty()
-                .split('|').map { it.trim() }
+            val alts = splitAliases(o.v("itemAltLabel") ?: o.v("alts"))
                 .filter { it.length in 2..40 && !it.equals(label, ignoreCase = true) }
                 .take(6)
             raw += RawAnswer(label, alts)
+            val k = Norm.compact(Norm.key(label))
+            if (!linksByKey.containsKey(k)) linksByKey[k] = o.v("links")?.toIntOrNull() ?: 0
         }
-        return Prompt(t.id, t.prompt, t.topic, SourceKind.WIKIDATA, Tiering.build(raw, t.id))
+        val entries = Tiering.build(raw, t.id)
+        val c = Tiering.cuts(entries.size)
+        fun linksAt(i: Int) = entries.getOrNull(i)?.let { linksByKey[Norm.compact(Norm.key(it.name))] } ?: 0
+        val cuts = if (entries.size >= 10) intArrayOf(linksAt(c.legacy - 1).coerceAtLeast(2), linksAt(c.leak - 1).coerceAtLeast(1)) else null
+        return Prompt(t.id, t.prompt, t.topic, SourceKind.WIKIDATA, entries, t.where, cuts)
+    }
+
+    /** Label-service aliases come joined by ", "; the old GROUP_CONCAT form used "|". */
+    fun splitAliases(s: String?): List<String> =
+        s.orEmpty().split(if ('|' in s.orEmpty()) "|" else ", ").map { it.trim() }.filter { it.isNotEmpty() }
+
+    /** One-request check of an unlisted answer: Wikidata entity search, constrained by the prompt's pattern. */
+    fun verifyQuery(where: String, input: String): String {
+        val term = input.trim().take(60).replace("\\", " ").replace("\"", " ")
+        return """
+            SELECT ?item ?itemLabel ?itemAltLabel ?links WHERE {
+              SERVICE wikibase:mwapi {
+                bd:serviceParam wikibase:endpoint "www.wikidata.org" ;
+                                wikibase:api "EntitySearch" ;
+                                mwapi:search "$term" ;
+                                mwapi:language "en" .
+                ?item wikibase:apiOutputItem mwapi:item .
+              }
+              $where
+              ?item wikibase:sitelinks ?links .
+              SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+            } ORDER BY DESC(?links) LIMIT 5
+        """.trimIndent()
+    }
+
+    class Verified(val label: String, val links: Int)
+
+    /** Accepts only when the input really names the found item (label or alias within a small edit distance). */
+    fun parseVerify(body: String, input: String): Verified? {
+        val q = Norm.compact(Norm.key(input))
+        if (q.length < 2) return null
+        val tol = AnswerIndex.toleranceFor(q.length).coerceAtMost(2)
+        val bindings = json.parseToJsonElement(body).jsonObject["results"]?.jsonObject?.get("bindings")?.jsonArray ?: return null
+        for (b in bindings) {
+            val o = b.jsonObject
+            val label = (o.v("itemLabel") ?: o.v("label")) ?: continue
+            if (qid.matches(label)) continue
+            val names = listOf(label) + splitAliases(o.v("itemAltLabel") ?: o.v("alts"))
+            val ok = names.any { n ->
+                val k = Norm.compact(Norm.key(n))
+                k.isNotEmpty() && Edits.osa(q, k, tol) <= tol
+            }
+            if (ok) return Verified(label, o.v("links")?.toIntOrNull() ?: 0)
+        }
+        return null
     }
 }

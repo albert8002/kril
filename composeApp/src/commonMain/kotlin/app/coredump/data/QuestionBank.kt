@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
@@ -126,12 +127,12 @@ class QuestionBank(private val scope: CoroutineScope) {
         syncJob = scope.launch(Dispatchers.Default) {
             val now = Platform.epochMillis()
             if (settings.useWikidata) {
-                if (force || isStale(SourceKind.WIKIDATA, now, WEEK)) syncWikidata()
+                if (force || isStale(SourceKind.WIKIDATA, now, 2 * WEEK)) syncWikidata()
                 else status(SourceKind.WIKIDATA) { it.copy(state = SyncState.OK, detail = "cached") }
             } else status(SourceKind.WIKIDATA) { it.copy(state = SyncState.OFF) }
 
             if (settings.useWikipedia) {
-                if (force || isStale(SourceKind.WIKIPEDIA, now, WEEK)) syncWikipedia()
+                if (force || isStale(SourceKind.WIKIPEDIA, now, 2 * WEEK)) syncWikipedia()
                 else status(SourceKind.WIKIPEDIA) { it.copy(state = SyncState.OK, detail = "cached") }
             } else status(SourceKind.WIKIPEDIA) { it.copy(state = SyncState.OFF) }
 
@@ -227,7 +228,11 @@ class QuestionBank(private val scope: CoroutineScope) {
     // ---------------- wikidata ----------------
 
     private suspend fun syncWikidata() {
-        val templates = WikidataTemplates.all
+        // Devices refresh a rotating slice (the full set ships pre-ranked inside the app).
+        val all = WikidataTemplates.all
+        val start = (Platform.readText("wd_rotor.txt")?.trim()?.toIntOrNull() ?: 0).mod(all.size)
+        val templates = (all.drop(start) + all.take(start)).take(DEVICE_SLICE)
+        runCatching { Platform.writeText("wd_rotor.txt", ((start + DEVICE_SLICE) % all.size).toString()) }
         lastError.remove(SourceKind.WIKIDATA)
         status(SourceKind.WIKIDATA) { it.copy(state = SyncState.SYNCING, done = 0, total = templates.size, detail = "") }
         val got = ArrayList<Prompt>()
@@ -235,7 +240,7 @@ class QuestionBank(private val scope: CoroutineScope) {
         // WDQS: sequential, polite gap; stop early if the service is clearly blocking us.
         for (t in templates) {
             val p = try { fetchWikidata(t) } catch (e: Fail) { lastError[SourceKind.WIKIDATA] = e.message ?: "error"; null }
-            if (p != null && p.size >= 5) { putAll(listOf(p)); got += p } else errors++
+            if (p != null && p.size >= WikidataTemplates.minAnswers(t)) { putAll(listOf(p)); got += p } else errors++
             status(SourceKind.WIKIDATA) { it.copy(done = it.done + 1) }
             if (got.isEmpty() && errors >= 4) break
             delay(250)
@@ -363,7 +368,38 @@ class QuestionBank(private val scope: CoroutineScope) {
         return fresh + readCache(kind).filter { it.id !in ids }
     }
 
+    // ---------------- verification of unlisted answers ----------------
+
+    private val verifyCache = HashMap<String, WikidataTemplates.Verified?>()
+    private val verifyLock = Mutex()
+
+    /**
+     * Checks an answer that is not in the list against Wikidata (one SPARQL request, ≤ 6 s).
+     * Returns null when the prompt has no class pattern, the answer is not found, or the network fails.
+     */
+    suspend fun verify(prompt: Prompt, input: String): WikidataTemplates.Verified? {
+        val where = prompt.check ?: return null
+        val key = prompt.id + "|" + app.coredump.core.Norm.key(input)
+        verifyLock.withLock { if (verifyCache.containsKey(key)) return verifyCache[key] }
+        val result = withTimeoutOrNull(6_000) {
+            runCatching {
+                val body = call(SourceKind.WIKIDATA) {
+                    http.get(WikiNet.WDQS) {
+                        parameter("query", WikidataTemplates.verifyQuery(where, input))
+                        parameter("format", "json")
+                        header("Accept", "application/sparql-results+json")
+                        header("User-Agent", WikiNet.USER_AGENT)
+                    }
+                }
+                WikidataTemplates.parseVerify(body, input)
+            }.getOrNull()
+        }
+        verifyLock.withLock { verifyCache[key] = result }
+        return result
+    }
+
     companion object {
+        const val DEVICE_SLICE = 30
         const val DAY = 24L * 3600 * 1000
         const val WEEK = 7 * DAY
     }

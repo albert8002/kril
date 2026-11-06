@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.coredump.AppModel
 import app.coredump.Screen
+import app.coredump.game.LinkMode
 import app.coredump.game.LobbyState
 import app.coredump.net.JoinTicket
 import app.coredump.platform.rememberQrScanLauncher
@@ -63,16 +64,25 @@ fun LobbyScreen(model: AppModel) {
                 Tab.JOIN -> JoinPane(model)
             }
             Spacer(Modifier.height(16.dp))
-            TText("both devices must share one Wi-Fi network or hotspot. no internet needed.", size = 10.sp, color = C.line)
+            TText("online relay: messages pass through a free public MQTT server (room code = key). direct: same Wi-Fi, no internet.",
+                size = 10.sp, color = C.line)
         }
     }
 }
 
 @Composable
 private fun HostPane(model: AppModel) {
-    val lobby = remember { model.openHost() }
+    var mode by remember { mutableStateOf(model.hostLobby?.mode ?: LinkMode.RELAY) }
+    Choice(LinkMode.entries, mode, { it.label }) { mode = it }
+    TText(
+        if (mode == LinkMode.RELAY) "works anywhere with internet (Wi-Fi or mobile data). recommended."
+        else "same Wi-Fi only. blocked on many campus/hotel networks and inside LiveContainer.",
+        size = 10.sp, color = C.dim,
+    )
+    Spacer(Modifier.height(12.dp))
+    val lobby = remember(mode) { model.openHost(mode) }
     val st by lobby.state.collectAsState()
-    LaunchedEffect(lobby) { if (st.ticket == null && st.peer == null) lobby.open() }
+    LaunchedEffect(lobby) { if (st.ticket == null && st.peer == null && !st.busy) lobby.open() }
     val s = model.settings
 
     Panel("MATCH PARAMS") {
@@ -91,7 +101,14 @@ private fun HostPane(model: AppModel) {
             QrSigil(t.toUri(), Modifier.widthIn(max = 280.dp).fillMaxWidth())
         }
         Spacer(Modifier.height(10.dp))
-        TText("manual:  ${t.host}:${t.port} ${t.pin}", size = 13.sp, weight = FontWeight.Bold, color = C.hot)
+        if (t.isRelay) {
+            TText("or type this room code:", size = 11.sp, color = C.dim)
+            TText(JoinTicket.pretty(t.room!!) + if (t.broker != 0) " /${t.broker}" else "", size = 28.sp,
+                weight = FontWeight.Bold, color = C.hot, spacing = 3.sp)
+        } else {
+            TText("manual:  ${t.host}:${t.port} ${t.pin}", size = 13.sp, weight = FontWeight.Bold, color = C.hot)
+        }
+        st.via?.let { TText("via $it", size = 10.sp, color = C.line) }
     }
     val peer = st.peer
     if (peer != null) {
@@ -115,7 +132,7 @@ private fun JoinPane(model: AppModel) {
     var manual by remember { mutableStateOf("") }
     fun dial(raw: String?) {
         val t = raw?.let { JoinTicket.parse(it) }
-        if (t == null) { if (raw != null) model.toast = "not a CORE_DUMP sigil"; return }
+        if (t == null) { if (raw != null) model.toast = "not a CORE_DUMP code"; return }
         join.connect(t) { session -> model.joined(session) }
     }
     val scan = rememberQrScanLauncher { dial(it) }
@@ -123,10 +140,11 @@ private fun JoinPane(model: AppModel) {
 
     TButton("SCAN SIGIL", { scan() }, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
     Spacer(Modifier.height(14.dp))
-    TText("or dial manually (ip:port pin):", size = 12.sp, color = C.dim)
+    TText("or type the host's room code:", size = 12.sp, color = C.dim)
     Spacer(Modifier.height(6.dp))
-    TermInput(manual, { manual = it }, Modifier.fillMaxWidth(), prompt = "dial", placeholder = "192.168.1.20:47000 1234",
-        size = 14.sp, onSubmit = { dial(manual) })
+    TermInput(manual, { manual = it.uppercase() }, Modifier.fillMaxWidth(), prompt = "join", placeholder = "K7Q2-M9XA",
+        size = 16.sp, onSubmit = { dial(manual) })
+    TText("(direct Wi-Fi hosts show  ip:port pin  instead)", size = 10.sp, color = C.line)
     Spacer(Modifier.height(8.dp))
     TButton("CONNECT", { dial(manual) }, Modifier.fillMaxWidth(), enabled = manual.isNotBlank())
     Spacer(Modifier.height(14.dp))

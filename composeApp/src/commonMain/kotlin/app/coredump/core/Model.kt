@@ -30,6 +30,10 @@ class Prompt(
     val topic: String,
     val source: SourceKind,
     val entries: List<AnswerEntry>,
+    /** Wikidata graph pattern binding ?item: used to verify answers that are not in the list. */
+    val check: String? = null,
+    /** Sitelink thresholds [LEGACY min, MEMORY_LEAK min] for scoring verified unlisted answers. */
+    val cuts: IntArray? = null,
 ) {
     val size: Int get() = entries.size
     val index: AnswerIndex by lazy { AnswerIndex(entries) }
@@ -92,6 +96,21 @@ object Tiering {
     }
 }
 
+/** Scores an unlisted-but-verified answer from its sitelink count (number of Wikipedia editions covering it). */
+object Rarity {
+    /** Defaults when a list has no measured thresholds. */
+    val DEFAULT_CUTS = intArrayOf(100, 35)
+
+    fun tierForLinks(links: Int, cuts: IntArray?): Tier {
+        val c = cuts?.takeIf { it.size >= 2 } ?: DEFAULT_CUTS
+        return when {
+            links >= c[0] -> Tier.LEGACY
+            links >= c[1] -> Tier.MEMORY_LEAK
+            else -> Tier.HEISENBUG
+        }
+    }
+}
+
 enum class Difficulty(
     val label: String,
     val maxEdit: Int,
@@ -138,6 +157,12 @@ object Judge {
             ?: return Judgement(input, null, Tier.SEGFAULT, -1)
         val e = prompt.entries[hit.entry]
         return Judgement(input, e, e.tier, hit.distance)
+    }
+
+    /** Judgement for an answer verified online (not in the list). */
+    fun verified(input: String, label: String, links: Int, prompt: Prompt): Judgement {
+        val tier = Rarity.tierForLinks(links, prompt.cuts)
+        return Judgement(input, AnswerEntry(label, emptyList(), tier, -1), tier, 0)
     }
 
     /**

@@ -37,6 +37,8 @@ import app.coredump.core.hexAddr
 import app.coredump.game.MatchSession
 import app.coredump.ui.C
 import app.coredump.ui.DecodeText
+import app.coredump.ui.DaemonShaft
+import app.coredump.platform.shareText
 import app.coredump.ui.Divider
 import app.coredump.ui.Panel
 import app.coredump.ui.RollingNumber
@@ -60,17 +62,30 @@ fun SummaryScreen(model: AppModel, session: MatchSession) {
         LazyColumn(Modifier.weight(1f).padding(horizontal = 16.dp)) {
             item {
                 Spacer(Modifier.height(14.dp))
-                TText("process exited · status ${if (my > 0) 0 else 139}", size = 11.sp, color = C.dim)
-                Spacer(Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.Bottom) {
-                    RollingNumber(depthFrames(my), size = 38.sp, color = C.hot, durationMs = 1600)
-                    TText(" frames deep", Modifier.padding(bottom = 6.dp), size = 13.sp, color = C.dim)
+                Row {
+                    Column(Modifier.weight(1f)) {
+                        TText(if (st.daily != null) "daily dive #${st.daily} · exited" else "process exited · status ${if (my > 0) 0 else 139}",
+                            size = 11.sp, color = C.dim)
+                        Spacer(Modifier.height(6.dp))
+                        RollingNumber(depthFrames(my), size = 36.sp, color = C.hot, durationMs = 2400)
+                        TText("frames deep", size = 13.sp, color = C.dim)
+                        TText("${hexAddr(depthFrames(my))} · ${my}/${maxPts} pts", size = 11.sp, color = C.dim)
+                        TText("avg ${(avg * 10).toInt() / 10.0} per prompt", size = 11.sp, color = C.dim)
+                        Spacer(Modifier.height(14.dp))
+                        TText("RANK", size = 10.sp, color = C.dim, spacing = 2.sp)
+                        DecodeText(rank.title, size = 28.sp, color = C.amber, durationMs = 1100)
+                        TText(rank.line, size = 12.sp, color = C.dim)
+                    }
+                    var acc = 0
+                    val marks = rounds.map { r -> acc += r.me.points; depthFrames(acc) to "#${r.index + 1} +${r.me.points}" }
+                    DaemonShaft(
+                        depthFrames = depthFrames(my), startFrom = 0, markers = marks, fallMs = 2600,
+                        lastTier = rounds.maxByOrNull { it.me.points }?.me?.tier,
+                        modifier = Modifier.width(72.dp).height(300.dp),
+                    )
                 }
-                TText("${hexAddr(depthFrames(my))} · ${my}/${maxPts} pts · avg ${(avg * 10).toInt() / 10.0}", size = 11.sp, color = C.dim)
-                Spacer(Modifier.height(14.dp))
-                TText("RANK", size = 10.sp, color = C.dim, spacing = 2.sp)
-                DecodeText(rank.title, size = 30.sp, color = C.amber, durationMs = 1100)
-                TText(rank.line, size = 12.sp, color = C.dim)
+                Spacer(Modifier.height(12.dp))
+                TButton("SHARE DUMP", { shareText(shareCard(st, rank)) }, Modifier.fillMaxWidth(), textSize = 13.sp)
 
                 val opp = st.oppName
                 if (session.isMulti && opp != null) {
@@ -185,4 +200,25 @@ private fun answerText(t: Tier, canonical: String?, input: String): String = whe
     Tier.TIMEOUT -> "<timeout>"
     Tier.SEGFAULT -> "$input  ✗ segfault"
     else -> canonical ?: input
+}
+
+private fun tierGlyph(t: Tier): String = when (t) {
+    Tier.TIMEOUT, Tier.SEGFAULT -> "⬛"
+    Tier.HELLO_WORLD, Tier.COPYPASTA -> "🟨"
+    Tier.LEGACY -> "🟧"
+    Tier.MEMORY_LEAK -> "🟥"
+    Tier.HEISENBUG -> "🟪"
+    Tier.ZERO_DAY -> "💀"
+}
+
+/** Spoiler-free result card, Wordle style. */
+fun shareCard(st: app.coredump.game.MatchState, rank: Rank): String {
+    val head = when {
+        st.daily != null -> "CORE_DUMP daily #${st.daily}"
+        st.oppName != null -> "CORE_DUMP 1v1 vs ${st.oppName}"
+        else -> "CORE_DUMP dive"
+    }
+    val grid = st.rounds.joinToString("") { tierGlyph(it.me.tier) }
+    val opp = if (st.oppName != null) " · ${st.oppName} ${depthFrames(st.oppTotal)} fr" else ""
+    return "$head\n${depthFrames(st.myTotal)} frames deep · ${rank.title}$opp\n$grid"
 }

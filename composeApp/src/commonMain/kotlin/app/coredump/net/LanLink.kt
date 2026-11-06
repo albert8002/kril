@@ -20,11 +20,12 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 
 /** One TCP connection carrying newline-delimited JSON messages. */
-class LanLink(private val socket: Socket, private val scope: CoroutineScope) {
+class LanLink(private val socket: Socket, private val scope: CoroutineScope) : PeerLink {
+    override val via: String = "direct wi-fi"
     private val input = socket.openReadChannel()
     private val output: ByteWriteChannel = socket.openWriteChannel(autoFlush = true)
     private val writeLock = Mutex()
-    val incoming = Channel<Msg>(Channel.UNLIMITED)
+    override val incoming = Channel<Msg>(Channel.UNLIMITED)
     private var reader: Job? = null
 
     fun start() {
@@ -42,14 +43,14 @@ class LanLink(private val socket: Socket, private val scope: CoroutineScope) {
         }
     }
 
-    suspend fun send(m: Msg): Boolean = runCatching {
+    override suspend fun send(m: Msg): Boolean = runCatching {
         writeLock.withLock {
             output.writeStringUtf8(m.encode() + "\n")
             output.flush()
         }
     }.isSuccess
 
-    fun close() {
+    override fun close() {
         reader?.cancel()
         runCatching { socket.close() }
         incoming.close()

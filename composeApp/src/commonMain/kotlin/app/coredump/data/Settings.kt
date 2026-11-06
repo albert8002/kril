@@ -2,6 +2,7 @@ package app.coredump.data
 
 import app.coredump.core.Difficulty
 import app.coredump.core.GameConfig
+import app.coredump.core.Tier
 import app.coredump.platform.Platform
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -34,6 +35,10 @@ data class Settings(
     val glow: Float = 1f,
     val haptics: Boolean = true,
     val reduceMotion: Boolean = false,
+    /** Text size multiplier (dimensionless): 0.9 / 1.0 / 1.15 / 1.3. */
+    val textScale: Float = 1f,
+    /** Check unlisted answers online (Wikidata). */
+    val verifyOnline: Boolean = true,
 ) {
     fun gameConfig() = GameConfig(rounds, seconds, difficulty, topics)
 }
@@ -63,6 +68,8 @@ object SettingsStore {
             glow = o["glow"]?.jsonPrimitive?.floatOrNull ?: d.glow,
             haptics = b("haptics") ?: d.haptics,
             reduceMotion = b("reduceMotion") ?: d.reduceMotion,
+            textScale = (o["textScale"]?.jsonPrimitive?.floatOrNull ?: d.textScale).coerceIn(0.8f, 1.4f),
+            verifyOnline = b("verifyOnline") ?: d.verifyOnline,
         )
     }.getOrElse { Settings() }
 
@@ -81,38 +88,92 @@ object SettingsStore {
             put("glow", s.glow)
             put("haptics", s.haptics)
             put("reduceMotion", s.reduceMotion)
+            put("textScale", s.textScale)
+            put("verifyOnline", s.verifyOnline)
         }
         runCatching { Platform.writeText(FILE, o.toString()) }
     }
 }
 
-/** Recently played prompt ids + best score, so games avoid repeats. */
+/** One finished run. points: total for the run; tiers: my tier per prompt (in order). */
+data class RunRecord(
+    val at: Long,
+    val mode: String,
+    val points: Int,
+    val tiers: List<Tier>,
+    val topics: List<String>,
+    val daily: Int?,
+    val opponent: String?,
+    val oppPoints: Int?,
+)
+
+/** Run history (for stats), recently played prompt ids (to avoid repeats), best score. */
 object History {
     private const val FILE = "history.json"
-    private const val KEEP = 400
+    private const val KEEP_IDS = 600
+    private const val KEEP_RUNS = 300
     private val json = Json { ignoreUnknownKeys = true }
 
     var recent: List<String> = emptyList(); private set
-    var best: Int = 0; private set
-    var games: Int = 0; private set
+    var runs: List<RunRecord> = emptyList(); private set
+    val best: Int get() = runs.maxOfOrNull { it.points } ?: 0
+    val games: Int get() = runs.size
 
     fun load() {
         runCatching {
             val o = json.parseToJsonElement(Platform.readText(FILE) ?: return).jsonObject
             recent = o["recent"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty()
-            best = o["best"]?.jsonPrimitive?.intOrNull ?: 0
-            games = o["games"]?.jsonPrimitive?.intOrNull ?: 0
+            runs = o["runs"]?.jsonArray?.mapNotNull { el ->
+                runCatching {
+                    val r = el.jsonObject
+                    RunRecord(
+                        at = r["at"]!!.jsonPrimitive.content.toLong(),
+                        mode = r["m"]?.jsonPrimitive?.contentOrNull ?: "solo",
+                        points = r["p"]?.jsonPrimitive?.intOrNull ?: 0,
+                        tiers = r["t"]?.jsonPrimitive?.contentOrNull.orEmpty().split(',').mapNotNull { Tier.byName(it) },
+                        topics = r["tp"]?.jsonPrimitive?.contentOrNull.orEmpty().split(',').filter { it.isNotBlank() },
+                        daily = r["d"]?.jsonPrimitive?.intOrNull,
+                        opponent = r["o"]?.jsonPrimitive?.contentOrNull,
+                        oppPoints = r["op"]?.jsonPrimitive?.intOrNull,
+                    )
+                }.getOrNull()
+            }.orEmpty()
         }
     }
 
-    fun record(promptIds: List<String>, points: Int) {
-        recent = (promptIds + recent).distinct().take(KEEP)
-        if (points > best) best = points
-        games += 1
+    fun playedDaily(n: Int): RunRecord? = runs.firstOrNull { it.daily == n }
+
+    fun recordRun(
+        promptIds: List<String>,
+        tiers: List<Tier>,
+        mode: String,
+        daily: Int?,
+        topics: List<String>,
+        opponent: String? = null,
+        oppPoints: Int? = null,
+    ) {
+        recent = (promptIds + recent).distinct().take(KEEP_IDS)
+        // a daily dive counts once: replays of the same day are not recorded as daily
+        val d = if (daily != null && playedDaily(daily) == null) daily else null
+        val rec = RunRecord(Platform.epochMillis(), if (daily != null && d == null) "solo" else mode,
+            tiers.sumOf { it.points }, tiers, topics, d, opponent, oppPoints)
+        runs = (listOf(rec) + runs).take(KEEP_RUNS)
+        save()
+    }
+
+    private fun save() {
         val o = buildJsonObject {
             put("recent", JsonArray(recent.map { JsonPrimitive(it) }))
-            put("best", best)
-            put("games", games)
+            put("runs", JsonArray(runs.map { r ->
+                buildJsonObject {
+                    put("at", r.at); put("m", r.mode); put("p", r.points)
+                    put("t", r.tiers.joinToString(",") { it.name })
+                    put("tp", r.topics.joinToString(","))
+                    r.daily?.let { put("d", it) }
+                    r.opponent?.let { put("o", it) }
+                    r.oppPoints?.let { put("op", it) }
+                }
+            }))
         }
         runCatching { Platform.writeText(FILE, o.toString()) }
     }

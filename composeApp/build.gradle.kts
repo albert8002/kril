@@ -36,6 +36,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.network)
+            implementation(libs.ktor.client.websockets)
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)

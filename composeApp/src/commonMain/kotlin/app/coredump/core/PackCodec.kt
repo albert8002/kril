@@ -73,7 +73,9 @@ object PackCodec {
                 AnswerEntry(name, al, tier, i)
             }
         }
-        return Prompt(id, q, topic.uppercase(), src, entries)
+        val check = o["w"]?.jsonPrimitive?.contentOrNull
+        val cuts = o["k"]?.let { k -> runCatching { k.jsonArray.map { it.jsonPrimitive.content.toInt() }.toIntArray() }.getOrNull() }
+        return Prompt(id, q, topic.uppercase(), src, entries, check, cuts)
     }
 
     fun encodeRanked(prompts: List<Prompt>, at: Long): String {
@@ -86,6 +88,8 @@ object PackCodec {
                     put("q", p.text)
                     put("t", p.topic)
                     put("s", p.source.name)
+                    p.check?.let { put("w", it) }
+                    p.cuts?.let { c -> put("k", JsonArray(c.map { JsonPrimitive(it) })) }
                     put("e", buildJsonArray {
                         for (e in p.entries) add(JsonArray(listOf(
                             JsonPrimitive(e.name),

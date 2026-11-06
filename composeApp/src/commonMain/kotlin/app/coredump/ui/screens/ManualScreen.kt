@@ -33,6 +33,9 @@ fun ManualScreen(model: AppModel) {
                 for (l in listOf(
                     "each run = N prompts (default 7), T seconds each (default 25).",
                     "type any valid answer. every valid answer scores.",
+                    "wrong? keep typing. free retries until the clock dies.",
+                    "close typo? tap the 'did you mean' chip.",
+                    "not in the list? it's checked online (Wikidata) and scored by obscurity.",
                     "rarer answers score more. obvious ones barely count.",
                     "1 point = 10 frames of stack depth. go deep.",
                     "typos are forgiven by difficulty: 2 / 2 / 1 / 0 edits.",
@@ -72,10 +75,11 @@ fun ManualScreen(model: AppModel) {
             Spacer(Modifier.height(12.dp))
             Panel("1v1") {
                 for (l in listOf(
-                    "host: LINK 1v1 → HOST. a QR sigil appears.",
-                    "peer: LINK 1v1 → JOIN → SCAN SIGIL (or dial ip:port pin).",
+                    "host: LINK 1v1 → HOST. a QR sigil + room code appear.",
+                    "peer: LINK 1v1 → JOIN → SCAN SIGIL or type the room code.",
                     "same prompts, same clock. deeper answer takes the round.",
-                    "runs over local Wi-Fi or a phone hotspot. Android ↔ iPhone works.",
+                    "ONLINE RELAY works on any network (Android ↔ iPhone, LiveContainer).",
+                    "DIRECT WI-FI needs both on one network that allows device-to-device traffic.",
                 )) TText("· $l", size = 12.sp, color = C.amber)
             }
             Spacer(Modifier.height(24.dp))

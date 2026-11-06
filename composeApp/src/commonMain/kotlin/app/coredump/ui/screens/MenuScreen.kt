@@ -39,6 +39,10 @@ import app.coredump.data.History
 import app.coredump.data.SyncState
 import app.coredump.ui.C
 import app.coredump.ui.Cursor
+import app.coredump.ui.DaemonIdle
+import app.coredump.dailyNumber
+import app.coredump.platform.Platform
+import androidx.compose.foundation.layout.size
 import app.coredump.ui.DecodeText
 import app.coredump.ui.Divider
 import app.coredump.ui.Spinner
@@ -65,8 +69,13 @@ fun MenuScreen(model: AppModel) {
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
         Spacer(Modifier.height(28.dp))
-        TText("/usr/bin/", size = 12.sp, color = C.dim)
-        GlitchTitle("CORE_DUMP", 42.sp)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column(Modifier.weight(1f)) {
+                TText("/usr/bin/", size = 12.sp, color = C.dim)
+                GlitchTitle("CORE_DUMP", 40.sp)
+            }
+            DaemonIdle(Modifier.size(60.dp))
+        }
         Typewriter("the obvious get garbage-collected.", size = 13.sp, color = C.dim, weight = FontWeight.Normal, charMs = 26)
         Spacer(Modifier.height(10.dp))
         val best = History.best
@@ -77,9 +86,14 @@ fun MenuScreen(model: AppModel) {
         )
         Spacer(Modifier.height(26.dp))
 
+        val today = dailyNumber(Platform.epochMillis())
+        val playedToday = History.playedDaily(today)
         val items = listOf(
+            Triple(if (playedToday != null) "DAILY #$today ✓" else "DAILY DIVE #$today",
+                if (playedToday != null) "${group(depthFrames(playedToday.points))} fr" else "cron @daily") { model.startDaily() },
             Triple("RUN SOLO", "./dive --solo") { model.go(Screen.Setup(forHost = false)) },
-            Triple("LINK 1v1", "./dive --peer --lan") { model.go(Screen.Lobby) },
+            Triple("LINK 1v1", "./dive --peer") { model.go(Screen.Lobby) },
+            Triple("STATS", "cat /proc/self") { model.go(Screen.Stats) },
             Triple("BROWSE DUMPS", "ls -la /var/lists") { model.go(Screen.Browse) },
             Triple("CONFIG", "vim ~/.coredumprc") { model.go(Screen.Config) },
             Triple("MANUAL", "man coredump") { model.go(Screen.Manual) },
@@ -129,7 +143,7 @@ private fun MenuItem(index: Int, label: String, cmd: String, onClick: () -> Unit
             .graphicsLayer { alpha = enter.value; translationX = (1f - enter.value) * -40f }
             .background(if (pressed) C.amber else C.bg.copy(alpha = 0f))
             .clickable(src, null, onClick = onClick)
-            .padding(vertical = 12.dp, horizontal = 6.dp),
+            .padding(vertical = 13.dp, horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val fg = if (pressed) C.bg else C.amber

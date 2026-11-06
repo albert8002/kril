@@ -101,3 +101,12 @@ actual fun rememberQrScanLauncher(onResult: (String?) -> Unit): () -> Unit {
     val cb by rememberUpdatedState(onResult)
     return remember { { QrScanner.present { cb(it) } } }
 }
+
+actual fun shareText(text: String) {
+    val root = platform.UIKit.UIApplication.sharedApplication.keyWindow?.rootViewController ?: return
+    var top: platform.UIKit.UIViewController = root
+    while (top.presentedViewController != null) top = top.presentedViewController!!
+    val vc = platform.UIKit.UIActivityViewController(activityItems = listOf(text), applicationActivities = null)
+    vc.popoverPresentationController?.sourceView = top.view
+    top.presentViewController(vc, animated = true, completion = null)
+}

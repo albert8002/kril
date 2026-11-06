@@ -17,6 +17,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
@@ -90,6 +91,7 @@ fun termStyle(
     glow: Float = 1f,
     align: TextAlign = TextAlign.Start,
     spacing: TextUnit = 0.sp,
+    decoration: TextDecoration? = null,
 ): TextStyle {
     val g = LocalLook.current.glow * glow
     return TextStyle(
@@ -99,6 +101,7 @@ fun termStyle(
         fontWeight = weight,
         textAlign = align,
         letterSpacing = spacing,
+        textDecoration = decoration,
         shadow = if (g > 0.01f) Shadow(color.copy(alpha = 0.6f), Offset.Zero, 12f * g) else null,
     )
 }
@@ -115,11 +118,12 @@ fun TText(
     align: TextAlign = TextAlign.Start,
     maxLines: Int = Int.MAX_VALUE,
     spacing: TextUnit = 0.sp,
+    decoration: TextDecoration? = null,
 ) {
     BasicText(
         text = text,
         modifier = modifier,
-        style = termStyle(size, color, weight, glow, align, spacing),
+        style = termStyle(size, color, weight, glow, align, spacing, decoration),
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
     )

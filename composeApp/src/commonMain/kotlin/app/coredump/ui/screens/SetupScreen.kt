@@ -101,7 +101,7 @@ private fun TopicChip(label: String, count: Int, on: Boolean, onClick: () -> Uni
         Modifier.background(if (on) C.amber else Color.Transparent)
             .border(1.dp, if (on) C.amber else C.line)
             .clickable(remember { MutableInteractionSource() }, null, onClick = onClick)
-            .padding(horizontal = 9.dp, vertical = 6.dp),
+            .padding(horizontal = 11.dp, vertical = 10.dp),
         size = 11.sp, color = if (on) C.bg else C.amber, weight = FontWeight.Bold, glow = if (on) 0f else 1f,
     )
 }

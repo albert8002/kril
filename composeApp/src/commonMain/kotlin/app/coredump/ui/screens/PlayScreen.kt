@@ -5,10 +5,18 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,10 +41,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.coredump.AppModel
@@ -44,11 +55,15 @@ import app.coredump.core.RoundView
 import app.coredump.core.Tier
 import app.coredump.core.depthFrames
 import app.coredump.core.hexAddr
+import app.coredump.game.Attempt
+import app.coredump.game.AttemptStatus
 import app.coredump.game.MatchSession
+import app.coredump.game.MatchState
 import app.coredump.game.Phase
 import app.coredump.game.duelVerdict
 import app.coredump.platform.Platform
 import app.coredump.ui.C
+import app.coredump.ui.DaemonShaft
 import app.coredump.ui.DecodeText
 import app.coredump.ui.HexRain
 import app.coredump.ui.LocalLook
@@ -79,7 +94,13 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
     LaunchedEffect(st.phase) {
         if (st.phase == Phase.OVER) { delay(400); model.finished(session) }
     }
-
+    LaunchedEffect(st.myTotal, st.total) {
+        model.depthFraction = if (st.total > 0) st.myTotal / (st.total * 100f) else 0f
+    }
+    // wrong attempt: small glitch + haptic
+    LaunchedEffect(st.missTick) {
+        if (st.missTick > 0) { fx.glitch(); haptic(false) }
+    }
     // screen effects when a reveal lands
     var rain by remember { mutableStateOf(false) }
     LaunchedEffect(st.reveal) {
@@ -96,71 +117,48 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            Header(model, if (session.isMulti) "1v1 :: ${st.myName} vs ${st.oppName ?: "?"}" else "DIVE :: ${st.myName}") {
-                session.quit(); model.closeLobbies(); model.home()
-            }
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp)) {
-                // status row
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    TText("PID ", size = 12.sp, color = C.dim)
-                    TText("${(st.round + 1).toString().padStart(2, '0')}/${st.total.toString().padStart(2, '0')}",
-                        size = 14.sp, weight = FontWeight.Bold)
-                    Spacer(Modifier.weight(1f))
-                    TText("DEPTH ", size = 12.sp, color = C.dim)
-                    RollingNumber(depthFrames(st.myTotal), size = 15.sp, color = C.hot, suffix = " fr")
-                }
-                if (session.isMulti) {
-                    Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
-                        TText("PEER ${st.oppName ?: "?"} ", size = 11.sp, color = C.dim, maxLines = 1)
-                        TText(
-                            when {
-                                st.phase == Phase.REVEAL -> ""
-                                st.oppLocked -> "▣ LOCKED IN"
-                                st.phase == Phase.TYPING || st.phase == Phase.LOCKED -> "▢ thinking…"
-                                else -> ""
-                            }, size = 11.sp, color = if (st.oppLocked) C.hot else C.dim,
-                        )
-                        Spacer(Modifier.weight(1f))
-                        RollingNumber(depthFrames(st.oppTotal), size = 12.sp, color = C.dim, suffix = " fr", weight = FontWeight.Normal)
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                TimerBar(st.startedAt, st.seconds, running = st.phase == Phase.TYPING || st.phase == Phase.LOCKED)
-                Spacer(Modifier.height(14.dp))
+            PlayHeader(model, session, st)
+            Row(Modifier.weight(1f).fillMaxWidth()) {
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 10.dp, top = 12.dp, bottom = 12.dp)) {
+                    StatusRow(session, st)
+                    Spacer(Modifier.height(10.dp))
+                    TimerBar(st.startedAt, st.seconds, running = (st.phase == Phase.TYPING || st.phase == Phase.LOCKED) && !st.paused)
+                    Spacer(Modifier.height(14.dp))
 
-                if (st.phase == Phase.WAITING) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Spinner(); TText("  ${st.message ?: "linking…"}", size = 13.sp, color = C.dim)
-                    }
-                } else if (st.prompt.isNotEmpty()) {
-                    Panel("QUERY ${hexAddr(st.round * 16 + 0x40)}") {
-                        TText("#${st.topic}  ·  ${group(st.listSize)} entries in memory", size = 11.sp, color = C.dim)
-                        Spacer(Modifier.height(8.dp))
-                        key(st.round) {
-                            Typewriter("> ${st.prompt}", size = 21.sp, charMs = 16)
+                    if (st.phase == Phase.WAITING) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Spinner(); TText("  ${st.message ?: "linking…"}", size = 13.sp, color = C.dim)
+                        }
+                    } else if (st.prompt.isNotEmpty()) {
+                        Panel("QUERY ${hexAddr(st.round * 16 + 0x40)}") {
+                            TText("#${st.topic}  ·  ${group(st.listSize)} entries in memory", size = 11.sp, color = C.dim)
+                            Spacer(Modifier.height(8.dp))
+                            key(st.round) { Typewriter("> ${st.prompt}", size = 21.sp, charMs = 16) }
                         }
                     }
-                }
-                Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(16.dp))
 
-                when (st.phase) {
-                    Phase.TYPING -> AnswerBox(st.round) { text ->
-                        keyboard?.hide()
-                        session.submit(text)
+                    when (st.phase) {
+                        Phase.TYPING -> if (!st.paused) AnswerBox(st) { text -> session.submit(text) }
+                        Phase.LOCKED -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            Spinner(C.hot)
+                            TText("  answer locked. awaiting peer process…", size = 13.sp, color = C.dim)
+                        }
+                        Phase.REVEAL -> st.reveal?.let { Reveal(it, session.isMulti, st.attempts.size) }
+                        Phase.ERROR -> Panel("KERNEL PANIC", color = C.blood, titleColor = C.blood) {
+                            TText(st.message ?: "unknown fault", size = 14.sp, color = C.blood)
+                        }
+                        else -> Unit
                     }
-                    Phase.LOCKED -> Row(verticalAlignment = Alignment.CenterVertically) {
-                        Spinner(C.hot)
-                        TText("  answer locked. awaiting peer process…", size = 13.sp, color = C.dim)
-                    }
-                    Phase.REVEAL -> st.reveal?.let { Reveal(it, session.isMulti) }
-                    Phase.ERROR -> Panel("KERNEL PANIC", color = C.blood, titleColor = C.blood) {
-                        TText(st.message ?: "unknown fault", size = 14.sp, color = C.blood)
-                    }
-                    else -> Unit
                 }
+                DaemonShaft(
+                    depthFrames = depthFrames(st.myTotal),
+                    modifier = Modifier.width(64.dp).fillMaxHeight(),
+                    lastTier = st.rounds.lastOrNull()?.me?.tier,
+                    missTick = st.missTick,
+                )
             }
 
-            // bottom action bar
             Column(Modifier.fillMaxWidth().padding(16.dp)) {
                 when (st.phase) {
                     Phase.REVEAL -> {
@@ -173,35 +171,138 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
                                 Modifier.fillMaxWidth(), primary = !waiting, enabled = !waiting)
                         }
                     }
-                    Phase.ERROR -> TButton("RETURN TO SHELL", { session.quit(); model.closeLobbies(); model.home() },
-                        Modifier.fillMaxWidth(), color = C.blood)
+                    Phase.ERROR -> TButton("RETURN TO SHELL", { model.abortRun(session) }, Modifier.fillMaxWidth(), color = C.blood)
                     else -> Unit
                 }
             }
         }
         HexRain(Modifier.fillMaxSize(), rain)
+        if (st.paused && !model.confirmQuit) PauseOverlay({ session.resume() }, { model.confirmQuit = true })
+        if (model.confirmQuit) ConfirmQuit(session.isMulti,
+            onKeep = { model.confirmQuit = false; session.resume() },
+            onAbort = { model.abortRun(session) })
     }
 }
 
 @Composable
-private fun AnswerBox(round: Int, onSubmit: (String) -> Unit) {
-    var text by remember(round) { mutableStateOf("") }
+private fun PlayHeader(model: AppModel, session: MatchSession, st: MatchState) {
+    val title = when {
+        st.daily != null -> "DAILY DIVE #${st.daily}"
+        session.isMulti -> "1v1 :: ${st.myName} vs ${st.oppName ?: "?"}"
+        else -> "DIVE :: ${st.myName}"
+    }
+    Box {
+        Header(model, title) { session.pause(); model.confirmQuit = true }
+        if (st.canPause && st.phase == Phase.TYPING && !st.paused) {
+            TText("[ ‖ ]", Modifier.align(Alignment.CenterEnd).padding(end = 12.dp, top = 2.dp)
+                .background(C.bg)
+                .clickable(remember { MutableInteractionSource() }, null) { session.pause() }
+                .padding(horizontal = 8.dp, vertical = 8.dp), size = 14.sp, weight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun StatusRow(session: MatchSession, st: MatchState) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        TText("PID ", size = 12.sp, color = C.dim)
+        TText("${(st.round + 1).toString().padStart(2, '0')}/${st.total.toString().padStart(2, '0')}", size = 14.sp, weight = FontWeight.Bold)
+        Spacer(Modifier.weight(1f))
+        TText("DEPTH ", size = 12.sp, color = C.dim)
+        RollingNumber(depthFrames(st.myTotal), size = 15.sp, color = C.hot, suffix = " fr")
+    }
+    if (session.isMulti) {
+        Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+            TText("PEER ${st.oppName ?: "?"} ", size = 11.sp, color = C.dim, maxLines = 1)
+            TText(
+                when {
+                    st.phase == Phase.REVEAL -> ""
+                    st.oppLocked -> "▣ LOCKED IN"
+                    st.phase == Phase.TYPING || st.phase == Phase.LOCKED -> "▢ thinking…"
+                    else -> ""
+                }, size = 11.sp, color = if (st.oppLocked) C.hot else C.dim,
+            )
+            Spacer(Modifier.weight(1f))
+            RollingNumber(depthFrames(st.oppTotal), size = 12.sp, color = C.dim, suffix = " fr", weight = FontWeight.Normal)
+        }
+        st.via?.let { TText("via $it", size = 9.sp, color = C.line, maxLines = 1) }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AnswerBox(st: MatchState, onSubmit: (String) -> Unit) {
+    var text by remember(st.round) { mutableStateOf("") }
     val focus = remember { FocusRequester() }
-    LaunchedEffect(round) { delay(250); runCatching { focus.requestFocus() } }
+    val shake = remember { Animatable(0f) }
+    val motion = !LocalLook.current.reduceMotion
+    LaunchedEffect(st.round) { delay(250); runCatching { focus.requestFocus() } }
+    LaunchedEffect(st.missTick) {
+        if (st.missTick == 0 || !motion) return@LaunchedEffect
+        shake.snapTo(1f)
+        shake.animateTo(0f, tween(420))
+    }
+    fun send(v: String) {
+        val t = v.trim()
+        if (t.isEmpty()) return
+        onSubmit(t)
+        text = ""
+    }
+    val latestSuggestion = st.attempts.lastOrNull { it.suggestion != null }?.suggestion
+        ?.takeIf { s -> st.attempts.none { it.text.equals(s, ignoreCase = true) } }
+
     Column {
         TermInput(
             value = text,
             onValueChange = { if (it.length <= 60) text = it },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().graphicsLayer {
+                translationX = sin(shake.value * 30f) * 14f * shake.value
+            }.border(1.dp, lerp(C.line, C.blood, shake.value)),
+            placeholder = if (st.attempts.isEmpty()) "type an answer…" else "try again…",
+            onSubmit = { send(text) },
             fieldModifier = Modifier.focusRequester(focus),
-            placeholder = "type an answer…",
-            onSubmit = { if (text.isNotBlank()) onSubmit(text) },
         )
+        if (latestSuggestion != null) {
+            Spacer(Modifier.height(8.dp))
+            TText(
+                "did you mean  $latestSuggestion ?  ↵",
+                Modifier.border(1.dp, C.hot).background(C.panel)
+                    .clickable(remember { MutableInteractionSource() }, null) { send(latestSuggestion) }
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                size = 13.sp, color = C.hot, weight = FontWeight.Bold,
+            )
+        }
+        if (st.attempts.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                for (a in st.attempts) AttemptChip(a)
+            }
+        }
         Spacer(Modifier.height(10.dp))
-        TButton("EXECUTE", { if (text.isNotBlank()) onSubmit(text) }, Modifier.fillMaxWidth(),
-            enabled = text.isNotBlank(), primary = true)
+        TButton("EXECUTE", { send(text) }, Modifier.fillMaxWidth(), enabled = text.isNotBlank(), primary = true)
         Spacer(Modifier.height(8.dp))
-        TText("rarer = deeper. obvious answers barely register.", size = 10.sp, color = C.line)
+        TText(
+            if (st.attempts.isEmpty()) "rarer = deeper. wrong answers cost nothing but time."
+            else "${st.attempts.count { it.status == AttemptStatus.REJECTED }} rejected · keep going until the clock dies.",
+            size = 10.sp, color = C.line,
+        )
+    }
+}
+
+@Composable
+private fun AttemptChip(a: Attempt) {
+    Row(
+        Modifier.border(1.dp, if (a.status == AttemptStatus.VERIFYING) C.dim else C.bloodDim)
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (a.status == AttemptStatus.VERIFYING) {
+            Spinner(C.dim, 11.sp)
+            TText(" checking ${a.text}", size = 11.sp, color = C.dim, maxLines = 1)
+        } else {
+            TText("✗ ", size = 11.sp, color = C.blood)
+            TText(a.text, size = 11.sp, color = C.blood.copy(alpha = 0.8f), decoration = TextDecoration.LineThrough, maxLines = 1)
+        }
     }
 }
 
@@ -249,7 +350,7 @@ fun TimerBar(startedAt: Long, seconds: Int, running: Boolean) {
 }
 
 @Composable
-private fun Reveal(v: RoundView, multi: Boolean) {
+private fun Reveal(v: RoundView, multi: Boolean, misses: Int) {
     val me = v.me
     val c = tierColor(me.tier)
     val pop = remember(v.index) { Animatable(1.8f) }
@@ -257,7 +358,8 @@ private fun Reveal(v: RoundView, multi: Boolean) {
 
     Panel(if (me.tier.isValid) "STDOUT" else "STDERR", color = if (me.tier.isValid) C.line else C.bloodDim,
         titleColor = if (me.tier.isValid) C.dim else C.blood) {
-        TText("$ ${me.input.ifBlank { "<null>" }}", size = 12.sp, color = C.dim, maxLines = 1)
+        TText("$ ${me.input.ifBlank { "<null>" }}" + if (misses > 0) "   ($misses miss${if (misses == 1) "" else "es"} before)" else "",
+            size = 12.sp, color = C.dim, maxLines = 1)
         Spacer(Modifier.height(6.dp))
         val headline = when (me.tier) {
             Tier.TIMEOUT -> "PROCESS KILLED"
@@ -270,7 +372,7 @@ private fun Reveal(v: RoundView, multi: Boolean) {
             TierBadge(me.tier)
             Spacer(Modifier.width(12.dp))
             TText(
-                if (me.points > 0) "+${me.points}" else "+0",
+                "+${me.points}",
                 Modifier.graphicsLayer { scaleX = pop.value; scaleY = pop.value; alpha = (2.2f - pop.value).coerceIn(0f, 1f) },
                 size = 22.sp, color = c, weight = FontWeight.Bold, glow = 1.6f,
             )
@@ -279,10 +381,7 @@ private fun Reveal(v: RoundView, multi: Boolean) {
         }
         Spacer(Modifier.height(8.dp))
         key(v.index) {
-            Typewriter(
-                if (me.tier == Tier.SEGFAULT) "(core dumped) not in this list." else me.tier.blurb,
-                size = 12.sp, color = C.dim, weight = FontWeight.Normal, charMs = 14, cursor = false,
-            )
+            Typewriter(me.tier.blurb, size = 12.sp, color = C.dim, weight = FontWeight.Normal, charMs = 14, cursor = false)
         }
     }
 
@@ -316,6 +415,38 @@ private fun Reveal(v: RoundView, multi: Boolean) {
                     TText(g.names.take(3).joinToString(" · "), size = 11.sp, color = C.amber, maxLines = 2)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PauseOverlay(onResume: () -> Unit, onAbort: () -> Unit) {
+    Box(Modifier.fillMaxSize().background(C.bg.copy(alpha = 0.94f))
+        .clickable(remember { MutableInteractionSource() }, null) { }, contentAlignment = Alignment.Center) {
+        Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            TText("^Z", size = 14.sp, color = C.dim)
+            DecodeText("PROCESS SUSPENDED", size = 22.sp)
+            TText("SIGSTOP · the clock is frozen", size = 12.sp, color = C.dim, align = TextAlign.Center)
+            Spacer(Modifier.height(24.dp))
+            TButton("RESUME (fg)", onResume, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
+            Spacer(Modifier.height(10.dp))
+            TButton("ABORT RUN", onAbort, Modifier.fillMaxWidth(), color = C.blood)
+        }
+    }
+}
+
+@Composable
+private fun ConfirmQuit(multi: Boolean, onKeep: () -> Unit, onAbort: () -> Unit) {
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.82f))
+        .clickable(remember { MutableInteractionSource() }, null) { }, contentAlignment = Alignment.Center) {
+        Panel("CONFIRM", Modifier.padding(28.dp), color = C.blood, titleColor = C.blood) {
+            TText("kill -9 this run?", size = 18.sp, weight = FontWeight.Bold, color = C.blood)
+            Spacer(Modifier.height(6.dp))
+            TText(if (multi) "your peer will be disconnected." else "progress in this dive is lost.", size = 12.sp, color = C.dim)
+            Spacer(Modifier.height(18.dp))
+            TButton("KEEP DIVING", onKeep, Modifier.fillMaxWidth(), primary = true)
+            Spacer(Modifier.height(10.dp))
+            TButton("ABORT", onAbort, Modifier.fillMaxWidth(), color = C.blood)
         }
     }
 }

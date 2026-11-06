@@ -22,7 +22,17 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
+      - name: Week key
+        id: week
+        run: echo "key=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+      - name: Restore this week's snapshot
+        id: snapcache
+        uses: actions/cache/restore@v4
+        with:
+          path: snapshot-out
+          key: snap-${{ steps.week.outputs.key }}-${{ hashFiles('composeApp/src/commonMain/kotlin/app/coredump/data/Wiki*.kt', 'snapshot/src/**') }}
       - name: Fetch + rank live Wikidata / Wikipedia lists
+        if: steps.snapcache.outputs.cache-hit != 'true'
         continue-on-error: true
         timeout-minutes: 22
         env:
@@ -30,7 +40,30 @@ jobs:
         run: |
           set -o pipefail
           chmod +x gradlew
-          ./gradlew :snapshot:run --args="$GITHUB_WORKSPACE/composeApp/src/commonMain/composeResources/files/packs" 2>&1 | tee build.log
+          mkdir -p snapshot-out
+          ./gradlew :snapshot:run --args="$GITHUB_WORKSPACE/snapshot-out" 2>&1 | tee build.log
+      - name: Save snapshot (only if it is substantial)
+        if: steps.snapcache.outputs.cache-hit != 'true' && hashFiles('snapshot-out/live_wikidata.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: snapshot-out
+          key: snap-${{ steps.week.outputs.key }}-${{ hashFiles('composeApp/src/commonMain/kotlin/app/coredump/data/Wiki*.kt', 'snapshot/src/**') }}
+      - name: Merge snapshot into bundled packs
+        run: |
+          python3 - <<'PY'
+          import json, os, shutil, glob
+          packs = "composeApp/src/commonMain/composeResources/files/packs"
+          idx = json.load(open(f"{packs}/index.json"))
+          for f in sorted(glob.glob("snapshot-out/live_*.json")):
+              name = os.path.basename(f)
+              if os.path.getsize(f) < 20000:
+                  continue
+              shutil.copy(f, f"{packs}/{name}")
+              if name not in idx["packs"]:
+                  idx["packs"].append(name)
+              print("bundled", name, os.path.getsize(f), "bytes")
+          json.dump(idx, open(f"{packs}/index.json", "w"))
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: live-packs

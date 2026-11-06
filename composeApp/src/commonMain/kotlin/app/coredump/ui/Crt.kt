@@ -22,6 +22,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -47,7 +51,7 @@ import kotlin.random.Random
  *  - triggered glitch tear, screen shake, and flash (via [Fx])
  */
 @Composable
-fun CrtScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
+fun CrtScreen(look: Look, fx: Fx, tint: Float = 0f, content: @Composable BoxScope.() -> Unit) {
     val motion = !look.reduceMotion
 
     var flicker by remember { mutableFloatStateOf(1f) }
@@ -106,9 +110,13 @@ fun CrtScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
         }
     }
 
+    val tintAnim = remember { Animatable(0f) }
+    LaunchedEffect(tint) { tintAnim.animateTo(tint.coerceIn(0f, 1f), tween(1800)) }
+
     Box(Modifier.fillMaxSize().background(C.bg)) {
         Box(
             Modifier.fillMaxSize().graphicsLayer {
+                compositingStrategy = CompositingStrategy.Offscreen
                 alpha = flicker
                 val s = shake.value
                 if (s > 0f) {
@@ -119,6 +127,14 @@ fun CrtScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
                 if (glitchOn > 0f) {
                     val r = Random(glitchSeed)
                     translationX += (r.nextFloat() - 0.5f) * 18f
+                }
+            }.drawWithContent {
+                drawContent()
+                // depth tint: amber drifts to blood red, then violet in the abyss (hue-only blend keeps brightness)
+                val tv = tintAnim.value
+                if (tv > 0.01f) {
+                    val hue = if (tv < 0.65f) TINT_RED else lerp(TINT_RED, TINT_VIOLET, ((tv - 0.65f) / 0.35f).coerceIn(0f, 1f))
+                    drawRect(hue, alpha = (tv * 0.9f).coerceAtMost(0.9f), blendMode = BlendMode.Hue)
                 }
             },
             content = content,
@@ -190,6 +206,9 @@ fun CrtScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
         )
     }
 }
+
+private val TINT_RED = Color(0xFFFF2A10)
+private val TINT_VIOLET = Color(0xFF8A2BE2)
 
 /** 0..1 ping-pong used by "breathing" elements. */
 fun breathe(t: Float): Float = ((sin(t * 2 * PI) + 1) / 2).toFloat()

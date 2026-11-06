@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -190,7 +191,8 @@ fun TButton(
                 haptic(primary)
                 onClick()
             }
-            .padding(horizontal = 14.dp, vertical = 11.dp),
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         TText(
@@ -274,12 +276,12 @@ fun Stepper(
         val src = remember { MutableInteractionSource() }
         TText(" ‹ ", Modifier.clickable(src, null) {
             haptic(false); onChange((value - step).coerceIn(range.first, range.last))
-        }.padding(8.dp), size = 18.sp, weight = FontWeight.Bold)
+        }.padding(12.dp), size = 18.sp, weight = FontWeight.Bold)
         TText(format(value), Modifier.width(64.dp), size = 18.sp, weight = FontWeight.Bold, color = C.hot,
             align = androidx.compose.ui.text.style.TextAlign.Center)
         TText(" › ", Modifier.clickable(remember { MutableInteractionSource() }, null) {
             haptic(false); onChange((value + step).coerceIn(range.first, range.last))
-        }.padding(8.dp), size = 18.sp, weight = FontWeight.Bold)
+        }.padding(12.dp), size = 18.sp, weight = FontWeight.Bold)
     }
 }
 
@@ -297,7 +299,7 @@ fun <T> Choice(options: List<T>, selected: T, label: (T) -> String, onSelect: (T
                     .background(if (on) C.amber else Color.Transparent)
                     .border(1.dp, if (on) C.amber else C.line)
                     .clickable(remember { MutableInteractionSource() }, null) { haptic(false); onSelect(o) }
-                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                    .padding(horizontal = 12.dp, vertical = 11.dp),
                 size = 12.sp, color = if (on) C.bg else C.amber, weight = FontWeight.Bold, glow = if (on) 0f else 1f,
             )
         }
@@ -309,7 +311,7 @@ fun Toggle(label: String, on: Boolean, onChange: (Boolean) -> Unit, hint: String
     val haptic = rememberHaptic()
     Row(
         Modifier.fillMaxWidth().clickable(remember { MutableInteractionSource() }, null) { haptic(false); onChange(!on) }
-            .padding(vertical = 7.dp),
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TText(if (on) "[x]" else "[ ]", size = 14.sp, color = if (on) C.hot else C.dim, weight = FontWeight.Bold)

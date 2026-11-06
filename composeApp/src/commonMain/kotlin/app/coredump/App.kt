@@ -42,6 +42,9 @@ import app.coredump.ui.screens.MenuScreen
 import app.coredump.ui.screens.PlayScreen
 import app.coredump.ui.screens.SetupScreen
 import app.coredump.ui.screens.SummaryScreen
+import app.coredump.ui.screens.StatsScreen
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import kotlinx.coroutines.delay
 
 @Composable
@@ -62,7 +65,9 @@ fun App() {
         LocalLook provides look,
         LocalFx provides model.fx,
     ) {
-        CrtScreen(look, model.fx) {
+        val d = LocalDensity.current
+        CompositionLocalProvider(LocalDensity provides Density(d.density, d.fontScale * s.textScale)) {
+        CrtScreen(look, model.fx, tint = model.depthFraction) {
             Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
                 AnimatedContent(
                     targetState = model.screen,
@@ -82,6 +87,7 @@ fun App() {
                         Screen.Config -> ConfigScreen(model)
                         Screen.Lobby -> LobbyScreen(model)
                         Screen.Manual -> ManualScreen(model)
+                        Screen.Stats -> StatsScreen(model)
                     }
                 }
 
@@ -96,6 +102,7 @@ fun App() {
                     )
                 }
             }
+        }
         }
     }
 

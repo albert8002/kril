@@ -77,3 +77,14 @@ actual fun rememberQrScanLauncher(onResult: (String?) -> Unit): () -> Unit {
         }
     }
 }
+
+actual fun shareText(text: String) {
+    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(android.content.Intent.EXTRA_TEXT, text)
+    }
+    val chooser = android.content.Intent.createChooser(send, "share dump").apply {
+        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    runCatching { AndroidContext.app.startActivity(chooser) }
+}

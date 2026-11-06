@@ -22,11 +22,35 @@ import kotlinx.serialization.json.put
 
 const val PROTOCOL_VERSION = 1
 
-/** Join info carried by the QR code: coredump://join?h=<ip>&p=<port>&k=<pin>&n=<host name> */
-data class JoinTicket(val host: String, val port: Int, val pin: String, val hostName: String) {
-    fun toUri(): String = "coredump://join?h=$host&p=$port&k=$pin&n=${encode(hostName)}"
+/**
+ * Join info carried by the QR code.
+ *  relay:  coredump://join?r=<ROOM>&b=<broker index>&n=<host name>
+ *  direct: coredump://join?h=<ip>&p=<port>&k=<pin>&n=<host name>
+ */
+data class JoinTicket(
+    val host: String,
+    val port: Int,
+    val pin: String,
+    val hostName: String,
+    val room: String? = null,
+    val broker: Int = 0,
+) {
+    val isRelay: Boolean get() = room != null
+
+    fun toUri(): String =
+        if (room != null) "coredump://join?r=$room&b=$broker&n=${encode(hostName)}"
+        else "coredump://join?h=$host&p=$port&k=$pin&n=${encode(hostName)}"
 
     companion object {
+        /** Room code alphabet: no 0/O, 1/I/L confusion. */
+        const val ROOM_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
+        const val ROOM_LEN = 8
+
+        fun newRoom(rnd: kotlin.random.Random = kotlin.random.Random.Default): String =
+            (1..ROOM_LEN).map { ROOM_ALPHABET[rnd.nextInt(ROOM_ALPHABET.length)] }.joinToString("")
+
+        fun pretty(room: String) = room.take(4) + "-" + room.drop(4)
+
         fun parse(raw: String): JoinTicket? {
             val s = raw.trim()
             if (s.startsWith("coredump://join?")) {
@@ -34,9 +58,19 @@ data class JoinTicket(val host: String, val port: Int, val pin: String, val host
                     val i = it.indexOf('=')
                     if (i <= 0) null else it.substring(0, i) to decode(it.substring(i + 1))
                 }.toMap()
+                q["r"]?.let { r ->
+                    val room = r.uppercase().filter { it in ROOM_ALPHABET }
+                    if (room.length != ROOM_LEN) return null
+                    return JoinTicket("", 0, "", q["n"] ?: "HOST", room, q["b"]?.toIntOrNull() ?: 0)
+                }
                 val h = q["h"] ?: return null
                 val p = q["p"]?.toIntOrNull() ?: return null
                 return JoinTicket(h, p, q["k"].orEmpty(), q["n"] ?: "HOST")
+            }
+            // typed room code: "K7Q2-M9XA" (optionally "/1" broker suffix)
+            val code = s.uppercase().substringBefore('/').filter { it.isLetterOrDigit() }
+            if (code.length == ROOM_LEN && code.all { it in ROOM_ALPHABET }) {
+                return JoinTicket("", 0, "", "HOST", code, s.substringAfter('/', "0").trim().toIntOrNull() ?: 0)
             }
             // manual form: "192.168.1.5:47000 1234"
             val m = Regex("""^\s*([0-9a-zA-Z.\-]+):(\d{2,5})\s+(\d{3,8})\s*$""").find(s) ?: return null
@@ -62,6 +96,12 @@ sealed class Msg {
     data class Locked(val i: Int) : Msg()
     data class Result(val i: Int, val host: PlayView, val guest: PlayView, val ladder: List<TierGroup>) : Msg()
     data class Ready(val i: Int) : Msg()
+    /** Guest → host: one typed attempt (host judges; free retries until accepted or timeout). */
+    data class Attempt(val i: Int, val text: String, val elapsedMs: Long) : Msg()
+    /** Host → guest: verdict for an attempt. status = miss | verifying | ok. */
+    data class Verdict(val i: Int, val text: String, val status: String, val suggestion: String?) : Msg()
+    /** Keep-alive both ways (relay links detect a dead peer by silence). */
+    data object Ping : Msg()
     data object Over : Msg()
     data class Bye(val reason: String) : Msg()
 
@@ -85,6 +125,12 @@ sealed class Msg {
             })
         }
         is Ready -> obj("ready") { put("i", i) }
+        is Attempt -> obj("attempt") { put("i", i); put("a", text); put("ms", elapsedMs) }
+        is Verdict -> obj("verdict") {
+            put("i", i); put("a", text); put("st", status)
+            put("sug", suggestion?.let { JsonPrimitive(it) } ?: JsonNull)
+        }
+        Ping -> obj("ping") {}
         Over -> obj("over") {}
         is Bye -> obj("bye") { put("reason", reason) }
     }
@@ -115,6 +161,9 @@ sealed class Msg {
                     }.orEmpty(),
                 )
                 "ready" -> Ready(i("i"))
+                "attempt" -> Attempt(i("i"), s("a"), o["ms"]?.jsonPrimitive?.long ?: 0L)
+                "verdict" -> Verdict(i("i"), s("a"), s("st"), o["sug"]?.jsonPrimitive?.contentOrNull)
+                "ping" -> Ping
                 "over" -> Over
                 "bye" -> Bye(s("reason"))
                 else -> null

@@ -69,7 +69,9 @@ fun ConfigScreen(model: AppModel) {
             Panel("SOURCES") {
                 Toggle("bundled packs", true, {}, "always on · offline")
                 Toggle("wikidata live lists", s.useWikidata, { v -> model.update { it.copy(useWikidata = v) } },
-                    "SPARQL · rarity = wikipedia language editions")
+                    "weekly refresh of 30 lists · full set ships inside the app")
+                Toggle("verify unlisted answers online", s.verifyOnline, { v -> model.update { it.copy(verifyOnline = v) } },
+                    "not in the list? check Wikidata · score by how many wikipedias cover it")
                 Toggle("wikipedia list scraping", s.useWikipedia, { v -> model.update { it.copy(useWikipedia = v) } },
                     "\"List of …\" pages · rarity = wikipedia language editions")
                 Spacer(Modifier.height(8.dp))
@@ -110,6 +112,13 @@ fun ConfigScreen(model: AppModel) {
                 Toggle("reduce motion", s.reduceMotion, { v -> model.update { it.copy(reduceMotion = v) } },
                     "no shake, tear, typewriter or rain")
                 Toggle("haptics", s.haptics, { v -> model.update { it.copy(haptics = v) } })
+                Spacer(Modifier.height(6.dp))
+                TText("text size", size = 13.sp, color = C.dim)
+                Spacer(Modifier.height(6.dp))
+                Choice(listOf(0.9f, 1f, 1.15f, 1.3f), s.textScale, { "${(it * 100).toInt()}%" }) { v ->
+                    model.update { it.copy(textScale = v) }
+                }
+                Spacer(Modifier.height(8.dp))
                 Spacer(Modifier.height(6.dp))
                 TText("glow", size = 13.sp, color = C.dim)
                 Spacer(Modifier.height(6.dp))

@@ -96,6 +96,27 @@ class AnswerIndex(entries: List<AnswerEntry>, maxIndexEdit: Int = 2) {
         return best
     }
 
+    /**
+     * Autocorrect hint for a rejected input: nearest key within a looser bound
+     * (≈ 1 edit per 3 chars, max 3). Linear scan; only runs on a miss.
+     */
+    fun suggest(input: String): Hit? {
+        val qc = Norm.compact(Norm.key(input))
+        if (qc.length < 3) return null
+        val bound = (qc.length / 3).coerceIn(1, 3)
+        var best: Hit? = null
+        for (ki in fuzzyKeys.indices) {
+            val key = fuzzyKeys[ki]
+            if (abs(key.length - qc.length) > bound) continue
+            val d = Edits.osa(qc, key, bound)
+            if (d == 0 || d > bound) continue
+            val e = fuzzyEntry[ki]
+            val b = best
+            if (b == null || d < b.distance || (d == b.distance && e < b.entry)) best = Hit(e, d, key)
+        }
+        return best
+    }
+
     companion object {
         const val PREFIX = 8
 

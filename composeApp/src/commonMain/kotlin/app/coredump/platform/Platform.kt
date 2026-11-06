@@ -20,3 +20,6 @@ expect fun PlatformBack(enabled: Boolean, onBack: () -> Unit)
 /** Returns a function that opens the camera QR scanner and reports the decoded text (null = cancelled). */
 @Composable
 expect fun rememberQrScanLauncher(onResult: (String?) -> Unit): () -> Unit
+
+/** Opens the system share sheet with [text]. */
+expect fun shareText(text: String)
