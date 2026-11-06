@@ -333,6 +333,7 @@ fun TermInput(
     onSubmit: () -> Unit = {},
     size: TextUnit = 18.sp,
     singleLine: Boolean = true,
+    fieldModifier: Modifier = Modifier,
 ) {
     Row(
         modifier.border(1.dp, C.line).background(C.panel).padding(horizontal = 12.dp, vertical = 12.dp),
@@ -355,7 +356,7 @@ fun TermInput(
                     imeAction = imeAction,
                 ),
                 keyboardActions = KeyboardActions(onDone = { onSubmit() }, onGo = { onSubmit() }, onSend = { onSubmit() }),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = fieldModifier.fillMaxWidth(),
             )
         }
     }

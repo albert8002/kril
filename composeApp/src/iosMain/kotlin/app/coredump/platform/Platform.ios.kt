@@ -29,10 +29,10 @@ import platform.Foundation.writeToFile
 import platform.UIKit.UIDevice
 import platform.posix.AF_INET
 import platform.posix.INET_ADDRSTRLEN
-import platform.posix.freeifaddrs
-import platform.posix.getifaddrs
-import platform.posix.ifaddrs
-import platform.posix.inet_ntop
+import platform.darwin.freeifaddrs
+import platform.darwin.getifaddrs
+import platform.darwin.ifaddrs
+import platform.darwin.inet_ntop
 import platform.posix.sockaddr_in
 
 actual object Platform {

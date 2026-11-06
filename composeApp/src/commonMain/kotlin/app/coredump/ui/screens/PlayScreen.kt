@@ -192,7 +192,8 @@ private fun AnswerBox(round: Int, onSubmit: (String) -> Unit) {
         TermInput(
             value = text,
             onValueChange = { if (it.length <= 60) text = it },
-            modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            modifier = Modifier.fillMaxWidth(),
+            fieldModifier = Modifier.focusRequester(focus),
             placeholder = "type an answer…",
             onSubmit = { if (text.isNotBlank()) onSubmit(text) },
         )
