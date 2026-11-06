@@ -81,6 +81,32 @@ jobs:
         if: always()
         run: bash .github/publish-log.sh snapshot "${{ job.status }}" "${{ github.token }}"
 
+  poolcheck:
+    # Queries every on-device pool template once and publishes the results (review aid; never blocks a build).
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Check pool templates
+        timeout-minutes: 25
+        env:
+          SNAP_BUDGET_MIN: "18"
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew :snapshot:run --args="--pool-check" 2>&1 | tee build.log
+      - name: Publish pool check log
+        if: always()
+        run: |
+          grep "POOL " build.log > pool.txt || true
+          cp pool.txt build.log
+          bash .github/publish-log.sh poolcheck "${{ job.status }}" "${{ github.token }}"
+
   android:
     needs: [ snapshot ]
     runs-on: ubuntu-latest

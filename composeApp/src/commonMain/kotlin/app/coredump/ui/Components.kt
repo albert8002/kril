@@ -673,29 +673,6 @@ fun Celebrate(modifier: Modifier, active: Boolean) {
     }
 }
 
-/** Tier badge, styled per theme. */
-@Composable
-fun TierBadge(tier: app.coredump.core.Tier, size: TextUnit = 13.sp) {
-    val style = Th.style
-    val c = tierColor(tier)
-    val t = rememberInfiniteTransition()
-    val pulse by t.animateFloat(0.6f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse))
-    val a = if (tier.heat >= 5 && !LocalLook.current.reduceMotion) pulse else 1f
-    when (style) {
-        Style.PAPER -> TText(
-            " ${tier.label} ",
-            Modifier.box(style, c, Color.Transparent, 1.dp).padding(horizontal = 6.dp, vertical = 3.dp),
-            size = size, color = c, weight = FontWeight.Bold, glow = 0f, spacing = 1.sp,
-        )
-        else -> TText(
-            " ${tier.label} ",
-            Modifier.box(style, Color.Transparent, c.copy(alpha = a), pill = style == Style.CLEAN || style == Style.NEON)
-                .padding(horizontal = if (style == Style.PIXEL) 8.dp else 6.dp, vertical = if (style == Style.PIXEL) 5.dp else 3.dp),
-            size = size, color = if (style == Style.TERMINAL) C.bg else onColor(c), weight = FontWeight.Bold, glow = 0f,
-        )
-    }
-}
-
 @Composable
 fun Gap(h: Dp) = Box(Modifier.height(h))
 

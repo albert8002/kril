@@ -52,17 +52,26 @@ object SelfTest {
                 for (round in 0 until 3) {
                     delay(900)
                     val p = s.promptAt(round) ?: break
+                    s.submit("asdfgh")                                 // key-mashing -> penalty
                     s.submit("zzqx nothing ${Random.nextInt(999)}")   // miss -> online check
                     delay(700)
-                    val e = p.entries[Random.nextInt(p.entries.size)]
-                    if (round == 0) shot("play_${style.name.lowercase()}")
-                    s.submit(typo(e.name))
-                    delay(400)
-                    if (s.state.value.phase == Phase.TYPING) s.submit(e.name)
+                    if (round == 1) {
+                        s.skip()
+                    } else {
+                        val e = p.entries.firstOrNull { it.name.length >= 7 } ?: p.entries[Random.nextInt(p.entries.size)]
+                        if (round == 0) shot("play_${style.name.lowercase()}")
+                        s.submit(typo(e.name))
+                        delay(500)
+                        if (s.state.value.confirm != null) {
+                            if (round == 0) shot("confirm_${style.name.lowercase()}")
+                            s.confirm(true)
+                        }
+                        if (s.state.value.phase == Phase.TYPING) s.submit(e.name)
+                    }
                     var w = 0
                     while (s.state.value.phase == Phase.TYPING && w < 8000) { delay(200); w += 200 }
                     delay(1300)
-                    if (round == 0) shot("reveal_${style.name.lowercase()}")
+                    if (round == 0) { delay(300); shot("reveal_${style.name.lowercase()}") }
                     s.next()
                 }
                 delay(2500)

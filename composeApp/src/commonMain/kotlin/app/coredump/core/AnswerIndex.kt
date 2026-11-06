@@ -13,11 +13,11 @@ import kotlin.math.abs
  * Memory: about 3 map keys per answer. (The old symmetric-delete index cost ~17 MB per
  * 1,500-answer list and was the cause of out-of-memory crashes.)
  */
-class AnswerIndex(entries: List<AnswerEntry>, @Suppress("UNUSED_PARAMETER") maxIndexEdit: Int = 2) {
+class AnswerIndex(entries: List<AnswerEntry>, private val people: Boolean = false) {
 
     class Hit(val entry: Int, val distance: Int, val key: String)
 
-    private val exact = HashMap<String, Int>(entries.size * 3)
+    private val exact = HashMap<String, Int>(entries.size * 4)
     private val fuzzyKeys = ArrayList<String>(entries.size * 2)
     private val fuzzyEntry = ArrayList<Int>(entries.size * 2)
     /** byLength[n] = indexes into fuzzyKeys of keys with length n. */
@@ -26,13 +26,35 @@ class AnswerIndex(entries: List<AnswerEntry>, @Suppress("UNUSED_PARAMETER") maxI
 
     init {
         val seenCompact = HashSet<String>()
+        // 1) full names and aliases (most familiar first, so a shared key belongs to the best-known answer)
         entries.forEachIndexed { i, e ->
             addVariants(e.name, i, seenCompact)
             for (a in e.aliases) addVariants(a, i, seenCompact)
         }
+        // 2) looser forms, only where no full name already owns the key
+        entries.forEachIndexed { i, e ->
+            for (raw in listOf(e.name) + e.aliases) {
+                for (v in Lenient.indexForms(raw)) {
+                    addExact(v, i)
+                    val vc = Norm.compact(v)
+                    if (vc.length >= 5 && seenCompact.add(vc)) { fuzzyKeys += vc; fuzzyEntry += i }
+                }
+                if (people) for (v in Lenient.surnameForms(raw)) {
+                    addExact(v, i)
+                    if (v.length >= 5 && seenCompact.add(v)) { fuzzyKeys += v; fuzzyEntry += i }
+                }
+            }
+        }
         val maxLen = fuzzyKeys.maxOfOrNull { it.length } ?: 0
         byLength = Array(maxLen + 1) { IntBag() }
         for (ki in fuzzyKeys.indices) byLength[fuzzyKeys[ki].length].add(ki)
+    }
+
+    private fun addExact(k: String, entry: Int) {
+        if (k.isEmpty()) return
+        if (!exact.containsKey(k)) exact[k] = entry
+        val c = Norm.compact(k)
+        if (c.length >= 3 && !exact.containsKey(c)) exact[c] = entry
     }
 
     private fun addVariants(raw: String, entry: Int, seenCompact: HashSet<String>) {
@@ -46,8 +68,14 @@ class AnswerIndex(entries: List<AnswerEntry>, @Suppress("UNUSED_PARAMETER") maxI
             fuzzyKeys += c
             fuzzyEntry += entry
         }
+        val sorted = Lenient.sortedKey(k)
+        if (sorted != null && !exact.containsKey(sorted)) exact[sorted] = entry
     }
 
+    /**
+     * Exact-ish match first (distance 0: spacing, accents, articles, plurals, "River"/"Lake" words, word order,
+     * St./Saint, surnames for people), then typo-tolerant match (distance > 0: the caller should confirm it).
+     */
     fun lookup(input: String, maxEdit: Int): Hit? {
         val q = Norm.key(input)
         if (q.isEmpty()) return null
@@ -56,6 +84,12 @@ class AnswerIndex(entries: List<AnswerEntry>, @Suppress("UNUSED_PARAMETER") maxI
         if (qc.isEmpty()) return null
         exact[qc]?.let { return Hit(it, 0, qc) }
         for (v in Norm.morphVariants(qc)) exact[v]?.let { return Hit(it, 0, v) }
+        for (v in Lenient.inputForms(input, q)) {
+            exact[v]?.let { return Hit(it, 0, v) }
+            val vc = Norm.compact(v)
+            exact[vc]?.let { return Hit(it, 0, vc) }
+        }
+        Lenient.sortedKey(q)?.let { s -> exact[s]?.let { return Hit(it, 0, s) } }
 
         val tol = minOf(maxEdit, toleranceFor(qc.length))
         if (tol <= 0) return null
@@ -102,6 +136,88 @@ class AnswerIndex(entries: List<AnswerEntry>, @Suppress("UNUSED_PARAMETER") maxI
     }
 }
 
+/** Looser answer forms shared by the index side and the input side. */
+object Lenient {
+    /** Category words people add or leave out: "River Thames" = "Thames", "Lake Garda" = "Garda". */
+    private val leadWords = listOf("river", "lake", "mount", "mt", "isle of", "gulf of", "bay of", "university of",
+        "republic of", "kingdom of", "state of", "city of", "planet")
+    private val tailWords = listOf("river", "lake", "mountain", "mountains", "island", "islands", "sea", "ocean", "desert",
+        "falls", "waterfall", "castle", "palace", "cathedral", "bridge", "tower", "stadium", "national park", "park",
+        "fc", "f c", "cf", "afc", "football club", "club", "cheese", "cat", "dog", "language", "people", "sauce", "soup",
+        "salad", "bread", "cake", "breed", "film", "movie", "band", "game", "video game", "series", "tv series",
+        "city", "province", "state", "empire", "dynasty")
+    private val swaps = listOf("saint" to "st", "st" to "saint", "mount" to "mt", "mt" to "mount", "fort" to "ft",
+        "ft" to "fort", "and" to "n", "doctor" to "dr", "dr" to "doctor", "number" to "no")
+    private val particles = setOf("van", "von", "de", "da", "di", "du", "del", "della", "der", "den", "le", "la", "mac",
+        "mc", "bin", "ibn", "al", "el", "ter", "ten", "dos", "das", "do", "st", "saint", "o")
+    private val suffixes = setOf("jr", "sr", "ii", "iii", "iv", "v", "junior", "senior")
+
+    private fun strip(k: String): List<String> {
+        val out = ArrayList<String>(4)
+        for (w in leadWords) if (k.startsWith("$w ") && k.length - w.length > 3) out += k.substring(w.length + 1)
+        for (w in tailWords) if (k.endsWith(" $w") && k.length - w.length > 3) out += k.substring(0, k.length - w.length - 1)
+        return out
+    }
+
+    private fun swapped(k: String): List<String> {
+        val toks = k.split(' ')
+        val out = ArrayList<String>(2)
+        for ((a, b) in swaps) if (a in toks) out += toks.joinToString(" ") { if (it == a) b else it }
+        return out
+    }
+
+    /** Extra keys stored for one answer (besides its own name). */
+    fun indexForms(raw: String): List<String> {
+        val k = Norm.key(raw)
+        if (k.isEmpty()) return emptyList()
+        val out = LinkedHashSet<String>()
+        out += strip(k)
+        out += swapped(k)
+        if (',' in raw) Norm.key(raw.substringBefore(',')).takeIf { it.length >= 3 }?.let { out += it }
+        // subtitle: "Star Wars: Episode IV – A New Hope" -> "a new hope"
+        for (sep in listOf(": ", " – ", " - ")) if (sep in raw) {
+            val sub = Norm.key(raw.substringAfterLast(sep))
+            if (sub.count { it == ' ' } >= 1 && sub.length >= 6) out += sub
+        }
+        out.remove(k)
+        return out.toList()
+    }
+
+    /** Extra keys tried for a typed answer when the plain key missed. */
+    fun inputForms(raw: String, k: String): List<String> {
+        val out = LinkedHashSet<String>()
+        out += strip(k)
+        out += swapped(k)
+        if (',' in raw) Norm.key(raw.substringBefore(',')).takeIf { it.length >= 3 }?.let { out += it }
+        out.remove(k)
+        return out.toList()
+    }
+
+    /** Word-order-free key ("gogh van vincent" == "vincent van gogh"), only for 2–4 word names. */
+    fun sortedKey(k: String): String? {
+        val toks = k.split(' ').filter { it.isNotEmpty() }
+        if (toks.size !in 2..4) return null
+        return "§" + toks.sorted().joinToString(" ")
+    }
+
+    /** For people: surname ("einstein"), particle + surname ("van gogh"), first + last ("john kennedy"). */
+    fun surnameForms(raw: String): List<String> {
+        val toks = Norm.key(raw).split(' ').filter { it.isNotEmpty() }.toMutableList()
+        while (toks.size > 1 && toks.last() in suffixes) toks.removeAt(toks.size - 1)
+        if (toks.size < 2) return emptyList()
+        val out = ArrayList<String>(3)
+        val last = toks.last()
+        if (last.length >= 3 && last !in particles) out += last
+        val prev = toks[toks.size - 2]
+        if (prev in particles) {
+            out += "$prev $last"
+            if (toks.size >= 3 && toks[toks.size - 3] in particles) out += "${toks[toks.size - 3]} $prev $last"
+        }
+        if (toks.size >= 3) out += "${toks.first()} $last"
+        return out.filter { Norm.compact(it).length >= 3 }
+    }
+}
+
 /**
  * Keeps answer indexes for the few prompts in play; older ones are dropped and rebuilt on demand
  * (building one takes a few ms), so memory does not grow with every list ever played.
@@ -120,7 +236,7 @@ object IndexCache {
         val k = p.cacheKey
         val hit = locked { map.remove(k)?.also { map[k] = it } }
         if (hit != null) return hit
-        val built = AnswerIndex(p.entries)
+        val built = AnswerIndex(p.entries, p.people)
         locked {
             map[k] = built
             while (map.size > MAX) map.remove(map.keys.first())

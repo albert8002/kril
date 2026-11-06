@@ -9,6 +9,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -92,13 +93,15 @@ sealed class Msg {
     data class Reject(val reason: String) : Msg()
     data class Start(val rounds: Int, val seconds: Int, val difficulty: String) : Msg()
     data class Round(val i: Int, val text: String, val topic: String, val size: Int, val seconds: Int) : Msg()
-    data class Answer(val i: Int, val text: String?, val elapsedMs: Long) : Msg()
+    /** Guest → host: no answer this round (time ran out, or [skip] = gave up). */
+    data class Answer(val i: Int, val text: String?, val elapsedMs: Long, val skip: Boolean = false) : Msg()
     data class Locked(val i: Int) : Msg()
     data class Result(val i: Int, val host: PlayView, val guest: PlayView, val ladder: List<TierGroup>) : Msg()
     data class Ready(val i: Int) : Msg()
     /** Guest → host: one typed attempt (host judges; free retries until accepted or timeout). */
-    data class Attempt(val i: Int, val text: String, val elapsedMs: Long) : Msg()
-    /** Host → guest: verdict for an attempt. status = miss | verifying | ok. */
+    /** [raw] = the guest rejected the autocorrect: judge exactly what was typed (then check online). */
+    data class Attempt(val i: Int, val text: String, val elapsedMs: Long, val raw: Boolean = false) : Msg()
+    /** Host → guest: verdict for an attempt. status = miss | verifying | ok | confirm (suggestion = answer to offer) | spam. */
     data class Verdict(val i: Int, val text: String, val status: String, val suggestion: String?) : Msg()
     /** Keep-alive both ways (relay links detect a dead peer by silence). */
     data object Ping : Msg()
@@ -113,7 +116,7 @@ sealed class Msg {
         is Reject -> obj("reject") { put("reason", reason) }
         is Start -> obj("start") { put("rounds", rounds); put("sec", seconds); put("diff", difficulty) }
         is Round -> obj("round") { put("i", i); put("q", text); put("t", topic); put("n", size); put("sec", seconds) }
-        is Answer -> obj("answer") { put("i", i); put("a", text?.let { JsonPrimitive(it) } ?: JsonNull); put("ms", elapsedMs) }
+        is Answer -> obj("answer") { put("i", i); put("a", text?.let { JsonPrimitive(it) } ?: JsonNull); put("ms", elapsedMs); if (skip) put("skip", true) }
         is Locked -> obj("locked") { put("i", i) }
         is Result -> obj("result") {
             put("i", i); put("host", play(host)); put("guest", play(guest))
@@ -125,7 +128,7 @@ sealed class Msg {
             })
         }
         is Ready -> obj("ready") { put("i", i) }
-        is Attempt -> obj("attempt") { put("i", i); put("a", text); put("ms", elapsedMs) }
+        is Attempt -> obj("attempt") { put("i", i); put("a", text); put("ms", elapsedMs); if (raw) put("raw", true) }
         is Verdict -> obj("verdict") {
             put("i", i); put("a", text); put("st", status)
             put("sug", suggestion?.let { JsonPrimitive(it) } ?: JsonNull)
@@ -148,7 +151,8 @@ sealed class Msg {
                 "reject" -> Reject(s("reason"))
                 "start" -> Start(i("rounds"), i("sec"), s("diff"))
                 "round" -> Round(i("i"), s("q"), s("t"), i("n"), i("sec"))
-                "answer" -> Answer(i("i"), o["a"]?.jsonPrimitive?.contentOrNull, o["ms"]?.jsonPrimitive?.long ?: 0L)
+                "answer" -> Answer(i("i"), o["a"]?.jsonPrimitive?.contentOrNull, o["ms"]?.jsonPrimitive?.long ?: 0L,
+                    o["skip"]?.jsonPrimitive?.booleanOrNull ?: false)
                 "locked" -> Locked(i("i"))
                 "result" -> Result(
                     i("i"),
@@ -161,7 +165,7 @@ sealed class Msg {
                     }.orEmpty(),
                 )
                 "ready" -> Ready(i("i"))
-                "attempt" -> Attempt(i("i"), s("a"), o["ms"]?.jsonPrimitive?.long ?: 0L)
+                "attempt" -> Attempt(i("i"), s("a"), o["ms"]?.jsonPrimitive?.long ?: 0L, o["raw"]?.jsonPrimitive?.booleanOrNull ?: false)
                 "verdict" -> Verdict(i("i"), s("a"), s("st"), o["sug"]?.jsonPrimitive?.contentOrNull)
                 "ping" -> Ping
                 "over" -> Over
@@ -177,6 +181,7 @@ sealed class Msg {
             put("p", p.player); put("in", p.input)
             put("c", p.canonical?.let { JsonPrimitive(it) } ?: JsonNull)
             put("t", p.tier.name); put("ms", p.elapsedMs)
+            if (p.penalty != 0) put("pen", p.penalty)
         }
 
         private fun unplay(o: JsonObject): PlayView = PlayView(
@@ -185,6 +190,7 @@ sealed class Msg {
             canonical = o["c"]?.jsonPrimitive?.contentOrNull,
             tier = Tier.byName(o["t"]?.jsonPrimitive?.contentOrNull.orEmpty()) ?: Tier.SEGFAULT,
             elapsedMs = o["ms"]?.jsonPrimitive?.long ?: 0L,
+            penalty = o["pen"]?.jsonPrimitive?.intOrNull ?: 0,
         )
     }
 }

@@ -6,6 +6,7 @@ import app.coredump.core.Judgement
 import app.coredump.core.Norm
 import app.coredump.core.Prompt
 import app.coredump.core.RoundView
+import app.coredump.core.Spam
 import app.coredump.core.Tier
 import app.coredump.core.Views
 import app.coredump.data.History
@@ -26,8 +27,11 @@ enum class Phase { WAITING, TYPING, LOCKED, REVEAL, OVER, ERROR }
 
 enum class AttemptStatus { REJECTED, VERIFYING }
 
-/** One rejected (or still being checked) answer in the current round. */
-data class Attempt(val text: String, val status: AttemptStatus, val suggestion: String?)
+/** One rejected (or still being checked) answer in the current round. spam: looked like key-mashing (cost points). */
+data class Attempt(val text: String, val status: AttemptStatus, val suggestion: String?, val spam: Boolean = false)
+
+/** Autocorrect wants to submit [answer] for what was [typed]; the player accepts or asks for a search instead. */
+data class Confirm(val typed: String, val answer: String)
 
 /**
  * round: 0-based index of the current prompt. total: prompts in the game (count).
@@ -56,6 +60,10 @@ data class MatchState(
     val canPause: Boolean = false,
     val via: String? = null,
     val daily: Int? = null,
+    /** Pending "did you mean …?" question (null = none). */
+    val confirm: Confirm? = null,
+    /** Key-mashed answers in this prompt (count; each costs [Spam.PENALTY] points, up to [Spam.MAX_PER_ROUND]). */
+    val spam: Int = 0,
 ) {
     val myTotal: Int get() = rounds.sumOf { it.me.points }
     val oppTotal: Int get() = rounds.sumOf { it.opp?.points ?: 0 }
@@ -73,6 +81,10 @@ interface MatchSession {
     fun quit()
     fun pause() {}
     fun resume() {}
+    /** Give up on the current prompt (0 points). */
+    fun skip() {}
+    /** Answer to [MatchState.confirm]: true = submit the suggestion, false = check exactly what was typed. */
+    fun confirm(accept: Boolean) {}
     /** Local prompt for a round (null for a guest: the host owns the lists). */
     fun promptAt(index: Int): Prompt?
 }
@@ -81,14 +93,18 @@ interface MatchSession {
 class Arbiter(private val bank: QuestionBank?, private val maxEdit: Int, private val online: Boolean) {
     sealed interface Local {
         class Hit(val j: Judgement) : Local
-        class Miss(val suggestion: String?, val canVerify: Boolean) : Local
+        /** Matched only with typos: ask the player before accepting. */
+        class Close(val j: Judgement) : Local
+        class Miss(val suggestion: String?, val canVerify: Boolean, val spam: Boolean) : Local
     }
 
-    fun local(p: Prompt, text: String): Local {
-        val j = Judge.judge(p, text, maxEdit)
-        if (j.tier.isValid) return Local.Hit(j)
-        val sug = p.index.suggest(text)?.let { p.entries[it.entry].name }
-        return Local.Miss(sug, online && bank != null && p.check != null)
+    /** [fuzzy] = false: exact forms only (the player rejected the autocorrect and wants a search). */
+    fun local(p: Prompt, text: String, fuzzy: Boolean = true): Local {
+        val j = Judge.judge(p, text, if (fuzzy) maxEdit else 0)
+        if (j.tier.isValid) return if (j.distance > 0) Local.Close(j) else Local.Hit(j)
+        val sug = if (fuzzy) p.index.suggest(text)?.let { p.entries[it.entry].name } else null
+        val spam = sug == null && Spam.isGibberish(text)
+        return Local.Miss(sug, !spam && online && bank != null && p.check != null, spam)
     }
 
     suspend fun remote(p: Prompt, text: String): Judgement? =
@@ -98,10 +114,10 @@ class Arbiter(private val bank: QuestionBank?, private val maxEdit: Int, private
 private const val GRACE_MS = 2_500L
 private const val VERIFY_SLACK_MS = 6_500L
 
-private fun List<Attempt>.upsert(text: String, status: AttemptStatus, sug: String?): List<Attempt> {
+private fun List<Attempt>.upsert(text: String, status: AttemptStatus, sug: String?, spam: Boolean = false): List<Attempt> {
     val k = Norm.key(text)
     val i = indexOfFirst { Norm.key(it.text) == k }
-    val a = Attempt(text, status, sug)
+    val a = Attempt(text, status, sug, spam)
     return if (i < 0) this + a else toMutableList().also { it[i] = a }
 }
 
@@ -112,6 +128,9 @@ private fun List<Attempt>.has(text: String): Boolean {
 
 private fun timeoutJudgement(attempts: List<Attempt>) =
     Judgement(attempts.lastOrNull()?.text.orEmpty(), null, Tier.TIMEOUT, -1)
+
+private fun skipJudgement(attempts: List<Attempt>) =
+    Judgement(attempts.lastOrNull()?.text.orEmpty(), null, Tier.SKIPPED, -1)
 
 // ------------------------------------------------------------------ solo
 
@@ -131,6 +150,8 @@ class SoloSession(
     private var pending = 0
     private var pausedAt = 0L
     private var remainingMs = 0L
+    private var close: Judgement? = null
+    private var spam = 0
 
     override fun promptAt(index: Int): Prompt? = prompts.getOrNull(index)
 
@@ -138,10 +159,12 @@ class SoloSession(
 
     private fun begin(i: Int) {
         val p = prompts[i]
-        expired = false; pending = 0
+        expired = false; pending = 0; close = null; spam = 0
+        History.markSeen(p.id)
         _s.update {
             it.copy(phase = Phase.TYPING, round = i, prompt = p.text, topic = p.topic, listSize = p.size,
-                seconds = cfg.secondsPerRound, startedAt = Platform.epochMillis(), reveal = null, attempts = emptyList(), paused = false)
+                seconds = cfg.secondsPerRound, startedAt = Platform.epochMillis(), reveal = null, attempts = emptyList(),
+                paused = false, confirm = null, spam = 0)
         }
         arm(cfg.secondsPerRound * 1000L)
     }
@@ -154,6 +177,8 @@ class SoloSession(
     private fun expire() {
         if (_s.value.phase != Phase.TYPING) return
         expired = true
+        // typed in time but not confirmed yet: take the suggestion
+        close?.let { finish(it); return }
         if (pending == 0) finish(timeoutJudgement(_s.value.attempts))
         else scope.launch {
             val r = _s.value.round
@@ -162,15 +187,42 @@ class SoloSession(
         }
     }
 
-    override fun submit(text: String) {
+    override fun submit(text: String) = attempt(text, fuzzy = true)
+
+    override fun confirm(accept: Boolean) {
+        val j = close ?: return
+        val c = _s.value.confirm
+        if (_s.value.phase != Phase.TYPING) return
+        close = null
+        _s.update { it.copy(confirm = null) }
+        if (accept) finish(j) else attempt(c?.typed ?: j.input, fuzzy = false)
+    }
+
+    override fun skip() {
+        val s = _s.value
+        if (s.phase != Phase.TYPING || s.paused) return
+        finish(skipJudgement(s.attempts))
+    }
+
+    private fun attempt(text: String, fuzzy: Boolean) {
         val s = _s.value
         val t = text.trim()
         if (s.phase != Phase.TYPING || s.paused || expired || t.isEmpty()) return
-        if (s.attempts.has(t)) { _s.update { it.copy(missTick = it.missTick + 1) }; return }
+        if (fuzzy && s.attempts.has(t)) { _s.update { it.copy(missTick = it.missTick + 1) }; return }
+        close = null
+        if (s.confirm != null) _s.update { it.copy(confirm = null) }
         val p = prompts[s.round]
-        when (val r = arbiter.local(p, t)) {
+        when (val r = arbiter.local(p, t, fuzzy)) {
             is Arbiter.Local.Hit -> finish(r.j)
-            is Arbiter.Local.Miss -> if (r.canVerify) {
+            is Arbiter.Local.Close -> {
+                close = r.j
+                _s.update { it.copy(confirm = Confirm(t, r.j.entry?.name ?: t)) }
+            }
+            is Arbiter.Local.Miss -> if (r.spam) {
+                spam++
+                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, null, spam = true),
+                    missTick = it.missTick + 1, spam = spam) }
+            } else if (r.canVerify) {
                 _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.VERIFYING, r.suggestion)) }
                 pending++
                 val round = s.round
@@ -198,8 +250,9 @@ class SoloSession(
         val s = _s.value
         val p = prompts[s.round]
         val elapsed = (Platform.epochMillis() - s.startedAt).coerceAtMost(if (s.seconds > 0) s.seconds * 1000L else Long.MAX_VALUE)
-        val view = RoundView(s.round, p.id, p.text, p.topic, p.size, Views.play(name, j, elapsed), null, Views.ladder(p))
-        _s.update { it.copy(phase = Phase.REVEAL, reveal = view, rounds = it.rounds + view) }
+        val view = RoundView(s.round, p.id, p.text, p.topic, p.size, Views.play(name, j, elapsed, spam), null, Views.ladder(p))
+        close = null
+        _s.update { it.copy(phase = Phase.REVEAL, reveal = view, rounds = it.rounds + view, confirm = null) }
     }
 
     override fun pause() {
@@ -226,7 +279,7 @@ class SoloSession(
             _s.update { it.copy(phase = Phase.OVER) }
             val st = _s.value
             History.recordRun(prompts.map { it.id }, st.rounds.map { it.me.tier }, mode = if (st.daily != null) "daily" else "solo",
-                daily = st.daily, topics = prompts.map { it.topic })
+                daily = st.daily, topics = prompts.map { it.topic }, points = st.myTotal)
         } else begin(s.round + 1)
     }
 
@@ -254,6 +307,9 @@ class HostSession(
     private var oppAttempts = ArrayList<String>()
     private var myPending = 0
     private var myExpired = false
+    private var myClose: Judgement? = null
+    private var mySpam = 0
+    private var oppSpam = 0
     private val timers = ArrayList<Job>()
     private var listener: Job? = null
 
@@ -265,7 +321,7 @@ class HostSession(
                 is Msg.Hello -> link.send(Msg.Welcome(name))
                 is Msg.Attempt -> onGuestAttempt(m)
                 is Msg.Answer -> if (m.i == _s.value.round && oppJ == null) {
-                    oppJ = Judgement(oppAttempts.lastOrNull().orEmpty(), null, Tier.TIMEOUT, -1)
+                    oppJ = Judgement(oppAttempts.lastOrNull().orEmpty(), null, if (m.skip) Tier.SKIPPED else Tier.TIMEOUT, -1)
                     oppMs = m.elapsedMs
                     _s.update { it.copy(oppLocked = true) }
                     maybeResolve()
@@ -290,10 +346,13 @@ class HostSession(
     private suspend fun begin(i: Int) {
         val p = prompts[i]
         myJ = null; oppJ = null; myPending = 0; myExpired = false; oppAttempts = ArrayList()
+        myClose = null; mySpam = 0; oppSpam = 0
         timers.forEach { it.cancel() }; timers.clear()
+        History.markSeen(p.id)
         _s.update {
             it.copy(phase = Phase.TYPING, round = i, prompt = p.text, topic = p.topic, listSize = p.size,
-                seconds = cfg.secondsPerRound, startedAt = Platform.epochMillis(), reveal = null, oppLocked = false, attempts = emptyList())
+                seconds = cfg.secondsPerRound, startedAt = Platform.epochMillis(), reveal = null, oppLocked = false,
+                attempts = emptyList(), confirm = null, spam = 0)
         }
         link.send(Msg.Round(i, p.text, p.topic, p.size, cfg.secondsPerRound))
         if (cfg.secondsPerRound > 0) {
@@ -306,12 +365,15 @@ class HostSession(
     private fun myExpire() {
         if (myJ != null) return
         myExpired = true
+        myClose?.let { lockMine(it); return }
         if (myPending == 0) lockMine(timeoutJudgement(_s.value.attempts))
     }
 
     private fun lockMine(j: Judgement) {
         if (myJ != null) return
         myJ = j
+        myClose = null
+        if (_s.value.confirm != null) _s.update { it.copy(confirm = null) }
         myMs = Platform.epochMillis() - _s.value.startedAt
         val r = _s.value.round
         _s.update { it.copy(phase = Phase.LOCKED) }
@@ -319,15 +381,40 @@ class HostSession(
         maybeResolve()
     }
 
-    override fun submit(text: String) {
+    override fun submit(text: String) = attempt(text, fuzzy = true)
+
+    override fun confirm(accept: Boolean) {
+        val j = myClose ?: return
+        val c = _s.value.confirm
+        myClose = null
+        _s.update { it.copy(confirm = null) }
+        if (accept) lockMine(j) else attempt(c?.typed ?: j.input, fuzzy = false)
+    }
+
+    override fun skip() {
+        if (_s.value.phase != Phase.TYPING || myJ != null) return
+        lockMine(skipJudgement(_s.value.attempts))
+    }
+
+    private fun attempt(text: String, fuzzy: Boolean) {
         val s = _s.value
         val t = text.trim()
         if (s.phase != Phase.TYPING || myJ != null || myExpired || t.isEmpty()) return
-        if (s.attempts.has(t)) { _s.update { it.copy(missTick = it.missTick + 1) }; return }
+        if (fuzzy && s.attempts.has(t)) { _s.update { it.copy(missTick = it.missTick + 1) }; return }
+        myClose = null
+        if (s.confirm != null) _s.update { it.copy(confirm = null) }
         val p = prompts[s.round]
-        when (val r = arbiter.local(p, t)) {
+        when (val r = arbiter.local(p, t, fuzzy)) {
             is Arbiter.Local.Hit -> lockMine(r.j)
-            is Arbiter.Local.Miss -> if (r.canVerify) {
+            is Arbiter.Local.Close -> {
+                myClose = r.j
+                _s.update { it.copy(confirm = Confirm(t, r.j.entry?.name ?: t)) }
+            }
+            is Arbiter.Local.Miss -> if (r.spam) {
+                mySpam++
+                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, null, spam = true),
+                    missTick = it.missTick + 1, spam = mySpam) }
+            } else if (r.canVerify) {
                 _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.VERIFYING, r.suggestion)) }
                 myPending++
                 val round = s.round
@@ -351,9 +438,13 @@ class HostSession(
         if (t.isEmpty()) return
         oppAttempts += t
         val p = prompts[s.round]
-        when (val r = arbiter.local(p, t)) {
+        when (val r = arbiter.local(p, t, fuzzy = !m.raw)) {
             is Arbiter.Local.Hit -> acceptGuest(r.j, m)
-            is Arbiter.Local.Miss -> if (r.canVerify) {
+            is Arbiter.Local.Close -> scope.launch { link.send(Msg.Verdict(m.i, t, "confirm", r.j.entry?.name)) }
+            is Arbiter.Local.Miss -> if (r.spam) {
+                oppSpam++
+                scope.launch { link.send(Msg.Verdict(m.i, t, "spam", null)) }
+            } else if (r.canVerify) {
                 scope.launch {
                     link.send(Msg.Verdict(m.i, t, "verifying", r.suggestion))
                     val j = arbiter.remote(p, t)
@@ -383,12 +474,13 @@ class HostSession(
         timers.forEach { it.cancel() }
         val p = prompts[s.round]
         val full = s.seconds * 1000L
-        val me = Views.play(name, myJ ?: timeoutJudgement(s.attempts), if (myJ != null) myMs else full)
+        val me = Views.play(name, myJ ?: myClose ?: timeoutJudgement(s.attempts), if (myJ != null) myMs else full, mySpam)
         val opp = Views.play(s.oppName ?: "PEER", oppJ ?: Judgement(oppAttempts.lastOrNull().orEmpty(), null, Tier.TIMEOUT, -1),
-            if (oppJ != null) oppMs else full)
+            if (oppJ != null) oppMs else full, oppSpam)
+        myClose = null
         val ladder = Views.ladder(p)
         val view = RoundView(s.round, p.id, p.text, p.topic, p.size, me, opp, ladder)
-        _s.update { it.copy(phase = Phase.REVEAL, reveal = view, rounds = it.rounds + view, oppLocked = true) }
+        _s.update { it.copy(phase = Phase.REVEAL, reveal = view, rounds = it.rounds + view, oppLocked = true, confirm = null) }
         scope.launch { link.send(Msg.Result(s.round, me, opp, ladder)) }
     }
 
@@ -399,7 +491,7 @@ class HostSession(
             _s.update { it.copy(phase = Phase.OVER) }
             val st = _s.value
             History.recordRun(prompts.map { it.id }, st.rounds.map { it.me.tier }, mode = "1v1", daily = null,
-                topics = prompts.map { it.topic }, opponent = st.oppName, oppPoints = st.oppTotal)
+                topics = prompts.map { it.topic }, opponent = st.oppName, oppPoints = st.oppTotal, points = st.myTotal)
             scope.launch { link.send(Msg.Over) }
         } else scope.launch { begin(s.round + 1) }
     }
@@ -444,7 +536,7 @@ class GuestSession(
                     _s.update { it.copy(phase = Phase.OVER) }
                     val st = _s.value
                     History.recordRun(emptyList(), st.rounds.map { it.me.tier }, mode = "1v1", daily = null,
-                        topics = st.rounds.map { it.topic }, opponent = st.oppName, oppPoints = st.oppTotal)
+                        topics = st.rounds.map { it.topic }, opponent = st.oppName, oppPoints = st.oppTotal, points = st.myTotal)
                 }
                 is Msg.Bye -> fail("host left: ${m.reason}")
                 else -> Unit
@@ -465,7 +557,7 @@ class GuestSession(
         _s.update {
             it.copy(phase = Phase.TYPING, round = m.i, total = maxOf(it.total, m.i + 1), prompt = m.text,
                 topic = m.topic, listSize = m.size, seconds = m.seconds, startedAt = Platform.epochMillis(),
-                reveal = null, oppLocked = false, message = null, attempts = emptyList())
+                reveal = null, oppLocked = false, message = null, attempts = emptyList(), confirm = null, spam = 0)
         }
         if (m.seconds > 0) timer = scope.launch {
             delay(m.seconds * 1000L)
@@ -477,13 +569,29 @@ class GuestSession(
         }
     }
 
-    override fun submit(text: String) {
+    override fun submit(text: String) = send(text, raw = false)
+
+    private fun send(text: String, raw: Boolean) {
         val s = _s.value
         val t = text.trim()
         if (s.phase != Phase.TYPING || t.isEmpty()) return
-        if (s.attempts.has(t)) { _s.update { it.copy(missTick = it.missTick + 1) }; return }
-        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.VERIFYING, null)) }
-        scope.launch { link.send(Msg.Attempt(s.round, t, Platform.epochMillis() - s.startedAt)) }
+        if (!raw && s.attempts.has(t)) { _s.update { it.copy(missTick = it.missTick + 1) }; return }
+        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.VERIFYING, null), confirm = null) }
+        scope.launch { link.send(Msg.Attempt(s.round, t, Platform.epochMillis() - s.startedAt, raw)) }
+    }
+
+    override fun confirm(accept: Boolean) {
+        val c = _s.value.confirm ?: return
+        _s.update { it.copy(confirm = null) }
+        if (accept) send(c.answer, raw = false) else send(c.typed, raw = true)
+    }
+
+    override fun skip() {
+        val s = _s.value
+        if (s.phase != Phase.TYPING) return
+        timer?.cancel()
+        _s.update { it.copy(phase = Phase.LOCKED, confirm = null) }
+        scope.launch { link.send(Msg.Answer(s.round, null, Platform.epochMillis() - s.startedAt, skip = true)) }
     }
 
     private fun onVerdict(v: Msg.Verdict) {
@@ -492,6 +600,12 @@ class GuestSession(
         when (v.status) {
             "ok" -> { timer?.cancel(); _s.update { it.copy(phase = Phase.LOCKED) } }
             "verifying" -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.VERIFYING, v.suggestion)) }
+            "confirm" -> _s.update { st ->
+                val k = Norm.key(v.text)
+                st.copy(attempts = st.attempts.filter { Norm.key(it.text) != k }, confirm = Confirm(v.text, v.suggestion ?: v.text))
+            }
+            "spam" -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.REJECTED, null, spam = true),
+                missTick = it.missTick + 1, spam = it.spam + 1) }
             else -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.REJECTED, v.suggestion), missTick = it.missTick + 1) }
         }
     }

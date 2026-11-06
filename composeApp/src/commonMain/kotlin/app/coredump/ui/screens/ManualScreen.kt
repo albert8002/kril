@@ -20,6 +20,10 @@ import app.coredump.ui.C
 import app.coredump.ui.Panel
 import app.coredump.ui.TText
 import app.coredump.ui.tierColor
+import app.coredump.ui.TierBadge
+import app.coredump.ui.rankGradient
+import app.coredump.core.Spam
+import androidx.compose.foundation.layout.Box
 import app.coredump.ui.Th
 
 @Composable
@@ -36,10 +40,16 @@ fun ManualScreen(model: AppModel) {
                     "each run = N prompts (default 7), T seconds each (default 25).",
                     "type any valid answer. every valid answer scores.",
                     "wrong? keep typing. free retries until the clock dies.",
-                    "close typo? tap the 'did you mean' chip.",
-                    "not in the list? it's checked online (Wikidata) and scored by obscurity.",
+                    "close to an answer? the app asks: submit the suggestion, or search what you typed.",
+                    "people: a surname is enough (\"einstein\", \"van gogh\").",
+                    "\"river\", \"lake\", \"mount\", word order, accents and plurals don't matter.",
+                    "not in the list? it's checked online (Wikidata) and scored by obscurity. results are cached.",
                     "rarer answers score more. obvious ones barely count.",
+                    "stuck? skip the prompt (0 points).",
+                    "key-mashing (\"asdfg\", \"jjjj\") costs ${Spam.PENALTY} points each, up to ${Spam.PENALTY * Spam.MAX_PER_ROUND} per prompt.",
                     "typos are forgiven by difficulty: 2 / 2 / 1 / 0 edits.",
+                    "a prompt you've seen won't come back for a few days (setup → repeats).",
+                    "niche lists (players from one country, sub-genres…) are off unless you turn them on.",
                     "at the end: see which answers would have scored more.",
                 )) TText("· $l", size = 12.sp, color = C.amber)
             }
@@ -47,8 +57,8 @@ fun ManualScreen(model: AppModel) {
             Panel(Th.say("TIERS", "Tiers")) {
                 for (t in Tier.entries.reversed()) {
                     Row(Modifier.padding(vertical = 3.dp)) {
-                        TText(t.label, Modifier.width(118.dp), size = 11.sp, color = tierColor(t), weight = FontWeight.Bold)
-                        TText("${t.points}", Modifier.width(34.dp), size = 11.sp, color = tierColor(t))
+                        Box(Modifier.width(170.dp)) { TierBadge(t, 10.sp, animate = false) }
+                        TText("${t.points}", Modifier.width(34.dp), size = 11.sp, color = tierColor(t), weight = FontWeight.Bold)
                         TText(t.blurb, size = 11.sp, color = C.dim)
                     }
                 }
@@ -58,7 +68,8 @@ fun ManualScreen(model: AppModel) {
                 for (r in Rank.entries) {
                     Row(Modifier.padding(vertical = 3.dp)) {
                         TText("≥${r.minAvg}", Modifier.width(40.dp), size = 11.sp, color = C.dim)
-                        TText(r.title, Modifier.width(110.dp), size = 11.sp, weight = FontWeight.Bold)
+                        TText(r.title, Modifier.width(140.dp), size = 11.sp, weight = FontWeight.Bold,
+                            color = if (Th.style == app.coredump.ui.Style.PIXEL) C.amber else rankGradient(r)[1])
                         TText(r.line, size = 11.sp, color = C.dim)
                     }
                 }
@@ -70,7 +81,7 @@ fun ManualScreen(model: AppModel) {
                     "WIKIDATA · ranked lists. rarity = how many Wikipedias cover the answer.",
                     "WIKIPEDIA · \"List of …\" pages, ranked the same way.",
                     "REMOTE · any JSON pack URL you add in settings.",
-                    "~470 lists ship inside the app. about 12 new lists are collected each day; tap FETCH MORE LISTS for more.",
+                    "hundreds of lists ship inside the app. about 30 more are downloaded each day; tap FETCH MORE LISTS for more.",
                 )) TText(l, size = 11.sp, color = C.amber)
             }
             Spacer(Modifier.height(12.dp))

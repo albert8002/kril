@@ -19,6 +19,7 @@ import io.ktor.http.isSuccess
 import io.ktor.http.parameters
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -389,26 +390,34 @@ class QuestionBank(private val scope: CoroutineScope) {
             val skip = HashMap(meta.skip)
             var failures = 0
             var lastErr: String? = null
-            for (t in picked) {
-                val p = try {
-                    fetchWikidata(t).takeIf { it.second >= WikidataTemplates.FAMOUS_MIN }?.first
-                        ?: run { skip[t.id] = now + 60 * DAY; null }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Throwable) {
-                    failures++
-                    lastErr = e.message ?: e::class.simpleName
-                    skip[t.id] = now + 2 * DAY
-                    null
+            var nextIndex = 0
+            var stop = false
+            val mx = Mutex()
+            // a few requests at a time; each finished list is classified (category, niche, people) and playable at once
+            coroutineScope {
+                repeat(PARALLEL) {
+                    launch {
+                        while (true) {
+                            val t = mx.withLock { if (stop || nextIndex >= picked.size) null else picked[nextIndex++] } ?: break
+                            var fetched: Pair<Prompt, Int>? = null
+                            var err: Throwable? = null
+                            try { fetched = fetchWikidata(t) } catch (e: CancellationException) { throw e } catch (e: Throwable) { err = e }
+                            val p = fetched?.takeIf { it.second >= WikidataTemplates.FAMOUS_MIN && it.first.size >= WikidataTemplates.minAnswers(t) }?.first
+                            mx.withLock {
+                                when {
+                                    err != null -> { failures++; lastErr = err.message ?: err::class.simpleName; skip[t.id] = now + 2 * DAY }
+                                    p == null -> skip[t.id] = now + 60 * DAY
+                                    else -> got += p
+                                }
+                                if (got.isEmpty() && failures >= 4) stop = true
+                            }
+                            if (p != null) putAll(listOf(p))
+                            collectStatus { it.copy(done = it.done + 1, added = got.size) }
+                            status(SourceKind.WIKIDATA) { it.copy(done = it.done + 1) }
+                            delay(250)
+                        }
+                    }
                 }
-                if (p != null) {
-                    if (p.size >= WikidataTemplates.minAnswers(t)) { got += p; putAll(listOf(p)) }
-                    else skip[t.id] = now + 60 * DAY
-                }
-                collectStatus { it.copy(done = it.done + 1, added = got.size) }
-                status(SourceKind.WIKIDATA) { it.copy(done = it.done + 1) }
-                if (got.isEmpty() && failures >= 4) break
-                delay(300)
             }
 
             var files = meta.files
@@ -622,18 +631,18 @@ class QuestionBank(private val scope: CoroutineScope) {
 
     // ---------------- verification of unlisted answers ----------------
 
-    private val verifyCache = HashMap<String, WikidataTemplates.Verified?>()
     private val verifyLock = Mutex()
 
     /**
      * Checks an answer that is not in the list against Wikidata (one SPARQL request, ≤ 6 s).
      * Returns null when the prompt has no class pattern, the answer is not found, or anything fails.
      */
+    /** Online check of an answer that is not in the list (Wikidata). Results are cached on the device. */
     suspend fun verify(prompt: Prompt, input: String): WikidataTemplates.Verified? {
         val where = prompt.check ?: return null
-        val key = prompt.id + "|" + app.coredump.core.Norm.key(input)
-        val cached = verifyLock.withLock { if (verifyCache.containsKey(key)) Result.success(verifyCache[key]) else null }
-        if (cached != null) return cached.getOrNull()
+        val key = prompt.id + "|" + app.coredump.core.Norm.compact(app.coredump.core.Norm.key(input))
+        verifyLock.withLock { VerifyCache.get(key) }?.let { return it.result }
+        var answered = false
         val result = try {
             withTimeoutOrNull(6_000) {
                 val body = call {
@@ -644,23 +653,24 @@ class QuestionBank(private val scope: CoroutineScope) {
                         header("User-Agent", WikiNet.USER_AGENT)
                     }
                 }
+                answered = true
                 WikidataTemplates.parseVerify(body, input)
             }
         } catch (e: CancellationException) {
-            null   // timeout or screen left: treat as "not verified"
+            null   // timeout or screen left: treat as "not verified" (and don't remember it)
         } catch (e: Throwable) {
             null
         }
-        verifyLock.withLock {
-            if (verifyCache.size > 400) verifyCache.clear()
-            verifyCache[key] = result
-        }
+        if (answered) verifyLock.withLock { VerifyCache.put(key, result) }
         return result
     }
 
     companion object {
-        const val DAILY_BATCH = 12
-        const val MAX_LIBRARY_FILES = 40
+        /** Lists fetched per batch (daily and on request). */
+        const val DAILY_BATCH = 30
+        /** Lists fetched at the same time. */
+        const val PARALLEL = 3
+        const val MAX_LIBRARY_FILES = 80
         const val DAY = 24L * 3600 * 1000
         const val WEEK = 7 * DAY
         /** A new batch at most every 20 h (so "daily" also works when the app is opened at varying times). */

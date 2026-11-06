@@ -73,6 +73,36 @@ fun main(args: Array<String>) {
 
     log("UA: ${WikiNet.USER_AGENT}  templates: ${WikidataTemplates.all.size} wikidata, ${WikipediaTemplates.all.size} wikipedia")
 
+    // ---- "--pool-check": query every on-device pool template once (CI review of new templates), nothing written
+    if (args.firstOrNull() == "--pool-check") {
+        val only = args.getOrNull(1)?.split(',')?.filter { it.isNotBlank() }
+        val list = app.coredump.data.WikidataPool.all.filter { only == null || only.any { o -> it.id.startsWith(o) } }
+        log("POOL checking ${list.size} templates")
+        val ok = java.util.concurrent.atomic.AtomicInteger()
+        val bad = java.util.concurrent.atomic.AtomicInteger()
+        val ex = Executors.newFixedThreadPool(3)
+        for (t in list) ex.submit {
+            if (overBudget()) { log("POOL ${t.id.padEnd(30)} SKIP budget"); return@submit }
+            val t0 = System.currentTimeMillis()
+            try {
+                val body = get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}", "application/sparql-results+json")
+                val p = WikidataTemplates.parse(t, body)
+                val fam = WikidataTemplates.famousCount(body)
+                val keep = p.size >= WikidataTemplates.minAnswers(t) && fam >= WikidataTemplates.FAMOUS_MIN
+                (if (keep) ok else bad).incrementAndGet()
+                log("POOL ${t.id.padEnd(30)} ${if (keep) "OK     " else if (p.size >= WikidataTemplates.minAnswers(t)) "OBSCURE" else "SMALL  "} ${p.size.toString().padStart(5)} fam=${fam.toString().padStart(4)} ${(System.currentTimeMillis() - t0).toString().padStart(6)}ms [${p.topic}${if (p.niche) " niche" else ""}${if (p.people) " people" else ""}] ${t.prompt} :: ${p.entries.take(8).joinToString(" | ") { it.name }}")
+            } catch (e: Exception) {
+                bad.incrementAndGet()
+                log("POOL ${t.id.padEnd(30)} FAIL   ${(System.currentTimeMillis() - t0).toString().padStart(6)}ms ${e::class.simpleName}: ${e.message?.take(100)}")
+            }
+            Thread.sleep(300)
+        }
+        ex.shutdown()
+        ex.awaitTermination(budgetMs + 120_000, TimeUnit.MILLISECONDS)
+        log("POOL SUMMARY ok=${ok.get()} bad=${bad.get()} of ${list.size}")
+        return
+    }
+
     // ---- relay self-test first (fast, independent of Wikimedia)
     relaySelfTest(http, ::log)
 

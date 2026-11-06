@@ -39,6 +39,7 @@ import app.coredump.game.MatchState
 import app.coredump.game.Phase
 import app.coredump.platform.shareText
 import app.coredump.ui.C
+import app.coredump.ui.TierBadge
 import app.coredump.ui.LocalDisplay
 import app.coredump.ui.LocalLook
 import app.coredump.ui.Panel
@@ -293,7 +294,7 @@ private fun ComicVerdict(v: RoundView) {
             Display(headline(me).uppercase(), 26.sp, tierColor(me.tier))
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Tape(me.tier.label.replace('_', ' '), tilt = -2f, fill = tierColor(me.tier))
+                TierBadge(me.tier, 12.sp)
                 Spacer(Modifier.weight(1f))
                 Display("+${me.points}", 26.sp, C.hot)
             }
@@ -339,7 +340,7 @@ fun ComicSummary(model: AppModel, session: MatchSession) {
                         val grow = remember { Animatable(0f) }
                         LaunchedEffect(Unit) { delay(300L + 90L * tier.ordinal); grow.animateTo(n / t.count.coerceAtLeast(1).toFloat(), spring(dampingRatio = 0.6f, stiffness = 200f)) }
                         Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                            TText(tier.label.replace('_', ' '), Modifier.width(104.dp), size = 10.sp, color = tierColor(tier), weight = FontWeight.Bold)
+                            TText(tier.label, Modifier.width(130.dp), size = 10.sp, color = tierColor(tier), weight = FontWeight.Bold)
                             Box(Modifier.weight(1f).height(18.dp)) {
                                 Box(Modifier.fillMaxWidth(grow.value.coerceIn(0.04f, 1f)).fillMaxHeight().box(Th.style, Color.Transparent, tierColor(tier)))
                             }

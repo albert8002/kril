@@ -42,8 +42,12 @@ data class Settings(
     /** Theme style name (TERMINAL / PAPER / NEON / CLEAN / PIXEL) and palette id within it. */
     val theme: String = "TERMINAL",
     val palette: String = "amber",
+    /** Include hyper-specific lists (players from one country, sub-genres, obscure species…). */
+    val niche: Boolean = false,
+    /** A prompt that was shown is not shown again for this many days (0 = no cooldown). */
+    val cooldownDays: Int = 2,
 ) {
-    fun gameConfig() = GameConfig(rounds, seconds, difficulty, topics)
+    fun gameConfig() = GameConfig(rounds, seconds, difficulty, topics, niche)
 }
 
 object SettingsStore {
@@ -62,7 +66,8 @@ object SettingsStore {
             rounds = (i("rounds") ?: d.rounds).coerceIn(1, 50),
             seconds = (i("seconds") ?: d.seconds).coerceIn(0, 300),
             difficulty = s("difficulty")?.let { Difficulty.byName(it) } ?: d.difficulty,
-            topics = list("topics")?.toSet() ?: d.topics,
+            // categories were renamed: keep only names that still exist
+            topics = list("topics")?.filter { it in app.coredump.core.Topics.keys }?.toSet() ?: d.topics,
             useWikidata = b("useWikidata") ?: d.useWikidata,
             useWikipedia = b("useWikipedia") ?: d.useWikipedia,
             remoteUrls = list("remoteUrls") ?: d.remoteUrls,
@@ -75,6 +80,8 @@ object SettingsStore {
             verifyOnline = b("verifyOnline") ?: d.verifyOnline,
             theme = s("theme") ?: d.theme,
             palette = s("palette") ?: d.palette,
+            niche = b("niche") ?: d.niche,
+            cooldownDays = (i("cooldownDays") ?: d.cooldownDays).coerceIn(0, 30),
         )
     }.getOrElse { Settings() }
 
@@ -97,6 +104,8 @@ object SettingsStore {
             put("verifyOnline", s.verifyOnline)
             put("theme", s.theme)
             put("palette", s.palette)
+            put("niche", s.niche)
+            put("cooldownDays", s.cooldownDays)
         }
         runCatching { Platform.writeText(FILE, o.toString()) }
     }
@@ -122,6 +131,8 @@ object History {
     private val json = Json { ignoreUnknownKeys = true }
 
     var recent: List<String> = emptyList(); private set
+    /** Prompt id -> epoch ms it was last shown (for the "don't repeat for N days" cooldown). */
+    var seen: Map<String, Long> = emptyMap(); private set
     var runs: List<RunRecord> = emptyList(); private set
     val best: Int get() = runs.maxOfOrNull { it.points } ?: 0
     val games: Int get() = runs.size
@@ -130,6 +141,7 @@ object History {
         runCatching {
             val o = json.parseToJsonElement(Platform.readText(FILE) ?: return).jsonObject
             recent = o["recent"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty()
+            seen = o["seen"]?.jsonObject?.mapNotNull { (k, v) -> v.jsonPrimitive.contentOrNull?.toLongOrNull()?.let { k to it } }?.toMap().orEmpty()
             runs = o["runs"]?.jsonArray?.mapNotNull { el ->
                 runCatching {
                     val r = el.jsonObject
@@ -150,6 +162,14 @@ object History {
 
     fun playedDaily(n: Int): RunRecord? = runs.firstOrNull { it.daily == n }
 
+    /** A prompt was put on screen (kept 30 days, newest 3,000). */
+    fun markSeen(id: String) {
+        val now = Platform.epochMillis()
+        val keep = seen.filterValues { now - it < 30L * 24 * 3600 * 1000 }
+        seen = (if (keep.size > 3000) keep.entries.sortedByDescending { it.value }.take(3000).associate { it.key to it.value } else keep) + (id to now)
+        save()
+    }
+
     fun recordRun(
         promptIds: List<String>,
         tiers: List<Tier>,
@@ -158,12 +178,13 @@ object History {
         topics: List<String>,
         opponent: String? = null,
         oppPoints: Int? = null,
+        points: Int = tiers.sumOf { it.points },
     ) {
         recent = (promptIds + recent).distinct().take(KEEP_IDS)
         // a daily run counts once: replays of the same day are not recorded as daily
         val d = if (daily != null && playedDaily(daily) == null) daily else null
         val rec = RunRecord(Platform.epochMillis(), if (daily != null && d == null) "solo" else mode,
-            tiers.sumOf { it.points }, tiers, topics, d, opponent, oppPoints)
+            points, tiers, topics, d, opponent, oppPoints)
         runs = (listOf(rec) + runs).take(KEEP_RUNS)
         save()
     }
@@ -171,6 +192,7 @@ object History {
     private fun save() {
         val o = buildJsonObject {
             put("recent", JsonArray(recent.map { JsonPrimitive(it) }))
+            put("seen", buildJsonObject { for ((k, v) in seen) put(k, v) })
             put("runs", JsonArray(runs.map { r ->
                 buildJsonObject {
                     put("at", r.at); put("m", r.mode); put("p", r.points)

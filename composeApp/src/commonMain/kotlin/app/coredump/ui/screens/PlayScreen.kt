@@ -56,8 +56,10 @@ import app.coredump.AppModel
 import app.coredump.core.RoundView
 import app.coredump.core.Tier
 import app.coredump.core.hexAddr
+import app.coredump.core.Spam
 import app.coredump.game.Attempt
 import app.coredump.game.AttemptStatus
+import app.coredump.game.Confirm
 import app.coredump.game.MatchSession
 import app.coredump.game.MatchState
 import app.coredump.game.Phase
@@ -68,6 +70,7 @@ import app.coredump.ui.Celebrate
 import app.coredump.ui.DecodeText
 import app.coredump.ui.LocalLook
 import app.coredump.ui.Panel
+import app.coredump.ui.RewardBurst
 import app.coredump.ui.RollingNumber
 import app.coredump.ui.Spinner
 import app.coredump.ui.Style
@@ -97,6 +100,8 @@ class AnswerState {
     val focus = FocusRequester()
     val shake = Animatable(0f)
     var onSubmit: (String) -> Unit = {}
+    /** Answer to an autocorrect question: true = take the suggestion, false = search what was typed. */
+    var onConfirm: (Boolean) -> Unit = {}
 
     fun send(v: String = text) {
         val t = v.trim()
@@ -107,9 +112,10 @@ class AnswerState {
 }
 
 @Composable
-fun rememberAnswer(st: MatchState, onSubmit: (String) -> Unit): AnswerState {
+fun rememberAnswer(st: MatchState, onSubmit: (String) -> Unit, onConfirm: (Boolean) -> Unit = {}): AnswerState {
     val a = remember(st.round) { AnswerState() }
     a.onSubmit = onSubmit
+    a.onConfirm = onConfirm
     val motion = !LocalLook.current.reduceMotion
     LaunchedEffect(st.round, st.phase) { if (st.phase == Phase.TYPING) { delay(250); runCatching { a.focus.requestFocus() } } }
     LaunchedEffect(st.missTick) {
@@ -159,9 +165,14 @@ fun AnswerField(a: AnswerState, st: MatchState, modifier: Modifier = Modifier, s
     )
 }
 
-/** "Did you mean X?" chip. */
+/**
+ * Autocorrect question ("Submit X?" with yes / "no, search what I typed") when the last answer only matched with
+ * typos; otherwise a "Did you mean X?" chip after a miss.
+ */
 @Composable
 fun SuggestionChip(st: MatchState, a: AnswerState) {
+    val c = st.confirm
+    if (c != null) { ConfirmCard(c, a); return }
     val s = suggestionOf(st) ?: return
     TText(
         Th.say("did you mean  $s ?  ↵", "Did you mean $s?"),
@@ -170,6 +181,42 @@ fun SuggestionChip(st: MatchState, a: AnswerState) {
             .padding(horizontal = 12.dp, vertical = 10.dp),
         size = 13.sp, color = C.hot, weight = FontWeight.Bold,
     )
+}
+
+@Composable
+fun ConfirmCard(c: Confirm, a: AnswerState) {
+    val pop = remember(c) { Animatable(0.85f) }
+    LaunchedEffect(c) { pop.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 600f)) }
+    Column(
+        Modifier.fillMaxWidth().graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+            .box(Th.style, C.hot, C.panel, 1.5.dp, glow = Th.style == Style.NEON || Th.style == Style.COMIC)
+            .padding(horizontal = if (Th.style == Style.COMIC) 22.dp else 14.dp, vertical = 12.dp),
+    ) {
+        TText(Th.say("autocorrect: you typed \"${c.typed}\"", "You typed \u201c${c.typed}\u201d"), size = 11.sp, color = C.dim, maxLines = 1)
+        Spacer(Modifier.height(2.dp))
+        TText(Th.say("submit \"${c.answer}\"?", "Submit \u201c${c.answer}\u201d?"), size = 16.sp, color = C.hot, weight = FontWeight.Bold, maxLines = 2)
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth()) {
+            TButton(Th.say("YES, SUBMIT", "Yes, submit"), { a.onConfirm(true) }, Modifier.weight(1f), primary = true, textSize = 13.sp)
+            Spacer(Modifier.width(8.dp))
+            TButton(Th.say("NO, SEARCH", "No, search mine"), { a.onConfirm(false) }, Modifier.weight(1f), textSize = 13.sp)
+        }
+    }
+}
+
+/** Give up on this prompt (worded per archetype). */
+@Composable
+fun SkipLink(session: MatchSession, st: MatchState, modifier: Modifier = Modifier) {
+    if (st.phase != Phase.TYPING || st.paused) return
+    val label = when (Th.style) {
+        Style.TERMINAL -> "skip (kill -SIGSKIP)"
+        Style.NEON -> "SKIP STAGE"
+        Style.PAPER -> "Pass on this clue"
+        Style.CLEAN -> "Skip question"
+        Style.PIXEL -> "RUN AWAY"
+        Style.COMIC -> "PASS!"
+    }
+    TLink(label, { session.skip() }, modifier, color = C.dim, size = 12.sp)
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -195,6 +242,7 @@ fun AttemptChip(a: Attempt) {
         } else {
             TText("✗ ", size = 11.sp, color = C.blood)
             TText(a.text, size = 11.sp, color = C.blood.copy(alpha = 0.8f), decoration = TextDecoration.LineThrough, maxLines = 1)
+            if (a.spam) TText("  −${Spam.PENALTY} mashing", size = 10.sp, color = C.blood, weight = FontWeight.Bold)
         }
     }
 }
@@ -207,6 +255,7 @@ fun DiscardAction(model: AppModel, session: MatchSession, round: Int, modifier: 
 /** Short line for a tier, phrased per archetype. */
 fun tierLine(t: Tier): String = when (Th.style) {
     Style.PIXEL -> when (t) {
+        Tier.SKIPPED -> "You fled the battle!"
         Tier.TIMEOUT -> "You ran out of time!"
         Tier.SEGFAULT -> "The attack missed!"
         Tier.HELLO_WORLD -> "A weak hit..."
@@ -217,6 +266,7 @@ fun tierLine(t: Tier): String = when (Th.style) {
         Tier.ZERO_DAY -> "A ONE-IN-A-MILLION HIT!!"
     }
     Style.NEON -> when (t) {
+        Tier.SKIPPED -> "STAGE SKIPPED"
         Tier.TIMEOUT -> "TIME OVER"
         Tier.SEGFAULT -> "MISS"
         Tier.HELLO_WORLD -> "GOOD"
@@ -227,6 +277,7 @@ fun tierLine(t: Tier): String = when (Th.style) {
         Tier.ZERO_DAY -> "PERFECT!!"
     }
     Style.COMIC -> when (t) {
+        Tier.SKIPPED -> "PASSED!"
         Tier.TIMEOUT -> "TOO SLOW!"
         Tier.SEGFAULT -> "NOPE!"
         Tier.HELLO_WORLD -> "BASIC."
@@ -237,6 +288,7 @@ fun tierLine(t: Tier): String = when (Th.style) {
         Tier.ZERO_DAY -> "JACKPOT!!"
     }
     Style.PAPER -> when (t) {
+        Tier.SKIPPED -> "Passed"
         Tier.TIMEOUT -> "Out of time"
         Tier.SEGFAULT -> "Not on the list"
         Tier.HELLO_WORLD -> "Common answer"
@@ -247,6 +299,7 @@ fun tierLine(t: Tier): String = when (Th.style) {
         Tier.ZERO_DAY -> "Exclusive!"
     }
     Style.CLEAN -> when (t) {
+        Tier.SKIPPED -> "Skipped"
         Tier.TIMEOUT -> "Time's up"
         Tier.SEGFAULT -> "Not on the list"
         Tier.HELLO_WORLD -> "Correct — but very common"
@@ -262,6 +315,7 @@ fun tierLine(t: Tier): String = when (Th.style) {
 /** Answer shown on a reveal. */
 fun headline(v: app.coredump.core.PlayView): String = when (v.tier) {
     Tier.TIMEOUT -> Th.say("PROCESS KILLED", "Time's up")
+    Tier.SKIPPED -> Th.say("SKIPPED", "Skipped")
     Tier.SEGFAULT -> Th.say("Segmentation fault", v.input.ifBlank { "—" })
     else -> v.canonical ?: v.input
 }
@@ -286,14 +340,16 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
         val v = st.reveal ?: return@LaunchedEffect
         keyboard?.hide()
         when (v.me.tier) {
-            Tier.ZERO_DAY -> { fx.flash(C.white); fx.shake(1.3f); haptic(true); rain = true; delay(1800); rain = false }
-            Tier.HEISENBUG -> { fx.flash(C.hot.copy(alpha = 0.6f)); fx.shake(0.45f); haptic(true) }
-            Tier.MEMORY_LEAK -> { fx.glitch(); haptic(false) }
+            Tier.ZERO_DAY -> { fx.flash(tierColor(Tier.ZERO_DAY)); fx.shake(1.3f); haptic(true); delay(110); haptic(true); delay(110); haptic(true); rain = true; delay(1800); rain = false }
+            Tier.HEISENBUG -> { fx.flash(tierColor(Tier.HEISENBUG).copy(alpha = 0.5f)); fx.shake(0.45f); haptic(true); delay(120); haptic(true) }
+            Tier.MEMORY_LEAK -> { fx.flash(tierColor(Tier.MEMORY_LEAK).copy(alpha = 0.3f)); fx.glitch(); haptic(true) }
             Tier.SEGFAULT, Tier.TIMEOUT -> { fx.flash(C.blood.copy(alpha = 0.55f)); fx.shake(0.8f); fx.glitch(); haptic(true) }
-            else -> haptic(false)
+            Tier.SKIPPED -> haptic(false)
+            Tier.LEGACY -> { fx.flash(tierColor(Tier.LEGACY).copy(alpha = 0.18f)); haptic(false) }
+            else -> { fx.flash(tierColor(v.me.tier).copy(alpha = 0.15f)); haptic(false) }
         }
     }
-    val a = rememberAnswer(st) { session.submit(it) }
+    val a = rememberAnswer(st, { session.submit(it) }, { session.confirm(it) })
 
     Box(Modifier.fillMaxSize()) {
         when (Th.style) {
@@ -305,6 +361,7 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
             Style.COMIC -> ComicPlay(model, session, st, a)
         }
         Celebrate(Modifier.fillMaxSize(), rain)
+        st.reveal?.let { v -> if (st.phase == Phase.REVEAL) RewardBurst(v.me.tier, v.me.points.coerceAtLeast(0), v.index) }
         if (st.paused && !model.confirmQuit) PauseOverlay({ session.resume() }, { model.confirmQuit = true })
         if (model.confirmQuit) ConfirmQuit(session.isMulti,
             onKeep = { model.confirmQuit = false; session.resume() },
@@ -332,6 +389,7 @@ fun PlayActions(model: AppModel, session: MatchSession, st: MatchState, modifier
                 }
             }
             Phase.ERROR -> TButton(Th.say("RETURN TO SHELL", "Back to menu"), { model.abortRun(session) }, Modifier.fillMaxWidth(), color = C.blood)
+            Phase.TYPING -> SkipLink(session, st, Modifier.align(Alignment.CenterHorizontally))
             else -> Unit
         }
     }
@@ -359,6 +417,11 @@ fun PeerLine(session: MatchSession, st: MatchState) {
 /** Opponent result on a 1v1 reveal + "would have scored more" list (shared content, themed panels). */
 @Composable
 fun RevealExtras(v: RoundView, multi: Boolean) {
+    if (v.me.penalty > 0) {
+        Spacer(Modifier.height(8.dp))
+        TText(Th.say("-${v.me.penalty} pts: key-mashing detected", "−${v.me.penalty} points for key-mashing"),
+            size = 12.sp, color = C.blood, weight = FontWeight.Bold)
+    }
     val opp = v.opp
     if (multi && opp != null) {
         Spacer(Modifier.height(12.dp))
@@ -367,6 +430,7 @@ fun RevealExtras(v: RoundView, multi: Boolean) {
                 TText(
                     when (opp.tier) {
                         Tier.TIMEOUT -> Th.say("<timeout>", "time's up")
+                        Tier.SKIPPED -> Th.say("<skipped>", "skipped")
                         Tier.SEGFAULT -> "${opp.input} ✗"
                         else -> opp.canonical ?: opp.input
                     },
@@ -384,7 +448,7 @@ fun RevealExtras(v: RoundView, multi: Boolean) {
         Panel(Th.say("RARER IN MEMORY", when (Th.style) { Style.PIXEL -> "Stronger attacks"; Style.NEON -> "Bonus answers"; else -> "Would have scored more" })) {
             for (g in better) {
                 Row(Modifier.padding(vertical = 2.dp)) {
-                    TText(g.tier.label, Modifier.width(112.dp), size = 11.sp, color = tierColor(g.tier))
+                    TText(g.tier.label, Modifier.width(150.dp), size = 11.sp, color = tierColor(g.tier), weight = FontWeight.Bold)
                     TText(g.names.take(3).joinToString(" · "), size = 11.sp, color = C.amber, maxLines = 2)
                 }
             }

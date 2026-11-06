@@ -182,13 +182,47 @@ object C {
 /** Readable text colour on top of [fill]. */
 fun onColor(fill: Color): Color = if (fill.luminance() > 0.45f) Color(0xFF111111) else Color(0xFFFAFAFA)
 
-fun tierColor(t: Tier): Color = when (t) {
-    Tier.TIMEOUT, Tier.SEGFAULT -> C.blood
-    Tier.HELLO_WORLD, Tier.COPYPASTA -> C.dim
-    Tier.LEGACY -> C.amber
-    Tier.MEMORY_LEAK -> C.amber
-    Tier.HEISENBUG -> C.hot
-    Tier.ZERO_DAY -> C.white
+/**
+ * Each tier has its own colours (bronze, teal, silver, gold, pink, galaxy), the same in every theme.
+ * gradient: badge fill, darkest first. onDark / onLight: text colour of the tier on dark / light backgrounds.
+ */
+class TierLook(val gradient: List<Color>, val onDark: Color, val onLight: Color)
+
+private val tierLooks: Map<Tier, TierLook> = mapOf(
+    Tier.SKIPPED to TierLook(listOf(Color(0xFF4B5563), Color(0xFF9CA3AF)), Color(0xFF9CA3AF), Color(0xFF6B7280)),
+    Tier.TIMEOUT to TierLook(listOf(Color(0xFF4B5563), Color(0xFF9CA3AF)), Color(0xFF9CA3AF), Color(0xFF6B7280)),
+    Tier.SEGFAULT to TierLook(listOf(Color(0xFF7F1D1D), Color(0xFFEF4444)), Color(0xFFFF6B6B), Color(0xFFB91C1C)),
+    Tier.HELLO_WORLD to TierLook(listOf(Color(0xFF7A3F14), Color(0xFFC57A3E), Color(0xFFF2C28A)), Color(0xFFE6A56A), Color(0xFF8A4A18)),
+    Tier.COPYPASTA to TierLook(listOf(Color(0xFF0E5F54), Color(0xFF34B3A0), Color(0xFFA6F0E1)), Color(0xFF6FE0CD), Color(0xFF0E6E61)),
+    Tier.LEGACY to TierLook(listOf(Color(0xFF3B5470), Color(0xFF94AECB), Color(0xFFE6F0FA)), Color(0xFFB4CCE4), Color(0xFF3B5876)),
+    Tier.MEMORY_LEAK to TierLook(listOf(Color(0xFF8A5A00), Color(0xFFE3A51A), Color(0xFFFFE89A)), Color(0xFFFFD34D), Color(0xFF946300)),
+    Tier.HEISENBUG to TierLook(listOf(Color(0xFF6A1B9A), Color(0xFFE0218A), Color(0xFFFF9AD5)), Color(0xFFFF6CC0), Color(0xFFB0136F)),
+    Tier.ZERO_DAY to TierLook(listOf(Color(0xFF231463), Color(0xFF5B3BFF), Color(0xFF00C8FF), Color(0xFFFF4FD8)), Color(0xFF8FE9FF), Color(0xFF4B2BB5)),
+)
+
+fun tierLook(t: Tier): TierLook = tierLooks.getValue(t)
+
+/** Text colour of a tier on the current background (the monochrome QUEST palettes keep their own ink). */
+fun tierColor(t: Tier): Color {
+    if (Th.style == Style.PIXEL) return when (t) {
+        Tier.TIMEOUT, Tier.SEGFAULT, Tier.SKIPPED -> C.blood
+        Tier.HELLO_WORLD, Tier.COPYPASTA -> C.dim
+        else -> C.amber
+    }
+    if (t == Tier.SEGFAULT) return C.blood
+    val l = tierLook(t)
+    return if (Th.pal.dark) l.onDark else l.onLight
+}
+
+/** Colours of the run ranks, lowest to highest (2–4 stops each). */
+fun rankGradient(r: app.coredump.core.Rank): List<Color> = when (r.ordinal) {
+    0 -> listOf(Color(0xFF6B7280), Color(0xFFB8C0CC))
+    1 -> listOf(Color(0xFF7A3F14), Color(0xFFD08A4E), Color(0xFFF2C28A))
+    2 -> listOf(Color(0xFF0E6B5E), Color(0xFF3CB8A3), Color(0xFFA6F0E1))
+    3 -> listOf(Color(0xFF3B5470), Color(0xFF9DB6CF), Color(0xFFF1F6FB))
+    4 -> listOf(Color(0xFF8A5A00), Color(0xFFE3A51A), Color(0xFFFFE89A))
+    5 -> listOf(Color(0xFF6A1B9A), Color(0xFFE0218A), Color(0xFFFF9AD5))
+    else -> listOf(Color(0xFF2B1A6B), Color(0xFF5B3BFF), Color(0xFF00D4FF), Color(0xFFFF4FD8))
 }
 
 /** Global screen effects, triggered from anywhere, animated by ThemedScreen. */

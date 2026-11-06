@@ -63,7 +63,7 @@ fun StatsScreen(model: AppModel) {
                 for (t in Tier.entries.reversed()) {
                     val n = all.count { it == t }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 1.dp)) {
-                        TText(t.label, Modifier.width(112.dp), size = 11.sp, color = tierColor(t))
+                        TText(t.label, Modifier.width(150.dp), size = 11.sp, color = tierColor(t), weight = FontWeight.Bold)
                         TText("█".repeat((n * 16 / max).coerceAtLeast(if (n > 0) 1 else 0)) + " $n", size = 11.sp, color = tierColor(t))
                     }
                 }

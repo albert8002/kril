@@ -43,6 +43,7 @@ import app.coredump.game.Phase
 import app.coredump.platform.Platform
 import app.coredump.platform.shareText
 import app.coredump.ui.C
+import app.coredump.ui.RankBadge
 import app.coredump.ui.LocalLook
 import app.coredump.ui.Panel
 import app.coredump.ui.RollingNumber
@@ -306,7 +307,7 @@ private fun QuestionCard(st: MatchState, a: AnswerState) {
             .box(Th.style, C.line.copy(alpha = 0.6f), C.panel).padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        TText(st.topic.replaceFirstChar { it.uppercase() }, Modifier.box(Th.style, Color.Transparent, C.hot.copy(alpha = 0.14f), pill = true)
+        TText(app.coredump.core.Topics.icon(st.topic) + " " + app.coredump.core.Topics.label(st.topic), Modifier.box(Th.style, Color.Transparent, C.hot.copy(alpha = 0.14f), pill = true)
             .padding(horizontal = 10.dp, vertical = 4.dp), size = 11.sp, color = C.hot, weight = FontWeight.SemiBold)
         Spacer(Modifier.height(10.dp))
         TText(st.prompt, size = 22.sp, weight = FontWeight.SemiBold, align = TextAlign.Center)
@@ -411,7 +412,8 @@ fun QuizSummary(model: AppModel, session: MatchSession) {
                 }
             }
             Spacer(Modifier.height(8.dp))
-            TText(t.rank.title.lowercase().replaceFirstChar { it.uppercase() }, size = 24.sp, weight = FontWeight.Bold)
+            RankBadge(t.rank, size = 22.sp)
+            Spacer(Modifier.height(6.dp))
             TText(t.rank.line.replaceFirstChar { it.uppercase() }, size = 13.sp, color = C.dim, align = TextAlign.Center)
             val opp = st.oppName
             if (session.isMulti && opp != null) {
@@ -424,7 +426,7 @@ fun QuizSummary(model: AppModel, session: MatchSession) {
             Row(Modifier.fillMaxWidth()) {
                 StatChip("✓", "${t.valid}/${t.count}", "correct", Modifier.weight(1f))
                 Spacer(Modifier.width(8.dp))
-                StatChip("★", t.best?.label?.lowercase()?.replace('_', ' ') ?: "—", "best tier", Modifier.weight(1f))
+                StatChip("★", t.best?.label?.lowercase() ?: "—", "best tier", Modifier.weight(1f))
                 Spacer(Modifier.width(8.dp))
                 StatChip("⌀", oneDecimal(t.avg), "per prompt", Modifier.weight(1f))
             }

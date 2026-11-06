@@ -40,6 +40,8 @@ import app.coredump.game.Phase
 import app.coredump.platform.Platform
 import app.coredump.platform.shareText
 import app.coredump.ui.C
+import app.coredump.ui.RankBadge
+import app.coredump.ui.TierBadge
 import app.coredump.ui.LocalLook
 import app.coredump.ui.Panel
 import app.coredump.ui.RollingNumber
@@ -274,7 +276,11 @@ fun GazettePlay(model: AppModel, session: MatchSession, st: MatchState, a: Answe
                     TText("Your answer", size = 11.sp, color = C.dim)
                     AnswerField(a, st, Modifier.fillMaxWidth().shakeX(a), size = 20.sp)
                     val s = suggestionOf(st)
-                    if (s != null) {
+                    val c = st.confirm
+                    if (c != null) {
+                        Spacer(Modifier.height(10.dp))
+                        ConfirmCard(c, a)
+                    } else if (s != null) {
                         Spacer(Modifier.height(8.dp))
                         TText("Perhaps you meant “$s”?", Modifier.clickable(remember { MutableInteractionSource() }, null) { a.send(s) },
                             size = 14.sp, color = C.hot, decoration = TextDecoration.Underline)
@@ -300,6 +306,8 @@ fun GazettePlay(model: AppModel, session: MatchSession, st: MatchState, a: Answe
                             Spacer(Modifier.height(4.dp))
                             TText(tierLine(v.me.tier) + if (v.me.points > 0) " — ${v.me.points} points." else ".", size = 14.sp, color = C.dim)
                             if (v.me.tier == Tier.SEGFAULT) TText("You wrote: “${v.me.input}”", size = 12.sp, color = C.dim)
+                            Spacer(Modifier.height(8.dp))
+                            TierBadge(v.me.tier, 12.sp)
                         }
                         Stamp(v.me.tier, v.index, Modifier.align(Alignment.TopEnd).padding(top = 4.dp))
                     }
@@ -319,7 +327,7 @@ private fun Pencil(st: MatchState) {
     Column {
         TText("Struck out:", size = 11.sp, color = C.dim)
         TText(
-            st.attempts.joinToString("   ") { if (it.status == AttemptStatus.VERIFYING) "${it.text} (checking…)" else it.text },
+            st.attempts.joinToString("   ") { when { it.status == AttemptStatus.VERIFYING -> "${it.text} (checking…)"; it.spam -> "${it.text} (−${app.coredump.core.Spam.PENALTY})"; else -> it.text } },
             size = 15.sp, color = C.dim.copy(alpha = 0.85f), decoration = TextDecoration.LineThrough,
         )
         if (st.verifying) Row(verticalAlignment = Alignment.CenterVertically) { Spinner(C.dim, 11.sp); TText("  checking the records…", size = 11.sp, color = C.dim) }
@@ -391,7 +399,13 @@ fun GazetteSummary(model: AppModel, session: MatchSession) {
             }
             Spacer(Modifier.height(6.dp))
             InkIn(300) {
-                TText("Rated “${t.rank.title.lowercase()}” by the editors: ${t.rank.line}", size = 14.sp, color = C.dim)
+                Column {
+                    TText("The editors' rating:", size = 12.sp, color = C.dim)
+                    Spacer(Modifier.height(6.dp))
+                    RankBadge(t.rank, size = 20.sp)
+                    Spacer(Modifier.height(6.dp))
+                    TText(t.rank.line.replaceFirstChar { it.uppercase() }, size = 14.sp, color = C.dim)
+                }
             }
             Spacer(Modifier.height(6.dp))
             TText("By our correspondent · ${t.count} clues · ${t.valid} accepted · average ${oneDecimal(t.avg)}", size = 11.sp, color = C.dim)

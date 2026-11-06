@@ -52,7 +52,8 @@ fun BrowseScreen(model: AppModel) {
     val bank by model.bank.state.collectAsState()
     var q by remember { mutableStateOf("") }
     var topic by remember { mutableStateOf<String?>(null) }
-    val topics = remember(bank.prompts) { model.bank.topics() }
+    val counts = remember(bank.prompts) { model.bank.topics().toMap() }
+    val topics = app.coredump.core.Topics.all.filter { (counts[it.key] ?: 0) > 0 }
     val list = remember(bank.prompts, q, topic) {
         val nq = Norm.key(q)
         model.bank.all()
@@ -68,7 +69,7 @@ fun BrowseScreen(model: AppModel) {
             Spacer(Modifier.height(8.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 item { Chip("#ALL", topic == null) { haptic(false); topic = null } }
-                items(topics) { (t, _) -> Chip("#$t", topic == t) { haptic(false); topic = t } }
+                items(topics) { t -> Chip(Th.say("#" + t.key.replace(' ', '_'), t.icon + " " + t.label), topic == t.key) { haptic(false); topic = t.key } }
             }
             Spacer(Modifier.height(6.dp))
             TText("${list.size} lists · ${group(list.sumOf { it.size })} answers", size = 11.sp, color = C.dim)
@@ -84,7 +85,8 @@ fun BrowseScreen(model: AppModel) {
                         TText(p.text, Modifier.weight(1f), size = 13.sp, maxLines = 2)
                         TText(group(p.size), size = 12.sp, color = C.hot)
                     }
-                    TText("#${p.topic} · ${p.source.tag}" + (if (Th.terminal) " · ${p.id}" else ""), size = 10.sp, color = C.dim, maxLines = 1)
+                    TText(app.coredump.core.Topics.label(p.topic) + " · ${p.source.tag}" + (if (p.niche) " · niche" else "") +
+                        (if (Th.terminal) " · ${p.id}" else ""), size = 10.sp, color = C.dim, maxLines = 1)
                 }
                 Divider()
             }
@@ -127,7 +129,7 @@ fun DumpScreen(model: AppModel, promptId: String) {
                     for (t in Tier.validDescending) {
                         val n = p.countOf(t)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            TText(t.label, Modifier.width(112.dp), size = 11.sp, color = tierColor(t))
+                            TText(t.label, Modifier.width(150.dp), size = 11.sp, color = tierColor(t), weight = FontWeight.Bold)
                             TText("█".repeat(((n * 18f) / maxN).toInt().coerceAtLeast(if (n > 0) 1 else 0)) + " $n",
                                 size = 11.sp, color = tierColor(t))
                         }

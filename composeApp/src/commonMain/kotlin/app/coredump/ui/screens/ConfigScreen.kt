@@ -79,7 +79,9 @@ fun ConfigScreen(model: AppModel) {
                 Spacer(Modifier.height(8.dp))
                 TButton(if (col.running) "collecting ${col.done}/${col.total}…" else Th.say("FETCH MORE LISTS", "Fetch more lists"),
                     { model.bank.requestMore() }, Modifier.fillMaxWidth(), enabled = !col.running, textSize = 12.sp)
-                TText("about 12 new lists are added automatically once a day while the app is used.", size = 10.sp, color = C.dim)
+                TText("about ${app.coredump.data.QuestionBank.DAILY_BATCH} new lists are added automatically once a day while the app is used.", size = 10.sp, color = C.dim)
+                Spacer(Modifier.height(8.dp))
+                KV("answers checked online (cached)", "${app.coredump.data.VerifyCache.size()}")
             }
             Spacer(Modifier.height(14.dp))
             Panel(Th.say("DISCARDED", "Discarded questions")) {

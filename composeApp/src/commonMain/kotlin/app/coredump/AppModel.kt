@@ -150,8 +150,10 @@ class AppModel(val scope: CoroutineScope) {
     fun setTheme(style: app.coredump.ui.Style, paletteId: String) =
         update { it.copy(theme = style.name, palette = paletteId) }
 
+    /** Prompts for a game: not shown in the last [Settings.cooldownDays] days when possible. */
     fun pick(cfg: GameConfig): List<Prompt> =
-        PromptPicker.pick(bank.all(), cfg, History.recent.toSet(), Random.Default)
+        PromptPicker.pick(bank.all(), cfg, History.recent.toSet(), Random.Default, History.seen,
+            settings.cooldownDays * 86_400_000L, app.coredump.platform.Platform.epochMillis())
 
     fun arbiter(cfg: GameConfig) = Arbiter(bank, cfg.difficulty.maxEdit, settings.verifyOnline)
 
@@ -167,7 +169,7 @@ class AppModel(val scope: CoroutineScope) {
     /** Same 7 hand-ranked prompts for everyone today (seeded by the date). */
     fun dailyPrompts(n: Int): List<Prompt> {
         val pool = bank.all()
-            .filter { it.source == app.coredump.core.SourceKind.BUNDLED && it.size >= 24 }
+            .filter { it.source == app.coredump.core.SourceKind.BUNDLED && it.size >= 24 && !it.niche }
             .sortedBy { it.id }
         val rnd = Random(n * 7919L + 17L)
         val out = ArrayList<Prompt>()

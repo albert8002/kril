@@ -45,6 +45,7 @@ import app.coredump.ui.RollingNumber
 import app.coredump.ui.TButton
 import app.coredump.ui.TLink
 import app.coredump.ui.TText
+import app.coredump.ui.RankBadge
 import app.coredump.ui.TierBadge
 import app.coredump.ui.rememberHaptic
 import app.coredump.ui.tierColor
@@ -86,7 +87,7 @@ fun RoundDetails(model: AppModel, r: RoundView) {
             TText(Th.say("WOULD HAVE SCORED MORE:", "Would have scored more:"), size = 10.sp, color = C.dim, spacing = 1.sp)
             for (g in better) {
                 Row(Modifier.padding(vertical = 2.dp)) {
-                    TText("${g.tier.label} +${g.tier.points}", Modifier.width(140.dp), size = 11.sp, color = tierColor(g.tier))
+                    TText("${g.tier.label} +${g.tier.points}", Modifier.width(170.dp), size = 11.sp, color = tierColor(g.tier), weight = FontWeight.Bold)
                     TText(g.names.joinToString(" · "), size = 11.sp, color = C.amber)
                 }
             }
@@ -127,7 +128,9 @@ private fun TerminalSummary(model: AppModel, session: MatchSession) {
                         size = 11.sp, color = C.dim)
                     Spacer(Modifier.height(14.dp))
                     TText(Th.say("RANK", "Rank"), size = 10.sp, color = C.dim, spacing = 2.sp)
-                    DecodeText(rank.title, size = 28.sp, color = C.amber, durationMs = 1100)
+                    Spacer(Modifier.height(4.dp))
+                    RankBadge(rank, size = 22.sp)
+                    Spacer(Modifier.height(4.dp))
                     TText(rank.line, size = 12.sp, color = C.dim)
                 }
                 Spacer(Modifier.height(12.dp))
@@ -164,7 +167,7 @@ private fun TerminalSummary(model: AppModel, session: MatchSession) {
                         val n = rounds.count { it.me.tier == t }
                         if (n == 0) continue
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            TText(t.label, Modifier.width(112.dp), size = 11.sp, color = tierColor(t))
+                            TText(t.label, Modifier.width(150.dp), size = 11.sp, color = tierColor(t), weight = FontWeight.Bold)
                             TText("█".repeat(n) + "  $n", size = 11.sp, color = tierColor(t))
                         }
                     }
@@ -206,7 +209,7 @@ private fun RoundRow(model: AppModel, r: RoundView, multi: Boolean) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TText("  ${answerText(r.me.tier, r.me.canonical, r.me.input)}", Modifier.weight(1f), size = 13.sp,
                 color = tierColor(r.me.tier), weight = FontWeight.Bold, maxLines = 1)
-            TierBadge(r.me.tier, 10.sp)
+            TierBadge(r.me.tier, 10.sp, animate = false)
             TText(" +${r.me.points}".padStart(5), size = 12.sp, color = tierColor(r.me.tier))
         }
         val opp = r.opp
@@ -227,12 +230,13 @@ private fun RoundRow(model: AppModel, r: RoundView, multi: Boolean) {
 
 fun answerText(t: Tier, canonical: String?, input: String): String = when (t) {
     Tier.TIMEOUT -> Th.say("<timeout>", "time's up")
+    Tier.SKIPPED -> Th.say("<skipped>", "skipped")
     Tier.SEGFAULT -> Th.say("$input  ✗ segfault", "$input  ✗")
     else -> canonical ?: input
 }
 
 private fun tierGlyph(t: Tier): String = when (t) {
-    Tier.TIMEOUT, Tier.SEGFAULT -> "⬛"
+    Tier.TIMEOUT, Tier.SEGFAULT, Tier.SKIPPED -> "⬛"
     Tier.HELLO_WORLD, Tier.COPYPASTA -> "🟨"
     Tier.LEGACY -> "🟧"
     Tier.MEMORY_LEAK -> "🟥"

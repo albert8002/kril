@@ -38,6 +38,8 @@ import app.coredump.game.MatchState
 import app.coredump.game.Phase
 import app.coredump.platform.shareText
 import app.coredump.ui.C
+import app.coredump.ui.RankBadge
+import app.coredump.ui.TierBadge
 import app.coredump.ui.DecodeText
 import app.coredump.ui.LocalDisplay
 import app.coredump.ui.LocalLook
@@ -266,6 +268,7 @@ fun ArcadePlay(model: AppModel, session: MatchSession, st: MatchState, a: Answer
                     }
                     Phase.REVEAL -> st.reveal?.let { v ->
                         ArcadeRating(v.me.tier, v.me.points, comboOf(st), v.index)
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { TierBadge(v.me.tier, 14.sp) }
                         Spacer(Modifier.height(10.dp))
                         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                             TText("YOU: ${v.me.input.ifBlank { "—" }}", size = 11.sp, color = C.dim, maxLines = 1)
@@ -362,7 +365,10 @@ fun ArcadeSummary(model: AppModel, session: MatchSession) {
                 RollingNumber(t.my, size = 38.sp, color = C.white, durationMs = 1800)
                 TText("  PTS", Modifier.padding(bottom = 6.dp), size = 14.sp, color = C.hot, weight = FontWeight.Bold)
             }
-            TText("RANK  ${t.rank.title}  ·  AVG ${oneDecimal(t.avg)}", Modifier.fillMaxWidth(), size = 12.sp, color = C.amber,
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { RankBadge(t.rank, size = 22.sp) }
+            Spacer(Modifier.height(6.dp))
+            TText("AVG ${oneDecimal(t.avg)} PER STAGE", Modifier.fillMaxWidth(), size = 12.sp, color = C.amber,
                 align = TextAlign.Center, spacing = 2.sp)
             if (newHigh) {
                 Spacer(Modifier.height(8.dp))

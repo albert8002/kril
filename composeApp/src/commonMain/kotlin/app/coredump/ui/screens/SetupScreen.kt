@@ -25,6 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.coredump.AppModel
 import app.coredump.core.Difficulty
+import app.coredump.core.Spam
+import app.coredump.core.Tier
+import app.coredump.core.Topics
+import app.coredump.ui.Toggle
 import app.coredump.ui.C
 import app.coredump.ui.Choice
 import app.coredump.ui.Panel
@@ -43,10 +47,13 @@ private val secondOptions = listOf(10, 15, 25, 40, 60, 90, 0)
 fun SetupScreen(model: AppModel, forHost: Boolean) {
     val s = model.settings
     val bank by model.bank.state.collectAsState()
-    val topics = remember(bank.prompts) { model.bank.topics() }
+    val counts = remember(bank.prompts, s.niche) {
+        model.bank.all().filter { s.niche || !it.niche }.groupingBy { it.topic }.eachCount()
+    }
+    val topics = Topics.all.filter { (counts[it.key] ?: 0) > 0 }
     val haptic = rememberHaptic()
-    val pool = remember(bank.prompts, s.topics) {
-        model.bank.all().count { s.topics.isEmpty() || it.topic in s.topics }
+    val pool = remember(bank.prompts, s.topics, s.niche) {
+        model.bank.all().count { (s.topics.isEmpty() || it.topic in s.topics) && (s.niche || !it.niche) }
     }
 
     Frame(model, if (forHost) Th.say("HOST PARAMETERS", "Match settings") else Th.say("SOLO RUN", "Solo run")) {
@@ -65,16 +72,16 @@ fun SetupScreen(model: AppModel, forHost: Boolean) {
                 TText("» ${s.difficulty.blurb}", size = 11.sp, color = if (s.difficulty == Difficulty.NIGHTMARE) C.blood else C.dim)
             }
             Spacer(Modifier.height(16.dp))
-            Panel(Th.say("TOPICS", "Topics") + "  (${if (s.topics.isEmpty()) "ALL" else s.topics.size.toString()})") {
+            Panel(Th.say("CATEGORIES", "Categories") + "  (${if (s.topics.isEmpty()) "ALL" else s.topics.size.toString()})") {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    TopicChip("#ALL", bank.prompts, s.topics.isEmpty()) {
+                    TopicChip(Th.say("#ALL", "All"), counts.values.sum(), s.topics.isEmpty()) {
                         haptic(false); model.update { it.copy(topics = emptySet()) }
                     }
-                    for ((t, n) in topics) {
-                        TopicChip("#$t", n, t in s.topics) {
+                    for (t in topics) {
+                        TopicChip(Th.say("#" + t.key.replace(" & ", "&").replace(' ', '_'), t.icon + " " + t.label), counts[t.key] ?: 0, t.key in s.topics) {
                             haptic(false)
                             model.update { st ->
-                                val next = if (t in st.topics) st.topics - t else st.topics + t
+                                val next = if (t.key in st.topics) st.topics - t.key else st.topics + t.key
                                 st.copy(topics = next)
                             }
                         }
@@ -82,10 +89,22 @@ fun SetupScreen(model: AppModel, forHost: Boolean) {
                 }
                 Spacer(Modifier.height(8.dp))
                 TText("${group(pool)} prompts in pool", size = 11.sp, color = if (pool < s.rounds) C.blood else C.dim)
+                Spacer(Modifier.height(6.dp))
+                Toggle(Th.say("include niche lists", "Include niche lists"), s.niche, { v -> model.update { it.copy(niche = v) } },
+                    "hyper-specific lists: players from one country, sub-genres, rare species…")
+            }
+            Spacer(Modifier.height(16.dp))
+            Panel(Th.say("REPEATS", "Repeats")) {
+                TText(Th.say("hide prompts already seen for", "Don't repeat a question for"), size = 13.sp, color = C.dim)
+                Spacer(Modifier.height(6.dp))
+                Choice(listOf(0, 1, 2, 3, 7), s.cooldownDays, { if (it == 0) "off" else "$it day" + if (it == 1) "" else "s" }) { v ->
+                    model.update { it.copy(cooldownDays = v) }
+                }
             }
             Spacer(Modifier.height(16.dp))
             TText(
-                "scoring: HELLO_WORLD 10 · COPYPASTA 15 · LEGACY 30 · MEMORY_LEAK 60 · HEISENBUG 85 · ZERO_DAY 100",
+                "scoring: " + Tier.validDescending.reversed().joinToString(" · ") { "${it.label} ${it.points}" } +
+                    " · key-mashing −${Spam.PENALTY}",
                 size = 10.sp, color = C.line,
             )
         }

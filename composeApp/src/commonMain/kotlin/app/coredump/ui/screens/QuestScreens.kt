@@ -33,6 +33,8 @@ import app.coredump.game.MatchState
 import app.coredump.game.Phase
 import app.coredump.platform.shareText
 import app.coredump.ui.C
+import app.coredump.ui.RankBadge
+import app.coredump.ui.TierBadge
 import app.coredump.ui.LocalLook
 import app.coredump.ui.Panel
 import app.coredump.ui.Spinner
@@ -271,6 +273,8 @@ fun QuestPlay(model: AppModel, session: MatchSession, st: MatchState, a: AnswerS
                             Typewriter(used + "\n" + tierLine(v.me.tier) + if (v.me.points > 0) "  -${v.me.points} HP" else "",
                                 size = 15.sp, color = tierColor(v.me.tier), charMs = 20, cursor = false)
                         }
+                        Spacer(Modifier.height(8.dp))
+                        TierBadge(v.me.tier, 12.sp)
                     }
                     RevealExtras(v, session.isMulti)
                 }
@@ -336,7 +340,10 @@ fun QuestSummary(model: AppModel, session: MatchSession) {
                 if (lvNow > lvBefore) TText(if (blink) "LEVEL UP!  LV $lvBefore → $lvNow" else "", Modifier.height(18.dp), size = 14.sp)
                 else TText("NEXT LV IN ${group(need - into)} EXP", size = 11.sp, color = C.dim)
                 Spacer(Modifier.height(4.dp))
-                TText("TITLE: ${t.rank.title}", size = 12.sp, color = C.dim)
+                Spacer(Modifier.height(6.dp))
+                TText("TITLE EARNED", size = 11.sp, color = C.dim)
+                Spacer(Modifier.height(4.dp))
+                RankBadge(t.rank, size = 18.sp)
             }
             Spacer(Modifier.height(12.dp))
             Panel("BATTLE LOG") {

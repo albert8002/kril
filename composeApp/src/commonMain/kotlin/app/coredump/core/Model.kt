@@ -27,7 +27,7 @@ class AnswerEntry(
 class Prompt(
     val id: String,
     val text: String,
-    val topic: String,
+    rawTopic: String,
     val source: SourceKind,
     val entries: List<AnswerEntry>,
     /** Wikidata graph pattern binding ?item: used to verify answers that are not in the list. */
@@ -35,6 +35,12 @@ class Prompt(
     /** Sitelink thresholds [LEGACY min, MEMORY_LEAK min] for scoring verified unlisted answers. */
     val cuts: IntArray? = null,
 ) {
+    /** Category key (see [Topics]); old category names from older data are mapped. */
+    val topic: String = Topics.classify(id, text, rawTopic)
+    /** Needs specialist knowledge: left out unless the player turns niche lists on. */
+    val niche: Boolean = Topics.isNiche(id, text)
+    /** Answers are people: a surname alone is accepted. */
+    val people: Boolean = Topics.isPeople(id, text, check)
     val size: Int get() = entries.size
     /** Built on demand and kept only for recently used prompts (see [IndexCache]). */
     val index: AnswerIndex get() = IndexCache.of(this)
@@ -140,6 +146,8 @@ data class GameConfig(
     val secondsPerRound: Int,
     val difficulty: Difficulty,
     val topics: Set<String>,
+    /** Include hyper-specific lists. */
+    val niche: Boolean = false,
 )
 
 /** Result of judging one answer. */
@@ -182,25 +190,40 @@ object Judge {
 }
 
 object PromptPicker {
-    /** Picks [GameConfig.rounds] distinct prompts; prefers difficulty match and unseen prompts. */
-    fun pick(all: Collection<Prompt>, cfg: GameConfig, recent: Set<String>, rnd: Random): List<Prompt> {
+    /**
+     * Picks [GameConfig.rounds] distinct prompts.
+     * Order of preference: not shown in the last [cooldownMs] (per [seen]), general (not niche), matching the
+     * difficulty's list size; then the same without the size rule; then niche lists; then prompts shown least recently.
+     */
+    fun pick(
+        all: Collection<Prompt>,
+        cfg: GameConfig,
+        recent: Set<String>,
+        rnd: Random,
+        seen: Map<String, Long> = emptyMap(),
+        cooldownMs: Long = 0L,
+        now: Long = 0L,
+    ): List<Prompt> {
         val usable = all.filter { it.size >= 3 }
-        val pool = usable.filter { cfg.topics.isEmpty() || it.topic in cfg.topics }
-        val primary = pool.filter { it.size in cfg.difficulty.minBreadth..cfg.difficulty.maxBreadth }
-
-        fun order(list: List<Prompt>): List<Prompt> =
-            list.shuffled(rnd).sortedBy { if (it.id in recent) 1 else 0 }
+        val inTopic = usable.filter { cfg.topics.isEmpty() || it.topic in cfg.topics }
+        val general = inTopic.filter { cfg.niche || !it.niche }
+        fun fresh(p: Prompt) = cooldownMs <= 0L || now - (seen[p.id] ?: Long.MIN_VALUE / 2) >= cooldownMs
+        fun sized(p: Prompt) = p.size in cfg.difficulty.minBreadth..cfg.difficulty.maxBreadth
 
         val out = LinkedHashMap<String, Prompt>()   // keyed by prompt text: no duplicates across sources
-        fun fill(list: List<Prompt>) {
-            for (p in order(list)) {
+        fun fill(list: List<Prompt>, shuffle: Boolean = true) {
+            val ordered = if (shuffle) list.shuffled(rnd).sortedBy { if (it.id in recent) 1 else 0 } else list
+            for (p in ordered) {
                 if (out.size >= cfg.rounds) return
                 val k = Norm.key(p.text)
                 if (!out.containsKey(k)) out[k] = p
             }
         }
-        fill(primary)
-        fill(pool)
+        fill(general.filter { fresh(it) && sized(it) })
+        fill(general.filter { fresh(it) })
+        fill(inTopic.filter { fresh(it) })
+        fill(general.sortedBy { seen[it.id] ?: 0L }, shuffle = false)
+        fill(inTopic.sortedBy { seen[it.id] ?: 0L }, shuffle = false)
         if (out.isEmpty()) fill(usable)
         return out.values.toList()
     }
