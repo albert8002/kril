@@ -33,9 +33,10 @@ sealed interface Screen {
     data object Lobby : Screen
     data object Manual : Screen
     data object Stats : Screen
+    data object Appearance : Screen
 }
 
-/** Daily dive number: days since 2026-01-01 UTC (epoch day 20454). */
+/** Daily run number: days since 2026-01-01 UTC (epoch day 20454). */
 fun dailyNumber(epochMs: Long): Int = (epochMs / 86_400_000L - 20454L).toInt().coerceAtLeast(0)
 
 @Stable
@@ -47,8 +48,8 @@ class AppModel(val scope: CoroutineScope) {
     var screen by mutableStateOf<Screen>(Screen.Boot)
         private set
     var toast by mutableStateOf<String?>(null)
-    /** 0..1: how deep the current run is (drives the amber → red tint). */
-    var depthFraction by mutableStateOf(0f)
+    /** Crash report from the previous session (shown once on the menu, kept in config until cleared). */
+    var lastCrash by mutableStateOf(app.coredump.platform.CrashLog.last())
     /** Back pressed during a run: ask before killing it. */
     var confirmQuit by mutableStateOf(false)
     private val stack = ArrayList<Screen>()
@@ -58,7 +59,10 @@ class AppModel(val scope: CoroutineScope) {
     var guestJoin: GuestJoin? = null
         private set
 
-    init { History.load() }
+    init {
+        History.load()
+        app.coredump.ui.Th.set(app.coredump.ui.Style.byName(settings.theme), settings.palette)
+    }
 
     fun go(s: Screen, push: Boolean = true) {
         if (push && screen != Screen.Boot) stack += screen
@@ -67,7 +71,6 @@ class AppModel(val scope: CoroutineScope) {
     }
 
     fun home() {
-        depthFraction = 0f
         stack.clear()
         screen = Screen.Menu
         fx.glitch()
@@ -98,7 +101,13 @@ class AppModel(val scope: CoroutineScope) {
         SettingsStore.save(settings)
         if (old.useWikidata != settings.useWikidata || old.useWikipedia != settings.useWikipedia ||
             old.remoteUrls != settings.remoteUrls) bank.sync(settings, force = false)
+        if (old.theme != settings.theme || old.palette != settings.palette) {
+            app.coredump.ui.Th.set(app.coredump.ui.Style.byName(settings.theme), settings.palette)
+        }
     }
+
+    fun setTheme(style: app.coredump.ui.Style, paletteId: String) =
+        update { it.copy(theme = style.name, palette = paletteId) }
 
     fun pick(cfg: GameConfig): List<Prompt> =
         PromptPicker.pick(bank.all(), cfg, History.recent.toSet(), Random.Default)
@@ -111,7 +120,6 @@ class AppModel(val scope: CoroutineScope) {
         if (prompts.isEmpty()) { toast = "no prompts match. widen topics."; return }
         val s = SoloSession(prompts, cfg, settings.handle, scope, arbiter(cfg))
         s.start()
-        depthFraction = 0f
         go(Screen.Play(s), push = false)
     }
 
@@ -133,11 +141,10 @@ class AppModel(val scope: CoroutineScope) {
     fun startDaily() {
         val n = dailyNumber(app.coredump.platform.Platform.epochMillis())
         val prompts = dailyPrompts(n)
-        if (prompts.isEmpty()) { toast = "daily dive unavailable."; return }
+        if (prompts.isEmpty()) { toast = "daily run unavailable."; return }
         val cfg = GameConfig(prompts.size, 25, app.coredump.core.Difficulty.NORMAL, emptySet())
         val s = SoloSession(prompts, cfg, settings.handle, scope, arbiter(cfg), daily = n)
         s.start()
-        depthFraction = 0f
         go(Screen.Play(s), push = false)
     }
 
@@ -171,14 +178,12 @@ class AppModel(val scope: CoroutineScope) {
         val prompts = pick(cfg)
         if (prompts.isEmpty()) { toast = "no prompts match. widen topics."; return }
         val s = l.begin(prompts, cfg, arbiter(cfg)) ?: run { toast = "no peer linked yet."; return }
-        depthFraction = 0f
         hostLobby = null
         go(Screen.Play(s), push = false)
     }
 
     fun joined(s: MatchSession) {
         guestJoin = null
-        depthFraction = 0f
         go(Screen.Play(s), push = false)
     }
 

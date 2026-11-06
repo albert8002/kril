@@ -45,20 +45,32 @@ jobs:
         with:
           path: snapshot-out
           key: snap-r${{ github.run_id }}-${{ github.run_attempt }}
-      - name: Merge snapshot into bundled packs
+      - name: Merge snapshot into bundled packs (split into small chunks)
         run: |
           python3 - <<'PY'
-          import json, os, shutil, glob
+          import json, os, glob
           packs = "composeApp/src/commonMain/composeResources/files/packs"
           idx = json.load(open(f"{packs}/index.json"))
+          idx["packs"] = [p for p in idx["packs"] if not p.startswith("live_")]
           for f in sorted(glob.glob("snapshot-out/live_*.json")):
-              name = os.path.basename(f)
               if os.path.getsize(f) < 20000:
                   continue
-              shutil.copy(f, f"{packs}/{name}")
-              if name not in idx["packs"]:
-                  idx["packs"].append(name)
-              print("bundled", name, os.path.getsize(f), "bytes")
+              src = json.load(open(f))
+              base = os.path.basename(f)[:-5]
+              prompts = src.get("prompts", [])
+              size, chunk, n = 0, [], 0
+              def flush():
+                  global chunk, size, n
+                  if not chunk: return
+                  name = f"{base}_{n:02d}.json"
+                  out = dict(src); out["prompts"] = chunk
+                  json.dump(out, open(f"{packs}/{name}", "w"), separators=(",", ":"), ensure_ascii=False)
+                  idx["packs"].append(name); n += 1; chunk, size = [], 0
+              for p in prompts:
+                  chunk.append(p); size += len(json.dumps(p))
+                  if size > 350_000: flush()
+              flush()
+              print("bundled", base, len(prompts), "prompts in", n, "chunks")
           json.dump(idx, open(f"{packs}/index.json", "w"))
           PY
       - uses: actions/upload-artifact@v4
@@ -122,6 +134,7 @@ jobs:
           api-level: 34
           target: google_apis
           arch: x86_64
+          profile: pixel_6
           ram-size: 3072M
           heap-size: 256M
           disable-animations: true
@@ -178,6 +191,47 @@ jobs:
       - name: Publish build log
         if: always()
         run: bash .github/publish-log.sh ios "${{ job.status }}" "${{ github.token }}"
+
+  iossim:
+    needs: [ snapshot ]
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: live-packs
+          path: composeApp/src/commonMain/composeResources/files/packs/
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+      - name: Build for the simulator
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          brew install xcodegen
+          cd iosApp && xcodegen generate && cd ..
+          chmod +x gradlew
+          xcodebuild -project iosApp/CoreDump.xcodeproj -scheme CoreDump -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build 2>&1 | tee build.log | tail -5
+      - name: Run self-test in the simulator
+        continue-on-error: true
+        timeout-minutes: 25
+        run: bash .github/sim-test.sh
+      - name: Publish simulator output
+        if: always()
+        run: |
+          mkdir -p sim-out && grep -nE "error:|BUILD FAILED|\*\* BUILD" build.log | head -100 > sim-out/build-errors.txt || true
+          bash .github/publish-dir.sh sim "$GITHUB_WORKSPACE/sim-out" "${{ github.token }}"
 
   release:
     needs: [ android, ios ]

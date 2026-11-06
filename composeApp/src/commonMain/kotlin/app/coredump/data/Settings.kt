@@ -39,6 +39,9 @@ data class Settings(
     val textScale: Float = 1f,
     /** Check unlisted answers online (Wikidata). */
     val verifyOnline: Boolean = true,
+    /** Theme style name (TERMINAL / PAPER / NEON / CLEAN / PIXEL) and palette id within it. */
+    val theme: String = "TERMINAL",
+    val palette: String = "amber",
 ) {
     fun gameConfig() = GameConfig(rounds, seconds, difficulty, topics)
 }
@@ -70,6 +73,8 @@ object SettingsStore {
             reduceMotion = b("reduceMotion") ?: d.reduceMotion,
             textScale = (o["textScale"]?.jsonPrimitive?.floatOrNull ?: d.textScale).coerceIn(0.8f, 1.4f),
             verifyOnline = b("verifyOnline") ?: d.verifyOnline,
+            theme = s("theme") ?: d.theme,
+            palette = s("palette") ?: d.palette,
         )
     }.getOrElse { Settings() }
 
@@ -90,6 +95,8 @@ object SettingsStore {
             put("reduceMotion", s.reduceMotion)
             put("textScale", s.textScale)
             put("verifyOnline", s.verifyOnline)
+            put("theme", s.theme)
+            put("palette", s.palette)
         }
         runCatching { Platform.writeText(FILE, o.toString()) }
     }
@@ -127,7 +134,7 @@ object History {
                 runCatching {
                     val r = el.jsonObject
                     RunRecord(
-                        at = r["at"]!!.jsonPrimitive.content.toLong(),
+                        at = r["at"]?.jsonPrimitive?.contentOrNull?.toLongOrNull() ?: return@runCatching null,
                         mode = r["m"]?.jsonPrimitive?.contentOrNull ?: "solo",
                         points = r["p"]?.jsonPrimitive?.intOrNull ?: 0,
                         tiers = r["t"]?.jsonPrimitive?.contentOrNull.orEmpty().split(',').mapNotNull { Tier.byName(it) },
@@ -153,7 +160,7 @@ object History {
         oppPoints: Int? = null,
     ) {
         recent = (promptIds + recent).distinct().take(KEEP_IDS)
-        // a daily dive counts once: replays of the same day are not recorded as daily
+        // a daily run counts once: replays of the same day are not recorded as daily
         val d = if (daily != null && playedDaily(daily) == null) daily else null
         val rec = RunRecord(Platform.epochMillis(), if (daily != null && d == null) "solo" else mode,
             tiers.sumOf { it.points }, tiers, topics, d, opponent, oppPoints)

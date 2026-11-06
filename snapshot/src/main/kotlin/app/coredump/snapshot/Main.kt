@@ -181,6 +181,29 @@ fun main(args: Array<String>) {
     pool.awaitTermination(budgetMs + 120_000, TimeUnit.MILLISECONDS)
     for (t in failed.toList()) { Thread.sleep(1500); fetchWd(t, 1) }
 
+    // ---- smoke test of the on-device pool (not bundled): a rotating sample, so broken query shapes show up in CI
+    run {
+        val pool = app.coredump.data.WikidataPool.order
+        val start = ((System.currentTimeMillis() / 86_400_000L) * 17 % pool.size).toInt()
+        var ok = 0; var small = 0; var fail = 0
+        for (k in 0 until 16) {
+            if (overBudget()) break
+            val t = pool[(start + k * 37) % pool.size]
+            val t0 = System.currentTimeMillis()
+            try {
+                val body = get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}", "application/sparql-results+json")
+                val p = WikidataTemplates.parse(t, body)
+                if (p.size >= WikidataTemplates.minAnswers(t)) ok++ else small++
+                log("SNAP pool  ${t.id.padEnd(34)} ${p.size.toString().padStart(5)}  ${System.currentTimeMillis() - t0}ms  top: ${p.entries.take(3).joinToString { it.name }}")
+            } catch (e: Exception) {
+                fail++
+                log("SNAP pool  ${t.id.padEnd(34)} FAIL ${System.currentTimeMillis() - t0}ms ${e.message?.take(100)}")
+            }
+            Thread.sleep(300)
+        }
+        log("SNAP pool summary: ${pool.size} templates; sample ok=$ok small=$small fail=$fail")
+    }
+
     val now = System.currentTimeMillis()
     val written = ArrayList<String>()
     val wdSorted = wdOut.values.sortedBy { it.id }

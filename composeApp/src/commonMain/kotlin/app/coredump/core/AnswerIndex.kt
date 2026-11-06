@@ -3,26 +3,25 @@ package app.coredump.core
 import kotlin.math.abs
 
 /**
- * Hash-based answer lookup.
+ * Answer lookup, sized for phones.
  *
- *  1. exact:   HashMap<normalised key, entry>     -> O(1)
- *  2. morph:   plural/singular variants            -> O(1) each
- *  3. fuzzy:   symmetric-delete index (SymSpell), two maps:
- *              pre: HashMap<delete-variant of key's first 8 chars, key ids>
- *              suf: HashMap<delete-variant of key's last 8 chars,  key ids>
- *              A candidate must hit both maps (kills shared-prefix floods),
- *              then is verified with a bounded OSA edit distance.
+ *  1. exact:  HashMap<normalised key, entry>      -> O(1)
+ *  2. morph:  plural/singular variants             -> O(1) each
+ *  3. fuzzy:  keys bucketed by length; only buckets within the typo tolerance are scanned,
+ *             each candidate checked with a bounded OSA edit distance (early exit).
+ *
+ * Memory: about 3 map keys per answer. (The old symmetric-delete index cost ~17 MB per
+ * 1,500-answer list and was the cause of out-of-memory crashes.)
  */
-class AnswerIndex(entries: List<AnswerEntry>, maxIndexEdit: Int = 2) {
+class AnswerIndex(entries: List<AnswerEntry>, @Suppress("UNUSED_PARAMETER") maxIndexEdit: Int = 2) {
 
     class Hit(val entry: Int, val distance: Int, val key: String)
 
     private val exact = HashMap<String, Int>(entries.size * 3)
     private val fuzzyKeys = ArrayList<String>(entries.size * 2)
     private val fuzzyEntry = ArrayList<Int>(entries.size * 2)
-    private val pre = HashMap<String, IntBag>()
-    private val suf = HashMap<String, IntBag>()
-    val depth: Int
+    /** byLength[n] = indexes into fuzzyKeys of keys with length n. */
+    private val byLength: Array<IntBag>
     val keyCount: Int get() = exact.size
 
     init {
@@ -31,17 +30,9 @@ class AnswerIndex(entries: List<AnswerEntry>, maxIndexEdit: Int = 2) {
             addVariants(e.name, i, seenCompact)
             for (a in e.aliases) addVariants(a, i, seenCompact)
         }
-        depth = when {
-            fuzzyKeys.size <= 6000 -> maxIndexEdit.coerceIn(0, 2)
-            else -> maxIndexEdit.coerceIn(0, 1)
-        }
-        if (depth > 0) {
-            for (ki in fuzzyKeys.indices) {
-                val k = fuzzyKeys[ki]
-                for (d in Edits.deletes(k.take(PREFIX), depth)) pre.getOrPut(d) { IntBag() }.add(ki)
-                for (d in Edits.deletes(k.takeLast(PREFIX), depth)) suf.getOrPut(d) { IntBag() }.add(ki)
-            }
-        }
+        val maxLen = fuzzyKeys.maxOfOrNull { it.length } ?: 0
+        byLength = Array(maxLen + 1) { IntBag() }
+        for (ki in fuzzyKeys.indices) byLength[fuzzyKeys[ki].length].add(ki)
     }
 
     private fun addVariants(raw: String, entry: Int, seenCompact: HashSet<String>) {
@@ -49,6 +40,7 @@ class AnswerIndex(entries: List<AnswerEntry>, maxIndexEdit: Int = 2) {
         if (k.isEmpty()) return
         if (!exact.containsKey(k)) exact[k] = entry
         val c = Norm.compact(k)
+        if (c.isEmpty()) return
         if (!exact.containsKey(c)) exact[c] = entry
         if (seenCompact.add(c)) {
             fuzzyKeys += c
@@ -61,65 +53,46 @@ class AnswerIndex(entries: List<AnswerEntry>, maxIndexEdit: Int = 2) {
         if (q.isEmpty()) return null
         val qc = Norm.compact(q)
         exact[q]?.let { return Hit(it, 0, q) }
+        if (qc.isEmpty()) return null
         exact[qc]?.let { return Hit(it, 0, qc) }
         for (v in Norm.morphVariants(qc)) exact[v]?.let { return Hit(it, 0, v) }
 
-        val tol = minOf(maxEdit, toleranceFor(qc.length), depth)
+        val tol = minOf(maxEdit, toleranceFor(qc.length))
         if (tol <= 0) return null
+        return nearest(qc, tol, allowExact = true)
+    }
 
-        val preBags = Edits.deletes(qc.take(PREFIX), tol).mapNotNull { pre[it] }
-        val sufBags = Edits.deletes(qc.takeLast(PREFIX), tol).mapNotNull { suf[it] }
-        if (preBags.isEmpty() || sufBags.isEmpty()) return null
-        // mark the smaller side, scan the larger side
-        val preTotal = preBags.sumOf { it.size }
-        val sufTotal = sufBags.sumOf { it.size }
-        val (small, large) = if (preTotal <= sufTotal) preBags to sufBags else sufBags to preBags
-        val marked = HashSet<Int>()
-        for (bag in small) for (j in 0 until bag.size) marked += bag[j]
+    /**
+     * Autocorrect hint for a rejected input: nearest key within a looser bound
+     * (about 1 edit per 3 chars, max 3). Only runs on a miss.
+     */
+    fun suggest(input: String): Hit? {
+        val qc = Norm.compact(Norm.key(input))
+        if (qc.length < 3) return null
+        return nearest(qc, (qc.length / 3).coerceIn(1, 3), allowExact = false)
+    }
 
+    private fun nearest(qc: String, bound: Int, allowExact: Boolean): Hit? {
         var best: Hit? = null
-        val tried = HashSet<Int>()
-        for (bag in large) {
+        val lo = (qc.length - bound).coerceAtLeast(0)
+        val hi = (qc.length + bound).coerceAtMost(byLength.size - 1)
+        for (len in lo..hi) {
+            val bag = byLength[len]
             for (j in 0 until bag.size) {
                 val ki = bag[j]
-                if (ki !in marked || !tried.add(ki)) continue
                 val key = fuzzyKeys[ki]
-                val dist = Edits.osa(qc, key, tol)
-                if (dist > tol) continue
-                val entry = fuzzyEntry[ki]
+                val limit = best?.distance ?: bound
+                val d = Edits.osa(qc, key, limit)
+                if (d > limit || (d == 0 && !allowExact)) continue
+                val e = fuzzyEntry[ki]
                 val b = best
-                if (b == null || dist < b.distance || (dist == b.distance && entry < b.entry)) {
-                    best = Hit(entry, dist, key)
-                }
+                if (b == null || d < b.distance || (d == b.distance && e < b.entry)) best = Hit(e, d, key)
             }
         }
         return best
     }
 
-    /**
-     * Autocorrect hint for a rejected input: nearest key within a looser bound
-     * (≈ 1 edit per 3 chars, max 3). Linear scan; only runs on a miss.
-     */
-    fun suggest(input: String): Hit? {
-        val qc = Norm.compact(Norm.key(input))
-        if (qc.length < 3) return null
-        val bound = (qc.length / 3).coerceIn(1, 3)
-        var best: Hit? = null
-        for (ki in fuzzyKeys.indices) {
-            val key = fuzzyKeys[ki]
-            if (abs(key.length - qc.length) > bound) continue
-            val d = Edits.osa(qc, key, bound)
-            if (d == 0 || d > bound) continue
-            val e = fuzzyEntry[ki]
-            val b = best
-            if (b == null || d < b.distance || (d == b.distance && e < b.entry)) best = Hit(e, d, key)
-        }
-        return best
-    }
-
     companion object {
-        const val PREFIX = 8
-
         /** Allowed typos by input length (compact form). */
         fun toleranceFor(len: Int): Int = when {
             len <= 3 -> 0
@@ -127,6 +100,35 @@ class AnswerIndex(entries: List<AnswerEntry>, maxIndexEdit: Int = 2) {
             else -> 2
         }
     }
+}
+
+/**
+ * Keeps answer indexes for the few prompts in play; older ones are dropped and rebuilt on demand
+ * (building one takes a few ms), so memory does not grow with every list ever played.
+ */
+object IndexCache {
+    private const val MAX = 16
+    private val map = LinkedHashMap<String, AnswerIndex>()
+    private val lock = kotlinx.coroutines.sync.Mutex()
+
+    private inline fun <T> locked(block: () -> T): T {
+        while (!lock.tryLock()) { /* held only for a few map operations */ }
+        try { return block() } finally { lock.unlock() }
+    }
+
+    fun of(p: Prompt): AnswerIndex {
+        val k = p.cacheKey
+        val hit = locked { map.remove(k)?.also { map[k] = it } }
+        if (hit != null) return hit
+        val built = AnswerIndex(p.entries)
+        locked {
+            map[k] = built
+            while (map.size > MAX) map.remove(map.keys.first())
+        }
+        return built
+    }
+
+    fun clear() = locked { map.clear() }
 }
 
 /** Growable int list without boxing. */

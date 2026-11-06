@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,22 +34,24 @@ import androidx.compose.ui.unit.sp
 import app.coredump.AppModel
 import app.coredump.Screen
 import app.coredump.core.SourceKind
-import app.coredump.core.depthFrames
-import app.coredump.core.hexAddr
+import app.coredump.dailyNumber
 import app.coredump.data.History
 import app.coredump.data.SyncState
+import app.coredump.platform.Platform
 import app.coredump.ui.C
 import app.coredump.ui.Cursor
-import app.coredump.ui.DaemonIdle
-import app.coredump.dailyNumber
-import app.coredump.platform.Platform
-import androidx.compose.foundation.layout.size
 import app.coredump.ui.DecodeText
 import app.coredump.ui.Divider
 import app.coredump.ui.Spinner
+import app.coredump.ui.Style
+import app.coredump.ui.TButton
+import app.coredump.ui.TLink
 import app.coredump.ui.TText
+import app.coredump.ui.Th
 import app.coredump.ui.Typewriter
+import app.coredump.ui.box
 import app.coredump.ui.group
+import app.coredump.ui.onColor
 import app.coredump.ui.rememberHaptic
 import kotlinx.coroutines.delay
 
@@ -62,95 +65,197 @@ private val whispers = listOf(
     "kill -9 does not work on it.",
 )
 
+private class Item(val label: String, val cmd: String, val hint: String, val badge: String?, val action: () -> Unit)
+
 @Composable
 fun MenuScreen(model: AppModel) {
     val bank by model.bank.state.collectAsState()
     val haptic = rememberHaptic()
+    val style = Th.style
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
-        Spacer(Modifier.height(28.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-            Column(Modifier.weight(1f)) {
-                TText("/usr/bin/", size = 12.sp, color = C.dim)
-                GlitchTitle("CORE_DUMP", 40.sp)
-            }
-            DaemonIdle(Modifier.size(60.dp))
-        }
-        Typewriter("the obvious get garbage-collected.", size = 13.sp, color = C.dim, weight = FontWeight.Normal, charMs = 26)
+        Spacer(Modifier.height(if (style == Style.CLEAN) 36.dp else 28.dp))
+        if (style == Style.TERMINAL) TText("/usr/bin/", size = 12.sp, color = C.dim)
+        AppTitle(40.sp)
+        Spacer(Modifier.height(4.dp))
+        Typewriter(
+            Th.say("the obvious get garbage-collected.", "Name the rare answer. The obvious ones barely score."),
+            size = 13.sp, color = C.dim, weight = FontWeight.Normal, charMs = 26,
+        )
         Spacer(Modifier.height(10.dp))
-        val best = History.best
         TText(
-            if (History.games == 0) "no dumps on record. go deep."
-            else "deepest dump: ${group(depthFrames(best))} frames ${hexAddr(depthFrames(best))} · ${History.games} runs",
+            if (History.games == 0) Th.say("no dumps on record.", "No runs yet.")
+            else Th.say("best run: ${History.best} pts · ${History.games} runs", "Best run ${History.best} pts · ${History.games} runs played"),
             size = 11.sp, color = C.dim,
         )
-        Spacer(Modifier.height(26.dp))
+        val crash = model.lastCrash
+        if (crash != null) {
+            Spacer(Modifier.height(12.dp))
+            Column(Modifier.fillMaxWidth().box(style, C.blood, C.bloodDim.copy(alpha = 0.35f)).padding(12.dp)) {
+                TText(Th.say("kernel panic last session. report saved.", "The app crashed last time. A report was saved."),
+                    size = 12.sp, color = C.blood, weight = FontWeight.Bold)
+                TLink(Th.say("view report in config", "View report in Settings"), { model.go(Screen.Config) }, color = C.blood)
+            }
+        }
+        Spacer(Modifier.height(22.dp))
 
         val today = dailyNumber(Platform.epochMillis())
         val playedToday = History.playedDaily(today)
         val items = listOf(
-            Triple(if (playedToday != null) "DAILY #$today ✓" else "DAILY DIVE #$today",
-                if (playedToday != null) "${group(depthFrames(playedToday.points))} fr" else "cron @daily") { model.startDaily() },
-            Triple("RUN SOLO", "./dive --solo") { model.go(Screen.Setup(forHost = false)) },
-            Triple("LINK 1v1", "./dive --peer") { model.go(Screen.Lobby) },
-            Triple("STATS", "cat /proc/self") { model.go(Screen.Stats) },
-            Triple("BROWSE DUMPS", "ls -la /var/lists") { model.go(Screen.Browse) },
-            Triple("CONFIG", "vim ~/.coredumprc") { model.go(Screen.Config) },
-            Triple("MANUAL", "man coredump") { model.go(Screen.Manual) },
+            Item(if (playedToday != null) "DAILY #$today ✓" else "DAILY RUN #$today", "cron @daily",
+                if (playedToday != null) "Played today · ${playedToday.points} pts" else "Same 7 prompts for everyone today",
+                if (playedToday != null) "${playedToday.points}" else "NEW") { model.startDaily() },
+            Item("RUN SOLO", "./run --solo", "Pick topics, time and difficulty", null) { model.go(Screen.Setup(forHost = false)) },
+            Item("LINK 1v1", "./run --peer", "Play a friend online or on Wi-Fi", null) { model.go(Screen.Lobby) },
+            Item("STATS", "cat /proc/self", "Runs, tiers, streaks", null) { model.go(Screen.Stats) },
+            Item("BROWSE LISTS", "ls -la /var/lists", "Every list and its answers", null) { model.go(Screen.Browse) },
+            Item("THEME", "chtheme", "${style.label.lowercase().replaceFirstChar { it.uppercase() }} · ${Th.pal.name.lowercase()}", null) { model.go(Screen.Appearance) },
+            Item("SETTINGS", "vim ~/.coredumprc", "Sources, defaults, crash reports", null) { model.go(Screen.Config) },
+            Item("MANUAL", "man coredump", "How scoring works", null) { model.go(Screen.Manual) },
         )
-        items.forEachIndexed { i, (label, cmd, action) ->
-            MenuItem(i, label, cmd) { haptic(true); action() }
-        }
+        items.forEachIndexed { i, it -> MenuItem(i, it) { haptic(true); it.action() } }
 
-        Spacer(Modifier.height(26.dp))
+        Spacer(Modifier.height(22.dp))
         Divider()
         Spacer(Modifier.height(10.dp))
-        TText("${group(bank.prompts)} prompts · ${group(bank.answers)} answers hashed", size = 12.sp, color = C.amber)
+        TText(
+            Th.say("${group(bank.prompts)} prompts · ${group(bank.answers)} answers hashed", "${group(bank.prompts)} lists · ${group(bank.answers)} answers"),
+            size = 12.sp, color = C.amber,
+        )
         Spacer(Modifier.height(6.dp))
+        val col = bank.collect
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (col.running) {
+                Spinner(C.amber, 12.sp)
+                TText("  ${Th.say("collecting", "Collecting new lists")} ${col.done}/${col.total}", size = 11.sp, color = C.amber)
+            } else {
+                TText(
+                    (if (col.library > 0) "+${col.library} ${Th.say("collected", "collected lists")}" else Th.say("no lists collected yet", "No collected lists yet")) +
+                        (if (col.message.isNotEmpty()) " · ${col.message}" else ""),
+                    Modifier.weight(1f), size = 11.sp, color = C.dim, maxLines = 2,
+                )
+            }
+        }
+        if (!col.running) {
+            Spacer(Modifier.height(8.dp))
+            TButton(Th.say("FETCH MORE LISTS", "Fetch more lists"), { model.bank.requestMore() }, Modifier.fillMaxWidth(), textSize = 12.sp)
+        }
+        Spacer(Modifier.height(10.dp))
         for (k in SourceKind.entries) {
             val st = bank.sources.getValue(k)
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 1.dp)) {
-                TText(k.tag.padEnd(10), size = 11.sp, color = C.dim)
+                TText(k.tag, Modifier.width(86.dp), size = 11.sp, color = C.dim)
                 when (st.state) {
                     SyncState.SYNCING -> { Spinner(C.amber, 11.sp); TText(" ${st.done}/${st.total}", size = 11.sp, color = C.amber) }
                     SyncState.OK -> TText("✓ ${st.count}", size = 11.sp, color = C.amber)
-                    SyncState.ERROR -> TText("✗ sync failed · ${st.count} kept", size = 11.sp, color = C.blood)
+                    SyncState.ERROR -> TText("✗ ${st.count} kept", size = 11.sp, color = C.blood)
                     SyncState.OFF -> TText("off", size = 11.sp, color = C.line)
                     SyncState.IDLE -> TText("· ${st.count}", size = 11.sp, color = C.dim)
                 }
-                if (st.detail.isNotEmpty() && st.state == SyncState.OK) TText("  ${st.detail}", size = 10.sp, color = C.line, maxLines = 1)
-            }
-            if (st.state == SyncState.ERROR && st.detail.isNotEmpty()) {
-                TText("           ${st.detail}", size = 10.sp, color = C.bloodDim, maxLines = 2)
+                if (st.detail.isNotEmpty()) TText("  ${st.detail}", size = 10.sp,
+                    color = if (st.state == SyncState.ERROR) C.blood else C.line, maxLines = 1)
             }
         }
         Spacer(Modifier.height(18.dp))
-        var w by remember { mutableIntStateOf(0) }
-        LaunchedEffect(Unit) { while (true) { delay(7000); w = (w + 1) % whispers.size } }
-        DecodeText(whispers[w], size = 11.sp, color = C.bloodDim, weight = FontWeight.Normal, glow = 0.6f, durationMs = 900)
+        if (style == Style.TERMINAL) {
+            var w by remember { mutableIntStateOf(0) }
+            LaunchedEffect(Unit) { while (true) { delay(7000); w = (w + 1) % whispers.size } }
+            DecodeText(whispers[w], size = 11.sp, color = C.bloodDim, weight = FontWeight.Normal, glow = 0.6f, durationMs = 900)
+        }
         Spacer(Modifier.height(30.dp))
     }
 }
 
 @Composable
-private fun MenuItem(index: Int, label: String, cmd: String, onClick: () -> Unit) {
+private fun MenuItem(index: Int, item: Item, onClick: () -> Unit) {
+    val style = Th.style
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
     val enter = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { delay(80L * index + 120); enter.animateTo(1f, tween(380, easing = FastOutSlowInEasing)) }
-    Row(
-        Modifier.fillMaxWidth()
-            .graphicsLayer { alpha = enter.value; translationX = (1f - enter.value) * -40f }
-            .background(if (pressed) C.amber else C.bg.copy(alpha = 0f))
-            .clickable(src, null, onClick = onClick)
-            .padding(vertical = 13.dp, horizontal = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        val fg = if (pressed) C.bg else C.amber
-        TText(if (pressed) "▶" else ">", Modifier.width(20.dp), size = 16.sp, color = fg, weight = FontWeight.Bold)
-        TText("[${index + 1}] ", size = 13.sp, color = if (pressed) C.bg else C.dim)
-        TText(label, Modifier.weight(1f), size = 17.sp, color = fg, weight = FontWeight.Bold, glow = if (pressed) 0f else 1f)
-        TText(cmd, size = 10.sp, color = if (pressed) C.bg else C.line, maxLines = 1)
-        if (pressed) Cursor(12.sp, C.bg)
+    LaunchedEffect(Unit) { delay(60L * index + 100); enter.animateTo(1f, tween(380, easing = FastOutSlowInEasing)) }
+    val anim = Modifier.graphicsLayer { alpha = enter.value; translationX = (1f - enter.value) * -40f }
+
+    when (style) {
+        Style.TERMINAL -> Row(
+            Modifier.fillMaxWidth().then(anim)
+                .background(if (pressed) C.amber else Color.Transparent)
+                .clickable(src, null, onClick = onClick)
+                .padding(vertical = 13.dp, horizontal = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val fg = if (pressed) C.bg else C.amber
+            TText(if (pressed) "▶" else ">", Modifier.width(20.dp), size = 16.sp, color = fg, weight = FontWeight.Bold)
+            TText("[${index + 1}] ", size = 13.sp, color = if (pressed) C.bg else C.dim)
+            TText(item.label, Modifier.weight(1f), size = 17.sp, color = fg, weight = FontWeight.Bold, glow = if (pressed) 0f else 1f)
+            TText(item.cmd, size = 10.sp, color = if (pressed) C.bg else C.line, maxLines = 1)
+            if (pressed) Cursor(12.sp, C.bg)
+        }
+        Style.PAPER -> Column(Modifier.fillMaxWidth().then(anim).clickable(src, null, onClick = onClick)) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                TText("${index + 1}.", Modifier.width(30.dp), size = 15.sp, color = C.dim, weight = FontWeight.Bold)
+                Column(Modifier.weight(1f)) {
+                    TText(item.label.lowercase().replaceFirstChar { it.uppercase() }, size = 19.sp,
+                        color = if (pressed) C.hot else C.amber, weight = FontWeight.Bold)
+                    TText(item.hint, size = 12.sp, color = C.dim)
+                }
+                item.badge?.let { TText(it, size = 11.sp, color = C.hot, weight = FontWeight.Bold) }
+            }
+            Box1px()
+        }
+        Style.NEON -> Row(
+            Modifier.fillMaxWidth().then(anim).padding(vertical = 5.dp)
+                .box(style, if (pressed) C.hot else C.amber.copy(alpha = 0.55f), if (pressed) C.hot.copy(alpha = 0.18f) else C.panel.copy(alpha = 0.55f),
+                    strokeWidth = 1.5.dp, glow = pressed || index == 0)
+                .clickable(src, null, onClick = onClick)
+                .padding(horizontal = 18.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                TText(item.label, size = 16.sp, color = if (index == 0) C.hot else C.amber, weight = FontWeight.Bold, spacing = 1.5.sp)
+                TText(item.hint, size = 11.sp, color = C.dim)
+            }
+            TText("›", size = 22.sp, color = C.hot, weight = FontWeight.Bold)
+        }
+        Style.CLEAN -> Row(
+            Modifier.fillMaxWidth().then(anim).padding(vertical = 5.dp)
+                .box(style, C.line.copy(alpha = 0.6f), if (pressed) C.ghost else C.panel)
+                .clickable(src, null, onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val dot = if (index == 0) C.hot else C.ghost
+            TText(
+                "${index + 1}", Modifier.width(30.dp).box(style, Color.Transparent, dot, pill = true).padding(vertical = 4.dp),
+                size = 12.sp, color = if (index == 0) onColor(dot) else C.dim, weight = FontWeight.SemiBold,
+                align = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                TText(item.label.lowercase().replaceFirstChar { it.uppercase() }.replace("1v1", "1v1"), size = 16.sp,
+                    color = C.amber, weight = FontWeight.SemiBold)
+                TText(item.hint, size = 12.sp, color = C.dim)
+            }
+            item.badge?.let {
+                TText(it, Modifier.box(style, Color.Transparent, C.hot, pill = true).padding(horizontal = 8.dp, vertical = 3.dp),
+                    size = 10.sp, color = onColor(C.hot), weight = FontWeight.Bold)
+                Spacer(Modifier.width(8.dp))
+            }
+            TText("›", size = 20.sp, color = C.dim)
+        }
+        Style.PIXEL -> Row(
+            Modifier.fillMaxWidth().then(anim)
+                .clickable(src, null, onClick = onClick)
+                .padding(vertical = 11.dp, horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TText(if (pressed) "▶" else " ", Modifier.width(22.dp), size = 16.sp, color = C.amber)
+            TText(item.label, Modifier.weight(1f), size = 17.sp, color = C.amber)
+            item.badge?.let { TText(it, Modifier.background(C.amber).padding(horizontal = 4.dp, vertical = 2.dp), size = 11.sp, color = C.bg) }
+        }
     }
+}
+
+@Composable
+private fun Box1px() {
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().height(1.dp).background(C.line))
 }

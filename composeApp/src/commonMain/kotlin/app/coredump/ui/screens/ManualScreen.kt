@@ -20,16 +20,18 @@ import app.coredump.ui.C
 import app.coredump.ui.Panel
 import app.coredump.ui.TText
 import app.coredump.ui.tierColor
+import app.coredump.ui.Th
 
 @Composable
 fun ManualScreen(model: AppModel) {
-    Frame(model, "man coredump") {
+    Frame(model, Th.say("man coredump", "How to play")) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
-            Panel("NAME") {
-                TText("coredump - name the rare thing before the garbage collector finds you", size = 12.sp)
+            Panel(Th.say("NAME", "The idea")) {
+                TText(Th.say("coredump - name the rare thing before the garbage collector finds you",
+                    "Every prompt has a long list of valid answers. Name one — the rarer it is, the more it scores."), size = 12.sp)
             }
             Spacer(Modifier.height(12.dp))
-            Panel("SYNOPSIS") {
+            Panel(Th.say("SYNOPSIS", "Rules")) {
                 for (l in listOf(
                     "each run = N prompts (default 7), T seconds each (default 25).",
                     "type any valid answer. every valid answer scores.",
@@ -37,39 +39,38 @@ fun ManualScreen(model: AppModel) {
                     "close typo? tap the 'did you mean' chip.",
                     "not in the list? it's checked online (Wikidata) and scored by obscurity.",
                     "rarer answers score more. obvious ones barely count.",
-                    "1 point = 10 frames of stack depth. go deep.",
                     "typos are forgiven by difficulty: 2 / 2 / 1 / 0 edits.",
-                    "at the end: see what would have gone deeper.",
+                    "at the end: see which answers would have scored more.",
                 )) TText("· $l", size = 12.sp, color = C.amber)
             }
             Spacer(Modifier.height(12.dp))
-            Panel("TIERS") {
+            Panel(Th.say("TIERS", "Tiers")) {
                 for (t in Tier.entries.reversed()) {
                     Row(Modifier.padding(vertical = 3.dp)) {
-                        TText(t.label.padEnd(12), Modifier.width(118.dp), size = 11.sp, color = tierColor(t), weight = FontWeight.Bold)
-                        TText("${t.points}".padStart(3) + "  ", size = 11.sp, color = tierColor(t))
+                        TText(t.label, Modifier.width(118.dp), size = 11.sp, color = tierColor(t), weight = FontWeight.Bold)
+                        TText("${t.points}", Modifier.width(34.dp), size = 11.sp, color = tierColor(t))
                         TText(t.blurb, size = 11.sp, color = C.dim)
                     }
                 }
             }
             Spacer(Modifier.height(12.dp))
-            Panel("RANKS  (average points per prompt)") {
+            Panel(Th.say("RANKS  (average points per prompt)", "Ranks (average points per prompt)")) {
                 for (r in Rank.entries) {
                     Row(Modifier.padding(vertical = 3.dp)) {
-                        TText("≥${r.minAvg}".padEnd(5), size = 11.sp, color = C.dim)
-                        TText(r.title.padEnd(12), Modifier.width(110.dp), size = 11.sp, weight = FontWeight.Bold)
+                        TText("≥${r.minAvg}", Modifier.width(40.dp), size = 11.sp, color = C.dim)
+                        TText(r.title, Modifier.width(110.dp), size = 11.sp, weight = FontWeight.Bold)
                         TText(r.line, size = 11.sp, color = C.dim)
                     }
                 }
             }
             Spacer(Modifier.height(12.dp))
-            Panel("SOURCES") {
+            Panel(Th.say("SOURCES", "Where the lists come from")) {
                 for (l in listOf(
-                    "LOCAL      hand-ranked packs shipped in the app. offline.",
-                    "WIKIDATA   live SPARQL lists. rarity = how many wikipedias cover it.",
-                    "WIKIPEDIA  scraped \"List of …\" pages. rarity = how many wikipedias cover it.",
-                    "REMOTE     any JSON pack URL you add in config.",
-                    "a snapshot of all live lists ships inside the app; boot refreshes it weekly.",
+                    "LOCAL · hand-ranked packs shipped in the app. offline.",
+                    "WIKIDATA · ranked lists. rarity = how many Wikipedias cover the answer.",
+                    "WIKIPEDIA · \"List of …\" pages, ranked the same way.",
+                    "REMOTE · any JSON pack URL you add in settings.",
+                    "~470 lists ship inside the app. about 12 new lists are collected each day; tap FETCH MORE LISTS for more.",
                 )) TText(l, size = 11.sp, color = C.amber)
             }
             Spacer(Modifier.height(12.dp))
@@ -77,7 +78,7 @@ fun ManualScreen(model: AppModel) {
                 for (l in listOf(
                     "host: LINK 1v1 → HOST. a QR sigil + room code appear.",
                     "peer: LINK 1v1 → JOIN → SCAN SIGIL or type the room code.",
-                    "same prompts, same clock. deeper answer takes the round.",
+                    "same prompts, same clock. the rarer answer takes the round.",
                     "ONLINE RELAY works on any network (Android ↔ iPhone, LiveContainer).",
                     "DIRECT WI-FI needs both on one network that allows device-to-device traffic.",
                 )) TText("· $l", size = 12.sp, color = C.amber)

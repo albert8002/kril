@@ -33,6 +33,11 @@ import app.coredump.ui.TButton
 import app.coredump.ui.TText
 import app.coredump.ui.TermInput
 import app.coredump.ui.Toggle
+import app.coredump.ui.Th
+import app.coredump.ui.TLink
+import app.coredump.Screen
+import app.coredump.platform.CrashLog
+import app.coredump.platform.shareText
 
 @Composable
 fun ConfigScreen(model: AppModel) {
@@ -41,9 +46,9 @@ fun ConfigScreen(model: AppModel) {
     var handle by remember { mutableStateOf(s.handle) }
     var urls by remember { mutableStateOf(s.remoteUrls.joinToString("\n")) }
 
-    Frame(model, "vim ~/.coredumprc") {
+    Frame(model, Th.say("vim ~/.coredumprc", "Settings")) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
-            Panel("IDENTITY") {
+            Panel(Th.say("IDENTITY", "Name")) {
                 TermInput(
                     handle,
                     { v -> handle = v.uppercase().filter { it.isLetterOrDigit() || it == '_' || it == '-' }.take(14) },
@@ -51,11 +56,11 @@ fun ConfigScreen(model: AppModel) {
                     onSubmit = { model.update { it.copy(handle = handle.ifBlank { "ANON" }) } },
                 )
                 Spacer(Modifier.height(6.dp))
-                TButton("SAVE HANDLE", { model.update { it.copy(handle = handle.ifBlank { "ANON" }) }; model.toast = "handle set: ${handle.ifBlank { "ANON" }}" },
+                TButton(Th.say("SAVE HANDLE", "Save name"), { model.update { it.copy(handle = handle.ifBlank { "ANON" }) }; model.toast = "handle set: ${handle.ifBlank { "ANON" }}" },
                     Modifier.fillMaxWidth(), textSize = 12.sp)
             }
             Spacer(Modifier.height(14.dp))
-            Panel("DEFAULT RUN") {
+            Panel(Th.say("DEFAULT RUN", "Default run")) {
                 Stepper("prompts per run", s.rounds, { v -> model.update { it.copy(rounds = v) } }, 1..50)
                 TText("time per prompt", size = 13.sp, color = C.dim)
                 Spacer(Modifier.height(6.dp))
@@ -66,10 +71,21 @@ fun ConfigScreen(model: AppModel) {
                 Choice(Difficulty.entries, s.difficulty, { it.label }) { v -> model.update { it.copy(difficulty = v) } }
             }
             Spacer(Modifier.height(14.dp))
-            Panel("SOURCES") {
+            Panel(Th.say("LIBRARY", "Collected lists")) {
+                val col = bank.collect
+                KV("collected lists on this device", "${col.library}")
+                KV("last batch", if (col.lastAt == 0L) "never" else "${((Platform.epochMillis() - col.lastAt) / 3_600_000L)} h ago")
+                if (col.message.isNotEmpty()) TText(col.message, size = 11.sp, color = C.dim)
+                Spacer(Modifier.height(8.dp))
+                TButton(if (col.running) "collecting ${col.done}/${col.total}…" else Th.say("FETCH MORE LISTS", "Fetch more lists"),
+                    { model.bank.requestMore() }, Modifier.fillMaxWidth(), enabled = !col.running, textSize = 12.sp)
+                TText("about 12 new lists are added automatically once a day while the app is used.", size = 10.sp, color = C.dim)
+            }
+            Spacer(Modifier.height(14.dp))
+            Panel(Th.say("SOURCES", "Sources")) {
                 Toggle("bundled packs", true, {}, "always on · offline")
-                Toggle("wikidata live lists", s.useWikidata, { v -> model.update { it.copy(useWikidata = v) } },
-                    "weekly refresh of 30 lists · full set ships inside the app")
+                Toggle("collect new Wikidata lists", s.useWikidata, { v -> model.update { it.copy(useWikidata = v) } },
+                    "daily batch + FETCH MORE · ~470 ranked lists ship inside the app")
                 Toggle("verify unlisted answers online", s.verifyOnline, { v -> model.update { it.copy(verifyOnline = v) } },
                     "not in the list? check Wikidata · score by how many wikipedias cover it")
                 Toggle("wikipedia list scraping", s.useWikipedia, { v -> model.update { it.copy(useWikipedia = v) } },
@@ -80,7 +96,7 @@ fun ConfigScreen(model: AppModel) {
                 TermInput(urls, { urls = it }, Modifier.fillMaxWidth(), prompt = "url", size = 11.sp,
                     singleLine = false, imeAction = ImeAction.Default, placeholder = "https://…/packs/index.json")
                 Spacer(Modifier.height(6.dp))
-                TButton("SAVE URLS", {
+                TButton(Th.say("SAVE URLS", "Save URLs"), {
                     val list = urls.split('\n', ',', ' ').map { it.trim() }.filter { it.startsWith("http") }
                     model.update { it.copy(remoteUrls = list) }
                     model.toast = "${list.size} remote source(s)"
@@ -99,37 +115,43 @@ fun ConfigScreen(model: AppModel) {
                 }
                 Spacer(Modifier.height(8.dp))
                 Row {
-                    TButton("SYNC NOW", { model.bank.sync(model.settings, force = true) }, Modifier.weight(1f), textSize = 12.sp)
+                    TButton(Th.say("SYNC NOW", "Sync now"), { model.bank.sync(model.settings, force = true) }, Modifier.weight(1f), textSize = 12.sp)
                     Spacer(Modifier.width(8.dp))
-                    TButton("PURGE CACHE", { model.bank.purgeCaches(); model.toast = "cache purged. restart to reload." },
+                    TButton(Th.say("PURGE CACHE", "Clear cache"), { model.bank.purgeCaches(); model.toast = "cache cleared. restart to reload." },
                         Modifier.weight(1f), textSize = 12.sp, color = C.blood)
                 }
             }
             Spacer(Modifier.height(14.dp))
-            Panel("DISPLAY") {
-                Toggle("scanlines", s.scanlines, { v -> model.update { it.copy(scanlines = v) } })
-                Toggle("phosphor flicker", s.flicker, { v -> model.update { it.copy(flicker = v) } })
-                Toggle("reduce motion", s.reduceMotion, { v -> model.update { it.copy(reduceMotion = v) } },
-                    "no shake, tear, typewriter or rain")
+            Panel(Th.say("DISPLAY", "Look")) {
+                KV("theme", "${Th.style.label} · ${Th.pal.name}")
+                TLink(Th.say("change theme, colours, text size", "Change theme, colours and text size"), { model.go(Screen.Appearance) }, color = C.hot)
                 Toggle("haptics", s.haptics, { v -> model.update { it.copy(haptics = v) } })
-                Spacer(Modifier.height(6.dp))
-                TText("text size", size = 13.sp, color = C.dim)
-                Spacer(Modifier.height(6.dp))
-                Choice(listOf(0.9f, 1f, 1.15f, 1.3f), s.textScale, { "${(it * 100).toInt()}%" }) { v ->
-                    model.update { it.copy(textScale = v) }
-                }
-                Spacer(Modifier.height(8.dp))
-                Spacer(Modifier.height(6.dp))
-                TText("glow", size = 13.sp, color = C.dim)
-                Spacer(Modifier.height(6.dp))
-                Choice(listOf(0f, 0.5f, 1f, 1.5f), s.glow, { if (it == 0f) "OFF" else "${(it * 100).toInt()}%" }) { v ->
-                    model.update { it.copy(glow = v) }
+            }
+            Spacer(Modifier.height(14.dp))
+            Panel(Th.say("CRASH REPORTS", "Crash reports"), color = if (model.lastCrash != null) C.blood else C.line) {
+                val crash = model.lastCrash
+                val notes = remember(crash) { CrashLog.notes() }
+                if (crash == null && notes == null) {
+                    TText("no crashes recorded.", size = 12.sp, color = C.dim)
+                } else {
+                    if (crash != null) {
+                        TText("last crash:", size = 11.sp, color = C.blood, weight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        TText(crash.lines().take(14).joinToString("\n"), size = 9.sp, color = C.dim)
+                    } else {
+                        TText("no crash · ${notes?.lines()?.count { it.isNotBlank() && it.first().isDigit() } ?: 0} handled errors logged", size = 11.sp, color = C.dim)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row {
+                        TButton("SHARE REPORT", { shareText(crash ?: notes.orEmpty()) }, Modifier.weight(1f), textSize = 12.sp)
+                        Spacer(Modifier.width(8.dp))
+                        TButton("CLEAR", { CrashLog.clear(); model.lastCrash = null }, Modifier.weight(1f), textSize = 12.sp, color = C.blood)
+                    }
                 }
             }
             Spacer(Modifier.height(14.dp))
-            TText("CORE_DUMP 1.0.0 · ${Platform.name} · font: DejaVu Sans Mono (free license)", size = 10.sp, color = C.line)
+            TText("CORE DUMP 1.1 · ${Platform.name} · fonts: DejaVu, Lora, Poppins, Inter (free licenses)", size = 10.sp, color = C.dim)
             TText("lists from Wikidata (CC0) and Wikipedia (CC BY-SA). no data leaves the device except those queries.",
-                size = 10.sp, color = C.line)
+                size = 10.sp, color = C.dim)
             Spacer(Modifier.height(20.dp))
         }
     }

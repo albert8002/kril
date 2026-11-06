@@ -47,7 +47,8 @@ object WikidataTemplates {
     val all: List<WikidataTemplate> by lazy { base + WikidataFamilies.all }
 
     /** Minimum list size to keep a fetched prompt. */
-    fun minAnswers(t: WikidataTemplate): Int = if (t.id.startsWith("wf.")) WikidataFamilies.MIN_ANSWERS else 5
+    fun minAnswers(t: WikidataTemplate): Int =
+        if (t.id.startsWith("wf.") || t.id.startsWith("wx.")) WikidataFamilies.MIN_ANSWERS else 5
 
     val base: List<WikidataTemplate> = listOf(
         WikidataTemplate("wd.dog", "Name a dog breed", "NATURE", inst("Q39367")),
@@ -125,7 +126,8 @@ object WikidataTemplates {
 
     /** Parses a SPARQL JSON result into a ranked prompt (with sitelink cut-offs for scoring unlisted answers). */
     fun parse(t: WikidataTemplate, body: String): Prompt {
-        val bindings = json.parseToJsonElement(body).jsonObject["results"]!!.jsonObject["bindings"]!!.jsonArray
+        val bindings = json.parseToJsonElement(body).jsonObject["results"]?.jsonObject?.get("bindings")?.jsonArray
+            ?: throw IllegalStateException("unexpected reply")
         val raw = ArrayList<RawAnswer>(bindings.size)
         val linksByKey = HashMap<String, Int>()
         for (b in bindings) {

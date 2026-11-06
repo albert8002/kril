@@ -32,12 +32,11 @@ import app.coredump.Screen
 import app.coredump.core.Rank
 import app.coredump.core.RoundView
 import app.coredump.core.Tier
-import app.coredump.core.depthFrames
 import app.coredump.core.hexAddr
 import app.coredump.game.MatchSession
 import app.coredump.ui.C
 import app.coredump.ui.DecodeText
-import app.coredump.ui.DaemonShaft
+import app.coredump.ui.Th
 import app.coredump.platform.shareText
 import app.coredump.ui.Divider
 import app.coredump.ui.Panel
@@ -58,54 +57,50 @@ fun SummaryScreen(model: AppModel, session: MatchSession) {
     val rank = Rank.of(avg)
     val maxPts = rounds.size * Tier.ZERO_DAY.points
 
-    Frame(model, "CORE DUMPED", onBack = { model.home() }) {
+    Frame(model, Th.say("CORE DUMPED", "Results"), onBack = { model.home() }) {
         LazyColumn(Modifier.weight(1f).padding(horizontal = 16.dp)) {
             item {
                 Spacer(Modifier.height(14.dp))
-                Row {
-                    Column(Modifier.weight(1f)) {
-                        TText(if (st.daily != null) "daily dive #${st.daily} · exited" else "process exited · status ${if (my > 0) 0 else 139}",
-                            size = 11.sp, color = C.dim)
-                        Spacer(Modifier.height(6.dp))
-                        RollingNumber(depthFrames(my), size = 36.sp, color = C.hot, durationMs = 2400)
-                        TText("frames deep", size = 13.sp, color = C.dim)
-                        TText("${hexAddr(depthFrames(my))} · ${my}/${maxPts} pts", size = 11.sp, color = C.dim)
-                        TText("avg ${(avg * 10).toInt() / 10.0} per prompt", size = 11.sp, color = C.dim)
-                        Spacer(Modifier.height(14.dp))
-                        TText("RANK", size = 10.sp, color = C.dim, spacing = 2.sp)
-                        DecodeText(rank.title, size = 28.sp, color = C.amber, durationMs = 1100)
-                        TText(rank.line, size = 12.sp, color = C.dim)
-                    }
-                    var acc = 0
-                    val marks = rounds.map { r -> acc += r.me.points; depthFrames(acc) to "#${r.index + 1} +${r.me.points}" }
-                    DaemonShaft(
-                        depthFrames = depthFrames(my), startFrom = 0, markers = marks, fallMs = 2600,
-                        lastTier = rounds.maxByOrNull { it.me.points }?.me?.tier,
-                        modifier = Modifier.width(72.dp).height(300.dp),
+                Column(Modifier.fillMaxWidth()) {
+                    TText(
+                        if (st.daily != null) Th.say("daily run #${st.daily} · exited", "Daily run #${st.daily}")
+                        else Th.say("process exited · status ${if (my > 0) 0 else 139}", "Run complete"),
+                        size = 11.sp, color = C.dim,
                     )
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        RollingNumber(my, size = 40.sp, color = C.hot, durationMs = 2000)
+                        TText(" / $maxPts pts", Modifier.padding(bottom = 6.dp), size = 13.sp, color = C.dim)
+                    }
+                    TText(Th.say("${hexAddr(my)} · avg ${(avg * 10).toInt() / 10.0} per prompt", "Average ${(avg * 10).toInt() / 10.0} per prompt"),
+                        size = 11.sp, color = C.dim)
+                    Spacer(Modifier.height(14.dp))
+                    TText(Th.say("RANK", "Rank"), size = 10.sp, color = C.dim, spacing = 2.sp)
+                    DecodeText(rank.title, size = 28.sp, color = C.amber, durationMs = 1100)
+                    TText(rank.line, size = 12.sp, color = C.dim)
                 }
                 Spacer(Modifier.height(12.dp))
-                TButton("SHARE DUMP", { shareText(shareCard(st, rank)) }, Modifier.fillMaxWidth(), textSize = 13.sp)
+                TButton(Th.say("SHARE DUMP", "Share result"), { shareText(shareCard(st, rank)) }, Modifier.fillMaxWidth(), textSize = 13.sp)
 
                 val opp = st.oppName
                 if (session.isMulti && opp != null) {
                     Spacer(Modifier.height(14.dp))
                     val o = st.oppTotal
-                    Panel("DUEL") {
+                    Panel(Th.say("DUEL", "1v1")) {
                         Row {
                             TText(st.myName, Modifier.weight(1f), size = 14.sp, weight = FontWeight.Bold)
-                            TText("${depthFrames(my)} fr", size = 14.sp, color = C.hot)
+                            TText("$my pts", size = 14.sp, color = C.hot)
                         }
                         Row {
                             TText(opp, Modifier.weight(1f), size = 14.sp, weight = FontWeight.Bold, color = C.dim)
-                            TText("${depthFrames(o)} fr", size = 14.sp, color = C.dim)
+                            TText("$o pts", size = 14.sp, color = C.dim)
                         }
                         Spacer(Modifier.height(6.dp))
                         TText(
                             when {
-                                my > o -> "WINNER: YOU. the peer was garbage-collected."
-                                my < o -> "WINNER: ${opp.uppercase()}. you were garbage-collected."
-                                else -> "DEADLOCK. nobody wins."
+                                my > o -> Th.say("WINNER: YOU. the peer was garbage-collected.", "You win!")
+                                my < o -> Th.say("WINNER: ${opp.uppercase()}. you were garbage-collected.", "$opp wins.")
+                                else -> Th.say("DEADLOCK. nobody wins.", "It's a draw.")
                             },
                             size = 13.sp, color = if (my >= o) C.hot else C.blood, weight = FontWeight.Bold,
                         )
@@ -113,18 +108,18 @@ fun SummaryScreen(model: AppModel, session: MatchSession) {
                 }
 
                 Spacer(Modifier.height(14.dp))
-                Panel("TIER HISTOGRAM") {
+                Panel(Th.say("TIER HISTOGRAM", "Tiers")) {
                     for (t in Tier.entries.reversed()) {
                         val n = rounds.count { it.me.tier == t }
                         if (n == 0) continue
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            TText(t.label.padEnd(12), size = 11.sp, color = tierColor(t))
+                            TText(t.label, Modifier.width(112.dp), size = 11.sp, color = tierColor(t))
                             TText("█".repeat(n) + "  $n", size = 11.sp, color = tierColor(t))
                         }
                     }
                 }
                 Spacer(Modifier.height(14.dp))
-                TText("STACK TRACE  (tap a frame for deeper answers)", size = 10.sp, color = C.dim, spacing = 1.sp)
+                TText(Th.say("STACK TRACE  (tap a prompt for rarer answers)", "Prompts · tap one to see rarer answers"), size = 10.sp, color = C.dim, spacing = 1.sp)
                 Spacer(Modifier.height(6.dp))
             }
             items(rounds, key = { it.index }) { r ->
@@ -134,10 +129,10 @@ fun SummaryScreen(model: AppModel, session: MatchSession) {
         }
         Row(Modifier.fillMaxWidth().padding(16.dp)) {
             if (!session.isMulti) {
-                TButton("AGAIN", { model.replay(session) }, Modifier.weight(1f), primary = true)
+                TButton(Th.say("AGAIN", "Play again"), { model.replay(session) }, Modifier.weight(1f), primary = true)
                 Spacer(Modifier.width(10.dp))
             }
-            TButton("SHELL", { model.home() }, Modifier.weight(1f))
+            TButton(Th.say("SHELL", "Menu"), { model.home() }, Modifier.weight(1f))
         }
     }
 }
@@ -175,19 +170,19 @@ private fun RoundRow(model: AppModel, r: RoundView, multi: Boolean) {
         AnimatedVisibility(open, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
             Column(Modifier.padding(start = 14.dp, top = 6.dp)) {
                 if (better.isEmpty()) {
-                    TText("nothing deeper existed. you hit bedrock.", size = 11.sp, color = C.hot)
+                    TText(Th.say("nothing rarer existed. you hit bedrock.", "Nothing rarer existed — top score."), size = 11.sp, color = C.hot)
                 } else {
-                    TText("WOULD HAVE GONE DEEPER:", size = 10.sp, color = C.dim, spacing = 1.sp)
+                    TText(Th.say("WOULD HAVE SCORED MORE:", "Would have scored more:"), size = 10.sp, color = C.dim, spacing = 1.sp)
                     for (g in better) {
                         Row(Modifier.padding(vertical = 2.dp)) {
-                            TText("${g.tier.label} +${g.tier.points}".padEnd(16), size = 11.sp, color = tierColor(g.tier))
+                            TText("${g.tier.label} +${g.tier.points}", Modifier.width(140.dp), size = 11.sp, color = tierColor(g.tier))
                             TText(g.names.joinToString(" · "), size = 11.sp, color = C.amber)
                         }
                     }
                 }
                 val pid = r.promptId
                 if (pid != null && model.bank.get(pid) != null) {
-                    TLink("cat full dump (${r.listSize} entries)", { model.go(Screen.Dump(pid)) })
+                    TLink(Th.say("cat full dump (${r.listSize} entries)", "See all ${r.listSize} answers"), { model.go(Screen.Dump(pid)) })
                 }
             }
         }
@@ -197,8 +192,8 @@ private fun RoundRow(model: AppModel, r: RoundView, multi: Boolean) {
 }
 
 private fun answerText(t: Tier, canonical: String?, input: String): String = when (t) {
-    Tier.TIMEOUT -> "<timeout>"
-    Tier.SEGFAULT -> "$input  ✗ segfault"
+    Tier.TIMEOUT -> Th.say("<timeout>", "time's up")
+    Tier.SEGFAULT -> Th.say("$input  ✗ segfault", "$input  ✗")
     else -> canonical ?: input
 }
 
@@ -214,11 +209,11 @@ private fun tierGlyph(t: Tier): String = when (t) {
 /** Spoiler-free result card, Wordle style. */
 fun shareCard(st: app.coredump.game.MatchState, rank: Rank): String {
     val head = when {
-        st.daily != null -> "CORE_DUMP daily #${st.daily}"
-        st.oppName != null -> "CORE_DUMP 1v1 vs ${st.oppName}"
-        else -> "CORE_DUMP dive"
+        st.daily != null -> "CORE DUMP daily #${st.daily}"
+        st.oppName != null -> "CORE DUMP 1v1 vs ${st.oppName}"
+        else -> "CORE DUMP run"
     }
     val grid = st.rounds.joinToString("") { tierGlyph(it.me.tier) }
-    val opp = if (st.oppName != null) " · ${st.oppName} ${depthFrames(st.oppTotal)} fr" else ""
-    return "$head\n${depthFrames(st.myTotal)} frames deep · ${rank.title}$opp\n$grid"
+    val opp = if (st.oppName != null) " · ${st.oppName} ${st.oppTotal} pts" else ""
+    return "$head\n${st.myTotal} pts · ${rank.title}$opp\n$grid"
 }

@@ -36,7 +36,9 @@ class Prompt(
     val cuts: IntArray? = null,
 ) {
     val size: Int get() = entries.size
-    val index: AnswerIndex by lazy { AnswerIndex(entries) }
+    /** Built on demand and kept only for recently used prompts (see [IndexCache]). */
+    val index: AnswerIndex get() = IndexCache.of(this)
+    internal val cacheKey: String = id + "#" + entries.size + "#" + (entries.firstOrNull()?.name ?: "")
     val zeroDay: AnswerEntry? get() = entries.firstOrNull { it.tier == Tier.ZERO_DAY }
     fun countOf(t: Tier): Int = entries.count { it.tier == t }
 }

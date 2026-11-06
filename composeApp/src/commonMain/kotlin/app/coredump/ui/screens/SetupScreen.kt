@@ -33,6 +33,8 @@ import app.coredump.ui.TButton
 import app.coredump.ui.TText
 import app.coredump.ui.group
 import app.coredump.ui.rememberHaptic
+import app.coredump.ui.ChipBox
+import app.coredump.ui.Th
 
 private val secondOptions = listOf(10, 15, 25, 40, 60, 90, 0)
 
@@ -47,9 +49,9 @@ fun SetupScreen(model: AppModel, forHost: Boolean) {
         model.bank.all().count { s.topics.isEmpty() || it.topic in s.topics }
     }
 
-    Frame(model, if (forHost) "HOST PARAMETERS" else "SOLO DIVE") {
+    Frame(model, if (forHost) Th.say("HOST PARAMETERS", "Match settings") else Th.say("SOLO RUN", "Solo run")) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
-            Panel("PARAMETERS") {
+            Panel(Th.say("PARAMETERS", "Settings")) {
                 Stepper("prompts per run", s.rounds, { v -> model.update { it.copy(rounds = v) } }, 1..50)
                 Spacer(Modifier.height(10.dp))
                 TText("time per prompt", size = 13.sp, color = C.dim)
@@ -63,7 +65,7 @@ fun SetupScreen(model: AppModel, forHost: Boolean) {
                 TText("» ${s.difficulty.blurb}", size = 11.sp, color = if (s.difficulty == Difficulty.NIGHTMARE) C.blood else C.dim)
             }
             Spacer(Modifier.height(16.dp))
-            Panel("TOPICS  (${if (s.topics.isEmpty()) "ALL" else s.topics.size.toString()})") {
+            Panel(Th.say("TOPICS", "Topics") + "  (${if (s.topics.isEmpty()) "ALL" else s.topics.size.toString()})") {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     TopicChip("#ALL", bank.prompts, s.topics.isEmpty()) {
                         haptic(false); model.update { it.copy(topics = emptySet()) }
@@ -88,20 +90,12 @@ fun SetupScreen(model: AppModel, forHost: Boolean) {
             )
         }
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            if (forHost) TButton("SAVE + RETURN", { model.back() }, Modifier.fillMaxWidth(), primary = true)
-            else TButton("EXECUTE", { model.startSolo() }, Modifier.fillMaxWidth(), primary = true, textSize = 17.sp)
+            if (forHost) TButton(Th.say("SAVE + RETURN", "Save"), { model.back() }, Modifier.fillMaxWidth(), primary = true)
+            else TButton(Th.say("EXECUTE", "Start"), { model.startSolo() }, Modifier.fillMaxWidth(), primary = true, textSize = 17.sp)
         }
     }
 }
 
 @Composable
-private fun TopicChip(label: String, count: Int, on: Boolean, onClick: () -> Unit) {
-    TText(
-        "$label ${count}",
-        Modifier.background(if (on) C.amber else Color.Transparent)
-            .border(1.dp, if (on) C.amber else C.line)
-            .clickable(remember { MutableInteractionSource() }, null, onClick = onClick)
-            .padding(horizontal = 11.dp, vertical = 10.dp),
-        size = 11.sp, color = if (on) C.bg else C.amber, weight = FontWeight.Bold, glow = if (on) 0f else 1f,
-    )
-}
+private fun TopicChip(label: String, count: Int, on: Boolean, onClick: () -> Unit) =
+    ChipBox("$label $count", on, size = 11.sp, onClick = onClick)

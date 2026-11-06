@@ -45,10 +45,5 @@ enum class Rank(val title: String, val minAvg: Int, val line: String) {
     }
 }
 
-/** 1 point = 10 frames of stack depth. */
-const val FRAMES_PER_POINT = 10
-
-fun depthFrames(points: Int): Int = points * FRAMES_PER_POINT
-
 fun hexAddr(value: Int, digits: Int = 4): String =
     "0x" + value.toString(16).uppercase().padStart(digits, '0')

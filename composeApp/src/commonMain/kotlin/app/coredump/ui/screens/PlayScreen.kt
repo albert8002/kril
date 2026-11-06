@@ -53,7 +53,6 @@ import androidx.compose.ui.unit.sp
 import app.coredump.AppModel
 import app.coredump.core.RoundView
 import app.coredump.core.Tier
-import app.coredump.core.depthFrames
 import app.coredump.core.hexAddr
 import app.coredump.game.Attempt
 import app.coredump.game.AttemptStatus
@@ -63,9 +62,11 @@ import app.coredump.game.Phase
 import app.coredump.game.duelVerdict
 import app.coredump.platform.Platform
 import app.coredump.ui.C
-import app.coredump.ui.DaemonShaft
 import app.coredump.ui.DecodeText
-import app.coredump.ui.HexRain
+import app.coredump.ui.Celebrate
+import app.coredump.ui.Style
+import app.coredump.ui.Th
+import app.coredump.ui.box
 import app.coredump.ui.LocalLook
 import app.coredump.ui.Panel
 import app.coredump.ui.RollingNumber
@@ -94,9 +95,6 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
     LaunchedEffect(st.phase) {
         if (st.phase == Phase.OVER) { delay(400); model.finished(session) }
     }
-    LaunchedEffect(st.myTotal, st.total) {
-        model.depthFraction = if (st.total > 0) st.myTotal / (st.total * 100f) else 0f
-    }
     // wrong attempt: small glitch + haptic
     LaunchedEffect(st.missTick) {
         if (st.missTick > 0) { fx.glitch(); haptic(false) }
@@ -119,7 +117,7 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
         Column(Modifier.fillMaxSize()) {
             PlayHeader(model, session, st)
             Row(Modifier.weight(1f).fillMaxWidth()) {
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 10.dp, top = 12.dp, bottom = 12.dp)) {
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp)) {
                     StatusRow(session, st)
                     Spacer(Modifier.height(10.dp))
                     TimerBar(st.startedAt, st.seconds, running = (st.phase == Phase.TYPING || st.phase == Phase.LOCKED) && !st.paused)
@@ -130,10 +128,12 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
                             Spinner(); TText("  ${st.message ?: "linking…"}", size = 13.sp, color = C.dim)
                         }
                     } else if (st.prompt.isNotEmpty()) {
-                        Panel("QUERY ${hexAddr(st.round * 16 + 0x40)}") {
-                            TText("#${st.topic}  ·  ${group(st.listSize)} entries in memory", size = 11.sp, color = C.dim)
+                        Panel(Th.say("QUERY ${hexAddr(st.round * 16 + 0x40)}", "Prompt ${st.round + 1}")) {
+                            TText(Th.say("#${st.topic}  ·  ${group(st.listSize)} entries in memory",
+                                "${st.topic.lowercase().replaceFirstChar { it.uppercase() }} · ${group(st.listSize)} answers on the list"),
+                                size = 11.sp, color = C.dim)
                             Spacer(Modifier.height(8.dp))
-                            key(st.round) { Typewriter("> ${st.prompt}", size = 21.sp, charMs = 16) }
+                            key(st.round) { Typewriter(if (Th.terminal) "> ${st.prompt}" else st.prompt, size = 21.sp, charMs = 16) }
                         }
                     }
                     Spacer(Modifier.height(16.dp))
@@ -142,41 +142,35 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
                         Phase.TYPING -> if (!st.paused) AnswerBox(st) { text -> session.submit(text) }
                         Phase.LOCKED -> Row(verticalAlignment = Alignment.CenterVertically) {
                             Spinner(C.hot)
-                            TText("  answer locked. awaiting peer process…", size = 13.sp, color = C.dim)
+                            TText("  " + Th.say("answer locked. awaiting peer process…", "Answer locked. Waiting for your opponent…"), size = 13.sp, color = C.dim)
                         }
                         Phase.REVEAL -> st.reveal?.let { Reveal(it, session.isMulti, st.attempts.size) }
-                        Phase.ERROR -> Panel("KERNEL PANIC", color = C.blood, titleColor = C.blood) {
+                        Phase.ERROR -> Panel(Th.say("KERNEL PANIC", "Connection lost"), color = C.blood, titleColor = C.blood) {
                             TText(st.message ?: "unknown fault", size = 14.sp, color = C.blood)
                         }
                         else -> Unit
                     }
                 }
-                DaemonShaft(
-                    depthFrames = depthFrames(st.myTotal),
-                    modifier = Modifier.width(64.dp).fillMaxHeight(),
-                    lastTier = st.rounds.lastOrNull()?.me?.tier,
-                    missTick = st.missTick,
-                )
             }
 
             Column(Modifier.fillMaxWidth().padding(16.dp)) {
                 when (st.phase) {
                     Phase.REVEAL -> {
                         if (st.canAdvance) {
-                            TButton(if (st.isLast) "DUMP CORE ▸" else "NEXT PROMPT ▸", { session.next() },
+                            TButton(if (st.isLast) Th.say("DUMP CORE ▸", "See results") else Th.say("NEXT PROMPT ▸", "Next prompt"), { session.next() },
                                 Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
                         } else {
                             val waiting = st.message != null
-                            TButton(if (waiting) "WAITING FOR HOST…" else "READY ▸", { session.next() },
+                            TButton(if (waiting) Th.say("WAITING FOR HOST…", "Waiting for host…") else Th.say("READY ▸", "Ready"), { session.next() },
                                 Modifier.fillMaxWidth(), primary = !waiting, enabled = !waiting)
                         }
                     }
-                    Phase.ERROR -> TButton("RETURN TO SHELL", { model.abortRun(session) }, Modifier.fillMaxWidth(), color = C.blood)
+                    Phase.ERROR -> TButton(Th.say("RETURN TO SHELL", "Back to menu"), { model.abortRun(session) }, Modifier.fillMaxWidth(), color = C.blood)
                     else -> Unit
                 }
             }
         }
-        HexRain(Modifier.fillMaxSize(), rain)
+        Celebrate(Modifier.fillMaxSize(), rain)
         if (st.paused && !model.confirmQuit) PauseOverlay({ session.resume() }, { model.confirmQuit = true })
         if (model.confirmQuit) ConfirmQuit(session.isMulti,
             onKeep = { model.confirmQuit = false; session.resume() },
@@ -187,14 +181,14 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
 @Composable
 private fun PlayHeader(model: AppModel, session: MatchSession, st: MatchState) {
     val title = when {
-        st.daily != null -> "DAILY DIVE #${st.daily}"
-        session.isMulti -> "1v1 :: ${st.myName} vs ${st.oppName ?: "?"}"
-        else -> "DIVE :: ${st.myName}"
+        st.daily != null -> Th.say("DAILY RUN #${st.daily}", "Daily run #${st.daily}")
+        session.isMulti -> Th.say("1v1 :: ${st.myName} vs ${st.oppName ?: "?"}", "${st.myName} vs ${st.oppName ?: "?"}")
+        else -> Th.say("RUN :: ${st.myName}", "Solo run")
     }
     Box {
         Header(model, title) { session.pause(); model.confirmQuit = true }
         if (st.canPause && st.phase == Phase.TYPING && !st.paused) {
-            TText("[ ‖ ]", Modifier.align(Alignment.CenterEnd).padding(end = 12.dp, top = 2.dp)
+            TText(if (Th.terminal) "[ ‖ ]" else "‖", Modifier.align(Alignment.CenterEnd).padding(end = 12.dp, top = 2.dp)
                 .background(C.bg)
                 .clickable(remember { MutableInteractionSource() }, null) { session.pause() }
                 .padding(horizontal = 8.dp, vertical = 8.dp), size = 14.sp, weight = FontWeight.Bold)
@@ -205,25 +199,25 @@ private fun PlayHeader(model: AppModel, session: MatchSession, st: MatchState) {
 @Composable
 private fun StatusRow(session: MatchSession, st: MatchState) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        TText("PID ", size = 12.sp, color = C.dim)
+        TText(Th.say("PID ", "Prompt "), size = 12.sp, color = C.dim)
         TText("${(st.round + 1).toString().padStart(2, '0')}/${st.total.toString().padStart(2, '0')}", size = 14.sp, weight = FontWeight.Bold)
         Spacer(Modifier.weight(1f))
-        TText("DEPTH ", size = 12.sp, color = C.dim)
-        RollingNumber(depthFrames(st.myTotal), size = 15.sp, color = C.hot, suffix = " fr")
+        TText(Th.say("SCORE ", "Score "), size = 12.sp, color = C.dim)
+        RollingNumber(st.myTotal, size = 15.sp, color = C.hot, suffix = " pts")
     }
     if (session.isMulti) {
         Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
-            TText("PEER ${st.oppName ?: "?"} ", size = 11.sp, color = C.dim, maxLines = 1)
+            TText(Th.say("PEER ", "") + "${st.oppName ?: "?"} ", size = 11.sp, color = C.dim, maxLines = 1)
             TText(
                 when {
                     st.phase == Phase.REVEAL -> ""
-                    st.oppLocked -> "▣ LOCKED IN"
-                    st.phase == Phase.TYPING || st.phase == Phase.LOCKED -> "▢ thinking…"
+                    st.oppLocked -> Th.say("▣ LOCKED IN", "locked in")
+                    st.phase == Phase.TYPING || st.phase == Phase.LOCKED -> Th.say("▢ thinking…", "thinking…")
                     else -> ""
                 }, size = 11.sp, color = if (st.oppLocked) C.hot else C.dim,
             )
             Spacer(Modifier.weight(1f))
-            RollingNumber(depthFrames(st.oppTotal), size = 12.sp, color = C.dim, suffix = " fr", weight = FontWeight.Normal)
+            RollingNumber(st.oppTotal, size = 12.sp, color = C.dim, suffix = " pts", weight = FontWeight.Normal)
         }
         st.via?.let { TText("via $it", size = 9.sp, color = C.line, maxLines = 1) }
     }
@@ -257,16 +251,16 @@ private fun AnswerBox(st: MatchState, onSubmit: (String) -> Unit) {
             onValueChange = { if (it.length <= 60) text = it },
             modifier = Modifier.fillMaxWidth().graphicsLayer {
                 translationX = sin(shake.value * 30f) * 14f * shake.value
-            }.border(1.dp, lerp(C.line, C.blood, shake.value)),
-            placeholder = if (st.attempts.isEmpty()) "type an answer…" else "try again…",
+            },
+            placeholder = if (st.attempts.isEmpty()) Th.say("type an answer…", "Type an answer") else Th.say("try again…", "Try again"),
             onSubmit = { send(text) },
             fieldModifier = Modifier.focusRequester(focus),
         )
         if (latestSuggestion != null) {
             Spacer(Modifier.height(8.dp))
             TText(
-                "did you mean  $latestSuggestion ?  ↵",
-                Modifier.border(1.dp, C.hot).background(C.panel)
+                Th.say("did you mean  $latestSuggestion ?  ↵", "Did you mean $latestSuggestion?"),
+                Modifier.box(Th.style, C.hot, C.panel, pill = Th.style == Style.CLEAN || Th.style == Style.NEON)
                     .clickable(remember { MutableInteractionSource() }, null) { send(latestSuggestion) }
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 size = 13.sp, color = C.hot, weight = FontWeight.Bold,
@@ -279,11 +273,12 @@ private fun AnswerBox(st: MatchState, onSubmit: (String) -> Unit) {
             }
         }
         Spacer(Modifier.height(10.dp))
-        TButton("EXECUTE", { send(text) }, Modifier.fillMaxWidth(), enabled = text.isNotBlank(), primary = true)
+        TButton(Th.say("EXECUTE", "Submit"), { send(text) }, Modifier.fillMaxWidth(), enabled = text.isNotBlank(), primary = true)
         Spacer(Modifier.height(8.dp))
         TText(
-            if (st.attempts.isEmpty()) "rarer = deeper. wrong answers cost nothing but time."
-            else "${st.attempts.count { it.status == AttemptStatus.REJECTED }} rejected · keep going until the clock dies.",
+            if (st.attempts.isEmpty()) Th.say("rarer = more points. wrong answers cost nothing but time.", "Rarer answers score more. Wrong answers only cost time.")
+            else Th.say("${st.attempts.count { it.status == AttemptStatus.REJECTED }} rejected · keep going until the clock dies.",
+                "${st.attempts.count { it.status == AttemptStatus.REJECTED }} not accepted · keep trying until time runs out"),
             size = 10.sp, color = C.line,
         )
     }
@@ -292,13 +287,14 @@ private fun AnswerBox(st: MatchState, onSubmit: (String) -> Unit) {
 @Composable
 private fun AttemptChip(a: Attempt) {
     Row(
-        Modifier.border(1.dp, if (a.status == AttemptStatus.VERIFYING) C.dim else C.bloodDim)
-            .padding(horizontal = 8.dp, vertical = 5.dp),
+        Modifier.box(Th.style, if (a.status == AttemptStatus.VERIFYING) C.dim else C.blood.copy(alpha = 0.5f), Color.Transparent,
+            pill = Th.style == Style.CLEAN || Th.style == Style.NEON)
+            .padding(horizontal = 9.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (a.status == AttemptStatus.VERIFYING) {
             Spinner(C.dim, 11.sp)
-            TText(" checking ${a.text}", size = 11.sp, color = C.dim, maxLines = 1)
+            TText(Th.say(" checking ${a.text}", " checking ${a.text}…"), size = 11.sp, color = C.dim, maxLines = 1)
         } else {
             TText("✗ ", size = 11.sp, color = C.blood)
             TText(a.text, size = 11.sp, color = C.blood.copy(alpha = 0.8f), decoration = TextDecoration.LineThrough, maxLines = 1)
@@ -310,7 +306,7 @@ private fun AttemptChip(a: Attempt) {
 @Composable
 fun TimerBar(startedAt: Long, seconds: Int, running: Boolean) {
     if (seconds <= 0) {
-        TText("∞  no deadline. the machine is patient.", size = 11.sp, color = C.dim)
+        TText(Th.say("∞  no deadline. the machine is patient.", "∞  No time limit"), size = 11.sp, color = C.dim)
         return
     }
     var now by remember { mutableLongStateOf(Platform.epochMillis()) }
@@ -325,7 +321,15 @@ fun TimerBar(startedAt: Long, seconds: Int, running: Boolean) {
     val color = lerp(C.blood, C.amber, (f * 3f).coerceIn(0f, 1f))
     val beat = if (danger && !LocalLook.current.reduceMotion) abs(sin(now / 1000.0 * PI * 1.8)).toFloat() else 0f
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Canvas(Modifier.weight(1f).height(14.dp).graphicsLayer { scaleY = 1f + beat * 0.35f }) {
+        val segmented = Th.style == Style.TERMINAL || Th.style == Style.PIXEL
+        val track = C.ghost
+        Canvas(Modifier.weight(1f).height(if (segmented) 14.dp else 10.dp).graphicsLayer { scaleY = 1f + beat * 0.35f }) {
+            if (!segmented) {
+                val r = androidx.compose.ui.geometry.CornerRadius(size.height / 2f)
+                drawRoundRect(track, cornerRadius = r)
+                if (f > 0f) drawRoundRect(color, size = Size(size.width * f, size.height), cornerRadius = r)
+                return@Canvas
+            }
             val n = 32
             val gap = 2.dp.toPx()
             val w = (size.width - gap * (n - 1)) / n
@@ -356,14 +360,14 @@ private fun Reveal(v: RoundView, multi: Boolean, misses: Int) {
     val pop = remember(v.index) { Animatable(1.8f) }
     LaunchedEffect(v.index) { delay(450); pop.animateTo(1f, spring(dampingRatio = 0.42f, stiffness = Spring.StiffnessMediumLow)) }
 
-    Panel(if (me.tier.isValid) "STDOUT" else "STDERR", color = if (me.tier.isValid) C.line else C.bloodDim,
+    Panel(if (me.tier.isValid) Th.say("STDOUT", "Accepted") else Th.say("STDERR", "No score"), color = if (me.tier.isValid) C.line else C.bloodDim,
         titleColor = if (me.tier.isValid) C.dim else C.blood) {
-        TText("$ ${me.input.ifBlank { "<null>" }}" + if (misses > 0) "   ($misses miss${if (misses == 1) "" else "es"} before)" else "",
+        TText(Th.say("$ ", "You: ") + me.input.ifBlank { Th.say("<null>", "—") } + if (misses > 0) "   ($misses miss${if (misses == 1) "" else "es"} before)" else "",
             size = 12.sp, color = C.dim, maxLines = 1)
         Spacer(Modifier.height(6.dp))
         val headline = when (me.tier) {
-            Tier.TIMEOUT -> "PROCESS KILLED"
-            Tier.SEGFAULT -> "Segmentation fault"
+            Tier.TIMEOUT -> Th.say("PROCESS KILLED", "Time's up")
+            Tier.SEGFAULT -> Th.say("Segmentation fault", "Not on the list")
             else -> me.canonical ?: me.input
         }
         DecodeText(headline, size = 26.sp, color = c)
@@ -377,7 +381,7 @@ private fun Reveal(v: RoundView, multi: Boolean, misses: Int) {
                 size = 22.sp, color = c, weight = FontWeight.Bold, glow = 1.6f,
             )
             Spacer(Modifier.weight(1f))
-            TText(me.tier.addr, size = 11.sp, color = C.line)
+            if (Th.terminal) TText(me.tier.addr, size = 11.sp, color = C.line)
         }
         Spacer(Modifier.height(8.dp))
         key(v.index) {
@@ -388,7 +392,7 @@ private fun Reveal(v: RoundView, multi: Boolean, misses: Int) {
     val opp = v.opp
     if (multi && opp != null) {
         Spacer(Modifier.height(12.dp))
-        Panel("PEER ${opp.player.uppercase()}") {
+        Panel(Th.say("PEER ${opp.player.uppercase()}", opp.player)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TText(
                     when (opp.tier) {
@@ -405,13 +409,13 @@ private fun Reveal(v: RoundView, multi: Boolean, misses: Int) {
         }
     }
 
-    val deeper = v.betterThan(me.points).take(3)
-    if (deeper.isNotEmpty()) {
+    val better = v.betterThan(me.points).take(3)
+    if (better.isNotEmpty()) {
         Spacer(Modifier.height(12.dp))
-        Panel("DEEPER IN MEMORY") {
-            for (g in deeper) {
+        Panel(Th.say("RARER IN MEMORY", "Would have scored more")) {
+            for (g in better) {
                 Row(Modifier.padding(vertical = 2.dp)) {
-                    TText(g.tier.label.padEnd(12), size = 11.sp, color = tierColor(g.tier))
+                    TText(g.tier.label, Modifier.width(112.dp), size = 11.sp, color = tierColor(g.tier))
                     TText(g.names.take(3).joinToString(" · "), size = 11.sp, color = C.amber, maxLines = 2)
                 }
             }
@@ -424,13 +428,13 @@ private fun PauseOverlay(onResume: () -> Unit, onAbort: () -> Unit) {
     Box(Modifier.fillMaxSize().background(C.bg.copy(alpha = 0.94f))
         .clickable(remember { MutableInteractionSource() }, null) { }, contentAlignment = Alignment.Center) {
         Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            TText("^Z", size = 14.sp, color = C.dim)
-            DecodeText("PROCESS SUSPENDED", size = 22.sp)
-            TText("SIGSTOP · the clock is frozen", size = 12.sp, color = C.dim, align = TextAlign.Center)
+            if (Th.terminal) TText("^Z", size = 14.sp, color = C.dim)
+            DecodeText(Th.say("PROCESS SUSPENDED", "Paused"), size = 22.sp)
+            TText(Th.say("SIGSTOP · the clock is frozen", "The clock is stopped"), size = 12.sp, color = C.dim, align = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
-            TButton("RESUME (fg)", onResume, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
+            TButton(Th.say("RESUME (fg)", "Resume"), onResume, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
             Spacer(Modifier.height(10.dp))
-            TButton("ABORT RUN", onAbort, Modifier.fillMaxWidth(), color = C.blood)
+            TButton(Th.say("ABORT RUN", "Quit run"), onAbort, Modifier.fillMaxWidth(), color = C.blood)
         }
     }
 }
@@ -439,14 +443,15 @@ private fun PauseOverlay(onResume: () -> Unit, onAbort: () -> Unit) {
 private fun ConfirmQuit(multi: Boolean, onKeep: () -> Unit, onAbort: () -> Unit) {
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.82f))
         .clickable(remember { MutableInteractionSource() }, null) { }, contentAlignment = Alignment.Center) {
-        Panel("CONFIRM", Modifier.padding(28.dp), color = C.blood, titleColor = C.blood) {
-            TText("kill -9 this run?", size = 18.sp, weight = FontWeight.Bold, color = C.blood)
+        Panel(Th.say("CONFIRM", "Quit?"), Modifier.padding(28.dp).background(C.bg), color = C.blood, titleColor = C.blood) {
+            TText(Th.say("kill -9 this run?", "Quit this run?"), size = 18.sp, weight = FontWeight.Bold, color = C.blood)
             Spacer(Modifier.height(6.dp))
-            TText(if (multi) "your peer will be disconnected." else "progress in this dive is lost.", size = 12.sp, color = C.dim)
+            TText(if (multi) Th.say("your peer will be disconnected.", "Your opponent will be disconnected.")
+                else Th.say("progress in this run is lost.", "Progress in this run is lost."), size = 12.sp, color = C.dim)
             Spacer(Modifier.height(18.dp))
-            TButton("KEEP DIVING", onKeep, Modifier.fillMaxWidth(), primary = true)
+            TButton(Th.say("KEEP GOING", "Keep playing"), onKeep, Modifier.fillMaxWidth(), primary = true)
             Spacer(Modifier.height(10.dp))
-            TButton("ABORT", onAbort, Modifier.fillMaxWidth(), color = C.blood)
+            TButton(Th.say("ABORT", "Quit"), onAbort, Modifier.fillMaxWidth(), color = C.blood)
         }
     }
 }

@@ -15,7 +15,8 @@
         android:label="CORE DUMP"
         android:supportsRtl="true"
         android:theme="@style/Theme.CoreDump"
-        android:hardwareAccelerated="true">
+        android:hardwareAccelerated="true"
+        android:largeHeap="true">
 
         <activity
             android:name=".MainActivity"

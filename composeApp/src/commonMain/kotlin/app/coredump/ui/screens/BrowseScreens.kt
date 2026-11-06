@@ -43,6 +43,8 @@ import app.coredump.ui.TierBadge
 import app.coredump.ui.group
 import app.coredump.ui.rememberHaptic
 import app.coredump.ui.tierColor
+import app.coredump.ui.ChipBox
+import app.coredump.ui.Th
 import kotlin.time.TimeSource
 
 @Composable
@@ -60,16 +62,16 @@ fun BrowseScreen(model: AppModel) {
     }
     val haptic = rememberHaptic()
 
-    Frame(model, "ls -la /var/lists") {
+    Frame(model, Th.say("ls -la /var/lists", "Lists")) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-            TermInput(q, { q = it }, Modifier.fillMaxWidth(), prompt = "grep", placeholder = "filter prompts", size = 14.sp)
+            TermInput(q, { q = it }, Modifier.fillMaxWidth(), prompt = Th.say("grep", "$"), placeholder = Th.say("filter prompts", "Search lists"), size = 14.sp)
             Spacer(Modifier.height(8.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 item { Chip("#ALL", topic == null) { haptic(false); topic = null } }
                 items(topics) { (t, _) -> Chip("#$t", topic == t) { haptic(false); topic = t } }
             }
             Spacer(Modifier.height(6.dp))
-            TText("${list.size} lists · ${group(list.sumOf { it.size })} entries", size = 11.sp, color = C.dim)
+            TText("${list.size} lists · ${group(list.sumOf { it.size })} answers", size = 11.sp, color = C.dim)
         }
         LazyColumn(Modifier.weight(1f).padding(horizontal = 16.dp)) {
             items(list, key = { it.id }) { p ->
@@ -82,7 +84,7 @@ fun BrowseScreen(model: AppModel) {
                         TText(p.text, Modifier.weight(1f), size = 13.sp, maxLines = 2)
                         TText(group(p.size), size = 12.sp, color = C.hot)
                     }
-                    TText("#${p.topic} · ${p.source.tag} · ${p.id}", size = 10.sp, color = C.line, maxLines = 1)
+                    TText("#${p.topic} · ${p.source.tag}" + (if (Th.terminal) " · ${p.id}" else ""), size = 10.sp, color = C.dim, maxLines = 1)
                 }
                 Divider()
             }
@@ -91,21 +93,13 @@ fun BrowseScreen(model: AppModel) {
 }
 
 @Composable
-private fun Chip(label: String, on: Boolean, onClick: () -> Unit) {
-    TText(
-        label,
-        Modifier.background(if (on) C.amber else Color.Transparent).border(1.dp, if (on) C.amber else C.line)
-            .clickable(remember { MutableInteractionSource() }, null, onClick = onClick)
-            .padding(horizontal = 9.dp, vertical = 6.dp),
-        size = 11.sp, color = if (on) C.bg else C.amber, weight = FontWeight.Bold, glow = if (on) 0f else 1f,
-    )
-}
+private fun Chip(label: String, on: Boolean, onClick: () -> Unit) = ChipBox(label, on, size = 11.sp, onClick = onClick)
 
 @Composable
 fun DumpScreen(model: AppModel, promptId: String) {
     val p = remember(promptId) { model.bank.get(promptId) }
     if (p == null) {
-        Frame(model, "cat: no such file") { TText("  list not in memory.", size = 13.sp, color = C.blood) }
+        Frame(model, Th.say("cat: no such file", "Not found")) { TText("  list not in memory.", size = 13.sp, color = C.blood) }
         return
     }
     var probe by remember { mutableStateOf("") }
@@ -119,27 +113,27 @@ fun DumpScreen(model: AppModel, promptId: String) {
         }
     }
 
-    Frame(model, "cat ${p.id}") {
+    Frame(model, Th.say("cat ${p.id}", p.topic.lowercase().replaceFirstChar { it.uppercase() })) {
         LazyColumn(Modifier.weight(1f).padding(horizontal = 16.dp)) {
             item {
                 Spacer(Modifier.height(12.dp))
-                TText("> ${p.text}", size = 18.sp, weight = FontWeight.Bold)
-                TText("#${p.topic} · ${p.source.tag} · ${group(p.size)} entries · ${p.index.keyCount} hash keys",
+                TText(if (Th.terminal) "> ${p.text}" else p.text, size = 18.sp, weight = FontWeight.Bold)
+                TText("#${p.topic} · ${p.source.tag} · ${group(p.size)} answers" + if (Th.terminal) " · ${p.index.keyCount} hash keys" else "",
                     size = 11.sp, color = C.dim)
                 Spacer(Modifier.height(12.dp))
-                Panel("TIER MAP") {
+                Panel(Th.say("TIER MAP", "Tiers")) {
                     val maxN = Tier.validDescending.maxOf { p.countOf(it) }.coerceAtLeast(1)
                     for (t in Tier.validDescending) {
                         val n = p.countOf(t)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            TText(t.label.padEnd(12), size = 11.sp, color = tierColor(t))
+                            TText(t.label, Modifier.width(112.dp), size = 11.sp, color = tierColor(t))
                             TText("█".repeat(((n * 18f) / maxN).toInt().coerceAtLeast(if (n > 0) 1 else 0)) + " $n",
                                 size = 11.sp, color = tierColor(t))
                         }
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-                TermInput(probe, { probe = it }, Modifier.fillMaxWidth(), prompt = "probe", placeholder = "test an answer", size = 14.sp)
+                TermInput(probe, { probe = it }, Modifier.fillMaxWidth(), prompt = Th.say("probe", "$"), placeholder = Th.say("test an answer", "Test an answer"), size = 14.sp)
                 Spacer(Modifier.height(6.dp))
                 if (result != null) {
                     val (j, us) = result
@@ -155,7 +149,7 @@ fun DumpScreen(model: AppModel, promptId: String) {
                     )
                 }
                 Spacer(Modifier.height(12.dp))
-                if (!reveal) TButton("DUMP ALL ${p.size} ENTRIES (spoilers)", { reveal = true }, Modifier.fillMaxWidth(), textSize = 12.sp)
+                if (!reveal) TButton(Th.say("DUMP ALL ${p.size} ENTRIES (spoilers)", "Show all ${p.size} answers (spoilers)"), { reveal = true }, Modifier.fillMaxWidth(), textSize = 12.sp)
                 Spacer(Modifier.height(8.dp))
             }
             if (reveal) {

@@ -31,6 +31,14 @@ import app.coredump.ui.C
 import app.coredump.ui.Cursor
 import app.coredump.ui.TText
 import app.coredump.ui.asciiBar
+import app.coredump.ui.Style
+import app.coredump.ui.Th
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -55,7 +63,7 @@ fun BootScreen(model: AppModel) {
         }
         delay(450)
         for (l in listOf(
-            "CORE_DUMP BIOS 1.0.0  (c) 1987-2026 /dev/null systems",
+            "CORE_DUMP BIOS 1.1.0  (c) 1987-2026 /dev/null systems",
             "cpu0: amber phosphor P3 @ 60Hz ............ [ OK ]",
             "memtest: 640K ought to be enough ............ [ OK ]",
             "warning: something is living in the heap",
@@ -64,8 +72,8 @@ fun BootScreen(model: AppModel) {
 
         model.bank.boot(model.settings) { logs.trySend(it); progress = (progress + 0.04f).coerceAtMost(0.9f) }
 
-        logs.send("[ .. ] wikidata · wikipedia · remote packs syncing in background")
-        logs.send("[ OK ] ranking tables prefetched")
+        logs.send("[ .. ] new lists are collected in the background")
+        logs.send("[ OK ] ranking tables loaded")
         logs.send("")
         logs.send("login: ${model.settings.handle.lowercase()}")
         logs.send("last login: never. or so they told you.")
@@ -77,6 +85,43 @@ fun BootScreen(model: AppModel) {
         fx.glitch()
         delay(1400)
         if (model.screen == Screen.Boot) model.go(Screen.Menu, push = false)
+    }
+
+    if (!Th.terminal) {
+        // Splash for the non-terminal themes: title, progress, last status line.
+        Box(
+            Modifier.fillMaxSize()
+                .clickable(remember { MutableInteractionSource() }, null) {
+                    if (ready && model.screen == Screen.Boot) model.go(Screen.Menu, push = false)
+                }
+                .padding(28.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+                AppTitle(38.sp)
+                Spacer(Modifier.height(18.dp))
+                val track = C.ghost
+                val fill = C.hot
+                Canvas(Modifier.fillMaxWidth().height(if (Th.style == Style.PIXEL) 12.dp else 6.dp)) {
+                    if (Th.style == Style.PIXEL) {
+                        val n = 20
+                        val gap = 3.dp.toPx()
+                        val w = (size.width - gap * (n - 1)) / n
+                        for (i in 0 until n) drawRect(if (i < (progress * n).toInt()) fill else track, Offset(i * (w + gap), 0f), Size(w, size.height))
+                    } else {
+                        val r = CornerRadius(size.height / 2)
+                        drawRoundRect(track, cornerRadius = r)
+                        drawRoundRect(fill, size = Size(size.width * progress.coerceIn(0f, 1f), size.height), cornerRadius = r)
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                val last = lines.lastOrNull { it.isNotBlank() }.orEmpty()
+                    .removePrefix("[ OK ] ").removePrefix("[ -- ] ").removePrefix("[ .. ] ").removePrefix("[FAIL] ")
+                TText(if (ready) "Tap to start" else last, size = 12.sp, color = if (ready) C.amber else C.dim, maxLines = 1,
+                    weight = if (ready) FontWeight.Bold else FontWeight.Normal)
+            }
+        }
+        return
     }
 
     Box(

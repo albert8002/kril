@@ -524,8 +524,8 @@ class GuestSession(
 fun duelVerdict(v: RoundView): String {
     val o = v.opp ?: return ""
     return when {
-        v.me.points > o.points -> "YOU WENT DEEPER"
-        v.me.points < o.points -> "${o.player.uppercase()} WENT DEEPER"
+        v.me.points > o.points -> "YOU TAKE THE ROUND"
+        v.me.points < o.points -> "${o.player.uppercase()} TAKES THE ROUND"
         v.me.tier == Tier.TIMEOUT && o.tier == Tier.TIMEOUT -> "BOTH PROCESSES KILLED"
         else -> "STALEMATE"
     }

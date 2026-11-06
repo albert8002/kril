@@ -49,13 +49,14 @@ import app.coredump.ui.TButton
 import app.coredump.ui.TLink
 import app.coredump.ui.TText
 import app.coredump.ui.TermInput
+import app.coredump.ui.Th
 
 private enum class Tab(val label: String) { HOST("HOST"), JOIN("JOIN") }
 
 @Composable
 fun LobbyScreen(model: AppModel) {
     var tab by remember { mutableStateOf(Tab.HOST) }
-    Frame(model, "./dive --peer --lan") {
+    Frame(model, Th.say("./run --peer", "1v1")) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
             Choice(Tab.entries, tab, { it.label }) { tab = it }
             Spacer(Modifier.height(14.dp))
@@ -85,7 +86,7 @@ private fun HostPane(model: AppModel) {
     LaunchedEffect(lobby) { if (st.ticket == null && st.peer == null && !st.busy) lobby.open() }
     val s = model.settings
 
-    Panel("MATCH PARAMS") {
+    Panel(Th.say("MATCH PARAMS", "Match settings")) {
         TText("${s.rounds} prompts · ${fmtSeconds(s.seconds)} each · ${s.difficulty.label} · " +
             (if (s.topics.isEmpty()) "ALL topics" else s.topics.joinToString(" ") { "#$it" }), size = 12.sp)
         TLink("edit parameters", { model.go(Screen.Setup(forHost = true)) })
@@ -95,7 +96,7 @@ private fun HostPane(model: AppModel) {
     val t = st.ticket
     if (t != null && st.peer == null) {
         Spacer(Modifier.height(12.dp))
-        TText("let the peer scan this sigil:", size = 12.sp, color = C.dim)
+        TText(Th.say("let the peer scan this sigil:", "Let your friend scan this code:"), size = 12.sp, color = C.dim)
         Spacer(Modifier.height(10.dp))
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             QrSigil(t.toUri(), Modifier.widthIn(max = 280.dp).fillMaxWidth())
@@ -113,11 +114,11 @@ private fun HostPane(model: AppModel) {
     val peer = st.peer
     if (peer != null) {
         Spacer(Modifier.height(12.dp))
-        Panel("LINK ESTABLISHED") {
+        Panel(Th.say("LINK ESTABLISHED", "Connected")) {
             TText("peer ${peer.uppercase()} is attached to your process.", size = 13.sp, color = C.hot)
         }
         Spacer(Modifier.height(12.dp))
-        TButton("EXECUTE MATCH", { model.startHosted() }, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
+        TButton(Th.say("EXECUTE MATCH", "Start match"), { model.startHosted() }, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
     }
     if (st.error != null) {
         Spacer(Modifier.height(10.dp))
@@ -138,7 +139,7 @@ private fun JoinPane(model: AppModel) {
     val scan = rememberQrScanLauncher { dial(it) }
     DisposableEffect(Unit) { onDispose { } }
 
-    TButton("SCAN SIGIL", { scan() }, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
+    TButton(Th.say("SCAN SIGIL", "Scan QR code"), { scan() }, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
     Spacer(Modifier.height(14.dp))
     TText("or type the host's room code:", size = 12.sp, color = C.dim)
     Spacer(Modifier.height(6.dp))

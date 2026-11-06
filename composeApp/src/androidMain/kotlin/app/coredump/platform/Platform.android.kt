@@ -3,6 +3,7 @@ package app.coredump.platform
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.activity.compose.BackHandler
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,6 +19,7 @@ import java.net.NetworkInterface
 object AndroidContext {
     lateinit var app: Context
         private set
+    var activity: java.lang.ref.WeakReference<android.app.Activity>? = null
 
     fun init(c: Context) { app = c.applicationContext }
 }
@@ -87,4 +89,15 @@ actual fun shareText(text: String) {
         addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
     }
     runCatching { AndroidContext.app.startActivity(chooser) }
+}
+
+actual fun setSystemBarsDark(dark: Boolean) {
+    val a = AndroidContext.activity?.get() as? androidx.activity.ComponentActivity ?: return
+    a.runOnUiThread {
+        runCatching {
+            val t = android.graphics.Color.TRANSPARENT
+            val style = if (dark) androidx.activity.SystemBarStyle.dark(t) else androidx.activity.SystemBarStyle.light(t, t)
+            a.enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+        }
+    }
 }

@@ -23,3 +23,6 @@ expect fun rememberQrScanLauncher(onResult: (String?) -> Unit): () -> Unit
 
 /** Opens the system share sheet with [text]. */
 expect fun shareText(text: String)
+
+/** Light or dark system bar icons to match the active palette. */
+expect fun setSystemBarsDark(dark: Boolean)

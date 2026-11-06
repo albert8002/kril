@@ -111,3 +111,12 @@ actual fun shareText(text: String) {
     vc.popoverPresentationController?.sourceView = top.view
     top.presentViewController(vc, animated = true, completion = null)
 }
+
+/** Set by the Swift host: switches SwiftUI's colour scheme (status bar, keyboard) to match the palette. */
+object IosBridge {
+    var onDark: ((Boolean) -> Unit)? = null
+}
+
+actual fun setSystemBarsDark(dark: Boolean) {
+    runCatching { IosBridge.onDark?.invoke(dark) }
+}
