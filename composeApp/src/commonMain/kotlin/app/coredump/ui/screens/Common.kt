@@ -1,6 +1,8 @@
 package app.coredump.ui.screens
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -9,7 +11,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -19,17 +25,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.TextStyle
@@ -44,10 +58,16 @@ import app.coredump.ui.Divider
 import app.coredump.ui.LocalDisplay
 import app.coredump.ui.LocalLook
 import app.coredump.ui.Style
+import app.coredump.ui.TLink
+import app.coredump.ui.onColor
+import app.coredump.ui.ransomFonts
 import app.coredump.ui.TText
 import app.coredump.ui.Th
 import app.coredump.ui.rememberHaptic
 import kotlinx.coroutines.delay
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.random.Random
 
 /** Top bar: back arrow, title, handle. */
@@ -119,6 +139,101 @@ fun AppTitle(size: TextUnit = 40.sp) {
         }
         Style.CLEAN -> TText("Core Dump", size = size * 0.85f, weight = FontWeight.Bold, color = C.amber)
         Style.PIXEL -> TText("CORE DUMP", size = size * 0.8f, weight = FontWeight.Bold, color = C.amber)
+        Style.COMIC -> RansomText("CORE DUMP", size * 0.8f, seed = 11)
+    }
+}
+
+/** Ransom-note letters: each glyph cut out in its own font, fill, size and tilt; they drop in one by one. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun RansomText(text: String, size: TextUnit = 30.sp, seed: Int = 3, modifier: Modifier = Modifier) {
+    val fonts = ransomFonts()
+    val motion = !LocalLook.current.reduceMotion
+    val glyphs = remember(text, seed) {
+        val r = Random(seed)
+        text.map { c -> RGlyph(c, r.nextInt(fonts.size), (r.nextFloat() - 0.5f) * 14f, 0.86f + r.nextFloat() * 0.28f, r.nextInt(4)) }
+    }
+    FlowRow(modifier, verticalArrangement = Arrangement.Center) {
+        glyphs.forEachIndexed { i, g ->
+            key(i) {
+                if (g.c == ' ') {
+                    Spacer(Modifier.width((size.value * 0.4f).dp))
+                } else {
+                    val drop = remember(text) { Animatable(if (motion) 0f else 1f) }
+                    LaunchedEffect(text) { delay(45L * i); drop.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 520f)) }
+                    val fill = when (g.fill) { 0 -> C.hot; 1 -> C.white; 2 -> C.line; else -> C.panel }
+                    val ink = if (g.fill == 3) C.amber else onColor(fill)
+                    BasicText(
+                        g.c.toString(),
+                        Modifier.padding(horizontal = 1.dp, vertical = 2.dp)
+                            .graphicsLayer { rotationZ = g.rot; scaleX = drop.value; scaleY = drop.value; alpha = drop.value.coerceIn(0f, 1f) }
+                            .background(fill).padding(horizontal = 4.dp),
+                        style = TextStyle(
+                            color = ink, fontFamily = fonts[g.font], fontWeight = FontWeight.Bold, fontSize = size * g.scale,
+                            fontStyle = if (g.font == 0) FontStyle.Italic else FontStyle.Normal,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private class RGlyph(val c: Char, val font: Int, val rot: Float, val scale: Float, val fill: Int)
+
+/** Comic starburst behind [content]; [spikes] points, inner radius = 72 % of the outer one. */
+@Composable
+fun Starburst(
+    modifier: Modifier = Modifier,
+    fill: Color = C.white,
+    stroke: Color = C.bg,
+    spikes: Int = 14,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    Box(modifier.drawBehind {
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val ro = minOf(size.width, size.height) / 2f
+        val path = Path()
+        for (i in 0 until spikes * 2) {
+            val a = PI * i / spikes - PI / 2
+            val r = if (i % 2 == 0) ro else ro * 0.72f
+            // stretch horizontally so a word fits inside
+            val x = cx + (cos(a) * r * (size.width / (2f * ro))).toFloat()
+            val y = cy + (sin(a) * r).toFloat()
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        drawPath(path, fill)
+        drawPath(path, stroke, style = Stroke(2.5.dp.toPx(), join = StrokeJoin.Miter))
+    }, contentAlignment = Alignment.Center, content = content)
+}
+
+/** "Never ask this again" for one prompt id (hidden when the id is unknown, e.g. a guest in 1v1). */
+@Composable
+fun DiscardLink(model: AppModel, id: String?, modifier: Modifier = Modifier) {
+    if (id == null) return
+    if (model.isDiscarded(id)) {
+        Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+            TText(Th.say("✗ rm'd. never again.", "✓ Discarded — won't come up again"), size = 12.sp, color = C.dim)
+            Spacer(Modifier.width(12.dp))
+            TLink(Th.say("undo", "Undo"), { model.undoDiscard(id) }, color = C.hot, size = 12.sp)
+        }
+    } else {
+        TLink(Th.say("rm this question (never ask again)", "Discard this question"), { model.discard(id) }, modifier, color = C.dim, size = 12.sp)
+    }
+}
+
+/** Experience for QUEST: every point ever scored is 1 EXP. Level L → L+1 needs 300 + 100·L EXP. */
+object Exp {
+    fun need(level: Int): Int = 300 + 100 * level
+
+    /** For a lifetime total (EXP): level (≥ 1), EXP gained inside that level, EXP the level needs. */
+    fun of(total: Int): Triple<Int, Int, Int> {
+        var level = 1
+        var left = total.coerceAtLeast(0)
+        while (left >= need(level)) { left -= need(level); level++ }
+        return Triple(level, left, need(level))
     }
 }
 

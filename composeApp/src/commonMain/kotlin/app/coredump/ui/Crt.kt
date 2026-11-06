@@ -37,6 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.PI
+import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.sin
 import kotlin.random.Random
@@ -48,6 +49,7 @@ import kotlin.random.Random
  *  NEON:     dusk gradient + scrolling perspective grid + horizon glow
  *  CLEAN:    flat
  *  PIXEL:    LCD dot matrix
+ *  COMIC:    halftone dots + one slashed colour band
  * Shake and flash ([Fx]) work in every style; glitch tears only in TERMINAL.
  */
 @Composable
@@ -114,6 +116,7 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
         when (style) {
             Style.NEON -> NeonBackdrop(if (motion) gridT else 0f)
             Style.PAPER -> PaperBackdrop()
+            Style.COMIC -> ComicBackdrop()
             else -> Unit
         }
 
@@ -290,6 +293,40 @@ private fun NeonBackdrop(t: Float) {
             }
         }
         drawRect(bg, Offset(0f, horizon), Size(w, 2f))
+    })
+}
+
+/** Punk print: halftone dots fading from the top-right corner + a diagonal colour band near the bottom. */
+@Composable
+private fun ComicBackdrop() {
+    val dot = C.hot
+    val band = C.white
+    Spacer(Modifier.fillMaxSize().drawWithCache {
+        val step = 14.dp.toPx()
+        val reach = hypot(size.width, size.height * 0.6f)
+        val dots = Path()
+        var y = 0f
+        var row = 0
+        while (y < size.height * 0.6f) {
+            var x = if (row % 2 == 0) 0f else step / 2f
+            while (x < size.width) {
+                val d = hypot(size.width - x, y) / reach
+                val r = (1f - d * 1.25f).coerceIn(0f, 1f) * step * 0.42f
+                if (r > 0.7f) dots.addOval(Rect(Offset(x, y), r))
+                x += step
+            }
+            y += step * 0.87f
+            row++
+        }
+        val h = size.height
+        val w = size.width
+        val slash = Path().apply {
+            moveTo(0f, h * 0.80f); lineTo(w, h * 0.70f); lineTo(w, h * 0.76f); lineTo(0f, h * 0.86f); close()
+        }
+        onDrawBehind {
+            drawPath(dots, dot.copy(alpha = 0.18f))
+            drawPath(slash, band.copy(alpha = 0.07f))
+        }
     })
 }
 

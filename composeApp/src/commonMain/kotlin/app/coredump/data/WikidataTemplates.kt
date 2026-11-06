@@ -43,12 +43,108 @@ object WikidataTemplates {
     private fun instSub(q: String) = "?item wdt:P31/wdt:P279* wd:$q ."
     private fun sub(q: String) = "?item wdt:P279+ wd:$q ."
 
-    /** Hand-picked templates + programmatic families. */
-    val all: List<WikidataTemplate> by lazy { base + WikidataFamilies.all }
+    /** Hand-picked templates + everyday categories + programmatic families. */
+    val all: List<WikidataTemplate> by lazy { base + generic + WikidataFamilies.all }
+
+    private fun subOf(q: String) = "?item wdt:P279+ wd:$q ."
+    private fun anyOf(q: String) = "?item (wdt:P31|wdt:P279)/wdt:P279* wd:$q ."
+    private fun famous(occ: String) = "?item wdt:P31 wd:Q5 ; wdt:P106 wd:$occ ."
+    /** Species below a taxon given by its scientific name (labels of taxa are unique). */
+    private fun species(vararg taxa: String) =
+        "VALUES ?tl { ${taxa.joinToString(" ") { "\"$it\"@en" }} } ?t rdfs:label ?tl ; wdt:P105 ?rank . " +
+            "?item wdt:P171+ ?t ; wdt:P105 wd:Q7432 ."
+
+    /** Everyday categories anyone can name a few of (validated by the CI snapshot). */
+    val generic: List<WikidataTemplate> = listOf(
+        WikidataTemplate("wg.film", "Name a famous film", "CULTURE", inst("Q11424"), minLinks = 60),
+        WikidataTemplate("wg.tv", "Name a TV series", "CULTURE", inst("Q5398426"), minLinks = 40),
+        WikidataTemplate("wg.animated", "Name an animated TV series", "CULTURE", inst("Q581714"), minLinks = 25),
+        WikidataTemplate("wg.sitcom", "Name a sitcom", "CULTURE", "?item wdt:P31 wd:Q5398426 ; wdt:P136 wd:Q170238 .", minLinks = 15),
+        WikidataTemplate("wg.song", "Name a famous song", "CULTURE", "VALUES ?k { wd:Q7366 wd:Q134556 } ?item wdt:P31 ?k .", minLinks = 30),
+        WikidataTemplate("wg.album", "Name a famous album", "CULTURE", inst("Q482994"), minLinks = 30),
+        WikidataTemplate("wg.band", "Name a band or music group", "CULTURE", inst("Q215380"), minLinks = 50),
+        WikidataTemplate("wg.painting", "Name a famous painting", "CULTURE", inst("Q3305213"), minLinks = 25),
+        WikidataTemplate("wg.book", "Name a famous book", "CULTURE", inst("Q7725634"), minLinks = 50),
+        WikidataTemplate("wg.superhero", "Name a superhero", "CULTURE", instSub("Q188784"), minLinks = 8),
+        WikidataTemplate("wg.vgchar", "Name a video game character", "CULTURE", inst("Q1569167"), minLinks = 8),
+        WikidataTemplate("wg.fictdog", "Name a famous fictional dog", "CULTURE", inst("Q21070598"), minLinks = 3),
+        WikidataTemplate("wg.brand", "Name a brand", "MISC", inst("Q431289"), minLinks = 30),
+        WikidataTemplate("wg.skyscraper", "Name a skyscraper", "GEOGRAPHY", inst("Q11303"), minLinks = 15),
+        WikidataTemplate("wg.bridge", "Name a famous bridge", "GEOGRAPHY", instSub("Q12280"), minLinks = 25),
+        WikidataTemplate("wg.stadium", "Name a stadium", "SPORT", inst("Q483110"), minLinks = 20),
+        WikidataTemplate("wg.museum", "Name a museum", "HISTORY", inst("Q33506"), minLinks = 40),
+        WikidataTemplate("wg.university", "Name a university", "MISC", inst("Q3918"), minLinks = 60),
+        WikidataTemplate("wg.city", "Name a city anywhere in the world", "GEOGRAPHY",
+            "VALUES ?cls { wd:Q515 wd:Q1549591 wd:Q1637706 wd:Q200250 wd:Q5119 } ?item wdt:P31 ?cls .", minLinks = 120),
+        WikidataTemplate("wg.disease", "Name a disease", "SCIENCE", instSub("Q12136"), minLinks = 60),
+        WikidataTemplate("wg.drug", "Name a medicine or drug", "SCIENCE", instSub("Q12140"), minLinks = 50),
+        WikidataTemplate("wg.compound", "Name a chemical compound", "SCIENCE", inst("Q11173"), minLinks = 60),
+        WikidataTemplate("wg.religion", "Name a religion", "HISTORY", instSub("Q9174"), minLinks = 25),
+        WikidataTemplate("wg.holiday", "Name a public holiday or festival", "MISC", instSub("Q1445650"), minLinks = 25),
+        WikidataTemplate("wg.dance", "Name a dance", "CULTURE", anyOf("Q11639"), minLinks = 20),
+        WikidataTemplate("wg.martial", "Name a martial art", "SPORT", anyOf("Q11417"), minLinks = 15),
+        WikidataTemplate("wg.artmove", "Name an art movement", "CULTURE", inst("Q968159"), minLinks = 30),
+        WikidataTemplate("wg.ideology", "Name a political ideology", "HISTORY", instSub("Q12909644"), minLinks = 30),
+        WikidataTemplate("wg.legend", "Name a legendary or mythical creature", "OCCULT", instSub("Q2239243"), minLinks = 15),
+        WikidataTemplate("wg.deity", "Name a god or goddess from any religion", "HISTORY", instSub("Q178885"), minLinks = 30),
+        WikidataTemplate("wg.clothing", "Name an item of clothing", "MISC", subOf("Q11460"), minLinks = 20),
+        WikidataTemplate("wg.furniture", "Name a piece of furniture", "MISC", subOf("Q14745"), minLinks = 15),
+        WikidataTemplate("wg.tool", "Name a tool", "MISC", subOf("Q39546"), minLinks = 30),
+        WikidataTemplate("wg.vehicle", "Name a type of vehicle", "MISC", subOf("Q42889"), minLinks = 30),
+        WikidataTemplate("wg.drink", "Name a drink", "FOOD", subOf("Q40050"), minLinks = 30),
+        WikidataTemplate("wg.cake", "Name a cake", "FOOD", anyOf("Q13276"), minLinks = 8),
+        WikidataTemplate("wg.bread", "Name a bread", "FOOD", anyOf("Q7802"), minLinks = 10),
+        WikidataTemplate("wg.sausage", "Name a sausage", "FOOD", anyOf("Q131419"), minLinks = 8),
+        WikidataTemplate("wg.pastry", "Name a pastry", "FOOD", anyOf("Q477248"), minLinks = 10),
+        WikidataTemplate("wg.soup", "Name a soup", "FOOD", anyOf("Q41415"), minLinks = 10),
+        WikidataTemplate("wg.sauce", "Name a sauce", "FOOD", anyOf("Q178359"), minLinks = 10),
+        WikidataTemplate("wg.salad", "Name a salad", "FOOD", anyOf("Q9266"), minLinks = 8),
+        WikidataTemplate("wg.whale", "Name a whale, dolphin or porpoise", "NATURE", species("Cetacea"), minLinks = 10),
+        WikidataTemplate("wg.wildcat", "Name a wild cat species", "NATURE", species("Felidae"), minLinks = 10),
+        WikidataTemplate("wg.canid", "Name a wolf, fox, jackal or wild dog", "NATURE", species("Canidae"), minLinks = 10),
+        WikidataTemplate("wg.rodent", "Name a rodent", "NATURE", species("Rodentia"), minLinks = 25),
+        WikidataTemplate("wg.raptor", "Name a bird of prey species", "NATURE", species("Accipitriformes", "Falconiformes", "Strigiformes"), minLinks = 25),
+        WikidataTemplate("wg.parrot", "Name a parrot species", "NATURE", species("Psittaciformes"), minLinks = 15),
+        WikidataTemplate("wg.duck", "Name a duck, goose or swan", "NATURE", species("Anatidae"), minLinks = 20),
+        WikidataTemplate("wg.shark", "Name a shark", "NATURE", species("Selachimorpha"), minLinks = 15),
+        WikidataTemplate("wg.turtle", "Name a turtle or tortoise", "NATURE", species("Testudines"), minLinks = 15),
+        WikidataTemplate("wg.frog", "Name a frog or toad", "NATURE", species("Anura"), minLinks = 20),
+        WikidataTemplate("wg.deer", "Name a deer", "NATURE", species("Cervidae"), minLinks = 10),
+        WikidataTemplate("wg.cactus", "Name a cactus", "NATURE", species("Cactaceae"), minLinks = 8),
+        WikidataTemplate("wg.actor", "Name a famous actor or actress", "PEOPLE", famous("Q33999"), minLinks = 60),
+        WikidataTemplate("wg.writer", "Name a famous writer", "PEOPLE", famous("Q36180"), minLinks = 80),
+        WikidataTemplate("wg.politician", "Name a famous politician", "PEOPLE", famous("Q82955"), minLinks = 100),
+        WikidataTemplate("wg.model", "Name a famous model", "PEOPLE", famous("Q4610556"), minLinks = 30),
+        WikidataTemplate("wg.youtuber", "Name a famous YouTuber", "PEOPLE", famous("Q17125263"), minLinks = 15),
+        WikidataTemplate("wg.dancer", "Name a famous dancer", "PEOPLE", famous("Q5716684"), minLinks = 30),
+        WikidataTemplate("wg.cricketer", "Name a famous cricketer", "SPORT", famous("Q12299841"), minLinks = 15),
+        WikidataTemplate("wg.golfer", "Name a famous golfer", "SPORT", famous("Q13156709"), minLinks = 15),
+        WikidataTemplate("wg.swimmer", "Name a famous swimmer", "SPORT", famous("Q10843402"), minLinks = 20),
+        WikidataTemplate("wg.cyclist", "Name a famous cyclist", "SPORT", famous("Q2309784"), minLinks = 20),
+        WikidataTemplate("wg.hockey", "Name a famous ice hockey player", "SPORT", famous("Q11774891"), minLinks = 20),
+        WikidataTemplate("wg.baseball", "Name a famous baseball player", "SPORT", famous("Q10871364"), minLinks = 15),
+        WikidataTemplate("wg.nfl", "Name a famous American football player", "SPORT", famous("Q19204627"), minLinks = 15),
+        WikidataTemplate("wg.wrestler", "Name a famous pro wrestler", "SPORT", famous("Q13474373"), minLinks = 15),
+        WikidataTemplate("wg.presenter", "Name a famous TV presenter", "PEOPLE", famous("Q947873"), minLinks = 25),
+        WikidataTemplate("wg.dj", "Name a famous DJ", "PEOPLE", famous("Q130857"), minLinks = 20),
+        WikidataTemplate("wg.pope", "Name a pope", "HISTORY", "?item wdt:P39 wd:Q19546 .", minLinks = 20),
+    )
+
+    /**
+     * How many answers in a fetched list are widely known (covered by at least [FAMOUS_LINKS] Wikipedias).
+     * Lists with fewer than [FAMOUS_MIN] such answers are too obscure for a general audience and are dropped.
+     */
+    fun famousCount(body: String): Int = runCatching {
+        val b = json.parseToJsonElement(body).jsonObject["results"]?.jsonObject?.get("bindings")?.jsonArray ?: return 0
+        b.count { (it.jsonObject.v("links")?.toIntOrNull() ?: 0) >= FAMOUS_LINKS }
+    }.getOrDefault(0)
+
+    const val FAMOUS_LINKS = 40
+    const val FAMOUS_MIN = 8
 
     /** Minimum list size to keep a fetched prompt. */
     fun minAnswers(t: WikidataTemplate): Int =
-        if (t.id.startsWith("wf.") || t.id.startsWith("wx.")) WikidataFamilies.MIN_ANSWERS else 5
+        if (t.id.startsWith("wf.") || t.id.startsWith("wx.") || t.id.startsWith("wg.")) WikidataFamilies.MIN_ANSWERS else 5
 
     val base: List<WikidataTemplate> = listOf(
         WikidataTemplate("wd.dog", "Name a dog breed", "NATURE", inst("Q39367")),
@@ -56,24 +152,12 @@ object WikidataTemplates {
         WikidataTemplate("wd.cocktail", "Name a cocktail", "FOOD", instSub("Q134768")),
         WikidataTemplate("wd.dish", "Name a dish from anywhere in the world", "FOOD", inst("Q746549"), minLinks = 5),
         WikidataTemplate("wd.proglang", "Name a programming language", "CODE", instSub("Q9143"), minLinks = 2),
-        WikidataTemplate(
-            "wd.proglang2000", "Name a programming language first released in 2000 or later", "CODE",
-            "?item wdt:P31/wdt:P279* wd:Q9143 ; wdt:P571 ?inc . FILTER(YEAR(?inc) >= 2000)",
-        ),
         WikidataTemplate("wd.os", "Name an operating system", "CODE", instSub("Q9135"), minLinks = 2),
-        WikidataTemplate("wd.distro", "Name a Linux distribution", "CODE", instSub("Q131669")),
         WikidataTemplate("wd.browser", "Name a web browser", "CODE", instSub("Q6368")),
-        WikidataTemplate("wd.editor", "Name a text editor", "CODE", instSub("Q522972")),
         WikidataTemplate("wd.website", "Name a website", "CODE", inst("Q35127"), minLinks = 12),
         WikidataTemplate("wd.videogame", "Name a video game", "CULTURE", inst("Q7889"), minLinks = 25),
-        WikidataTemplate("wd.compsci", "Name a computer scientist", "CODE",
-            "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q82594 .", minLinks = 10),
-        WikidataTemplate("wd.programmer", "Name a famous programmer", "CODE",
-            "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q5482740 .", minLinks = 6),
         WikidataTemplate("wd.horrorfilm", "Name a horror film", "OCCULT",
             "?item wdt:P31 wd:Q11424 ; wdt:P136 wd:Q200092 .", minLinks = 3),
-        WikidataTemplate("wd.horrordir", "Name a director of a horror film", "OCCULT",
-            "?film wdt:P31 wd:Q11424 ; wdt:P136 wd:Q200092 ; wdt:P57 ?item .", minLinks = 5),
         WikidataTemplate("wd.metal", "Name a heavy metal band", "CULTURE",
             "?item wdt:P31 wd:Q5741069 ; wdt:P136 wd:Q38848 ."),
         WikidataTemplate("wd.genre", "Name a music genre", "CULTURE", inst("Q188451"), minLinks = 6),
@@ -94,8 +178,6 @@ object WikidataTemplates {
         WikidataTemplate("wd.club", "Name a football (soccer) club", "SPORT", inst("Q476028"), minLinks = 20),
         WikidataTemplate("wd.megacity", "Name a city with over a million people", "GEOGRAPHY",
             "VALUES ?cls { wd:Q515 wd:Q1549591 wd:Q1637706 wd:Q200250 wd:Q5119 } ?item wdt:P31 ?cls ; wdt:P1082 ?pop . FILTER(?pop >= 1000000)"),
-        WikidataTemplate("wd.peak7k", "Name a mountain over 7,000 metres", "GEOGRAPHY",
-            "?item wdt:P31 wd:Q8502 ; wdt:P2044 ?elev . FILTER(?elev > 7000)"),
         WikidataTemplate("wd.lake", "Name a lake", "GEOGRAPHY", inst("Q23397"), minLinks = 15),
         WikidataTemplate("wd.volcano", "Name a volcano", "GEOGRAPHY", instSub("Q8072"), minLinks = 8),
         WikidataTemplate("wd.sea", "Name a sea", "GEOGRAPHY", inst("Q165"), minLinks = 3),

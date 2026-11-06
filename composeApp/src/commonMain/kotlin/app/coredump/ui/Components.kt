@@ -2,6 +2,7 @@ package app.coredump.ui
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -49,6 +50,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -110,6 +112,18 @@ fun DrawScope.drawBox(style: Style, stroke: Color, fill: Color, sw: Float, glow:
             drawRect(stroke, Offset(0f, b), Size(b, h - 2 * b))
             drawRect(stroke, Offset(w - b, b), Size(b, h - 2 * b))
         }
+        return
+    }
+    if (style == Style.COMIC) {
+        // slanted panel; [glow] = hard drop shadow in the accent colour
+        val k = minOf(h * 0.22f, 12.dp.toPx())
+        fun slab(dx: Float, dy: Float) = Path().apply {
+            moveTo(k + dx, dy); lineTo(w + dx, dy); lineTo(w - k + dx, h + dy); lineTo(dx, h + dy); close()
+        }
+        if (glow) { val o = 4.dp.toPx(); drawPath(slab(o, o), C.hot) }
+        val body = slab(0f, 0f)
+        if (fill.alpha > 0f) drawPath(body, fill)
+        if (stroke.alpha > 0f && sw > 0f) drawPath(body, stroke, style = Stroke(sw, join = androidx.compose.ui.graphics.StrokeJoin.Miter))
         return
     }
     val r = if (pill) h / 2f else style.corner.toPx()
@@ -246,7 +260,7 @@ fun TButton(
     val accent = when {
         !enabled -> C.line
         custom -> color
-        primary && (style == Style.CLEAN || style == Style.NEON) -> C.hot
+        primary && (style == Style.CLEAN || style == Style.NEON || style == Style.COMIC) -> C.hot
         else -> C.amber
     }
     val click = Modifier.clickable(interactionSource = src, indication = null, enabled = enabled) { haptic(primary); onClick() }
@@ -278,6 +292,21 @@ fun TButton(
                 Box(Modifier.offset(o, o).heightIn(min = 48.dp).padding(horizontal = 16.dp, vertical = 14.dp),
                     contentAlignment = Alignment.Center) {
                     TText((if (primary) "▶ " else "") + label.uppercase(), size = textSize, color = ink, align = TextAlign.Center)
+                }
+            }
+        }
+        Style.COMIC -> {
+            // slanted slab on a hard shadow; pressing pushes it into the shadow, with a small tilt
+            val shadow = 5.dp
+            val o by animateDpAsState(if (pressed) shadow else 0.dp, tween(70))
+            val tilt by animateFloatAsState(if (pressed) -1.5f else 0f, tween(90))
+            val face = when { !enabled -> C.ghost; primary -> accent; else -> C.panel }
+            val ink = when { !enabled -> C.dim; primary -> onColor(accent); else -> accent }
+            Box(modifier.graphicsLayer { rotationZ = tilt }.then(click), contentAlignment = Alignment.Center) {
+                if (enabled) Box(Modifier.matchParentSize().offset(shadow, shadow).box(style, Color.Transparent, if (primary) C.white else C.hot))
+                Box(Modifier.matchParentSize().offset(o, o).box(style, if (custom) color else C.line, face, 2.dp))
+                Box(Modifier.offset(o, o).heightIn(min = 50.dp).padding(horizontal = 24.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
+                    TText(label.uppercase(), size = textSize, color = ink, weight = FontWeight.Bold, spacing = 1.sp, glow = 0f, align = TextAlign.Center)
                 }
             }
         }
@@ -313,7 +342,7 @@ fun TButton(
 @Composable
 fun TLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = C.dim, size: TextUnit = 13.sp) {
     val haptic = rememberHaptic()
-    val prefix = when (Th.style) { Style.TERMINAL -> "› "; Style.PIXEL -> "> "; else -> "" }
+    val prefix = when (Th.style) { Style.TERMINAL -> "› "; Style.PIXEL -> "> "; Style.COMIC -> "✦ "; else -> "" }
     val suffix = when (Th.style) { Style.CLEAN, Style.NEON, Style.PAPER -> "  →"; else -> "" }
     TText("$prefix$label$suffix", modifier.clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {
         haptic(false); onClick()
@@ -380,6 +409,19 @@ fun Panel(
                 Spacer(Modifier.height(8.dp))
             }
             content()
+        }
+        Style.COMIC -> Box(modifier.padding(top = if (title != null) 12.dp else 0.dp)) {
+            Column(
+                Modifier.fillMaxWidth().box(Style.COMIC, if (color == C.line) C.line else color, C.panel, 2.dp)
+                    .padding(start = 20.dp, end = 20.dp, top = if (title != null) 20.dp else 16.dp, bottom = 16.dp),
+                content = content,
+            )
+            if (title != null) {
+                val tag = if (color == C.line) C.hot else color
+                TText(title.uppercase(), Modifier.offset(x = 18.dp, y = (-10).dp).graphicsLayer { rotationZ = -3f }
+                    .background(tag).padding(horizontal = 8.dp, vertical = 3.dp),
+                    size = 11.sp, color = onColor(tag), weight = FontWeight.Bold, spacing = 1.5.sp, glow = 0f)
+            }
         }
     }
 }
@@ -460,7 +502,7 @@ fun Stepper(
 @Composable
 fun ChipBox(label: String, on: Boolean, modifier: Modifier = Modifier, size: TextUnit = 12.sp, onClick: () -> Unit) {
     val style = Th.style
-    val accent = when (style) { Style.CLEAN, Style.NEON -> C.hot; else -> C.amber }
+    val accent = when (style) { Style.CLEAN, Style.NEON, Style.COMIC -> C.hot; else -> C.amber }
     val ink = if (on) (if (style == Style.TERMINAL) C.bg else onColor(accent)) else C.amber
     TText(
         label,
@@ -468,7 +510,7 @@ fun ChipBox(label: String, on: Boolean, modifier: Modifier = Modifier, size: Tex
             .box(style, if (on) accent else C.line, if (on) accent else Color.Transparent, glow = on && style == Style.NEON,
                 pill = style == Style.NEON || style == Style.CLEAN)
             .clickable(remember { MutableInteractionSource() }, null, onClick = onClick)
-            .padding(horizontal = if (style == Style.PIXEL) 14.dp else 12.dp, vertical = 11.dp),
+            .padding(horizontal = if (style == Style.PIXEL) 14.dp else if (style == Style.COMIC) 16.dp else 12.dp, vertical = 11.dp),
         size = size, color = if (style == Style.PIXEL && on) C.bg else ink,
         weight = if (style == Style.CLEAN) FontWeight.SemiBold else FontWeight.Bold, glow = if (on) 0f else 1f,
     )
@@ -559,6 +601,7 @@ fun TermInput(
             .padding(horizontal = 16.dp, vertical = 12.dp)
         Style.CLEAN -> Modifier.box(style, C.line, C.panel).padding(horizontal = 14.dp, vertical = 13.dp)
         Style.TERMINAL -> Modifier.box(style, C.line, C.panel).padding(horizontal = 12.dp, vertical = 12.dp)
+        Style.COMIC -> Modifier.box(style, C.line, C.panel, 2.dp).padding(horizontal = 22.dp, vertical = 14.dp)
     }
     val ink = C.amber
     Row(modifier.then(frame), verticalAlignment = Alignment.CenterVertically) {
@@ -573,7 +616,7 @@ fun TermInput(
                 singleLine = singleLine,
                 textStyle = termStyle(size = size, color = if (style == Style.TERMINAL) C.hot else ink,
                     weight = if (style == Style.CLEAN) FontWeight.Normal else FontWeight.Bold),
-                cursorBrush = SolidColor(if (style == Style.CLEAN || style == Style.NEON) C.hot else C.amber),
+                cursorBrush = SolidColor(if (style == Style.CLEAN || style == Style.NEON || style == Style.COMIC) C.hot else C.amber),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
                     autoCorrectEnabled = false,

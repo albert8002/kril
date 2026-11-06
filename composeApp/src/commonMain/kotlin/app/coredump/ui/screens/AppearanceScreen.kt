@@ -176,6 +176,18 @@ private fun ThemeThumb(style: Style, p: Palette) {
                     var x = 0f
                     while (x < size.width) { drawRect(p.line.copy(alpha = 0.12f), Offset(x, 0f), Size(1f, size.height)); x += 4f }
                 }
+                Style.COMIC -> {
+                    // halftone corner + one slashed band
+                    for (row in 0 until 5) for (col in 0 until 7) {
+                        val r = (5f - row) * 0.9f - col * 0.35f
+                        if (r > 0.4f) drawCircle(p.hot.copy(alpha = 0.55f), r, Offset(size.width - col * 9f - 6f, row * 8f + 5f))
+                    }
+                    val band = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(0f, size.height * 0.78f); lineTo(size.width, size.height * 0.58f)
+                        lineTo(size.width, size.height * 0.70f); lineTo(0f, size.height * 0.90f); close()
+                    }
+                    drawPath(band, p.white.copy(alpha = 0.35f))
+                }
             }
         },
     ) {

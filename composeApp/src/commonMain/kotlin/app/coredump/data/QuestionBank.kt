@@ -111,7 +111,8 @@ class QuestionBank(private val scope: CoroutineScope) {
         snapshot.groupingBy { it.topic }.eachCount().toList().sortedBy { it.first }
 
     private suspend fun putAll(list: List<Prompt>) = lock.withLock {
-        for (p in list) byId[p.id] = p
+        val gone = Discards.ids
+        for (p in list) if (p.id !in gone) byId[p.id] = p
         publish()
     }
 
@@ -141,6 +142,7 @@ class QuestionBank(private val scope: CoroutineScope) {
     /** Fast part of boot. [log] receives terminal lines for the boot screen. */
     suspend fun boot(settings: Settings, log: (String) -> Unit) {
         withContext(Dispatchers.Default) {
+            Discards.load()
             val bundled = guarded("bundled packs", 0) { loadBundled(log) }
             status(SourceKind.BUNDLED) { it.copy(state = SyncState.OK, detail = "$bundled prompts") }
 
@@ -148,7 +150,11 @@ class QuestionBank(private val scope: CoroutineScope) {
             log(if (lib > 0) "[ OK ] /var/lib: $lib collected lists" else "[ -- ] /var/lib: no collected lists yet")
 
             for (kind in listOf(SourceKind.WIKIPEDIA, SourceKind.REMOTE)) {
-                val cached = guarded("cache", emptyList()) { readCache(kind) }
+                val cached = guarded("cache", emptyList()) {
+                    // drop lists whose template no longer exists (too specialised lists were retired)
+                    val known = WikipediaTemplates.all.mapTo(HashSet()) { it.id }
+                    readCache(kind).filter { kind != SourceKind.WIKIPEDIA || it.id in known }
+                }
                 if (cached.isNotEmpty()) {
                     putAll(cached)
                     log("[ OK ] cache /var/${kind.tag.lowercase()}: ${cached.size} prompts")
@@ -156,8 +162,9 @@ class QuestionBank(private val scope: CoroutineScope) {
             }
             // Pre-v8 devices kept refreshed Wikidata lists here; they are still valid prompts.
             guarded("legacy cache", Unit) {
+                val known = WikidataTemplates.all.mapTo(HashSet()) { it.id }
                 val old = readCache(SourceKind.WIKIDATA)
-                if (old.isNotEmpty()) putAll(old.filter { get(it.id) == null })
+                if (old.isNotEmpty()) putAll(old.filter { it.id in known && get(it.id) == null })
             }
             log("[ OK ] ${_state.value.answers} answers across ${_state.value.prompts} lists")
             _state.update { it.copy(ready = true) }
@@ -284,16 +291,72 @@ class QuestionBank(private val scope: CoroutineScope) {
 
     private suspend fun loadLibrary(): Int {
         val meta = readMeta()
+        val pool = WikidataPool.all.mapTo(HashSet()) { it.id }
         var n = 0
+        val keptFiles = ArrayList<String>()
         for (f in meta.files) {
             val ps = runCatching { PackCodec.parse(Platform.readText(f) ?: return@runCatching emptyList(), SourceKind.WIKIDATA) }
                 .getOrElse { emptyList() }
-            putAll(ps)
-            n += ps.size
+            // retired (too specialised) or discarded lists are deleted from the device
+            val keep = ps.filter { it.id in pool && it.id !in Discards.ids }
+            if (keep.size != ps.size) {
+                if (keep.isEmpty()) runCatching { Platform.delete(f) }
+                else runCatching { Platform.writeText(f, PackCodec.encodeRanked(keep, Platform.epochMillis())) }
+            }
+            if (keep.isNotEmpty()) keptFiles += f
+            putAll(keep)
+            n += keep.size
         }
+        if (keptFiles.size != meta.files.size) writeMeta(Meta(keptFiles, meta.next, meta.cursor, meta.lastAuto, meta.lastAt, meta.skip))
         collectStatus { it.copy(library = n, lastAt = meta.lastAt) }
         return n
     }
+
+    /**
+     * Discard a prompt: hidden forever; collected lists are also deleted from the device's files.
+     * Returns the removed prompt (for undo) or null.
+     */
+    suspend fun discard(id: String): Prompt? = withContext(Dispatchers.Default) {
+        val p = get(id)
+        Discards.add(id)
+        lock.withLock { byId.remove(id); publish() }
+        guarded("discard", Unit) {
+            val meta = readMeta()
+            val files = ArrayList<String>()
+            for (f in meta.files) {
+                val ps = runCatching { PackCodec.parse(Platform.readText(f) ?: "", SourceKind.WIKIDATA) }.getOrElse { emptyList() }
+                if (ps.none { it.id == id }) { files += f; continue }
+                val keep = ps.filter { it.id != id }
+                if (keep.isEmpty()) Platform.delete(f) else { Platform.writeText(f, PackCodec.encodeRanked(keep, Platform.epochMillis())); files += f }
+            }
+            if (files.size != meta.files.size) writeMeta(Meta(files, meta.next, meta.cursor, meta.lastAuto, meta.lastAt, meta.skip))
+            for (k in listOf(SourceKind.WIKIPEDIA, SourceKind.REMOTE, SourceKind.WIKIDATA)) {
+                val c = readCache(k)
+                if (c.any { it.id == id }) writeCache(k, c.filter { it.id != id }).also { if (c.size == 1) Platform.delete(cacheFile(k)) }
+            }
+            collectStatus { it.copy(library = snapshot.count { q -> q.id.startsWith("wx.") }) }
+        }
+        p
+    }
+
+    /** Undo a discard: back in play (a collected list is written back as its own small batch). */
+    suspend fun restore(p: Prompt): Unit = withContext(Dispatchers.Default) {
+        Discards.remove(p.id)
+        putAll(listOf(p))
+        if (p.id.startsWith("wx.")) guarded("restore", Unit) {
+            val meta = readMeta()
+            val name = "lib_" + meta.next.toString().padStart(5, '0') + ".json"
+            Platform.writeText(name, PackCodec.encodeRanked(listOf(p), Platform.epochMillis()))
+            writeMeta(Meta(meta.files + name, meta.next + 1, meta.cursor, meta.lastAuto, meta.lastAt, meta.skip))
+        } else if (p.source != SourceKind.BUNDLED) guarded("restore", Unit) {
+            val c = readCache(p.source)
+            if (c.none { it.id == p.id }) writeCache(p.source, c + p)
+        }
+        Unit
+    }
+
+    /** "Restore discarded questions": forget the list; built-in ones come back on the next start. */
+    fun clearDiscards() = Discards.clear()
 
     /**
      * Fetches up to [n] lists the device has not got yet. Lists that come back too small are skipped for
@@ -305,7 +368,7 @@ class QuestionBank(private val scope: CoroutineScope) {
             var meta = readMeta()
             val pool = WikidataPool.order
             val now = Platform.epochMillis()
-            val have = snapshot.mapTo(HashSet()) { it.id }
+            val have = snapshot.mapTo(HashSet()) { it.id }.apply { addAll(Discards.ids) }
             val picked = ArrayList<WikidataTemplate>()
             var cursor = meta.cursor
             var scanned = 0
@@ -328,7 +391,8 @@ class QuestionBank(private val scope: CoroutineScope) {
             var lastErr: String? = null
             for (t in picked) {
                 val p = try {
-                    fetchWikidata(t)
+                    fetchWikidata(t).takeIf { it.second >= WikidataTemplates.FAMOUS_MIN }?.first
+                        ?: run { skip[t.id] = now + 60 * DAY; null }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Throwable) {
@@ -438,7 +502,8 @@ class QuestionBank(private val scope: CoroutineScope) {
         return if (failed > 0 && err != null) "$base · $err" else base
     }
 
-    private suspend fun fetchWikidata(t: WikidataTemplate): Prompt {
+    /** The parsed list and how many of its answers are widely known. */
+    private suspend fun fetchWikidata(t: WikidataTemplate): Pair<Prompt, Int> {
         val body = call {
             http.get(WikiNet.WDQS) {
                 parameter("query", WikidataTemplates.query(t))
@@ -447,7 +512,7 @@ class QuestionBank(private val scope: CoroutineScope) {
                 header("User-Agent", WikiNet.USER_AGENT)
             }
         }
-        return WikidataTemplates.parse(t, body)
+        return WikidataTemplates.parse(t, body) to WikidataTemplates.famousCount(body)
     }
 
     // ---------------- wikipedia ----------------

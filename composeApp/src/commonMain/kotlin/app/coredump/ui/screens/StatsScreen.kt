@@ -103,7 +103,7 @@ private fun RunLine(r: RunRecord) {
 }
 
 /** Consecutive days (ending today or yesterday) with a recorded daily run. */
-private fun streak(runs: List<RunRecord>): Int {
+fun streak(runs: List<RunRecord>): Int {
     val days = runs.mapNotNull { it.daily }.toSet()
     var d = dailyNumber(Platform.epochMillis())
     if (d !in days) d -= 1

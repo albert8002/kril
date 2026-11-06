@@ -65,11 +65,100 @@ private val whispers = listOf(
     "kill -9 does not work on it.",
 )
 
-private class Item(val label: String, val cmd: String, val hint: String, val badge: String?, val action: () -> Unit)
+/** One main-menu destination. [key] lets each archetype pick its own words and icon. */
+class Item(val key: String, val label: String, val cmd: String, val hint: String, val badge: String?, val action: () -> Unit)
+
+fun menuItems(model: AppModel): List<Item> {
+    val today = dailyNumber(Platform.epochMillis())
+    val playedToday = History.playedDaily(today)
+    val style = Th.style
+    return listOf(
+        Item("daily", if (playedToday != null) "DAILY #$today ✓" else "DAILY RUN #$today", "cron @daily",
+            if (playedToday != null) "Played today · ${playedToday.points} pts" else "Same 7 prompts for everyone today",
+            if (playedToday != null) "${playedToday.points}" else "NEW") { model.startDaily() },
+        Item("solo", "RUN SOLO", "./run --solo", "Pick topics, time and difficulty", null) { model.go(Screen.Setup(forHost = false)) },
+        Item("duel", "LINK 1v1", "./run --peer", "Play a friend online or on Wi-Fi", null) { model.go(Screen.Lobby) },
+        Item("stats", "STATS", "cat /proc/self", "Runs, tiers, streaks", null) { model.go(Screen.Stats) },
+        Item("browse", "BROWSE LISTS", "ls -la /var/lists", "Every list and its answers", null) { model.go(Screen.Browse) },
+        Item("theme", "THEME", "chtheme", "${style.label.lowercase().replaceFirstChar { it.uppercase() }} · ${Th.pal.name.lowercase()}", null) { model.go(Screen.Appearance) },
+        Item("settings", "SETTINGS", "vim ~/.coredumprc", "Sources, defaults, crash reports", null) { model.go(Screen.Config) },
+        Item("manual", "MANUAL", "man coredump", "How scoring works", null) { model.go(Screen.Manual) },
+    )
+}
 
 @Composable
 fun MenuScreen(model: AppModel) {
+    when (Th.style) {
+        Style.TERMINAL -> TerminalMenu(model)
+        Style.NEON -> ArcadeMenu(model)
+        Style.PAPER -> GazetteMenu(model)
+        Style.CLEAN -> QuizMenu(model)
+        Style.PIXEL -> QuestMenu(model)
+        Style.COMIC -> ComicMenu(model)
+    }
+}
+
+/** Crash notice from the previous session (any archetype). */
+@Composable
+fun CrashBanner(model: AppModel) {
+    if (model.lastCrash == null) return
+    Spacer(Modifier.height(12.dp))
+    Column(Modifier.fillMaxWidth().box(Th.style, C.blood, C.bloodDim.copy(alpha = 0.35f)).padding(horizontal = 16.dp, vertical = 12.dp)) {
+        TText(Th.say("kernel panic last session. report saved.", "The app crashed last time. A report was saved."),
+            size = 12.sp, color = C.blood, weight = FontWeight.Bold)
+        TLink(Th.say("view report in config", "View report in Settings"), { model.go(Screen.Config) }, color = C.blood)
+    }
+}
+
+/** List counts, collection progress, "fetch more", source rows. */
+@Composable
+fun LibraryFooter(model: AppModel, sources: Boolean = true) {
     val bank by model.bank.state.collectAsState()
+    TText(
+        Th.say("${group(bank.prompts)} prompts · ${group(bank.answers)} answers hashed", "${group(bank.prompts)} lists · ${group(bank.answers)} answers"),
+        size = 12.sp, color = C.amber,
+    )
+    Spacer(Modifier.height(6.dp))
+    val col = bank.collect
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (col.running) {
+            Spinner(C.amber, 12.sp)
+            TText("  ${Th.say("collecting", "Collecting new lists")} ${col.done}/${col.total}", size = 11.sp, color = C.amber)
+        } else {
+            TText(
+                (if (col.library > 0) "+${col.library} ${Th.say("collected", "collected lists")}" else Th.say("no lists collected yet", "No collected lists yet")) +
+                    (if (col.message.isNotEmpty()) " · ${col.message}" else ""),
+                Modifier.weight(1f), size = 11.sp, color = C.dim, maxLines = 2,
+            )
+        }
+    }
+    if (!col.running) {
+        Spacer(Modifier.height(10.dp))
+        TButton(Th.say("FETCH MORE LISTS", "Fetch more lists"), { model.bank.requestMore() }, Modifier.fillMaxWidth(), textSize = 12.sp)
+    }
+    if (!sources) return
+    Spacer(Modifier.height(10.dp))
+    for (k in SourceKind.entries) {
+        val st = bank.sources.getValue(k)
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 1.dp)) {
+            TText(k.tag, Modifier.width(86.dp), size = 11.sp, color = C.dim)
+            when (st.state) {
+                SyncState.SYNCING -> { Spinner(C.amber, 11.sp); TText(" ${st.done}/${st.total}", size = 11.sp, color = C.amber) }
+                SyncState.OK -> TText("✓ ${st.count}", size = 11.sp, color = C.amber)
+                SyncState.ERROR -> TText("✗ ${st.count} kept", size = 11.sp, color = C.blood)
+                SyncState.OFF -> TText("off", size = 11.sp, color = C.line)
+                SyncState.IDLE -> TText("· ${st.count}", size = 11.sp, color = C.dim)
+            }
+            if (st.detail.isNotEmpty()) TText("  ${st.detail}", size = 10.sp,
+                color = if (st.state == SyncState.ERROR) C.blood else C.line, maxLines = 1)
+        }
+    }
+}
+
+// ======================================================================= TERMINAL
+
+@Composable
+private fun TerminalMenu(model: AppModel) {
     val haptic = rememberHaptic()
     val style = Th.style
 
@@ -88,74 +177,14 @@ fun MenuScreen(model: AppModel) {
             else Th.say("best run: ${History.best} pts · ${History.games} runs", "Best run ${History.best} pts · ${History.games} runs played"),
             size = 11.sp, color = C.dim,
         )
-        val crash = model.lastCrash
-        if (crash != null) {
-            Spacer(Modifier.height(12.dp))
-            Column(Modifier.fillMaxWidth().box(style, C.blood, C.bloodDim.copy(alpha = 0.35f)).padding(12.dp)) {
-                TText(Th.say("kernel panic last session. report saved.", "The app crashed last time. A report was saved."),
-                    size = 12.sp, color = C.blood, weight = FontWeight.Bold)
-                TLink(Th.say("view report in config", "View report in Settings"), { model.go(Screen.Config) }, color = C.blood)
-            }
-        }
+        CrashBanner(model)
         Spacer(Modifier.height(22.dp))
-
-        val today = dailyNumber(Platform.epochMillis())
-        val playedToday = History.playedDaily(today)
-        val items = listOf(
-            Item(if (playedToday != null) "DAILY #$today ✓" else "DAILY RUN #$today", "cron @daily",
-                if (playedToday != null) "Played today · ${playedToday.points} pts" else "Same 7 prompts for everyone today",
-                if (playedToday != null) "${playedToday.points}" else "NEW") { model.startDaily() },
-            Item("RUN SOLO", "./run --solo", "Pick topics, time and difficulty", null) { model.go(Screen.Setup(forHost = false)) },
-            Item("LINK 1v1", "./run --peer", "Play a friend online or on Wi-Fi", null) { model.go(Screen.Lobby) },
-            Item("STATS", "cat /proc/self", "Runs, tiers, streaks", null) { model.go(Screen.Stats) },
-            Item("BROWSE LISTS", "ls -la /var/lists", "Every list and its answers", null) { model.go(Screen.Browse) },
-            Item("THEME", "chtheme", "${style.label.lowercase().replaceFirstChar { it.uppercase() }} · ${Th.pal.name.lowercase()}", null) { model.go(Screen.Appearance) },
-            Item("SETTINGS", "vim ~/.coredumprc", "Sources, defaults, crash reports", null) { model.go(Screen.Config) },
-            Item("MANUAL", "man coredump", "How scoring works", null) { model.go(Screen.Manual) },
-        )
-        items.forEachIndexed { i, it -> MenuItem(i, it) { haptic(true); it.action() } }
+        menuItems(model).forEachIndexed { i, it -> MenuItem(i, it) { haptic(true); it.action() } }
 
         Spacer(Modifier.height(22.dp))
         Divider()
         Spacer(Modifier.height(10.dp))
-        TText(
-            Th.say("${group(bank.prompts)} prompts · ${group(bank.answers)} answers hashed", "${group(bank.prompts)} lists · ${group(bank.answers)} answers"),
-            size = 12.sp, color = C.amber,
-        )
-        Spacer(Modifier.height(6.dp))
-        val col = bank.collect
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (col.running) {
-                Spinner(C.amber, 12.sp)
-                TText("  ${Th.say("collecting", "Collecting new lists")} ${col.done}/${col.total}", size = 11.sp, color = C.amber)
-            } else {
-                TText(
-                    (if (col.library > 0) "+${col.library} ${Th.say("collected", "collected lists")}" else Th.say("no lists collected yet", "No collected lists yet")) +
-                        (if (col.message.isNotEmpty()) " · ${col.message}" else ""),
-                    Modifier.weight(1f), size = 11.sp, color = C.dim, maxLines = 2,
-                )
-            }
-        }
-        if (!col.running) {
-            Spacer(Modifier.height(8.dp))
-            TButton(Th.say("FETCH MORE LISTS", "Fetch more lists"), { model.bank.requestMore() }, Modifier.fillMaxWidth(), textSize = 12.sp)
-        }
-        Spacer(Modifier.height(10.dp))
-        for (k in SourceKind.entries) {
-            val st = bank.sources.getValue(k)
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 1.dp)) {
-                TText(k.tag, Modifier.width(86.dp), size = 11.sp, color = C.dim)
-                when (st.state) {
-                    SyncState.SYNCING -> { Spinner(C.amber, 11.sp); TText(" ${st.done}/${st.total}", size = 11.sp, color = C.amber) }
-                    SyncState.OK -> TText("✓ ${st.count}", size = 11.sp, color = C.amber)
-                    SyncState.ERROR -> TText("✗ ${st.count} kept", size = 11.sp, color = C.blood)
-                    SyncState.OFF -> TText("off", size = 11.sp, color = C.line)
-                    SyncState.IDLE -> TText("· ${st.count}", size = 11.sp, color = C.dim)
-                }
-                if (st.detail.isNotEmpty()) TText("  ${st.detail}", size = 10.sp,
-                    color = if (st.state == SyncState.ERROR) C.blood else C.line, maxLines = 1)
-            }
-        }
+        LibraryFooter(model)
         Spacer(Modifier.height(18.dp))
         if (style == Style.TERMINAL) {
             var w by remember { mutableIntStateOf(0) }
@@ -175,87 +204,20 @@ private fun MenuItem(index: Int, item: Item, onClick: () -> Unit) {
     LaunchedEffect(Unit) { delay(60L * index + 100); enter.animateTo(1f, tween(380, easing = FastOutSlowInEasing)) }
     val anim = Modifier.graphicsLayer { alpha = enter.value; translationX = (1f - enter.value) * -40f }
 
-    when (style) {
-        Style.TERMINAL -> Row(
-            Modifier.fillMaxWidth().then(anim)
-                .background(if (pressed) C.amber else Color.Transparent)
-                .clickable(src, null, onClick = onClick)
-                .padding(vertical = 13.dp, horizontal = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            val fg = if (pressed) C.bg else C.amber
-            TText(if (pressed) "▶" else ">", Modifier.width(20.dp), size = 16.sp, color = fg, weight = FontWeight.Bold)
-            TText("[${index + 1}] ", size = 13.sp, color = if (pressed) C.bg else C.dim)
-            TText(item.label, Modifier.weight(1f), size = 17.sp, color = fg, weight = FontWeight.Bold, glow = if (pressed) 0f else 1f)
-            TText(item.cmd, size = 10.sp, color = if (pressed) C.bg else C.line, maxLines = 1)
-            if (pressed) Cursor(12.sp, C.bg)
-        }
-        Style.PAPER -> Column(Modifier.fillMaxWidth().then(anim).clickable(src, null, onClick = onClick)) {
-            Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-                TText("${index + 1}.", Modifier.width(30.dp), size = 15.sp, color = C.dim, weight = FontWeight.Bold)
-                Column(Modifier.weight(1f)) {
-                    TText(item.label.lowercase().replaceFirstChar { it.uppercase() }, size = 19.sp,
-                        color = if (pressed) C.hot else C.amber, weight = FontWeight.Bold)
-                    TText(item.hint, size = 12.sp, color = C.dim)
-                }
-                item.badge?.let { TText(it, size = 11.sp, color = C.hot, weight = FontWeight.Bold) }
-            }
-            Box1px()
-        }
-        Style.NEON -> Row(
-            Modifier.fillMaxWidth().then(anim).padding(vertical = 5.dp)
-                .box(style, if (pressed) C.hot else C.amber.copy(alpha = 0.55f), if (pressed) C.hot.copy(alpha = 0.18f) else C.panel.copy(alpha = 0.55f),
-                    strokeWidth = 1.5.dp, glow = pressed || index == 0)
-                .clickable(src, null, onClick = onClick)
-                .padding(horizontal = 18.dp, vertical = 13.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                TText(item.label, size = 16.sp, color = if (index == 0) C.hot else C.amber, weight = FontWeight.Bold, spacing = 1.5.sp)
-                TText(item.hint, size = 11.sp, color = C.dim)
-            }
-            TText("›", size = 22.sp, color = C.hot, weight = FontWeight.Bold)
-        }
-        Style.CLEAN -> Row(
-            Modifier.fillMaxWidth().then(anim).padding(vertical = 5.dp)
-                .box(style, C.line.copy(alpha = 0.6f), if (pressed) C.ghost else C.panel)
-                .clickable(src, null, onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            val dot = if (index == 0) C.hot else C.ghost
-            TText(
-                "${index + 1}", Modifier.width(30.dp).box(style, Color.Transparent, dot, pill = true).padding(vertical = 4.dp),
-                size = 12.sp, color = if (index == 0) onColor(dot) else C.dim, weight = FontWeight.SemiBold,
-                align = androidx.compose.ui.text.style.TextAlign.Center,
-            )
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                TText(item.label.lowercase().replaceFirstChar { it.uppercase() }.replace("1v1", "1v1"), size = 16.sp,
-                    color = C.amber, weight = FontWeight.SemiBold)
-                TText(item.hint, size = 12.sp, color = C.dim)
-            }
-            item.badge?.let {
-                TText(it, Modifier.box(style, Color.Transparent, C.hot, pill = true).padding(horizontal = 8.dp, vertical = 3.dp),
-                    size = 10.sp, color = onColor(C.hot), weight = FontWeight.Bold)
-                Spacer(Modifier.width(8.dp))
-            }
-            TText("›", size = 20.sp, color = C.dim)
-        }
-        Style.PIXEL -> Row(
-            Modifier.fillMaxWidth().then(anim)
-                .clickable(src, null, onClick = onClick)
-                .padding(vertical = 11.dp, horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TText(if (pressed) "▶" else " ", Modifier.width(22.dp), size = 16.sp, color = C.amber)
-            TText(item.label, Modifier.weight(1f), size = 17.sp, color = C.amber)
-            item.badge?.let { TText(it, Modifier.background(C.amber).padding(horizontal = 4.dp, vertical = 2.dp), size = 11.sp, color = C.bg) }
-        }
+    Row(
+        Modifier.fillMaxWidth().then(anim)
+            .background(if (pressed) C.amber else Color.Transparent)
+            .clickable(src, null, onClick = onClick)
+            .padding(vertical = 13.dp, horizontal = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val fg = if (pressed) C.bg else C.amber
+        TText(if (pressed) "▶" else ">", Modifier.width(20.dp), size = 16.sp, color = fg, weight = FontWeight.Bold)
+        TText("[${index + 1}] ", size = 13.sp, color = if (pressed) C.bg else C.dim)
+        TText(item.label, Modifier.weight(1f), size = 17.sp, color = fg, weight = FontWeight.Bold, glow = if (pressed) 0f else 1f)
+        TText(item.cmd, size = 10.sp, color = if (pressed) C.bg else C.line, maxLines = 1)
+        if (pressed) Cursor(12.sp, C.bg)
     }
 }
 
-@Composable
-private fun Box1px() {
-    androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().height(1.dp).background(C.line))
-}
+

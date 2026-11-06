@@ -52,11 +52,12 @@ enum class Style(
     /** Text glow / bloom allowed. */
     val glows: Boolean,
 ) {
-    TERMINAL("TERMINAL", "CRT phosphor, scanlines, glitches", 0.dp, true),
-    PAPER("PAPER", "newsprint, serif type, ink rules", 2.dp, false),
-    NEON("NEON", "synthwave grid, glowing outlines", 16.dp, true),
-    CLEAN("CLEAN", "flat cards, calm modern type", 14.dp, false),
-    PIXEL("PIXEL", "4-shade handheld LCD, chunky pixels", 0.dp, false);
+    TERMINAL("TERMINAL", "CRT hacker shell: scanlines, glitches, typed commands", 0.dp, true),
+    PAPER("GAZETTE", "newspaper front page: headlines, clue cards, rubber stamps", 2.dp, false),
+    NEON("ARCADE", "coin-op cabinet: attract mode, HUD, high-score table", 16.dp, true),
+    CLEAN("QUIZ SHOW", "bright game-show app: big buttons, progress dots, confetti", 14.dp, false),
+    PIXEL("QUEST", "handheld RPG: dialogue box, ▶ cursor, boss battle, level ups", 0.dp, false),
+    COMIC("COMIC", "punk collage: slanted panels, ransom-note letters, starbursts", 0.dp, false);
 
     companion object {
         fun byName(n: String): Style = entries.firstOrNull { it.name == n } ?: TERMINAL
@@ -128,12 +129,22 @@ object Palettes {
         pal("banana", "BANANA", 0xFFF8E8A0, 0xFFF0D878, 0xFFB08820, 0xFFF0D878, 0xFF805810, 0xFF302008, 0xFF302008, 0xFF302008, 0xFF302008, 0xFFB08820),
     )
 
+    val comic = listOf(
+        pal("rebel", "REBEL RED", 0xFF0C0C0C, 0xFF1A1A1A, 0xFFF2F2F2, 0xFF2A2A2A, 0xFFB8B8B8, 0xFFF7F7F7, 0xFFE3101E, 0xFFFFD400, 0xFFE3101E, 0xFF4A0A0E),
+        pal("velvet", "VELVET BLUE", 0xFF070B1A, 0xFF101833, 0xFFE8EEFF, 0xFF1A2448, 0xFF9AA8D6, 0xFFF4F7FF, 0xFF2F6BFF, 0xFFFFC94A, 0xFFFF4D5E, 0xFF3A1020),
+        pal("mustard", "MUSTARD", 0xFF111111, 0xFF1C1C1C, 0xFFFFF4C2, 0xFF2B2B2B, 0xFFC9BE8A, 0xFFFFF8DC, 0xFFFFC21A, 0xFFFF4F2E, 0xFFFF4F2E, 0xFF4A1A0A),
+        pal("toxin", "TOXIN", 0xFF0A0F0A, 0xFF132013, 0xFFEFFFEF, 0xFF1C2C1C, 0xFFA2C7A2, 0xFFF4FFF4, 0xFF27E36B, 0xFFFF2E9A, 0xFFFF3B3B, 0xFF4A0F1A),
+        pal("royal", "ROYAL", 0xFF120A1A, 0xFF1F1230, 0xFFF5ECFF, 0xFF2A1A40, 0xFFB9A2D6, 0xFFFBF6FF, 0xFF9B3BFF, 0xFFFFC94A, 0xFFFF4D6D, 0xFF3A1028),
+        pal("pop", "POP ART", 0xFFFFF4E0, 0xFFFFFFFF, 0xFF111111, 0xFFF1E3C8, 0xFF5A5040, 0xFF111111, 0xFFE3101E, 0xFF1F5BFF, 0xFFE3101E, 0xFFFFD9D9),
+    )
+
     fun of(style: Style): List<Palette> = when (style) {
         Style.TERMINAL -> terminal
         Style.PAPER -> paper
         Style.NEON -> neon
         Style.CLEAN -> clean
         Style.PIXEL -> pixel
+        Style.COMIC -> comic
     }
 
     fun find(style: Style, id: String): Palette = of(style).firstOrNull { it.id == id } ?: of(style).first()
@@ -220,18 +231,31 @@ fun styleFont(style: Style): FontFamily = when (style) {
         Font(Res.font.inter_bold, FontWeight.Bold),
     )
     Style.PIXEL -> FontFamily(Font(Res.font.pixel_dump, FontWeight.Normal), Font(Res.font.pixel_dump, FontWeight.Bold))
+    Style.COMIC -> FontFamily(
+        Font(Res.font.inter_semibold, FontWeight.Normal), Font(Res.font.inter_bold, FontWeight.Bold),
+        Font(Res.font.inter_bold, FontWeight.SemiBold),
+    )
 }
 
 @Composable
 fun displayFont(style: Style): FontFamily = when (style) {
-    Style.NEON -> FontFamily(Font(Res.font.poppins_bold_italic, FontWeight.Bold, FontStyle.Italic))
+    Style.NEON, Style.COMIC -> FontFamily(Font(Res.font.poppins_bold_italic, FontWeight.Bold, FontStyle.Italic))
     else -> styleFont(style)
 }
+
+/** Fonts mixed letter by letter for COMIC's ransom-note titles. */
+@Composable
+fun ransomFonts(): List<FontFamily> = listOf(
+    FontFamily(Font(Res.font.poppins_bold_italic, FontWeight.Bold, FontStyle.Italic)),
+    FontFamily(Font(Res.font.lora_bold, FontWeight.Bold)),
+    FontFamily(Font(Res.font.dejavu_mono_bold, FontWeight.Bold)),
+    FontFamily(Font(Res.font.inter_bold, FontWeight.Bold)),
+)
 
 /** Pixel font has one weight; mono/serif look best a touch smaller than the sans fonts. */
 private fun sizeFor(style: Style, size: TextUnit): TextUnit = when (style) {
     Style.PIXEL -> size * 1.08f
-    Style.CLEAN, Style.NEON -> size * 0.98f
+    Style.CLEAN, Style.NEON, Style.COMIC -> size * 0.98f
     else -> size
 }
 

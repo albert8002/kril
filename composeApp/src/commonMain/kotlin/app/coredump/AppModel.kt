@@ -19,6 +19,8 @@ import app.coredump.game.MatchSession
 import app.coredump.game.SoloSession
 import app.coredump.ui.Fx
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 sealed interface Screen {
@@ -53,6 +55,12 @@ class AppModel(val scope: CoroutineScope) {
     /** Back pressed during a run: ask before killing it. */
     var confirmQuit by mutableStateOf(false)
     private val stack = ArrayList<Screen>()
+
+    /** Prompt ids discarded on this device (mirrors [app.coredump.data.Discards] for the UI). */
+    var discarded by mutableStateOf<Set<String>>(emptySet())
+        private set
+    private val removed = HashMap<String, Prompt>()
+    private val discardJobs = HashMap<String, Job>()
 
     var hostLobby: HostLobby? = null
         private set
@@ -104,6 +112,39 @@ class AppModel(val scope: CoroutineScope) {
         if (old.theme != settings.theme || old.palette != settings.palette) {
             app.coredump.ui.Th.set(app.coredump.ui.Style.byName(settings.theme), settings.palette)
         }
+    }
+
+    fun isDiscarded(id: String) = id in discarded
+
+    /** Read the saved list once the bank has loaded it. */
+    fun syncDiscards() { discarded = app.coredump.data.Discards.ids }
+
+    /** Never show this prompt again: hidden for good; a collected list is deleted from the device. */
+    fun discard(id: String) {
+        if (id in discarded) return
+        discarded = discarded + id
+        discardJobs[id] = scope.launch { bank.discard(id)?.let { removed[id] = it } }
+    }
+
+    fun undoDiscard(id: String) {
+        if (id !in discarded) return
+        discarded = discarded - id
+        val job = discardJobs.remove(id)
+        scope.launch {
+            job?.join()
+            val p = removed.remove(id)
+            if (p != null) bank.restore(p) else app.coredump.data.Discards.remove(id)
+        }
+    }
+
+    /** Forget every discard. Built-in lists return on the next start; deleted collected lists can be fetched again. */
+    fun restoreDiscards() {
+        val back = removed.values.toList()
+        removed.clear(); discardJobs.clear()
+        bank.clearDiscards()
+        discarded = emptySet()
+        scope.launch { for (p in back) bank.restore(p) }
+        toast = app.coredump.ui.Th.say("discard list wiped. built-ins return on next boot.", "Restored. Built-in lists return after a restart.")
     }
 
     fun setTheme(style: app.coredump.ui.Style, paletteId: String) =

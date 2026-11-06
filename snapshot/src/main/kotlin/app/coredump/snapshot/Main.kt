@@ -96,8 +96,8 @@ fun main(args: Array<String>) {
     fun fileAt(name: String) = runCatching { PackCodec.cacheTime(File(dir, name).readText()) }.getOrNull() ?: System.currentTimeMillis()
     log("SNAP restored ${wdOut.size} wikidata + ${wpOut.size} wikipedia prompts, ${state.size} state rows")
     val freshMs = 10L * 24 * 3600 * 1000
-    fun hashWd(t: app.coredump.data.WikidataTemplate) = stableHash("${t.where}|${t.prompt}|${t.limit}|${t.minLinks}|${t.topic}")
-    fun hashWp(t: app.coredump.data.WikipediaTemplate) = stableHash("${t.page}|${t.prompt}|${t.max}|${t.topic}|x${WikipediaTemplates.EXTRACT_VERSION}")
+    fun hashWd(t: app.coredump.data.WikidataTemplate) = stableHash("${t.where}|${t.prompt}|${t.limit}|${t.minLinks}|${t.topic}|r2")
+    fun hashWp(t: app.coredump.data.WikipediaTemplate) = stableHash("${t.page}|${t.prompt}|${t.max}|${t.topic}|x${WikipediaTemplates.EXTRACT_VERSION}|r2")
     fun isFresh(id: String, hash: Int, have: Boolean): Boolean {
         val st = state[id] ?: return false
         return st.hash == hash && System.currentTimeMillis() - st.at < freshMs && (have || !st.kept)
@@ -131,7 +131,8 @@ fun main(args: Array<String>) {
                 Thread.sleep(300)
             }
             val p = WikipediaTemplates.rank(t, items, links)
-            val keep = p.size >= 24 && rankErr == null
+            val fam = links.values.count { it >= WikidataTemplates.FAMOUS_LINKS }
+            val keep = p.size >= 24 && rankErr == null && fam >= WikidataTemplates.FAMOUS_MIN
             if (keep) wpOut[t.id] = p else wpOut.remove(t.id)
             if (rankErr == null) state[t.id] = St(System.currentTimeMillis(), hashWp(t), keep)
             log("SNAP wikipedia ${t.id.padEnd(30)} ${if (keep) "OK  " else "SMALL"} ${p.size.toString().padStart(5)}  ranked ${links.size}/${items.size}" +
@@ -164,11 +165,12 @@ fun main(args: Array<String>) {
         try {
             val body = get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}", "application/sparql-results+json")
             val p = WikidataTemplates.parse(t, body)
+            val fam = WikidataTemplates.famousCount(body)
             val ms = System.currentTimeMillis() - t0
-            val keep = p.size >= WikidataTemplates.minAnswers(t)
+            val keep = p.size >= WikidataTemplates.minAnswers(t) && fam >= WikidataTemplates.FAMOUS_MIN
             if (keep) wdOut[t.id] = p else wdOut.remove(t.id)
             state[t.id] = St(System.currentTimeMillis(), hashWd(t), keep)
-            log("SNAP wikidata  ${t.id.padEnd(30)} ${if (keep) "OK  " else "SMALL"} ${p.size.toString().padStart(5)}  ${ms}ms  top: ${p.entries.take(3).joinToString { it.name }}")
+            log("SNAP wikidata  ${t.id.padEnd(30)} ${if (keep) "OK  " else if (p.size >= WikidataTemplates.minAnswers(t)) "OBSCURE" else "SMALL"} ${p.size.toString().padStart(5)} fam=${fam.toString().padStart(3)}  ${ms}ms  top: ${p.entries.take(5).joinToString { it.name }}")
         } catch (e: Exception) {
             if (pass == 0) failed += t
             log("SNAP wikidata  ${t.id.padEnd(30)} FAIL${pass} ${System.currentTimeMillis() - t0}ms ${e::class.simpleName}: ${e.message?.take(120)}")
@@ -184,17 +186,18 @@ fun main(args: Array<String>) {
     // ---- smoke test of the on-device pool (not bundled): a rotating sample, so broken query shapes show up in CI
     run {
         val pool = app.coredump.data.WikidataPool.order
-        val start = ((System.currentTimeMillis() / 86_400_000L) * 17 % pool.size).toInt()
+        val start = ((System.currentTimeMillis() / 3_600_000L) * 41 % pool.size).toInt()
         var ok = 0; var small = 0; var fail = 0
-        for (k in 0 until 16) {
+        for (k in 0 until 40) {
             if (overBudget()) break
-            val t = pool[(start + k * 37) % pool.size]
+            val t = pool[(start + k) % pool.size]
             val t0 = System.currentTimeMillis()
             try {
                 val body = get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}", "application/sparql-results+json")
                 val p = WikidataTemplates.parse(t, body)
-                if (p.size >= WikidataTemplates.minAnswers(t)) ok++ else small++
-                log("SNAP pool  ${t.id.padEnd(34)} ${p.size.toString().padStart(5)}  ${System.currentTimeMillis() - t0}ms  top: ${p.entries.take(3).joinToString { it.name }}")
+                val fam = WikidataTemplates.famousCount(body)
+                if (p.size >= WikidataTemplates.minAnswers(t) && fam >= WikidataTemplates.FAMOUS_MIN) ok++ else small++
+                log("SNAP pool  ${t.id.padEnd(34)} ${p.size.toString().padStart(5)} fam=${fam.toString().padStart(3)}  ${System.currentTimeMillis() - t0}ms  top: ${p.entries.take(5).joinToString { it.name }}")
             } catch (e: Exception) {
                 fail++
                 log("SNAP pool  ${t.id.padEnd(34)} FAIL ${System.currentTimeMillis() - t0}ms ${e.message?.take(100)}")

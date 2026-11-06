@@ -120,7 +120,8 @@ fun DumpScreen(model: AppModel, promptId: String) {
                 TText(if (Th.terminal) "> ${p.text}" else p.text, size = 18.sp, weight = FontWeight.Bold)
                 TText("#${p.topic} · ${p.source.tag} · ${group(p.size)} answers" + if (Th.terminal) " · ${p.index.keyCount} hash keys" else "",
                     size = 11.sp, color = C.dim)
-                Spacer(Modifier.height(12.dp))
+                DiscardLink(model, p.id)
+                Spacer(Modifier.height(8.dp))
                 Panel(Th.say("TIER MAP", "Tiers")) {
                     val maxN = Tier.validDescending.maxOf { p.countOf(it) }.coerceAtLeast(1)
                     for (t in Tier.validDescending) {

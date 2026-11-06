@@ -1,7 +1,13 @@
 package app.coredump
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -90,8 +96,26 @@ fun App() {
                     AnimatedContent(
                         targetState = model.screen,
                         transitionSpec = {
-                            (fadeIn(tween(240, delayMillis = 70)) + scaleIn(tween(300, delayMillis = 70), initialScale = 0.985f))
-                                .togetherWith(fadeOut(tween(110)))
+                            // each archetype changes screens its own way
+                            when (Th.style) {
+                                app.coredump.ui.Style.TERMINAL ->
+                                    (fadeIn(tween(240, delayMillis = 70)) + scaleIn(tween(300, delayMillis = 70), initialScale = 0.985f))
+                                        .togetherWith(fadeOut(tween(110)))
+                                app.coredump.ui.Style.NEON ->   // zoom through the cabinet glass
+                                    (fadeIn(tween(220, delayMillis = 60)) + scaleIn(tween(320, delayMillis = 60), initialScale = 1.08f))
+                                        .togetherWith(fadeOut(tween(140)) + scaleOut(tween(180), targetScale = 0.92f))
+                                app.coredump.ui.Style.PAPER ->  // page turn
+                                    (slideInHorizontally(tween(340)) { it / 3 } + fadeIn(tween(260)))
+                                        .togetherWith(slideOutHorizontally(tween(260)) { -it / 5 } + fadeOut(tween(200)))
+                                app.coredump.ui.Style.CLEAN ->  // card rises
+                                    (slideInVertically(tween(300)) { it / 12 } + fadeIn(tween(240)))
+                                        .togetherWith(fadeOut(tween(120)))
+                                app.coredump.ui.Style.PIXEL ->  // stepped fade, like an old handheld
+                                    fadeIn(tween(240, delayMillis = 120, easing = Steps4)).togetherWith(fadeOut(tween(120, easing = Steps4)))
+                                app.coredump.ui.Style.COMIC ->  // panel slams in from the left
+                                    (slideInHorizontally(spring(dampingRatio = 0.62f, stiffness = 420f)) { -it } + fadeIn(tween(120)))
+                                        .togetherWith(slideOutHorizontally(tween(200)) { it / 2 } + fadeOut(tween(160)))
+                            }
                         },
                     ) { screen ->
                         when (screen) {
@@ -128,3 +152,5 @@ fun App() {
 
     PlatformBack(enabled = model.screen != Screen.Boot && model.screen != Screen.Menu) { model.back() }
 }
+
+private val Steps4 = Easing { (it * 4f).toInt() / 4f }

@@ -82,10 +82,20 @@ fun ConfigScreen(model: AppModel) {
                 TText("about 12 new lists are added automatically once a day while the app is used.", size = 10.sp, color = C.dim)
             }
             Spacer(Modifier.height(14.dp))
+            Panel(Th.say("DISCARDED", "Discarded questions")) {
+                val n = model.discarded.size
+                KV(Th.say("rm'd prompts", "discarded on this device"), "$n")
+                TText("discarded questions never come up again. collected ones are also deleted from the device.", size = 10.sp, color = C.dim)
+                if (n > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    TButton(Th.say("RESTORE ALL", "Restore all"), { model.restoreDiscards() }, Modifier.fillMaxWidth(), textSize = 12.sp)
+                }
+            }
+            Spacer(Modifier.height(14.dp))
             Panel(Th.say("SOURCES", "Sources")) {
                 Toggle("bundled packs", true, {}, "always on · offline")
                 Toggle("collect new Wikidata lists", s.useWikidata, { v -> model.update { it.copy(useWikidata = v) } },
-                    "daily batch + FETCH MORE · ~470 ranked lists ship inside the app")
+                    "daily batch + FETCH MORE · ranked lists also ship inside the app")
                 Toggle("verify unlisted answers online", s.verifyOnline, { v -> model.update { it.copy(verifyOnline = v) } },
                     "not in the list? check Wikidata · score by how many wikipedias cover it")
                 Toggle("wikipedia list scraping", s.useWikipedia, { v -> model.update { it.copy(useWikipedia = v) } },

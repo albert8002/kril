@@ -33,16 +33,10 @@ object WikipediaTemplates {
     const val EXTRACT_VERSION = 2
 
     val all: List<WikipediaTemplate> = listOf(
-        WikipediaTemplate("wp.editors", "Name a text editor", "CODE", "List of text editors"),
-        WikipediaTemplate("wp.hash", "Name a hash function", "CODE", "List of hash functions"),
-        WikipediaTemplate("wp.distros", "Name a Linux distribution", "CODE", "List of Linux distributions"),
-        WikipediaTemplate("wp.fictcomp", "Name a fictional computer or AI", "CODE", "List of fictional computers"),
         WikipediaTemplate("wp.robots", "Name a fictional robot or android", "CULTURE", "List of fictional robots and androids"),
         WikipediaTemplate("wp.cryptids", "Name a cryptid", "OCCULT", "List of cryptids"),
-        WikipediaTemplate("wp.haunted", "Name a reportedly haunted place", "OCCULT", "List of reportedly haunted locations"),
         WikipediaTemplate("wp.horrorauthors", "Name a horror fiction author", "OCCULT", "List of horror fiction authors"),
         WikipediaTemplate("wp.games", "Name a best-selling video game", "CULTURE", "List of best-selling video games"),
-        WikipediaTemplate("wp.chess", "Name a chess opening", "CULTURE", "List of chess openings"),
         WikipediaTemplate("wp.cheeses", "Name a cheese", "FOOD", "List of cheeses"),
         WikipediaTemplate("wp.sauces", "Name a sauce", "FOOD", "List of sauces"),
         WikipediaTemplate("wp.breads", "Name a type of bread", "FOOD", "List of breads"),

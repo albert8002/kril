@@ -28,10 +28,10 @@ object SelfTest {
 
     private val plan = listOf(
         Style.TERMINAL to "amber", Style.PAPER to "newsprint", Style.NEON to "synthwave",
-        Style.CLEAN to "light", Style.PIXEL to "dmg",
+        Style.CLEAN to "light", Style.PIXEL to "dmg", Style.COMIC to "rebel",
     )
     private val extra = listOf(
-        Style.TERMINAL to "green", Style.PAPER to "night", Style.NEON to "outrun", Style.CLEAN to "dark", Style.PIXEL to "color",
+        Style.TERMINAL to "green", Style.PAPER to "night", Style.NEON to "outrun", Style.CLEAN to "dark", Style.PIXEL to "color", Style.COMIC to "pop",
     )
 
     suspend fun run(model: AppModel) {
@@ -106,6 +106,17 @@ object SelfTest {
             while (model.bank.state.value.collect.running && w < 150_000) { delay(1000); w += 1000 }
             val c = model.bank.state.value.collect
             log("COLLECT added=${c.added} library=${c.library} msg=${c.message}")
+
+            // discard: gone from the bank, back after undo (built-in list, then a collected one if any)
+            for (id in listOfNotNull(model.bank.all().firstOrNull { it.source == app.coredump.core.SourceKind.BUNDLED }?.id,
+                    model.bank.all().firstOrNull { it.id.startsWith("wx.") }?.id)) {
+                model.discard(id); delay(1500)
+                val gone = model.bank.all().none { it.id == id } && id in app.coredump.data.Discards.ids
+                model.undoDiscard(id); delay(1500)
+                val back = model.bank.all().any { it.id == id } && id !in app.coredump.data.Discards.ids
+                log("DISCARD $id gone=$gone back=$back")
+                if (!gone || !back) throw IllegalStateException("discard check failed for $id")
+            }
             model.home(); delay(800)
             shot("menu_after_collect")
             log("DONE ok")

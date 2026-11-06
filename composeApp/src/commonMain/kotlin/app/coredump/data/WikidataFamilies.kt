@@ -29,6 +29,7 @@ object WikidataFamilies {
         Country("Q114", "Kenya", 30000), Country("Q1028", "Morocco", 60000), Country("Q419", "Peru", 50000),
     )
     private val byQ = countries.associateBy { it.q }
+    private val CITY_COUNTRIES = setOf("Q142", "Q145", "Q148", "Q155", "Q159", "Q16", "Q17", "Q183", "Q20", "Q258", "Q27", "Q29", "Q30", "Q31", "Q34", "Q36", "Q38", "Q39", "Q40", "Q408", "Q41", "Q414", "Q43", "Q45", "Q55", "Q668", "Q79", "Q869", "Q884", "Q96")
     private fun c(q: String) = byQ.getValue(q).name
 
     private fun slug(s: String) = s.lowercase().replace(Regex("[^a-z0-9]+"), "")
@@ -46,28 +47,26 @@ object WikidataFamilies {
 
     val all: List<WikidataTemplate> = buildList {
         // ---- cities per country
-        for (k in countries) if (k.q != "Q27") add(t("city.${slug(k.name)}", "Name a city in ${k.name}", "GEOGRAPHY",
+        // only countries most players could name a few cities of
+        for (k in countries) if (k.q in CITY_COUNTRIES) add(t("city.${slug(k.name)}", "Name a city in ${k.name}", "GEOGRAPHY",
             "?item wdt:P17 wd:${k.q} ; wdt:P1082 ?pop . FILTER(?pop >= ${k.cityPop}) ?item wdt:P31/wdt:P279* wd:Q515 ."))
 
         // ---- rivers / mountains / islands / lakes per country
-        for (q in listOf("Q30", "Q183", "Q142", "Q159", "Q148", "Q668", "Q155", "Q145", "Q38", "Q29", "Q36", "Q16", "Q408"))
+        for (q in listOf("Q30", "Q183", "Q142", "Q145", "Q38"))
             add(t("river.${slug(c(q))}", "Name a river in ${c(q)}", "GEOGRAPHY", "?item wdt:P31 wd:Q4022 ; wdt:P17 wd:$q .", 5))
-        for ((q, name) in listOf("Q39" to "Switzerland", "Q40" to "Austria", "Q38" to "Italy", "Q142" to "France",
-            "Q30" to "the United States", "Q837" to "Nepal", "Q17" to "Japan", "Q16" to "Canada", "Q298" to "Chile", "Q414" to "Argentina"))
+        for ((q, name) in listOf("Q39" to "Switzerland", "Q30" to "the United States"))
             add(t("mountain.${slug(name)}", "Name a mountain in $name", "GEOGRAPHY", "?item wdt:P31 wd:Q8502 ; wdt:P17 wd:$q .", 3))
-        for ((q, name) in listOf("Q41" to "Greece", "Q38" to "Italy", "Q252" to "Indonesia", "Q928" to "the Philippines",
-            "Q17" to "Japan", "Q145" to "the United Kingdom", "Q20" to "Norway", "Q34" to "Sweden", "Q16" to "Canada",
-            "Q224" to "Croatia", "Q35" to "Denmark"))
+        for ((q, name) in listOf("Q41" to "Greece", "Q38" to "Italy", "Q252" to "Indonesia", "Q17" to "Japan",
+            "Q145" to "the United Kingdom", "Q16" to "Canada"))
             add(t("island.${slug(name)}", "Name an island of $name", "GEOGRAPHY", "?item wdt:P31 wd:Q23442 ; wdt:P17 wd:$q .", 5))
-        for ((q, name) in listOf("Q33" to "Finland", "Q34" to "Sweden", "Q16" to "Canada", "Q39" to "Switzerland",
-            "Q38" to "Italy", "Q183" to "Germany", "Q30" to "the United States", "Q159" to "Russia"))
+        for ((q, name) in listOf("Q16" to "Canada", "Q39" to "Switzerland", "Q38" to "Italy", "Q30" to "the United States"))
             add(t("lake.${slug(name)}", "Name a lake in $name", "GEOGRAPHY", "?item wdt:P31 wd:Q23397 ; wdt:P17 wd:$q .", 5))
         for ((q, name) in listOf("Q46" to "Europe", "Q48" to "Asia", "Q49" to "North America"))
             add(t("countryin.${slug(name)}", "Name a country in $name", "GEOGRAPHY", "?item wdt:P31 wd:Q3624078 ; wdt:P30 wd:$q ."))
-        for ((q, name) in listOf("Q183" to "Germany", "Q142" to "France", "Q145" to "the United Kingdom", "Q29" to "Spain", "Q38" to "Italy"))
+        for ((q, name) in listOf("Q183" to "Germany", "Q142" to "France", "Q145" to "the United Kingdom"))
             add(t("castle.${slug(name)}", "Name a castle in $name", "HISTORY", "?item wdt:P31 wd:Q23413 ; wdt:P17 wd:$q .", 3))
         for ((q, name) in listOf("Q38" to "Italy", "Q148" to "China", "Q29" to "Spain", "Q183" to "Germany", "Q142" to "France",
-            "Q668" to "India", "Q96" to "Mexico", "Q145" to "the United Kingdom", "Q159" to "Russia", "Q794" to "Iran"))
+            "Q668" to "India", "Q96" to "Mexico", "Q145" to "the United Kingdom"))
             add(t("unesco.${slug(name)}", "Name a UNESCO World Heritage Site in $name", "HISTORY",
                 "?item wdt:P1435 wd:Q9259 ; wdt:P17 wd:$q .", 2))
         for ((q, name) in listOf("Q30" to "the United States", "Q145" to "the United Kingdom", "Q183" to "Germany"))
@@ -108,34 +107,18 @@ object WikidataFamilies {
             Triple("Q1342372", "zombie film", 4), Triple("Q853630", "slasher film", 4), Triple("Q185867", "film noir", 5),
         )) add(t("film.${slug(label)}", "Name a $label", if (g in setOf("Q1342372", "Q853630")) "OCCULT" else "CULTURE", film(g), min))
         add(t("film.animated", "Name an animated film", "CULTURE", "?item wdt:P31 wd:Q202866 .", 15))
-        for ((q, name) in listOf("Q7374" to "Alfred Hitchcock", "Q8877" to "Steven Spielberg", "Q41148" to "Martin Scorsese",
-            "Q8006" to "Akira Kurosawa", "Q95008" to "John Carpenter", "Q56008" to "Tim Burton", "Q55424" to "David Cronenberg",
-            "Q56005" to "Ridley Scott", "Q25089" to "Woody Allen", "Q43203" to "Clint Eastwood", "Q7546" to "Ingmar Bergman",
-            "Q7371" to "Federico Fellini", "Q53001" to "Jean-Luc Godard", "Q56094" to "Francis Ford Coppola"))
-            // matched by English label (safer than hand-typed QIDs); any film subclass counts
-            add(t("dir.${slug(name)}", "Name a film directed by $name", "CULTURE",
-                "?dir rdfs:label \"$name\"@en ; wdt:P31 wd:Q5 . ?item wdt:P57 ?dir ; wdt:P31/wdt:P279* wd:Q11424 ."))
         for ((aw, label) in listOf("Q102427" to "a Best Picture Oscar winner", "Q103916" to "a Best Actor Oscar winner",
-            "Q103618" to "a Best Actress Oscar winner", "Q103360" to "a Best Director Oscar winner"))
+            "Q103618" to "a Best Actress Oscar winner"))
             add(t("oscar.${aw.lowercase()}", "Name $label", "CULTURE",
                 if (aw == "Q102427") "?item wdt:P166 wd:$aw ; wdt:P31/wdt:P279* wd:Q11424 ." else "?item wdt:P166 wd:$aw ; wdt:P31 wd:Q5 ."))
 
         // ---- video games
-        for ((q, name) in listOf("Q172742" to "NES", "Q183259" to "Super Nintendo", "Q184839" to "Nintendo 64",
-            "Q10677" to "PlayStation", "Q10680" to "PlayStation 2", "Q10683" to "PlayStation 3", "Q5014725" to "PlayStation 4",
-            "Q186437" to "Game Boy", "Q188642" to "Game Boy Advance", "Q182172" to "GameCube", "Q8079" to "Wii", "Q56942" to "Wii U",
-            "Q19610114" to "Nintendo Switch", "Q170323" to "Nintendo DS", "Q203597" to "Nintendo 3DS", "Q170325" to "PSP",
-            "Q10676" to "Sega Mega Drive / Genesis", "Q184198" to "Dreamcast", "Q132020" to "Xbox", "Q48263" to "Xbox 360",
-            "Q206261" to "Atari 2600", "Q99775" to "Commodore 64", "Q47604" to "MS-DOS"))
-            add(t("game.${slug(name)}", "Name a video game released on $name", "CULTURE", game(q), 4))
         for ((g, label) in listOf("Q828322" to "platform game", "Q185029" to "first-person shooter", "Q744038" to "role-playing video game"))
             add(t("gamegenre.${slug(label)}", "Name a $label", "CULTURE", "?item wdt:P31 wd:Q7889 ; wdt:P136 wd:$g .", 10))
 
         // ---- music
         for ((g, label, min) in listOf(
-            Triple("Q3071", "punk rock", 8), Triple("Q11365", "grunge", 5), Triple("Q132438", "black metal", 5),
-            Triple("Q483251", "death metal", 5), Triple("Q485395", "gothic rock", 5), Triple("Q211756", "post-punk", 5),
-            Triple("Q187760", "new wave", 8), Triple("Q1298934", "synth-pop", 8), Triple("Q49451", "progressive rock", 8),
+            Triple("Q3071", "punk rock", 8), Triple("Q11365", "grunge", 5), Triple("Q187760", "new wave", 8), Triple("Q1298934", "synth-pop", 8), Triple("Q49451", "progressive rock", 8),
             Triple("Q186472", "emo", 4), Triple("Q213665", "K-pop", 8), Triple("Q164444", "funk", 5), Triple("Q58339", "disco", 5),
         )) add(t("band.${slug(label)}", "Name a $label band", "CULTURE",
             "?item wdt:P136 wd:$g . ?item wdt:P31/wdt:P279* wd:Q215380 .", min))
@@ -143,8 +126,7 @@ object WikidataFamilies {
             add(t("artist.${slug(label)}", "Name a $label", "CULTURE", "?item wdt:P31 wd:Q5 ; wdt:P136 wd:$g .", 12))
 
         // ---- awards
-        for ((q, label) in listOf("Q38104" to "Physics", "Q44585" to "Chemistry", "Q37922" to "Literature",
-            "Q35637" to "Peace", "Q80061" to "Physiology or Medicine", "Q47170" to "Economics"))
+        for ((q, label) in listOf("Q38104" to "Physics", "Q37922" to "Literature", "Q35637" to "Peace"))
             add(t("nobel.${slug(label)}", "Name a winner of the Nobel Prize in $label", "SCIENCE", "?item wdt:P166 wd:$q ."))
 
         // ---- sport leagues
@@ -161,13 +143,9 @@ object WikidataFamilies {
         for ((q, name) in listOf("Q142" to "France", "Q38" to "Italy"))
             add(t("cheesefrom.${slug(name)}", "Name a cheese from $name", "FOOD", "?item wdt:P31/wdt:P279* wd:Q10943 ; wdt:P495 wd:$q ."))
         add(t("mineral", "Name a mineral", "SCIENCE", "?item wdt:P31 wd:Q12089225 .", 5))
-        add(t("typeface", "Name a typeface", "CODE", "?item wdt:P31/wdt:P279* wd:Q17451 .", 3))
         add(t("crypto", "Name a cryptocurrency", "CODE", "?item wdt:P31 wd:Q13479982 .", 3))
         add(t("social", "Name a social network", "CODE", "?item wdt:P31 wd:Q3220391 .", 5))
         add(t("gamegenre", "Name a video game genre", "CULTURE", "?item wdt:P31 wd:Q659563 .", 5))
         add(t("cardgame", "Name a card game", "CULTURE", "?item wdt:P31 wd:Q142714 .", 3))
-        add(t("exoplanet", "Name an exoplanet", "SCIENCE", "?item wdt:P31 wd:Q44559 .", 5))
-        add(t("asteroid", "Name an asteroid", "SCIENCE", "?item wdt:P31 wd:Q3863 .", 15))
-        add(t("comet", "Name a comet", "SCIENCE", "?item wdt:P31 wd:Q3559 .", 5))
     }
 }

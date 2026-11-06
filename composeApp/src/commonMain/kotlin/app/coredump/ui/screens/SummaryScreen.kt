@@ -36,6 +36,7 @@ import app.coredump.core.hexAddr
 import app.coredump.game.MatchSession
 import app.coredump.ui.C
 import app.coredump.ui.DecodeText
+import app.coredump.ui.Style
 import app.coredump.ui.Th
 import app.coredump.platform.shareText
 import app.coredump.ui.Divider
@@ -50,6 +51,56 @@ import app.coredump.ui.tierColor
 
 @Composable
 fun SummaryScreen(model: AppModel, session: MatchSession) {
+    when (Th.style) {
+        Style.TERMINAL -> TerminalSummary(model, session)
+        Style.NEON -> ArcadeSummary(model, session)
+        Style.PAPER -> GazetteSummary(model, session)
+        Style.CLEAN -> QuizSummary(model, session)
+        Style.PIXEL -> QuestSummary(model, session)
+        Style.COMIC -> ComicSummary(model, session)
+    }
+}
+
+/** Numbers every results screen needs. avg: points per prompt. maxPts: best possible total. */
+class RunTotals(val my: Int, val avg: Double, val rank: Rank, val maxPts: Int, val valid: Int, val count: Int, val best: Tier?)
+
+fun totalsOf(st: app.coredump.game.MatchState): RunTotals {
+    val rounds = st.rounds
+    val my = st.myTotal
+    val avg = if (rounds.isEmpty()) 0.0 else my.toDouble() / rounds.size
+    return RunTotals(my, avg, Rank.of(avg), rounds.size * Tier.ZERO_DAY.points, rounds.count { it.me.tier.isValid }, rounds.size,
+        rounds.maxByOrNull { it.me.tier.ordinal }?.me?.tier)
+}
+
+/** 1 decimal, e.g. 42.3 */
+fun oneDecimal(x: Double): String = ((x * 10).toInt() / 10.0).toString()
+
+/** "Would have scored more" + full list link + discard, under a result row (shared by every archetype). */
+@Composable
+fun RoundDetails(model: AppModel, r: RoundView) {
+    val better = r.betterThan(r.me.points)
+    Column(Modifier.padding(start = 14.dp, top = 6.dp)) {
+        if (better.isEmpty()) {
+            TText(Th.say("nothing rarer existed. you hit bedrock.", "Nothing rarer existed — top score."), size = 11.sp, color = C.hot)
+        } else {
+            TText(Th.say("WOULD HAVE SCORED MORE:", "Would have scored more:"), size = 10.sp, color = C.dim, spacing = 1.sp)
+            for (g in better) {
+                Row(Modifier.padding(vertical = 2.dp)) {
+                    TText("${g.tier.label} +${g.tier.points}", Modifier.width(140.dp), size = 11.sp, color = tierColor(g.tier))
+                    TText(g.names.joinToString(" · "), size = 11.sp, color = C.amber)
+                }
+            }
+        }
+        val pid = r.promptId
+        if (pid != null && model.bank.get(pid) != null) {
+            TLink(Th.say("cat full dump (${r.listSize} entries)", "See all ${r.listSize} answers"), { model.go(Screen.Dump(pid)) })
+        }
+        DiscardLink(model, pid)
+    }
+}
+
+@Composable
+private fun TerminalSummary(model: AppModel, session: MatchSession) {
     val st by session.state.collectAsState()
     val rounds = st.rounds
     val my = st.myTotal
@@ -141,7 +192,6 @@ fun SummaryScreen(model: AppModel, session: MatchSession) {
 private fun RoundRow(model: AppModel, r: RoundView, multi: Boolean) {
     var open by remember { mutableStateOf(false) }
     val haptic = rememberHaptic()
-    val better = r.betterThan(r.me.points)
     Column(
         Modifier.fillMaxWidth()
             .clickable(remember { MutableInteractionSource() }, null) { haptic(false); open = !open }
@@ -168,30 +218,14 @@ private fun RoundRow(model: AppModel, r: RoundView, multi: Boolean) {
             }
         }
         AnimatedVisibility(open, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-            Column(Modifier.padding(start = 14.dp, top = 6.dp)) {
-                if (better.isEmpty()) {
-                    TText(Th.say("nothing rarer existed. you hit bedrock.", "Nothing rarer existed — top score."), size = 11.sp, color = C.hot)
-                } else {
-                    TText(Th.say("WOULD HAVE SCORED MORE:", "Would have scored more:"), size = 10.sp, color = C.dim, spacing = 1.sp)
-                    for (g in better) {
-                        Row(Modifier.padding(vertical = 2.dp)) {
-                            TText("${g.tier.label} +${g.tier.points}", Modifier.width(140.dp), size = 11.sp, color = tierColor(g.tier))
-                            TText(g.names.joinToString(" · "), size = 11.sp, color = C.amber)
-                        }
-                    }
-                }
-                val pid = r.promptId
-                if (pid != null && model.bank.get(pid) != null) {
-                    TLink(Th.say("cat full dump (${r.listSize} entries)", "See all ${r.listSize} answers"), { model.go(Screen.Dump(pid)) })
-                }
-            }
+            RoundDetails(model, r)
         }
         Spacer(Modifier.height(6.dp))
         Divider()
     }
 }
 
-private fun answerText(t: Tier, canonical: String?, input: String): String = when (t) {
+fun answerText(t: Tier, canonical: String?, input: String): String = when (t) {
     Tier.TIMEOUT -> Th.say("<timeout>", "time's up")
     Tier.SEGFAULT -> Th.say("$input  ✗ segfault", "$input  ✗")
     else -> canonical ?: input

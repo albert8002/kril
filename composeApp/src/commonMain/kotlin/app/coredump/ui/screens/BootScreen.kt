@@ -71,6 +71,7 @@ fun BootScreen(model: AppModel) {
         )) { logs.send(l); progress += 0.08f; delay(70) }
 
         model.bank.boot(model.settings) { logs.trySend(it); progress = (progress + 0.04f).coerceAtMost(0.9f) }
+        model.syncDiscards()
 
         logs.send("[ .. ] new lists are collected in the background")
         logs.send("[ OK ] ranking tables loaded")
