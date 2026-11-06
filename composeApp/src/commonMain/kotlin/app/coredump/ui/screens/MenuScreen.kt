@@ -95,6 +95,12 @@ fun MenuScreen(model: AppModel) {
         Style.CLEAN -> QuizMenu(model)
         Style.PIXEL -> QuestMenu(model)
         Style.COMIC -> ComicMenu(model)
+        Style.ABYSS -> AbyssMenu(model)
+        Style.METRO -> MetroMenu(model)
+        Style.JACKPOT -> JackpotMenu(model)
+        Style.CHAT -> ChatMenu(model)
+        Style.DESKTOP -> DesktopMenu(model)
+        Style.ORACLE -> OracleMenu(model)
     }
 }
 

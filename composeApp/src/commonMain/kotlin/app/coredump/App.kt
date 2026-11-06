@@ -7,6 +7,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -81,7 +83,7 @@ fun App() {
     if (SelfTest.enabled) LaunchedEffect(Unit) { SelfTest.run(model) }
 
     val style = Th.style
-    val dark = Th.pal.dark
+    val dark = Th.pal.barsDark
     LaunchedEffect(dark) { app.coredump.platform.setSystemBarsDark(dark) }
     CompositionLocalProvider(
         LocalMono provides styleFont(style),
@@ -115,6 +117,22 @@ fun App() {
                                 app.coredump.ui.Style.COMIC ->  // panel slams in from the left
                                     (slideInHorizontally(spring(dampingRatio = 0.62f, stiffness = 420f)) { -it } + fadeIn(tween(120)))
                                         .togetherWith(slideOutHorizontally(tween(200)) { it / 2 } + fadeOut(tween(160)))
+                                app.coredump.ui.Style.ABYSS ->  // sink: the next screen rises from below, slowly
+                                    (slideInVertically(tween(560, easing = FastOutSlowInEasing)) { it / 6 } + fadeIn(tween(460)))
+                                        .togetherWith(slideOutVertically(tween(420)) { -it / 10 } + fadeOut(tween(300)))
+                                app.coredump.ui.Style.METRO ->  // train pulls in from the right
+                                    slideInHorizontally(tween(420, easing = FastOutSlowInEasing)) { it }
+                                        .togetherWith(slideOutHorizontally(tween(420, easing = FastOutSlowInEasing)) { -it })
+                                app.coredump.ui.Style.JACKPOT ->  // reel drops in and settles
+                                    (slideInVertically(spring(dampingRatio = 0.72f, stiffness = 380f)) { -it } + fadeIn(tween(120)))
+                                        .togetherWith(slideOutVertically(tween(220)) { it / 2 } + fadeOut(tween(180)))
+                                app.coredump.ui.Style.CHAT ->  // pushed like a chat thread
+                                    slideInHorizontally(tween(300, easing = FastOutSlowInEasing)) { it }
+                                        .togetherWith(slideOutHorizontally(tween(300, easing = FastOutSlowInEasing)) { -it / 4 } + fadeOut(tween(300)))
+                                app.coredump.ui.Style.DESKTOP ->  // windows just appear
+                                    fadeIn(tween(60)).togetherWith(fadeOut(tween(40)))
+                                app.coredump.ui.Style.ORACLE ->  // slow fade, like smoke
+                                    (fadeIn(tween(520)) + scaleIn(tween(620), initialScale = 0.96f)).togetherWith(fadeOut(tween(320)))
                             }
                         },
                     ) { screen ->
@@ -140,7 +158,7 @@ fun App() {
                         TText(
                             (if (Th.terminal) "! " else "") + t,
                             Modifier.align(Alignment.BottomCenter).padding(20.dp)
-                                .box(Th.style, C.blood, C.bg, pill = Th.style == app.coredump.ui.Style.CLEAN || Th.style == app.coredump.ui.Style.NEON)
+                                .box(Th.style, C.blood, C.bg, pill = Th.style == app.coredump.ui.Style.CLEAN || Th.style == app.coredump.ui.Style.NEON || Th.style == app.coredump.ui.Style.CHAT || Th.style == app.coredump.ui.Style.ABYSS)
                                 .padding(horizontal = 16.dp, vertical = 11.dp),
                             size = 13.sp, color = C.blood,
                         )

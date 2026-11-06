@@ -20,7 +20,7 @@ enum class Tier(
     LEGACY(30, "MID MENTALITY", "0x001E", "solid. not special. mid.", 3),
     MEMORY_LEAK(60, "GOLDEN GOONER", "0x003C", "slipped past almost everyone.", 4),
     HEISENBUG(85, "PORNOGRAPHIC MEMORY", "0x0055", "how do you even know that.", 5),
-    ZERO_DAY(100, "GALAXY BRAIN", "0x0064", "the rarest answer on the list.", 6);
+    ZERO_DAY(100, "OILED UP", "0x0064", "the rarest answer on the list.", 6);
 
     val isValid: Boolean get() = points > 0
 

@@ -179,7 +179,7 @@ fun SuggestionChip(st: MatchState, a: AnswerState) {
     val s = suggestionOf(st) ?: return
     TText(
         Th.say("did you mean  $s ?  ↵", "Did you mean $s?"),
-        Modifier.box(Th.style, C.hot, C.panel, pill = Th.style == Style.CLEAN || Th.style == Style.NEON)
+        Modifier.box(Th.style, C.hot, C.panel, pill = Th.style == Style.CLEAN || Th.style == Style.NEON || Th.style == Style.ABYSS || Th.style == Style.CHAT)
             .clickable(remember { MutableInteractionSource() }, null) { a.send(s) }
             .padding(horizontal = 12.dp, vertical = 10.dp),
         size = 13.sp, color = C.hot, weight = FontWeight.Bold,
@@ -222,6 +222,12 @@ fun SkipLink(session: MatchSession, st: MatchState, modifier: Modifier = Modifie
         Style.CLEAN -> "Skip question"
         Style.PIXEL -> "RUN AWAY"
         Style.COMIC -> "PASS!"
+        Style.ABYSS -> "Let this one drift"
+        Style.METRO -> "Skip this stop"
+        Style.JACKPOT -> "FOLD"
+        Style.CHAT -> "Skip"
+        Style.DESKTOP -> "Skip"
+        Style.ORACLE -> "Leave it to fate"
     }
     TLink(label, { session.skip() }, modifier, color = C.dim, size = 12.sp)
 }
@@ -239,7 +245,7 @@ fun AttemptChips(st: MatchState) {
 fun AttemptChip(a: Attempt) {
     Row(
         Modifier.box(Th.style, if (a.status == AttemptStatus.VERIFYING) C.dim else C.blood.copy(alpha = 0.5f), Color.Transparent,
-            pill = Th.style == Style.CLEAN || Th.style == Style.NEON)
+            pill = Th.style == Style.CLEAN || Th.style == Style.NEON || Th.style == Style.ABYSS || Th.style == Style.CHAT)
             .padding(horizontal = 9.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -316,6 +322,72 @@ fun tierLine(t: Tier): String = when (Th.style) {
         Tier.HEISENBUG -> "Brilliant — that's rare!"
         Tier.ZERO_DAY -> "Incredible! The rarest pick!"
     }
+    Style.ABYSS -> when (t) {
+        Tier.SKIPPED -> "You let it drift"
+        Tier.TIMEOUT -> "Out of air"
+        Tier.SEGFAULT -> "Nothing down here"
+        Tier.HELLO_WORLD -> "Surface water"
+        Tier.COPYPASTA -> "Shallow reef"
+        Tier.LEGACY -> "Twilight zone"
+        Tier.MEMORY_LEAK -> "Midnight zone"
+        Tier.HEISENBUG -> "The abyss"
+        Tier.ZERO_DAY -> "The deepest trench!"
+    }
+    Style.METRO -> when (t) {
+        Tier.SKIPPED -> "Skipped this stop"
+        Tier.TIMEOUT -> "Missed the train"
+        Tier.SEGFAULT -> "No such station"
+        Tier.HELLO_WORLD -> "Local service"
+        Tier.COPYPASTA -> "Regional line"
+        Tier.LEGACY -> "Express"
+        Tier.MEMORY_LEAK -> "Intercity"
+        Tier.HEISENBUG -> "Night express"
+        Tier.ZERO_DAY -> "Last train out!"
+    }
+    Style.JACKPOT -> when (t) {
+        Tier.SKIPPED -> "FOLDED"
+        Tier.TIMEOUT -> "TIME'S UP"
+        Tier.SEGFAULT -> "NO WIN"
+        Tier.HELLO_WORLD -> "SMALL WIN"
+        Tier.COPYPASTA -> "WIN"
+        Tier.LEGACY -> "NICE WIN"
+        Tier.MEMORY_LEAK -> "BIG WIN!"
+        Tier.HEISENBUG -> "MEGA WIN!"
+        Tier.ZERO_DAY -> "JACKPOT!!!"
+    }
+    Style.CHAT -> when (t) {
+        Tier.SKIPPED -> "Skipped 👋"
+        Tier.TIMEOUT -> "Time's up ⏰"
+        Tier.SEGFAULT -> "Not on the list 🙅"
+        Tier.HELLO_WORLD -> "Correct, but everyone said that 😅"
+        Tier.COPYPASTA -> "Correct, pretty common 👍"
+        Tier.LEGACY -> "Nice one 🙌"
+        Tier.MEMORY_LEAK -> "Ooh, good pick 🔥"
+        Tier.HEISENBUG -> "Wait, how?? 🤯"
+        Tier.ZERO_DAY -> "THE rarest answer 👑"
+    }
+    Style.DESKTOP -> when (t) {
+        Tier.SKIPPED -> "Operation cancelled."
+        Tier.TIMEOUT -> "The operation timed out."
+        Tier.SEGFAULT -> "Answer not found."
+        Tier.HELLO_WORLD -> "Answer accepted (very common)."
+        Tier.COPYPASTA -> "Answer accepted (common)."
+        Tier.LEGACY -> "Answer accepted."
+        Tier.MEMORY_LEAK -> "Uncommon answer found!"
+        Tier.HEISENBUG -> "Rare answer found!"
+        Tier.ZERO_DAY -> "Rarest answer on the list!"
+    }
+    Style.ORACLE -> when (t) {
+        Tier.SKIPPED -> "The card was set aside"
+        Tier.TIMEOUT -> "The candle burned out"
+        Tier.SEGFAULT -> "The cards do not know it"
+        Tier.HELLO_WORLD -> "A common fortune"
+        Tier.COPYPASTA -> "A familiar omen"
+        Tier.LEGACY -> "A fair omen"
+        Tier.MEMORY_LEAK -> "A rare omen"
+        Tier.HEISENBUG -> "A prophecy!"
+        Tier.ZERO_DAY -> "Written in the stars!"
+    }
     Style.TERMINAL -> t.blurb
 }
 
@@ -368,6 +440,12 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
             Style.CLEAN -> QuizPlay(model, session, st, a)
             Style.PIXEL -> QuestPlay(model, session, st, a)
             Style.COMIC -> ComicPlay(model, session, st, a)
+            Style.ABYSS -> AbyssPlay(model, session, st, a)
+            Style.METRO -> MetroPlay(model, session, st, a)
+            Style.JACKPOT -> JackpotPlay(model, session, st, a)
+            Style.CHAT -> ChatPlay(model, session, st, a)
+            Style.DESKTOP -> DesktopPlay(model, session, st, a)
+            Style.ORACLE -> OraclePlay(model, session, st, a)
         }
         Celebrate(Modifier.fillMaxSize(), rain)
         st.reveal?.let { v -> if (st.phase == Phase.REVEAL) RewardBurst(v.me.tier, v.me.points.coerceAtLeast(0), v.index) }
@@ -387,8 +465,15 @@ fun PlayActions(model: AppModel, session: MatchSession, st: MatchState, modifier
                 st.reveal?.let { DiscardAction(model, session, it.index, Modifier.padding(bottom = 8.dp)) }
                 if (st.canAdvance) {
                     TButton(
-                        if (st.isLast) Th.say("DUMP CORE ▸", when (Th.style) { Style.NEON -> "FINISH"; Style.PIXEL -> "END BATTLE"; else -> "See results" })
-                        else Th.say("NEXT PROMPT ▸", when (Th.style) { Style.NEON -> "NEXT STAGE"; Style.PIXEL -> "NEXT TURN"; Style.COMIC -> "NEXT!"; else -> "Next prompt" }),
+                        if (st.isLast) Th.say("DUMP CORE ▸", when (Th.style) {
+                            Style.NEON -> "FINISH"; Style.PIXEL -> "END BATTLE"; Style.ABYSS -> "Surface"; Style.METRO -> "End of the line"
+                            Style.JACKPOT -> "CASH OUT"; Style.DESKTOP -> "Finish"; Style.ORACLE -> "Read the cards"; else -> "See results"
+                        })
+                        else Th.say("NEXT PROMPT ▸", when (Th.style) {
+                            Style.NEON -> "NEXT STAGE"; Style.PIXEL -> "NEXT TURN"; Style.COMIC -> "NEXT!"; Style.ABYSS -> "Descend"
+                            Style.METRO -> "Next stop"; Style.JACKPOT -> "SPIN AGAIN"; Style.CHAT -> "Next question"; Style.DESKTOP -> "Next >"
+                            Style.ORACLE -> "Draw the next card"; else -> "Next prompt"
+                        }),
                         { session.next() }, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp,
                     )
                 } else {
@@ -454,7 +539,10 @@ fun RevealExtras(v: RoundView, multi: Boolean) {
     val better = v.betterThan(v.me.points).take(3)
     if (better.isNotEmpty()) {
         Spacer(Modifier.height(12.dp))
-        Panel(Th.say("RARER IN MEMORY", when (Th.style) { Style.PIXEL -> "Stronger attacks"; Style.NEON -> "Bonus answers"; else -> "Would have scored more" })) {
+        Panel(Th.say("RARER IN MEMORY", when (Th.style) {
+            Style.PIXEL -> "Stronger attacks"; Style.NEON -> "Bonus answers"; Style.ABYSS -> "Deeper down"; Style.JACKPOT -> "Bigger payouts"
+            Style.ORACLE -> "Rarer omens"; else -> "Would have scored more"
+        })) {
             for (g in better) {
                 Row(Modifier.padding(vertical = 2.dp)) {
                     TText(g.tier.label, Modifier.width(150.dp), size = 11.sp, color = tierColor(g.tier), weight = FontWeight.Bold)
@@ -620,7 +708,10 @@ fun PauseOverlay(onResume: () -> Unit, onAbort: () -> Unit) {
         .clickable(remember { MutableInteractionSource() }, null) { }, contentAlignment = Alignment.Center) {
         Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             if (Th.terminal) TText("^Z", size = 14.sp, color = C.dim)
-            DecodeText(Th.say("PROCESS SUSPENDED", when (Th.style) { Style.NEON -> "PAUSE"; Style.PIXEL -> "PAUSED"; Style.COMIC -> "HOLD UP!"; else -> "Paused" }), size = 22.sp)
+            DecodeText(Th.say("PROCESS SUSPENDED", when (Th.style) {
+                Style.NEON -> "PAUSE"; Style.PIXEL -> "PAUSED"; Style.COMIC -> "HOLD UP!"; Style.ABYSS -> "Holding depth"; Style.METRO -> "Train held"
+                Style.JACKPOT -> "MACHINE PAUSED"; Style.ORACLE -> "The candle waits"; else -> "Paused"
+            }), size = 22.sp)
             TText(Th.say("SIGSTOP · the clock is frozen", "The clock is stopped"), size = 12.sp, color = C.dim, align = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
             TButton(Th.say("RESUME (fg)", "Resume"), onResume, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)

@@ -188,6 +188,54 @@ private fun ThemeThumb(style: Style, p: Palette) {
                     }
                     drawPath(band, p.white.copy(alpha = 0.35f))
                 }
+                Style.ABYSS -> {
+                    drawRect(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(p.line.copy(alpha = 0.7f), p.bg, Color.Black)))
+                    val r = kotlin.random.Random(5)
+                    repeat(26) { drawCircle(p.hot.copy(alpha = 0.25f + 0.5f * r.nextFloat()), 1.2f + r.nextFloat() * 1.5f, Offset(r.nextFloat() * size.width, r.nextFloat() * size.height)) }
+                    drawCircle(p.hot.copy(alpha = 0.4f), 16f, Offset(size.width * 0.78f, size.height * 0.62f), style = androidx.compose.ui.graphics.drawscope.Stroke(1.5f))
+                    drawCircle(p.hot.copy(alpha = 0.2f), 28f, Offset(size.width * 0.78f, size.height * 0.62f), style = androidx.compose.ui.graphics.drawscope.Stroke(1.5f))
+                }
+                Style.METRO -> {
+                    drawRect(p.hot, Offset.Zero, Size(size.width, 5f))
+                    for (i in 0 until 4) {
+                        val x = size.width * 0.42f + i * 15f
+                        drawRoundRect(p.panel, Offset(x, 14f), Size(13f, 18f), androidx.compose.ui.geometry.CornerRadius(2f))
+                        drawRect(p.bg, Offset(x, 22.5f), Size(13f, 1f))
+                    }
+                    drawLine(p.hot, Offset(8f, size.height - 12f), Offset(size.width - 8f, size.height - 12f), 4f)
+                    for (i in 0 until 5) drawCircle(p.amber, 4f, Offset(8f + i * (size.width - 16f) / 4f, size.height - 12f))
+                }
+                Style.JACKPOT -> {
+                    var x = 6f
+                    var i = 0
+                    while (x < size.width) {
+                        drawCircle(if (i % 2 == 0) p.white else p.line.copy(alpha = 0.5f), 2.2f, Offset(x, 5f))
+                        drawCircle(if (i % 2 == 1) p.white else p.line.copy(alpha = 0.5f), 2.2f, Offset(x, size.height - 5f))
+                        x += 10f; i++
+                    }
+                }
+                Style.CHAT -> {
+                    drawRoundRect(p.panel, Offset(size.width * 0.45f, 10f), Size(size.width * 0.48f, 18f), androidx.compose.ui.geometry.CornerRadius(9f))
+                    drawRoundRect(p.hot, Offset(size.width * 0.52f, 34f), Size(size.width * 0.41f, 18f), androidx.compose.ui.geometry.CornerRadius(9f))
+                }
+                Style.DESKTOP -> {
+                    val l = size.width * 0.44f
+                    drawRect(p.panel, Offset(l, 8f), Size(size.width - l - 6f, size.height - 22f))
+                    drawRect(p.hot, Offset(l + 2f, 10f), Size(size.width - l - 10f, 7f))
+                    drawRect(p.panel, Offset(0f, size.height - 10f), Size(size.width, 10f))
+                    drawRect(p.white, Offset(0f, size.height - 10f), Size(size.width, 1f))
+                }
+                Style.ORACLE -> {
+                    val r = kotlin.random.Random(9)
+                    repeat(22) { drawCircle(p.amber.copy(alpha = 0.2f + 0.5f * r.nextFloat()), 0.8f + r.nextFloat(), Offset(r.nextFloat() * size.width, r.nextFloat() * size.height)) }
+                    val cw = 30f
+                    val ch = 46f
+                    val x = size.width - cw - 10f
+                    drawRect(p.panel, Offset(x, 14f), Size(cw, ch))
+                    drawRect(p.hot, Offset(x, 14f), Size(cw, ch), style = androidx.compose.ui.graphics.drawscope.Stroke(1.5f))
+                    drawRect(p.hot.copy(alpha = 0.5f), Offset(x + 3f, 17f), Size(cw - 6f, ch - 6f), style = androidx.compose.ui.graphics.drawscope.Stroke(0.8f))
+                    drawCircle(p.hot, 5f, Offset(x + cw / 2f, 14f + ch / 2f))
+                }
             }
         },
     ) {
@@ -195,9 +243,15 @@ private fun ThemeThumb(style: Style, p: Palette) {
             BasicText("Aa", style = TextStyle(color = p.amber, fontFamily = font, fontSize = 20.sp, fontWeight = FontWeight.Bold))
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(38.dp, 14.dp).drawBehind { drawBox(style, p.hot, p.hot, 1.dp.toPx(), pill = style == Style.NEON || style == Style.CLEAN) })
-                Spacer(Modifier.width(6.dp))
-                Box(Modifier.size(22.dp, 14.dp).drawBehind { drawBox(style, p.white, Color.Transparent, 1.dp.toPx(), pill = style == Style.NEON || style == Style.CLEAN) })
+                val pill = style == Style.NEON || style == Style.CLEAN || style == Style.ABYSS || style == Style.CHAT
+                // DESKTOP draws its bevel from the active palette, so the thumbnail uses plain blocks there
+                if (style == Style.DESKTOP) {
+                    Box(Modifier.size(38.dp, 14.dp).drawBehind { drawRect(p.panel); drawRect(p.white, Offset.Zero, Size(size.width, 1.dp.toPx())); drawRect(Color.Black, Offset(0f, size.height - 1.dp.toPx()), Size(size.width, 1.dp.toPx())) })
+                } else {
+                    Box(Modifier.size(38.dp, 14.dp).drawBehind { drawBox(style, p.hot, p.hot, 1.dp.toPx(), pill = pill) })
+                    Spacer(Modifier.width(6.dp))
+                    Box(Modifier.size(22.dp, 14.dp).drawBehind { drawBox(style, p.white, Color.Transparent, 1.dp.toPx(), pill = pill) })
+                }
             }
         }
     }

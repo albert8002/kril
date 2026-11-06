@@ -31,6 +31,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -74,6 +76,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlin.math.max
+import kotlin.math.sin
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -126,12 +129,63 @@ fun DrawScope.drawBox(style: Style, stroke: Color, fill: Color, sw: Float, glow:
         if (stroke.alpha > 0f && sw > 0f) drawPath(body, stroke, style = Stroke(sw, join = androidx.compose.ui.graphics.StrokeJoin.Miter))
         return
     }
+    if (style == Style.DESKTOP) {
+        // bevelled face; [glow] = sunken (fields, pressed buttons). stroke = text colour: default-button frame;
+        // any other accent: thin inner highlight.
+        val px = max(1f, 1.dp.toPx())
+        val light = Th.pal.white
+        val shade = Th.pal.line
+        val deep = lerp(shade, Color.Black, 0.65f)
+        val frame = stroke.alpha > 0f && stroke == Th.pal.amber
+        val o = if (frame) px else 0f
+        if (fill.alpha > 0f) drawRect(fill)
+        if (frame) drawRect(stroke, style = Stroke(px * 2f))
+        fun edge(tl: Color, br: Color, i: Float) {
+            drawRect(tl, Offset(i, i), Size(w - 2 * i, px)); drawRect(tl, Offset(i, i), Size(px, h - 2 * i))
+            drawRect(br, Offset(i, h - i - px), Size(w - 2 * i, px)); drawRect(br, Offset(w - i - px, i), Size(px, h - 2 * i))
+        }
+        if (glow) { edge(shade, light, o); edge(deep, Th.pal.ghost, o + px) } else { edge(light, deep, o); edge(Th.pal.ghost, shade, o + px) }
+        if (!frame && stroke.alpha > 0f && stroke != shade && stroke != Color.Transparent) {
+            drawRect(stroke, Offset(o + 3 * px, o + 3 * px), Size(w - 2 * o - 6 * px, h - 2 * o - 6 * px), style = Stroke(px))
+        }
+        return
+    }
+    if (style == Style.ORACLE) {
+        // chamfered card frame with a fine second rule inside; [glow] = soft halo
+        val k = minOf(h * 0.22f, 9.dp.toPx())
+        fun oct(i: Float) = Path().apply {
+            moveTo(k + i, i); lineTo(w - k - i, i); lineTo(w - i, k + i); lineTo(w - i, h - k - i)
+            lineTo(w - k - i, h - i); lineTo(k + i, h - i); lineTo(i, h - k - i); lineTo(i, k + i); close()
+        }
+        if (glow && stroke.alpha > 0f) drawPath(oct(0f), stroke.copy(alpha = 0.12f), style = Stroke(sw * 7))
+        if (fill.alpha > 0f) drawPath(oct(0f), fill)
+        if (stroke.alpha > 0f && sw > 0f) {
+            drawPath(oct(sw / 2), stroke, style = Stroke(sw))
+            if (h > 26.dp.toPx()) drawPath(oct(sw + 3.dp.toPx()), stroke.copy(alpha = 0.4f), style = Stroke(sw * 0.6f))
+        }
+        return
+    }
     val r = if (pill) h / 2f else style.corner.toPx()
     if (fill.alpha > 0f) drawRoundRect(fill, cornerRadius = CornerRadius(r))
-    if (glow && style == Style.NEON && stroke.alpha > 0f) {
-        drawRoundRect(stroke.copy(alpha = 0.10f), Offset(-sw * 2, -sw * 2), Size(w + sw * 4, h + sw * 4),
+    if (glow && (style == Style.NEON || style == Style.ABYSS) && stroke.alpha > 0f) {
+        val soft = if (style == Style.ABYSS) 0.6f else 1f
+        drawRoundRect(stroke.copy(alpha = 0.10f * soft), Offset(-sw * 2, -sw * 2), Size(w + sw * 4, h + sw * 4),
             CornerRadius(r + sw * 2), style = Stroke(sw * 6))
-        drawRoundRect(stroke.copy(alpha = 0.22f), cornerRadius = CornerRadius(r), style = Stroke(sw * 3))
+        drawRoundRect(stroke.copy(alpha = 0.22f * soft), cornerRadius = CornerRadius(r), style = Stroke(sw * 3))
+    }
+    if (style == Style.JACKPOT && stroke.alpha > 0f && sw > 0f) {
+        // double gold rim; [glow] = a row of marquee bulbs on the rim
+        val i = sw + 2.5.dp.toPx()
+        if (w > 2 * i && h > 2 * i) drawRoundRect(stroke.copy(alpha = 0.4f), Offset(i, i), Size(w - 2 * i, h - 2 * i), CornerRadius(max(0f, r - i)), style = Stroke(sw * 0.7f))
+        if (glow) {
+            val step = 16.dp.toPx()
+            var x = r
+            while (x < w - r) {
+                drawCircle(Th.pal.white.copy(alpha = 0.75f), 1.8.dp.toPx(), Offset(x, 0f))
+                drawCircle(Th.pal.white.copy(alpha = 0.75f), 1.8.dp.toPx(), Offset(x, h))
+                x += step
+            }
+        }
     }
     if (stroke.alpha > 0f && sw > 0f) {
         drawRoundRect(stroke, Offset(sw / 2, sw / 2), Size(w - sw, h - sw), CornerRadius(max(0f, r - sw / 2)), style = Stroke(sw))
@@ -260,7 +314,7 @@ fun TButton(
     val accent = when {
         !enabled -> C.line
         custom -> color
-        primary && (style == Style.CLEAN || style == Style.NEON || style == Style.COMIC) -> C.hot
+        primary && style != Style.TERMINAL && style != Style.PIXEL && style != Style.PAPER && style != Style.DESKTOP -> C.hot
         else -> C.amber
     }
     val click = Modifier.clickable(interactionSource = src, indication = null, enabled = enabled) { haptic(primary); onClick() }
@@ -310,27 +364,69 @@ fun TButton(
                 }
             }
         }
+        Style.JACKPOT -> {
+            // domed casino push button on a dark base; it sinks into the base when pressed
+            val depth = 4.dp
+            val o by animateDpAsState(if (pressed) depth else 0.dp, tween(60))
+            val face = when { !enabled -> C.ghost; primary -> accent; custom -> color; else -> C.panel }
+            val ink = when { !enabled -> C.dim; primary || custom -> onColor(face); else -> C.amber }
+            val rim = C.line
+            Box(modifier.then(click), contentAlignment = Alignment.Center) {
+                Box(Modifier.matchParentSize().offset(y = depth).drawBehind {
+                    drawRoundRect(lerp(face, Color.Black, 0.5f), cornerRadius = CornerRadius(style.corner.toPx()))
+                })
+                Box(Modifier.matchParentSize().offset(y = o).drawBehind {
+                    val r = CornerRadius(style.corner.toPx())
+                    drawRoundRect(Brush.verticalGradient(listOf(lerp(face, Color.White, 0.25f), face, lerp(face, Color.Black, 0.12f))), cornerRadius = r)
+                    drawRoundRect(rim, cornerRadius = r, style = Stroke(1.5.dp.toPx()))
+                    drawRoundRect(Color.White.copy(alpha = 0.18f), Offset(6.dp.toPx(), 3.dp.toPx()),
+                        Size(size.width - 12.dp.toPx(), size.height * 0.32f), CornerRadius(size.height * 0.16f))
+                })
+                Box(Modifier.offset(y = o).heightIn(min = 50.dp).padding(horizontal = 20.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
+                    TText(label.uppercase(), size = textSize, color = ink, weight = FontWeight.Bold, spacing = 1.sp, align = TextAlign.Center)
+                }
+            }
+        }
+        Style.DESKTOP -> {
+            // bevelled push button: sinks (inverted bevel, label nudged 1 dp) while pressed; primary = default button frame
+            val down = pressed && enabled
+            val ink = if (!enabled) C.line else if (custom) color else C.amber
+            val nudge = if (down) 1.dp else 0.dp
+            Box(
+                modifier.box(style, if (primary && enabled) C.amber else C.line, C.panel, glow = down)
+                    .then(click).heightIn(min = 44.dp).padding(horizontal = 16.dp, vertical = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                TText(label, Modifier.offset(nudge, nudge), size = textSize * 0.95f, color = ink,
+                    weight = if (primary) FontWeight.Bold else FontWeight.Normal, align = TextAlign.Center)
+            }
+        }
         else -> {
             val filled = primary || pressed
+            // QUIZ SHOW / CHAT / METRO: secondary buttons sit on a panel fill
+            val soft = style == Style.CLEAN || style == Style.CHAT || style == Style.METRO
             val bgFill = when {
-                style == Style.CLEAN && !filled -> C.panel
                 filled -> accent
+                soft -> C.panel
                 else -> Color.Transparent
             }
             val ink = if (filled) onColor(accent) else accent
+            val pill = style == Style.NEON || style == Style.ABYSS || style == Style.CHAT
+            val upper = style == Style.PAPER || style == Style.METRO || style == Style.ORACLE
             val scale by animateFloatAsState(if (pressed) 0.97f else 1f, tween(120))
             Box(
                 modifier.graphicsLayer { scaleX = scale; scaleY = scale }
-                    .box(style, if (style == Style.CLEAN && !filled) C.line else accent, bgFill,
-                        strokeWidth = if (style == Style.PAPER) 1.5.dp else 1.dp, glow = style == Style.NEON, pill = style == Style.NEON)
+                    .box(style, when { !soft || filled -> accent; style == Style.CHAT -> Color.Transparent; else -> C.line }, bgFill,
+                        strokeWidth = if (style == Style.PAPER) 1.5.dp else if (style == Style.ORACLE) 1.2.dp else 1.dp,
+                        glow = style == Style.NEON || style == Style.ABYSS, pill = pill)
                     .then(click).heightIn(min = 48.dp).padding(horizontal = 18.dp, vertical = 12.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 TText(
-                    if (style == Style.PAPER) label.uppercase() else label,
-                    size = textSize * (if (style == Style.PAPER) 0.9f else 1f), color = ink,
-                    weight = if (style == Style.CLEAN) FontWeight.SemiBold else FontWeight.Bold,
-                    spacing = if (style == Style.PAPER) 1.5.sp else if (style == Style.NEON) 1.sp else 0.sp,
+                    (if (upper) label.uppercase() else label) + if (style == Style.METRO && primary) "  →" else "",
+                    size = textSize * (if (style == Style.PAPER || style == Style.ORACLE) 0.9f else 1f), color = ink,
+                    weight = if (style == Style.CLEAN || style == Style.CHAT) FontWeight.SemiBold else FontWeight.Bold,
+                    spacing = when (style) { Style.PAPER -> 1.5.sp; Style.ORACLE -> 2.sp; Style.NEON -> 1.sp; Style.METRO, Style.ABYSS -> 0.5.sp; else -> 0.sp },
                     glow = if (filled) 0f else 1f, align = TextAlign.Center,
                 )
             }
@@ -342,12 +438,15 @@ fun TButton(
 @Composable
 fun TLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = C.dim, size: TextUnit = 13.sp) {
     val haptic = rememberHaptic()
-    val prefix = when (Th.style) { Style.TERMINAL -> "› "; Style.PIXEL -> "> "; Style.COMIC -> "✦ "; else -> "" }
-    val suffix = when (Th.style) { Style.CLEAN, Style.NEON, Style.PAPER -> "  →"; else -> "" }
+    val prefix = when (Th.style) {
+        Style.TERMINAL -> "› "; Style.PIXEL -> "> "; Style.COMIC -> "✦ "; Style.METRO -> "→ "; Style.JACKPOT -> "♦ "; Style.ORACLE -> "✧ "
+        else -> ""
+    }
+    val suffix = when (Th.style) { Style.CLEAN, Style.NEON, Style.PAPER, Style.ABYSS -> "  →"; else -> "" }
     TText("$prefix$label$suffix", modifier.clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {
         haptic(false); onClick()
     }.padding(vertical = 6.dp), size = size, color = color,
-        decoration = if (Th.style == Style.PAPER) androidx.compose.ui.text.style.TextDecoration.Underline else null)
+        decoration = if (Th.style == Style.PAPER || Th.style == Style.DESKTOP) androidx.compose.ui.text.style.TextDecoration.Underline else null)
 }
 
 // ------------------------------------------------------------------ containers
@@ -423,13 +522,92 @@ fun Panel(
                     size = 11.sp, color = onColor(tag), weight = FontWeight.Bold, spacing = 1.5.sp, glow = 0f)
             }
         }
+        Style.ABYSS -> Column(
+            modifier.fillMaxWidth().box(Style.ABYSS, if (color == C.line) C.line else color, C.panel.copy(alpha = 0.62f)).padding(16.dp),
+        ) {
+            if (title != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(5.dp).background(if (color == C.line) C.hot else color, CircleShape))
+                    Spacer(Modifier.width(8.dp))
+                    TText(title.uppercase(), size = 10.sp, color = titleColor, weight = FontWeight.SemiBold, spacing = 3.sp, glow = 0f)
+                }
+                Spacer(Modifier.height(10.dp))
+            }
+            content()
+        }
+        Style.METRO -> Column(modifier.fillMaxWidth().box(Style.METRO, C.line, C.panel)) {
+            if (title != null) {
+                val strip = if (color == C.line) C.hot else color
+                TText(title.uppercase(), Modifier.fillMaxWidth().background(strip, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                    .padding(horizontal = 14.dp, vertical = 7.dp), size = 11.sp, color = onColor(strip), weight = FontWeight.Bold, spacing = 1.sp)
+            }
+            Column(Modifier.fillMaxWidth().padding(14.dp), content = content)
+        }
+        Style.JACKPOT -> Box(modifier.padding(top = if (title != null) 12.dp else 0.dp)) {
+            Column(
+                Modifier.fillMaxWidth().box(Style.JACKPOT, if (color == C.line) C.line else color, C.panel, 1.5.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = if (title != null) 22.dp else 16.dp, bottom = 16.dp),
+                content = content,
+            )
+            if (title != null) {
+                TText(title.uppercase(), Modifier.align(Alignment.TopCenter).offset(y = (-10).dp)
+                    .box(Style.JACKPOT, if (color == C.line) C.line else color, C.bg, 1.5.dp).padding(horizontal = 14.dp, vertical = 4.dp),
+                    size = 11.sp, color = if (titleColor == C.dim) C.hot else titleColor, weight = FontWeight.Bold, spacing = 2.sp)
+            }
+        }
+        Style.CHAT -> Column(modifier.fillMaxWidth()) {
+            if (title != null) {
+                TText(title.uppercase(), Modifier.padding(start = 14.dp, bottom = 6.dp), size = 11.sp, color = titleColor,
+                    weight = FontWeight.SemiBold, spacing = 0.5.sp)
+            }
+            Column(Modifier.fillMaxWidth().box(Style.CHAT, if (color == C.line) Color.Transparent else color, C.panel).padding(16.dp), content = content)
+        }
+        Style.DESKTOP -> Column(modifier.fillMaxWidth().box(Style.DESKTOP, C.line, C.panel).padding(3.dp)) {
+            if (title != null) {
+                DesktopTitleBar(title, color = if (color == C.line) C.hot else color)
+            }
+            Column(Modifier.fillMaxWidth().padding(12.dp), content = content)
+        }
+        Style.ORACLE -> Box(modifier.padding(top = if (title != null) 10.dp else 0.dp)) {
+            Column(
+                Modifier.fillMaxWidth().box(Style.ORACLE, if (color == C.line) C.line else color, C.panel, 1.dp)
+                    .padding(start = 18.dp, end = 18.dp, top = if (title != null) 20.dp else 16.dp, bottom = 16.dp),
+                content = content,
+            )
+            if (title != null) {
+                TText("✦ ${title.uppercase()} ✦", Modifier.align(Alignment.TopCenter).offset(y = (-9).dp).background(C.bg).padding(horizontal = 8.dp),
+                    size = 11.sp, color = if (titleColor == C.dim) C.hot else titleColor, weight = FontWeight.Bold, spacing = 2.5.sp)
+            }
+        }
+    }
+}
+
+/** DESKTOP window title bar: gradient strip, bold title, optional close / extra buttons at the right. */
+@Composable
+fun DesktopTitleBar(title: String, color: Color = C.hot, modifier: Modifier = Modifier, onClose: (() -> Unit)? = null, extra: (@Composable () -> Unit)? = null) {
+    val ink = onColor(color)
+    Row(
+        modifier.fillMaxWidth().background(Brush.horizontalGradient(listOf(color, lerp(color, C.white, 0.42f))))
+            .padding(start = 6.dp, end = 3.dp, top = 3.dp, bottom = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        androidx.compose.foundation.text.BasicText(title, Modifier.weight(1f), maxLines = 1,
+            style = TextStyle(color = ink, fontFamily = LocalDisplay.current, fontSize = 13.sp, fontWeight = FontWeight.Bold))
+        if (extra != null) extra()
+        if (onClose != null) {
+            val haptic = rememberHaptic()
+            Box(Modifier.padding(start = 3.dp).size(24.dp, 21.dp).box(Style.DESKTOP, C.line, C.panel)
+                .clickable(remember { MutableInteractionSource() }, null) { haptic(false); onClose() }, contentAlignment = Alignment.Center) {
+                TText("×", size = 15.sp, color = C.amber, weight = FontWeight.Bold)
+            }
+        }
     }
 }
 
 @Composable
 fun Divider(modifier: Modifier = Modifier, color: Color = C.line) {
     val style = Th.style
-    Canvas(modifier.fillMaxWidth().height(if (style == Style.PIXEL) 3.dp else 1.dp)) {
+    Canvas(modifier.fillMaxWidth().height(when (style) { Style.PIXEL -> 3.dp; Style.DESKTOP -> 2.dp; Style.ORACLE -> 7.dp; else -> 1.dp })) {
         when (style) {
             Style.TERMINAL -> {
                 var x = 0f
@@ -445,6 +623,20 @@ fun Divider(modifier: Modifier = Modifier, color: Color = C.line) {
                 while (x < size.width) { drawRect(color, Offset(x, 0f), Size(s, s)); x += s * 2 }
             }
             Style.NEON -> drawRect(Brush.horizontalGradient(0f to Color.Transparent, 0.5f to color.copy(alpha = 1f), 1f to Color.Transparent))
+            Style.ABYSS -> drawRect(Brush.horizontalGradient(0f to Color.Transparent, 0.5f to color, 1f to Color.Transparent))
+            Style.DESKTOP -> {
+                val px = 1.dp.toPx()
+                drawRect(Th.pal.line, Offset.Zero, Size(size.width, px))
+                drawRect(Th.pal.white, Offset(0f, px), Size(size.width, px))
+            }
+            Style.ORACLE -> {
+                val y = size.height / 2f
+                val c = size.width / 2f
+                val d = size.height / 2f
+                drawLine(color, Offset(0f, y), Offset(c - d * 2.2f, y), 1.dp.toPx())
+                drawLine(color, Offset(c + d * 2.2f, y), Offset(size.width, y), 1.dp.toPx())
+                drawPath(Path().apply { moveTo(c, y - d); lineTo(c + d, y); lineTo(c, y + d); lineTo(c - d, y); close() }, color)
+            }
             else -> drawRect(color.copy(alpha = if (style == Style.CLEAN) 0.8f else 1f))
         }
     }
@@ -502,13 +694,14 @@ fun Stepper(
 @Composable
 fun ChipBox(label: String, on: Boolean, modifier: Modifier = Modifier, size: TextUnit = 12.sp, onClick: () -> Unit) {
     val style = Th.style
-    val accent = when (style) { Style.CLEAN, Style.NEON, Style.COMIC -> C.hot; else -> C.amber }
+    val accent = when (style) { Style.TERMINAL, Style.PAPER, Style.PIXEL -> C.amber; else -> C.hot }
     val ink = if (on) (if (style == Style.TERMINAL) C.bg else onColor(accent)) else C.amber
     TText(
         label,
         modifier
-            .box(style, if (on) accent else C.line, if (on) accent else Color.Transparent, glow = on && style == Style.NEON,
-                pill = style == Style.NEON || style == Style.CLEAN)
+            .box(style, if (on) accent else C.line, if (on) accent else (if (style == Style.DESKTOP || style == Style.CHAT) C.panel else Color.Transparent),
+                glow = on && (style == Style.NEON || style == Style.ABYSS || style == Style.DESKTOP),
+                pill = style == Style.NEON || style == Style.CLEAN || style == Style.ABYSS || style == Style.CHAT)
             .clickable(remember { MutableInteractionSource() }, null, onClick = onClick)
             .padding(horizontal = if (style == Style.PIXEL) 14.dp else if (style == Style.COMIC) 16.dp else 12.dp, vertical = 11.dp),
         size = size, color = if (style == Style.PIXEL && on) C.bg else ink,
@@ -538,6 +731,25 @@ fun Toggle(label: String, on: Boolean, onChange: (Boolean) -> Unit, hint: String
         when (style) {
             Style.TERMINAL -> TText(if (on) "[x]" else "[ ]", size = 14.sp, color = if (on) C.hot else C.dim, weight = FontWeight.Bold)
             Style.PIXEL -> TText(if (on) "▣" else "▢", size = 16.sp, color = C.amber)
+            Style.DESKTOP -> {
+                val field = if (Th.pal.dark) Color.Black else Color.White
+                Box(Modifier.size(18.dp).box(style, C.line, field, glow = true), contentAlignment = Alignment.Center) {
+                    if (on) TText("✓", size = 13.sp, color = onColor(field), weight = FontWeight.Bold)
+                }
+            }
+            Style.ORACLE -> {
+                val ink = C.hot
+                Canvas(Modifier.size(18.dp)) {
+                    val c = center
+                    val r = size.minDimension / 2f
+                    val outer = Path().apply { moveTo(c.x, c.y - r); lineTo(c.x + r, c.y); lineTo(c.x, c.y + r); lineTo(c.x - r, c.y); close() }
+                    drawPath(outer, ink, style = Stroke(1.2.dp.toPx()))
+                    if (on) {
+                        val q = r * 0.5f
+                        drawPath(Path().apply { moveTo(c.x, c.y - q); lineTo(c.x + q, c.y); lineTo(c.x, c.y + q); lineTo(c.x - q, c.y); close() }, ink)
+                    }
+                }
+            }
             Style.PAPER -> {
                 val ink = C.amber
                 Canvas(Modifier.size(18.dp)) {
@@ -602,6 +814,20 @@ fun TermInput(
         Style.CLEAN -> Modifier.box(style, C.line, C.panel).padding(horizontal = 14.dp, vertical = 13.dp)
         Style.TERMINAL -> Modifier.box(style, C.line, C.panel).padding(horizontal = 12.dp, vertical = 12.dp)
         Style.COMIC -> Modifier.box(style, C.line, C.panel, 2.dp).padding(horizontal = 22.dp, vertical = 14.dp)
+        Style.ABYSS -> Modifier.box(style, C.hot.copy(alpha = 0.55f), C.panel.copy(alpha = 0.8f), 1.dp, glow = true, pill = true)
+            .padding(horizontal = 20.dp, vertical = 13.dp)
+        Style.METRO -> Modifier.box(style, C.amber.copy(alpha = 0.45f), C.panel, 1.5.dp).padding(horizontal = 14.dp, vertical = 13.dp)
+        Style.JACKPOT -> Modifier.box(style, C.line, lerp(C.panel, Color.Black, 0.3f), 1.5.dp).padding(horizontal = 16.dp, vertical = 13.dp)
+        Style.CHAT -> Modifier.box(style, C.line, C.panel, 1.dp, pill = true).padding(horizontal = 18.dp, vertical = 12.dp)
+        Style.DESKTOP -> Modifier.box(style, C.line, if (Th.pal.dark) Color.Black else Color.White, glow = true).padding(horizontal = 10.dp, vertical = 10.dp)
+        Style.ORACLE -> Modifier.drawBehind {
+            val box = this.size
+            val y = box.height - 1.dp.toPx()
+            val d = 3.dp.toPx()
+            val ink = C_hot()
+            drawLine(ink, Offset(d * 2, y), Offset(box.width - d * 2, y), 1.dp.toPx())
+            for (x in listOf(d, box.width - d)) drawPath(Path().apply { moveTo(x, y - d); lineTo(x + d, y); lineTo(x, y + d); lineTo(x - d, y); close() }, ink)
+        }.padding(horizontal = 6.dp, vertical = 12.dp)
     }
     val ink = C.amber
     Row(modifier.then(frame), verticalAlignment = Alignment.CenterVertically) {
@@ -615,8 +841,8 @@ fun TermInput(
                 enabled = enabled,
                 singleLine = singleLine,
                 textStyle = termStyle(size = size, color = if (style == Style.TERMINAL) C.hot else ink,
-                    weight = if (style == Style.CLEAN) FontWeight.Normal else FontWeight.Bold),
-                cursorBrush = SolidColor(if (style == Style.CLEAN || style == Style.NEON || style == Style.COMIC) C.hot else C.amber),
+                    weight = if (style == Style.CLEAN || style == Style.CHAT || style == Style.DESKTOP) FontWeight.Normal else FontWeight.Bold),
+                cursorBrush = SolidColor(when (style) { Style.TERMINAL, Style.PAPER, Style.PIXEL, Style.DESKTOP -> C.amber; else -> C.hot }),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
                     autoCorrectEnabled = false,
@@ -631,6 +857,7 @@ fun TermInput(
 }
 
 private fun C_line(): Color = C.amber.copy(alpha = 0.8f)
+private fun C_hot(): Color = C.hot
 
 // ------------------------------------------------------------------ celebration
 
@@ -649,6 +876,26 @@ fun Celebrate(modifier: Modifier, active: Boolean) {
     val rain = style == Style.TERMINAL || style == Style.NEON || style == Style.PIXEL
     val color = C.hot
     Canvas(modifier) {
+        if (style == Style.ABYSS || style == Style.JACKPOT || style == Style.ORACLE) {
+            // bubbles rising / coins falling / stars drifting down
+            cols.forEachIndexed { i, (speed, phase) ->
+                for (k in 0 until 2) {
+                    val x = size.width * ((i + k * 0.5f + phase) % cols.size) / cols.size
+                    val f = (p * (0.5f + speed) + phase + k * 0.47f) % 1f
+                    val r = (3f + 4f * speed).dp.toPx()
+                    when (style) {
+                        Style.ABYSS -> drawCircle(color.copy(alpha = 0.5f), r, Offset(x + sin((f * 4f + phase) * 6.28f) * 8f, size.height * (1f - f)),
+                            style = Stroke(1.dp.toPx()))
+                        Style.JACKPOT -> {
+                            val sq = kotlin.math.abs(kotlin.math.cos((f * 3f + phase) * 6.28f)).coerceAtLeast(0.15f)
+                            drawOval(Color(0xFFFFD45A).copy(alpha = 0.9f), Offset(x - r * sq, size.height * f - r), Size(2 * r * sq, 2 * r))
+                        }
+                        else -> drawCircle(colors[(i + k) % 3].copy(alpha = 0.7f * (1f - f)), r * 0.35f, Offset(x, size.height * f))
+                    }
+                }
+            }
+            return@Canvas
+        }
         if (rain) {
             val st = TextStyle(fontFamily = font, fontSize = 12.sp, color = color.copy(alpha = 0.55f))
             cols.forEachIndexed { i, (speed, phase) ->

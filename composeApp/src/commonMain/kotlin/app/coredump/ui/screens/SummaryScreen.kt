@@ -59,6 +59,12 @@ fun SummaryScreen(model: AppModel, session: MatchSession) {
         Style.CLEAN -> QuizSummary(model, session)
         Style.PIXEL -> QuestSummary(model, session)
         Style.COMIC -> ComicSummary(model, session)
+        Style.ABYSS -> AbyssSummary(model, session)
+        Style.METRO -> MetroSummary(model, session)
+        Style.JACKPOT -> JackpotSummary(model, session)
+        Style.CHAT -> ChatSummary(model, session)
+        Style.DESKTOP -> DesktopSummary(model, session)
+        Style.ORACLE -> OracleSummary(model, session)
     }
 }
 

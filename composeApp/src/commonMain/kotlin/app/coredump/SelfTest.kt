@@ -29,9 +29,13 @@ object SelfTest {
     private val plan = listOf(
         Style.TERMINAL to "amber", Style.PAPER to "newsprint", Style.NEON to "synthwave",
         Style.CLEAN to "light", Style.PIXEL to "dmg", Style.COMIC to "rebel",
+        Style.ABYSS to "trench", Style.METRO to "board", Style.JACKPOT to "felt",
+        Style.CHAT to "daylight", Style.DESKTOP to "classic", Style.ORACLE to "midnight",
     )
     private val extra = listOf(
         Style.TERMINAL to "green", Style.PAPER to "night", Style.NEON to "outrun", Style.CLEAN to "dark", Style.PIXEL to "color", Style.COMIC to "pop",
+        Style.ABYSS to "jelly", Style.METRO to "platform", Style.JACKPOT to "velvet", Style.CHAT to "midnight", Style.DESKTOP to "storm",
+        Style.ORACLE to "parchment",
     )
 
     suspend fun run(model: AppModel) {

@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +48,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +58,8 @@ import androidx.compose.ui.unit.sp
 import app.coredump.AppModel
 import app.coredump.ui.C
 import app.coredump.ui.Divider
+import app.coredump.ui.DesktopTitleBar
+import app.coredump.ui.box
 import app.coredump.ui.LocalDisplay
 import app.coredump.ui.LocalLook
 import app.coredump.ui.Style
@@ -75,33 +80,52 @@ import kotlin.random.Random
 fun Header(model: AppModel, title: String, onBack: (() -> Unit)? = { model.back() }) {
     val haptic = rememberHaptic()
     val style = Th.style
+    if (style == Style.DESKTOP) {
+        DesktopTitleBar(title, onClose = onBack, extra = {
+            TText(model.settings.handle.take(10), Modifier.padding(end = 6.dp), size = 10.sp, color = onColor(C.hot).copy(alpha = 0.8f), maxLines = 1)
+        })
+        return
+    }
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) {
                 TText(
-                    when (style) { Style.TERMINAL, Style.PIXEL -> "◂ "; else -> "←" },
+                    when (style) { Style.TERMINAL, Style.PIXEL -> "◂ "; Style.CHAT -> "‹"; else -> "←" },
                     Modifier.clickable(remember { MutableInteractionSource() }, null) { haptic(false); onBack() }
                         .padding(end = 12.dp, top = 4.dp, bottom = 4.dp),
-                    size = if (style == Style.CLEAN || style == Style.NEON) 20.sp else 16.sp, weight = FontWeight.Bold,
+                    size = when (style) { Style.CLEAN, Style.NEON, Style.ABYSS, Style.METRO -> 20.sp; Style.CHAT -> 28.sp; else -> 16.sp },
+                    weight = FontWeight.Bold, color = if (style == Style.CHAT) C.hot else C.amber,
                 )
             }
+            val plain = style == Style.CLEAN || style == Style.CHAT
             TText(
-                if (style == Style.PAPER || style == Style.PIXEL) title.uppercase() else title,
+                if (style == Style.PAPER || style == Style.PIXEL || style == Style.METRO || style == Style.ORACLE || style == Style.ABYSS) title.uppercase() else title,
                 Modifier.weight(1f),
-                size = if (style == Style.CLEAN) 17.sp else 13.sp,
+                size = if (plain) 17.sp else 13.sp,
                 weight = FontWeight.Bold,
-                spacing = if (style == Style.CLEAN) 0.sp else 2.sp,
+                spacing = if (plain) 0.sp else if (style == Style.ABYSS) 3.sp else 2.sp,
                 maxLines = 1,
             )
             TText(if (style == Style.TERMINAL) "uid=${model.settings.handle.take(10)}" else model.settings.handle.take(10),
                 size = 11.sp, color = C.dim, maxLines = 1)
         }
-        if (style != Style.CLEAN) Divider(Modifier.padding(horizontal = 16.dp))
+        if (style == Style.METRO) Box(Modifier.fillMaxWidth().height(3.dp).background(C.hot))
+        else if (style != Style.CLEAN && style != Style.CHAT) Divider(Modifier.padding(horizontal = 16.dp))
+        else if (style == Style.CHAT) Box(Modifier.fillMaxWidth().height(1.dp).background(C.line))
     }
 }
 
 @Composable
 fun Frame(model: AppModel, title: String, onBack: (() -> Unit)? = { model.back() }, content: @Composable ColumnScope.() -> Unit) {
+    if (Th.style == Style.DESKTOP) {
+        // every screen is a maximised window on the desktop
+        Column(Modifier.fillMaxSize().padding(6.dp).box(Style.DESKTOP, C.line, C.panel).padding(3.dp)) {
+            Header(model, title, onBack)
+            Spacer(Modifier.height(4.dp))
+            content()
+        }
+        return
+    }
     Column(Modifier.fillMaxSize()) {
         Header(model, title, onBack)
         content()
@@ -140,6 +164,23 @@ fun AppTitle(size: TextUnit = 40.sp) {
         Style.CLEAN -> TText("Core Dump", size = size * 0.85f, weight = FontWeight.Bold, color = C.amber)
         Style.PIXEL -> TText("CORE DUMP", size = size * 0.8f, weight = FontWeight.Bold, color = C.amber)
         Style.COMIC -> RansomText("CORE DUMP", size * 0.8f, seed = 11)
+        Style.ABYSS -> TText("CORE DUMP", size = size * 0.7f, weight = FontWeight.SemiBold, spacing = 9.sp, color = C.amber, glow = 1.6f)
+        Style.METRO -> SplitFlap("CORE DUMP", size * 0.62f)
+        Style.JACKPOT -> BasicText(
+            "CORE DUMP",
+            style = TextStyle(
+                brush = Brush.verticalGradient(listOf(C.white, C.hot, lerp(C.hot, Color.Black, 0.25f))),
+                fontFamily = LocalDisplay.current, fontWeight = FontWeight.Bold, fontSize = size * 0.9f, letterSpacing = 2.sp,
+                shadow = Shadow(Color.Black.copy(alpha = 0.6f), Offset(0f, 4f), 6f),
+            ),
+        )
+        Style.CHAT -> Row(verticalAlignment = Alignment.CenterVertically) {
+            TText("Core Dump", size = size * 0.8f, weight = FontWeight.Bold, color = C.amber)
+            Spacer(Modifier.width(10.dp))
+            Box(Modifier.size(9.dp).background(Color(0xFF34C759), CircleShape))
+        }
+        Style.DESKTOP -> BasicText("Core Dump", style = TextStyle(color = C.amber, fontFamily = LocalDisplay.current, fontSize = size * 0.75f))
+        Style.ORACLE -> TText("Core Dump", size = size * 0.95f, weight = FontWeight.Bold, color = C.hot, spacing = 1.5.sp)
     }
 }
 

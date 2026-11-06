@@ -79,6 +79,8 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
     val loop = rememberInfiniteTransition()
     val beam by loop.animateFloat(-0.2f, 1.2f, infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Restart))
     val gridT by loop.animateFloat(0f, 1f, infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart))
+    // one slow 60 s cycle for drifting backdrops (all motion in it uses whole-number frequencies, so it loops seamlessly)
+    val drift by loop.animateFloat(0f, 1f, infiniteRepeatable(tween(60_000, easing = LinearEasing), RepeatMode.Restart))
 
     var glitchSeed by remember { mutableIntStateOf(0) }
     var glitchOn by remember { mutableFloatStateOf(0f) }
@@ -117,7 +119,11 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
             Style.NEON -> NeonBackdrop(if (motion) gridT else 0f)
             Style.PAPER -> PaperBackdrop()
             Style.COMIC -> ComicBackdrop()
-            else -> Unit
+            Style.ABYSS -> AbyssBackdrop(if (motion) drift else 0f)
+            Style.METRO -> MetroBackdrop()
+            Style.JACKPOT -> FeltBackdrop()
+            Style.ORACLE -> StarBackdrop(if (motion) drift else 0f)
+            Style.TERMINAL, Style.CLEAN, Style.PIXEL, Style.CHAT, Style.DESKTOP -> Unit
         }
 
         // ---- content (+ shake / tear)
@@ -133,7 +139,11 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
                         translationX = (sin(s * 38f) * 3f * p).toInt() * step * s
                         translationY = (sin(s * 29f + 1f) * 1.5f * p).toInt() * step * s
                     } else {
-                        val k = if (style == Style.CLEAN || style == Style.PAPER) 0.5f else 1f
+                        val k = when (style) {
+                            Style.CLEAN, Style.PAPER, Style.CHAT, Style.ORACLE, Style.METRO -> 0.5f
+                            Style.DESKTOP -> 0.35f
+                            else -> 1f
+                        }
                         translationX = sin(s * 38f) * 14f * s * p * k
                         translationY = sin(s * 29f + 1f) * 6f * s * p * k
                     }
@@ -326,6 +336,105 @@ private fun ComicBackdrop() {
         onDrawBehind {
             drawPath(dots, dot.copy(alpha = 0.18f))
             drawPath(slash, band.copy(alpha = 0.07f))
+        }
+    })
+}
+
+/**
+ * Deep water: lighter near the surface, near-black below; three faint light shafts sway; plankton motes drift up
+ * and twinkle. [t] 0..1 over 60 s.
+ */
+@Composable
+private fun AbyssBackdrop(t: Float) {
+    val bg = C.bg
+    val glow = C.hot
+    val line = C.line
+    val motes = remember { List(64) { floatArrayOf(Random.nextFloat(), Random.nextFloat(), (1 + Random.nextInt(3)).toFloat(), Random.nextFloat()) } }
+    Spacer(Modifier.fillMaxSize().drawBehind {
+        val w = size.width
+        val h = size.height
+        val tau = 2f * PI.toFloat()
+        drawRect(Brush.verticalGradient(0f to lerp(bg, line, 0.45f), 0.5f to bg, 1f to lerp(bg, Color.Black, 0.55f)))
+        for (i in 0 until 3) {
+            val x0 = w * (0.12f + 0.3f * i) + sin((t * 2f + i * 0.31f) * tau) * w * 0.03f
+            val p = Path().apply {
+                moveTo(x0, 0f); lineTo(x0 + w * 0.09f, 0f); lineTo(x0 + w * 0.30f, h * 0.62f); lineTo(x0 + w * 0.13f, h * 0.62f); close()
+            }
+            drawPath(p, Brush.verticalGradient(0f to glow.copy(alpha = 0.055f), 1f to Color.Transparent, startY = 0f, endY = h * 0.62f))
+        }
+        for (m in motes) {
+            val x = (((m[0] + t + sin((t * 3f + m[3]) * tau) * 0.01f) % 1f) + 1f) % 1f * w
+            val y = (((m[1] - t * m[2]) % 1f) + 1f) % 1f * h
+            val tw = 0.5f + 0.5f * sin((t * 12f + m[3]) * tau)
+            drawCircle(glow.copy(alpha = 0.08f + 0.22f * tw * (m[2] / 3f)), (0.8f + m[2] * 0.5f).dp.toPx(), Offset(x, y))
+        }
+    })
+}
+
+/** Station wall: a thin route stripe at the top and very faint wall tiles. */
+@Composable
+private fun MetroBackdrop() {
+    val stripe = C.hot
+    val tile = C.line
+    Spacer(Modifier.fillMaxSize().drawWithCache {
+        val tw = 46.dp.toPx()
+        val th = 23.dp.toPx()
+        val p = Path()
+        var y = 0f
+        var row = 0
+        while (y < size.height) {
+            var x = if (row % 2 == 0) 0f else -tw / 2f
+            while (x < size.width) { p.addRect(Rect(x, y, x + tw - 1.dp.toPx(), y + th - 1.dp.toPx())); x += tw }
+            y += th; row++
+        }
+        onDrawBehind {
+            drawPath(p, tile.copy(alpha = 0.05f))
+            drawRect(stripe, Offset.Zero, Size(size.width, 3.dp.toPx()))
+        }
+    })
+}
+
+/** Card-table felt: a soft lamp light in the middle, darker edges, a faint diamond lattice. */
+@Composable
+private fun FeltBackdrop() {
+    val bg = C.bg
+    val gold = C.line
+    Spacer(Modifier.fillMaxSize().drawWithCache {
+        val step = 34.dp.toPx()
+        val p = Path()
+        var x = -size.height
+        while (x < size.width + size.height) {
+            p.moveTo(x, 0f); p.lineTo(x + size.height, size.height)
+            p.moveTo(x + size.height, 0f); p.lineTo(x, size.height)
+            x += step
+        }
+        val lamp = Brush.radialGradient(
+            0f to lerp(bg, Color.White, 0.10f), 0.55f to bg, 1f to lerp(bg, Color.Black, 0.45f),
+            center = Offset(size.width / 2f, size.height * 0.35f), radius = max(size.width, size.height) * 0.8f,
+        )
+        onDrawBehind {
+            drawRect(lamp)
+            drawPath(p, gold.copy(alpha = 0.05f), style = androidx.compose.ui.graphics.drawscope.Stroke(1f))
+        }
+    })
+}
+
+/** Night sky: fixed stars (a few twinkle), a pale ring of moonlight in the top-right corner. */
+@Composable
+private fun StarBackdrop(t: Float) {
+    val star = C.amber
+    val gold = C.hot
+    val stars = remember { val r = Random(29); List(90) { floatArrayOf(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()) } }
+    Spacer(Modifier.fillMaxSize().drawBehind {
+        val w = size.width
+        val h = size.height
+        val tau = 2f * PI.toFloat()
+        val moon = Offset(w * 0.86f, h * 0.08f)
+        drawCircle(Brush.radialGradient(0f to gold.copy(alpha = 0.10f), 1f to Color.Transparent, center = moon, radius = w * 0.35f), w * 0.35f, moon)
+        drawCircle(gold.copy(alpha = 0.18f), w * 0.07f, moon, style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
+        for (s in stars) {
+            val tw = if (s[3] > 0.8f) 0.5f + 0.5f * sin((t * 20f + s[2]) * tau) else 1f
+            drawCircle(star.copy(alpha = (0.12f + 0.35f * s[2]) * tw), (0.5f + s[2] * 1.1f).dp.toPx(), Offset(s[0] * w, s[1] * h))
         }
     })
 }
