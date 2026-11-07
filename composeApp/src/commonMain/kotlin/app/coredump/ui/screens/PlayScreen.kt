@@ -664,7 +664,7 @@ fun AnswerList(v: RoundView) {
     LaunchedEffect(RevealProbe.ping) { if (RevealProbe.ping > since) runCatching { view.bringIntoView() } }
     Panel(Th.say("FULL LIST · ${group(total)} ANSWERS", "All ${group(total)} answers"), Modifier.bringIntoViewRequester(view)) {
         if (!full) {
-            TText(Th.say("top answers only (full list not received)", "Only the top answers (the full list did not arrive)"), size = 10.sp, color = C.dim)
+            TText(Th.say("top answers only (full list not received yet)", "Top answers only (full list not received yet)"), size = 10.sp, color = C.dim)
             Spacer(Modifier.height(6.dp))
         }
         for ((gi, g) in groups.withIndex()) key(v.index, g.tier) {
