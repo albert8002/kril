@@ -88,9 +88,13 @@ actual fun rememberImagePicker(maxSide: Int, onResult: (ByteArray?) -> Unit): ()
     val cb by rememberUpdatedState(onResult)
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val launcher = rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri == null) cb(null) else scope.launch {
-            val png = withContext(Dispatchers.IO) { runCatching { shrinkImage(uri, maxSide) }.getOrNull() }
-            cb(png)
+        if (uri == null) {
+            cb(null)
+        } else {
+            scope.launch {
+                val png = withContext(Dispatchers.IO) { runCatching { shrinkImage(uri, maxSide) }.getOrNull() }
+                cb(png)
+            }
         }
     }
     return remember(launcher) {

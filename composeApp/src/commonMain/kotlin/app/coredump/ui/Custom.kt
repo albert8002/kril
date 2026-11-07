@@ -105,27 +105,27 @@ fun customKey(r: Rank) = Custom.keyOf(r)
  * Draws nothing when there is no icon. [animated] = false for long lists.
  */
 @Composable
-fun CustomIcon(key: String, size: Dp, modifier: Modifier = Modifier, animated: Boolean = true, anim: IconAnim? = null) {
+fun CustomIcon(key: String, side: Dp, modifier: Modifier = Modifier, animated: Boolean = true, anim: IconAnim? = null) {
     val bmp = CustomLooks.icons[key] ?: return
     val a = anim ?: IconAnim.byName(Names.custom[key]?.anim)
     val motion = animated && a != IconAnim.NONE && !LocalLook.current.reduceMotion
     val t: State<Float> = if (motion) {
         rememberInfiniteTransition().animateFloat(0f, 1f, infiniteRepeatable(tween(periodOf(a), easing = LinearEasing), RepeatMode.Restart))
     } else remember { mutableFloatStateOf(0f) }
-    Image(bmp, null, modifier.size(size).graphicsLayer {
+    Image(bmp, null, modifier.size(side).graphicsLayer {
         val p = t.value
         val w = 2f * PI.toFloat() * p
-        val px = size.toPx()
+        val px = side.toPx()
         when (a) {
-            IconAnim.NONE -> Unit
+            IconAnim.NONE -> {}
             IconAnim.PULSE -> { val s = 1f + 0.12f * sin(w); scaleX = s; scaleY = s }
-            IconAnim.BOUNCE -> { translationY = -abs(sin(w)) * px * 0.22f; val sq = 1f - 0.08f * cos(w * 2f).coerceAtLeast(0f); scaleY = sq }
-            IconAnim.SPIN -> rotationZ = 360f * p
-            IconAnim.WOBBLE -> rotationZ = 14f * sin(w)
-            IconAnim.FLOAT -> translationY = sin(w) * px * 0.12f
-            IconAnim.BLINK -> alpha = 0.3f + 0.7f * (0.5f + 0.5f * cos(w))
+            IconAnim.BOUNCE -> { translationY = -abs(sin(w)) * px * 0.22f; scaleY = 1f - 0.08f * cos(w * 2f).coerceAtLeast(0f) }
+            IconAnim.SPIN -> { rotationZ = 360f * p }
+            IconAnim.WOBBLE -> { rotationZ = 14f * sin(w) }
+            IconAnim.FLOAT -> { translationY = sin(w) * px * 0.12f }
+            IconAnim.BLINK -> { alpha = 0.3f + 0.7f * (0.5f + 0.5f * cos(w)) }
             // a short shake, then rest
-            IconAnim.SHAKE -> translationX = if (p < 0.3f) sin(p / 0.3f * 6f * PI.toFloat()) * px * 0.08f else 0f
+            IconAnim.SHAKE -> { translationX = if (p < 0.3f) sin(p / 0.3f * 6f * PI.toFloat()) * px * 0.08f else 0f }
             IconAnim.FLIP -> { rotationY = 360f * p; cameraDistance = 10f * density }
         }
     })

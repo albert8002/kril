@@ -68,9 +68,9 @@ fun LooksScreen(model: AppModel) {
         val k = target
         target = null
         when {
-            k == null || png == null -> Unit
-            CustomLooks.store(k, png) -> model.update { s -> s.copy(custom = s.custom + (k to (s.custom[k] ?: Custom()).copy(icon = true))) }
-            else -> model.toast = Th.say("could not read that image", "Could not read that image")
+            k == null || png == null -> {}
+            CustomLooks.store(k, png) -> { model.update { s -> s.copy(custom = s.custom + (k to (s.custom[k] ?: Custom()).copy(icon = true))) } }
+            else -> { model.toast = Th.say("could not read that image", "Could not read that image") }
         }
     }
 
@@ -142,7 +142,7 @@ private fun LookEditor(
             delay(400)
             if (name.trim() != (model.settings.custom[k]?.name ?: "")) set { it.copy(name = name.trim()) }
         }
-        TermInput(name, { if (it.length <= SettingsStore.MAX_NAME) name = it }, Modifier.fillMaxWidth(),
+        TermInput(name, { if (it.length <= SettingsStore.MAX_NAME) { name = it } }, Modifier.fillMaxWidth(),
             prompt = Th.say("name", "Name"), placeholder = defaultName, size = 14.sp)
 
         // colour

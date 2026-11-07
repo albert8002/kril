@@ -659,7 +659,9 @@ fun AnswerList(v: RoundView) {
     val given = listOfNotNull(v.me.canonical, v.opp?.canonical).map { app.coredump.core.Norm.key(it) }.toSet()
     Spacer(Modifier.height(12.dp))
     val view = remember { BringIntoViewRequester() }
-    LaunchedEffect(RevealProbe.ping) { if (RevealProbe.ping > 0) runCatching { view.bringIntoView() } }
+    // only pings made while this reveal is on screen
+    val since = remember { RevealProbe.ping }
+    LaunchedEffect(RevealProbe.ping) { if (RevealProbe.ping > since) runCatching { view.bringIntoView() } }
     Panel(Th.say("FULL LIST · ${group(total)} ANSWERS", "All ${group(total)} answers"), Modifier.bringIntoViewRequester(view)) {
         if (!full) {
             TText(Th.say("top answers only (full list not received)", "Only the top answers (the full list did not arrive)"), size = 10.sp, color = C.dim)

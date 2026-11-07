@@ -309,7 +309,7 @@ private fun Badge(text: String, colors: List<Color>, tint: Color, heat: Int, tex
         val text0 = @Composable { BasicText(label, style = if (shadow != null) base.copy(shadow = shadow) else base, maxLines = if (big) 2 else 1) }
         if (icon != null && CustomLooks.icons[icon] != null) {
             // the player's own icon in front of the name
-            val d = with(LocalDensity.current) { (textSize * if (big) 1.25f else 1.45f).toDp() }
+            val d = with(LocalDensity.current) { (textSize * (if (big) 1.25f else 1.45f)).toDp() }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CustomIcon(icon, d, animated = animate)
                 Spacer(Modifier.width(if (big) 8.dp else 5.dp))
