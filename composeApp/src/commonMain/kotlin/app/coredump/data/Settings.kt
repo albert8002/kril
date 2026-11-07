@@ -46,6 +46,16 @@ data class Settings(
     val niche: Boolean = false,
     /** A prompt that was shown is not shown again for this many days (0 = no cooldown). */
     val cooldownDays: Int = 2,
+    /** Sound effects on/off and volume (0..1, dimensionless). */
+    val sound: Boolean = true,
+    val volume: Float = 0.7f,
+    /** Hidden setting: crude tier and rank names instead of the plain ones. */
+    val spicyNames: Boolean = false,
+    /** Fetch screen: categories to collect (empty = all) and lists per request (count). */
+    val fetchTopics: Set<String> = emptySet(),
+    val fetchCount: Int = 20,
+    /** Share collected lists with the other player during 1v1 (silently, in the background). */
+    val shareLists: Boolean = true,
 ) {
     fun gameConfig() = GameConfig(rounds, seconds, difficulty, topics, niche)
 }
@@ -82,6 +92,12 @@ object SettingsStore {
             palette = s("palette") ?: d.palette,
             niche = b("niche") ?: d.niche,
             cooldownDays = (i("cooldownDays") ?: d.cooldownDays).coerceIn(0, 30),
+            sound = b("sound") ?: d.sound,
+            volume = (o["volume"]?.jsonPrimitive?.floatOrNull ?: d.volume).coerceIn(0f, 1f),
+            spicyNames = b("spicyNames") ?: d.spicyNames,
+            fetchTopics = list("fetchTopics")?.filter { it in app.coredump.core.Topics.keys }?.toSet() ?: d.fetchTopics,
+            fetchCount = (i("fetchCount") ?: d.fetchCount).coerceIn(1, 200),
+            shareLists = b("shareLists") ?: d.shareLists,
         )
     }.getOrElse { Settings() }
 
@@ -106,6 +122,12 @@ object SettingsStore {
             put("palette", s.palette)
             put("niche", s.niche)
             put("cooldownDays", s.cooldownDays)
+            put("sound", s.sound)
+            put("volume", s.volume)
+            put("spicyNames", s.spicyNames)
+            put("fetchTopics", JsonArray(s.fetchTopics.map { JsonPrimitive(it) }))
+            put("fetchCount", s.fetchCount)
+            put("shareLists", s.shareLists)
         }
         runCatching { Platform.writeText(FILE, o.toString()) }
     }

@@ -26,3 +26,8 @@ expect fun shareText(text: String)
 
 /** Light or dark system bar icons to match the active palette. */
 expect fun setSystemBarsDark(dark: Boolean)
+
+/** Plays 16-bit mono PCM at [app.coredump.ui.Sfx.RATE] Hz; several sounds may overlap. gain: 0..1. Never throws. */
+expect object SoundOut {
+    fun play(pcm: ShortArray, gain: Float)
+}

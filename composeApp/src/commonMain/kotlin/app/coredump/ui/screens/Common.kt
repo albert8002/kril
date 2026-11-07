@@ -261,7 +261,7 @@ fun DiscardLink(model: AppModel, id: String?, modifier: Modifier = Modifier) {
             TLink(Th.say("undo", "Undo"), { model.undoDiscard(id) }, color = C.hot, size = 12.sp)
         }
     } else {
-        TLink(Th.say("rm this question (never ask again)", "Discard this question"), { model.discard(id) }, modifier, color = C.dim, size = 12.sp)
+        TLink(Th.say("rm this question (never ask again)", "Discard this question"), { app.coredump.ui.Sfx.play(app.coredump.ui.Cue.DISCARD); model.discard(id) }, modifier, color = C.dim, size = 12.sp)
     }
 }
 

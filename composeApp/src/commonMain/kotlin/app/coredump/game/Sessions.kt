@@ -10,6 +10,7 @@ import app.coredump.core.Spam
 import app.coredump.core.Tier
 import app.coredump.core.Views
 import app.coredump.data.History
+import app.coredump.data.AnswerCheck
 import app.coredump.data.QuestionBank
 import app.coredump.net.Msg
 import app.coredump.net.PeerLink
@@ -27,8 +28,11 @@ enum class Phase { WAITING, TYPING, LOCKED, REVEAL, OVER, ERROR }
 
 enum class AttemptStatus { REJECTED, VERIFYING }
 
-/** One rejected (or still being checked) answer in the current round. spam: looked like key-mashing (cost points). */
-data class Attempt(val text: String, val status: AttemptStatus, val suggestion: String?, val spam: Boolean = false)
+/**
+ * One rejected (or still being checked) answer in the current round. spam: looked like key-mashing (cost points).
+ * offline: the online check could not be reached (the same answer may be sent again).
+ */
+data class Attempt(val text: String, val status: AttemptStatus, val suggestion: String?, val spam: Boolean = false, val offline: Boolean = false)
 
 /** Autocorrect wants to submit [answer] for what was [typed]; the player accepts or asks for a search instead. */
 data class Confirm(val typed: String, val answer: String)
@@ -98,32 +102,55 @@ class Arbiter(private val bank: QuestionBank?, private val maxEdit: Int, private
         class Miss(val suggestion: String?, val canVerify: Boolean, val spam: Boolean) : Local
     }
 
-    /** [fuzzy] = false: exact forms only (the player rejected the autocorrect and wants a search). */
+    /** Outcome of the online search. */
+    sealed interface Remote {
+        class Found(val j: Judgement) : Remote
+        data object Missing : Remote
+        /** No connection / the services did not answer: nothing learned, the player may send it again. */
+        data object Unreachable : Remote
+    }
+
+    /**
+     * [fuzzy] = false: exact forms only (the player rejected the autocorrect and wants a search).
+     * Every miss that is not key-mashing is searched online (when allowed): lists without a class pattern still
+     * get their other names resolved (redirects, aliases), lists with one also accept unlisted members.
+     */
     fun local(p: Prompt, text: String, fuzzy: Boolean = true): Local {
         val j = Judge.judge(p, text, if (fuzzy) maxEdit else 0)
         if (j.tier.isValid) return if (j.distance > 0) Local.Close(j) else Local.Hit(j)
         val sug = if (fuzzy) p.index.suggest(text)?.let { p.entries[it.entry].name } else null
         val spam = sug == null && Spam.isGibberish(text)
-        return Local.Miss(sug, !spam && online && bank != null && p.check != null, spam)
+        return Local.Miss(sug, !spam && online && bank != null, spam)
     }
 
-    suspend fun remote(p: Prompt, text: String): Judgement? =
-        bank?.verify(p, text)?.let { Judge.verified(text, it.label, it.links, p) }
+    suspend fun remote(p: Prompt, text: String): Remote {
+        val b = bank ?: return Remote.Missing
+        return when (val r = b.verify(p, text)) {
+            is AnswerCheck.Outcome.Listed -> {
+                val j = Judge.judge(p, r.name, 0)
+                if (j.tier.isValid) Remote.Found(Judgement(text, j.entry, j.tier, 0)) else Remote.Missing
+            }
+            is AnswerCheck.Outcome.Found -> Remote.Found(Judge.verified(text, r.label, r.links, p))
+            AnswerCheck.Outcome.Missing -> Remote.Missing
+            AnswerCheck.Outcome.Unreachable -> Remote.Unreachable
+        }
+    }
 }
 
 private const val GRACE_MS = 2_500L
 private const val VERIFY_SLACK_MS = 6_500L
 
-private fun List<Attempt>.upsert(text: String, status: AttemptStatus, sug: String?, spam: Boolean = false): List<Attempt> {
+private fun List<Attempt>.upsert(text: String, status: AttemptStatus, sug: String?, spam: Boolean = false, offline: Boolean = false): List<Attempt> {
     val k = Norm.key(text)
     val i = indexOfFirst { Norm.key(it.text) == k }
-    val a = Attempt(text, status, sug, spam)
+    val a = Attempt(text, status, sug, spam, offline)
     return if (i < 0) this + a else toMutableList().also { it[i] = a }
 }
 
+/** Already tried (an answer whose check could not reach the internet may be sent again). */
 private fun List<Attempt>.has(text: String): Boolean {
     val k = Norm.key(text)
-    return any { Norm.key(it.text) == k }
+    return any { Norm.key(it.text) == k && !it.offline }
 }
 
 private fun timeoutJudgement(attempts: List<Attempt>) =
@@ -227,9 +254,9 @@ class SoloSession(
                 pending++
                 val round = s.round
                 scope.launch {
-                    val j = arbiter.remote(p, t)
+                    val res = arbiter.remote(p, t)
                     pending--
-                    onRemote(round, t, j, r.suggestion)
+                    onRemote(round, t, res, r.suggestion)
                 }
             } else {
                 _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, r.suggestion), missTick = it.missTick + 1) }
@@ -237,11 +264,12 @@ class SoloSession(
         }
     }
 
-    private fun onRemote(round: Int, t: String, j: Judgement?, sug: String?) {
+    private fun onRemote(round: Int, t: String, res: Arbiter.Remote, sug: String?) {
         val s = _s.value
         if (s.round != round || s.phase != Phase.TYPING) return
-        if (j != null) { finish(j); return }
-        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, sug), missTick = it.missTick + 1) }
+        if (res is Arbiter.Remote.Found) { finish(res.j); return }
+        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, sug, offline = res == Arbiter.Remote.Unreachable),
+            missTick = it.missTick + 1) }
         if (expired && pending == 0) finish(timeoutJudgement(_s.value.attempts))
     }
 
@@ -419,11 +447,12 @@ class HostSession(
                 myPending++
                 val round = s.round
                 scope.launch {
-                    val j = arbiter.remote(p, t)
+                    val res = arbiter.remote(p, t)
                     myPending--
                     if (_s.value.round != round || myJ != null) return@launch
-                    if (j != null) lockMine(j) else {
-                        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, r.suggestion), missTick = it.missTick + 1) }
+                    if (res is Arbiter.Remote.Found) lockMine(res.j) else {
+                        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, r.suggestion,
+                            offline = res == Arbiter.Remote.Unreachable), missTick = it.missTick + 1) }
                         if (myExpired && myPending == 0) lockMine(timeoutJudgement(_s.value.attempts))
                     }
                 }
@@ -447,9 +476,10 @@ class HostSession(
             } else if (r.canVerify) {
                 scope.launch {
                     link.send(Msg.Verdict(m.i, t, "verifying", r.suggestion))
-                    val j = arbiter.remote(p, t)
+                    val res = arbiter.remote(p, t)
                     if (_s.value.round != m.i || oppJ != null) return@launch
-                    if (j != null) acceptGuest(j, m) else link.send(Msg.Verdict(m.i, t, "miss", r.suggestion))
+                    if (res is Arbiter.Remote.Found) acceptGuest(res.j, m)
+                    else link.send(Msg.Verdict(m.i, t, if (res == Arbiter.Remote.Unreachable) "offline" else "miss", r.suggestion))
                 }
             } else scope.launch { link.send(Msg.Verdict(m.i, t, "miss", r.suggestion)) }
         }
@@ -606,6 +636,8 @@ class GuestSession(
             }
             "spam" -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.REJECTED, null, spam = true),
                 missTick = it.missTick + 1, spam = it.spam + 1) }
+            "offline" -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.REJECTED, v.suggestion, offline = true),
+                missTick = it.missTick + 1) }
             else -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.REJECTED, v.suggestion), missTick = it.missTick + 1) }
         }
     }

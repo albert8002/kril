@@ -63,7 +63,13 @@ object SelfTest {
                         s.skip()
                     } else {
                         val e = p.entries.firstOrNull { it.name.length >= 7 } ?: p.entries[Random.nextInt(p.entries.size)]
-                        if (round == 0) shot("play_${style.name.lowercase()}")
+                        if (round == 0) {
+                            shot("play_${style.name.lowercase()}")
+                            // the theme's typing / sending touches around the answer field
+                            repeat(4) { model.fx.key(); delay(70) }
+                            model.fx.sent(); delay(280)
+                            shot("touch_${style.name.lowercase()}")
+                        }
                         s.submit(typo(e.name))
                         delay(500)
                         if (s.state.value.confirm != null) {
@@ -85,6 +91,8 @@ object SelfTest {
                 model.go(Screen.Browse); delay(1000)
                 model.go(Screen.Config); delay(1000)
                 shot("config_${style.name.lowercase()}")
+                model.go(Screen.Fetch); delay(1000)
+                shot("fetch_${style.name.lowercase()}")
             }
             for ((style, pal) in extra) {
                 model.setTheme(style, pal)
@@ -112,13 +120,33 @@ object SelfTest {
             }
             log("stress done")
 
-            // one small collection batch (network)
-            model.bank.requestMore(4)
+            // answer search on the device (real network): an alias, a typo-free unlisted member, a non-member
+            for ((want, input) in listOf("Name a dog breed" to "Labrador", "Name a dog breed" to "Kai Ken", "Name a dog breed" to "banana",
+                    "Name a cheese" to "Tete de Moine", "Name a cheese" to "toaster")) {
+                val p = model.bank.all().firstOrNull { it.text == want } ?: continue
+                val t0 = kotlin.time.TimeSource.Monotonic.markNow()
+                val local = Judge.judge(p, input, 2)
+                val out = if (local.tier.isValid) "LOCAL(${local.entry?.name})" else when (val r = model.bank.verify(p, input)) {
+                    is app.coredump.data.AnswerCheck.Outcome.Listed -> "LISTED(${r.name})"
+                    is app.coredump.data.AnswerCheck.Outcome.Found -> "FOUND(${r.label}, ${r.links})"
+                    app.coredump.data.AnswerCheck.Outcome.Missing -> "MISSING"
+                    app.coredump.data.AnswerCheck.Outcome.Unreachable -> "UNREACHABLE"
+                }
+                log("VERIFY '${p.text}' '$input' -> $out (${t0.elapsedNow().inWholeMilliseconds}ms)")
+            }
+
+            // one small collection batch for chosen categories (network), with the fetch screen open
+            model.setTheme(Style.TERMINAL, "amber")
+            model.go(Screen.Fetch); delay(600)
+            model.bank.requestMore(4, setOf("TV", "GAMING"))
             var w = 0
-            delay(1000)
+            delay(2500)
+            shot("fetch_running")
             while (model.bank.state.value.collect.running && w < 150_000) { delay(1000); w += 1000 }
             val c = model.bank.state.value.collect
-            log("COLLECT added=${c.added} library=${c.library} msg=${c.message}")
+            log("COLLECT added=${c.added} library=${c.library} failed=${c.failed} topics=${c.topics} msg=${c.message}")
+            delay(800)
+            shot("fetch_done")
 
             // discard: gone from the bank, back after undo (built-in list, then a collected one if any)
             for (id in listOfNotNull(model.bank.all().firstOrNull { it.source == app.coredump.core.SourceKind.BUNDLED }?.id,

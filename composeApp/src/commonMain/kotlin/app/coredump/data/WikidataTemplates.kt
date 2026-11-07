@@ -26,6 +26,7 @@ object WikiNet {
     const val USER_AGENT = "CoreDumpTrivia/$VERSION ($CONTACT)"
     const val WDQS = "https://query.wikidata.org/sparql"
     const val WP_API = "https://en.wikipedia.org/w/api.php"
+    const val WD_API = "https://www.wikidata.org/w/api.php"
 }
 
 class WikidataTemplate(

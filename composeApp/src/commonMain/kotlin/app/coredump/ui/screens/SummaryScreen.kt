@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.coredump.AppModel
+import kotlinx.coroutines.delay
 import app.coredump.Screen
 import app.coredump.core.Rank
 import app.coredump.core.RoundView
@@ -52,6 +54,10 @@ import app.coredump.ui.tierColor
 
 @Composable
 fun SummaryScreen(model: AppModel, session: MatchSession) {
+    LaunchedEffect(session) {
+        delay(350)
+        app.coredump.ui.Sfx.play(app.coredump.ui.Cue.RANK, totalsOf(session.state.value).rank.ordinal)
+    }
     when (Th.style) {
         Style.TERMINAL -> TerminalSummary(model, session)
         Style.NEON -> ArcadeSummary(model, session)

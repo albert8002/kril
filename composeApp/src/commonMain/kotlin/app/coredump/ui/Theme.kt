@@ -299,6 +299,16 @@ class Fx {
     fun glitch() { glitchTick++ }
     fun shake(power: Float = 1f) { shakePower = power; shakeTick++ }
     fun flash(color: Color) { flashColor = color; flashTick++ }
+
+    /** Typing / sending in the answer field (drives the per-theme touches around the field). */
+    var keyTick by mutableIntStateOf(0)
+    var sendTick by mutableIntStateOf(0)
+    /** Answer field bounds in root coordinates (px); Rect.Zero = no field on screen. */
+    var field by mutableStateOf(androidx.compose.ui.geometry.Rect.Zero)
+    /** Field bounds when the last answer was sent (the field may already be gone when the touch starts). */
+    var sentField: androidx.compose.ui.geometry.Rect = androidx.compose.ui.geometry.Rect.Zero
+    fun key() { keyTick++ }
+    fun sent() { sentField = field; sendTick++ }
 }
 
 /** Visual options from settings. glow: multiplier 0..1.5 (dimensionless). */

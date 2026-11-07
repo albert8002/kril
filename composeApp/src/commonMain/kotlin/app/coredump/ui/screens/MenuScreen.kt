@@ -138,10 +138,10 @@ fun LibraryFooter(model: AppModel, sources: Boolean = true) {
             )
         }
     }
-    if (!col.running) {
-        Spacer(Modifier.height(10.dp))
-        TButton(Th.say("FETCH MORE LISTS", "Fetch more lists"), { model.bank.requestMore() }, Modifier.fillMaxWidth(), textSize = 12.sp)
-    }
+    if (col.running) FetchStatusLine(model)
+    Spacer(Modifier.height(10.dp))
+    TButton(if (col.running) Th.say("FETCH STATUS", "Fetch status") else Th.say("FETCH MORE LISTS", "Fetch more lists"),
+        { model.go(Screen.Fetch) }, Modifier.fillMaxWidth(), textSize = 12.sp)
     if (!sources) return
     Spacer(Modifier.height(10.dp))
     for (k in SourceKind.entries) {

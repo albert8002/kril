@@ -148,9 +148,18 @@ object Topics {
 
     private fun has(w: String, phrase: String): Boolean = w.contains(" $phrase ") || w.contains(" ${phrase}s ")
 
+    /** Collected Wikidata lists ("wx.<group>.<name>"): the group says the category. */
+    private val poolGroup = mapOf(
+        "tv" to "TV", "mv" to "MOVIES", "pc" to "POP CULTURE", "mu" to "MUSIC", "gm" to "GAMING", "tc" to "TECH",
+        "bk" to "BOOKS & ART", "fd" to "FOOD & DRINK", "ge" to "GEOGRAPHY", "lm" to "LANDMARKS", "hi" to "HISTORY",
+        "sp" to "SPORT", "an2" to "ANIMALS", "na" to "NATURE", "sc" to "SCIENCE", "bd" to "BODY", "my" to "MYTH",
+        "ev" to "EVERYDAY", "br" to "BRANDS", "ho" to "HORROR", "wo" to "WORDS",
+    )
+
     /** Category of a list. [raw] is the category the source gave it (old names are mapped). */
     fun classify(id: String, text: String, raw: String): String {
         byId[id]?.let { return it }
+        if (id.startsWith("wx.")) poolGroup[id.split('.').getOrElse(1) { "" }]?.let { return it }
         if (id.startsWith("wf.film.")) return "MOVIES"
         if (id.startsWith("wf.gamegenre")) return "GAMING"
         // a source that already uses the new categories (new packs) is trusted; old names go through the rules

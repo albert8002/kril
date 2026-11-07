@@ -73,8 +73,73 @@ fun main(args: Array<String>) {
 
     log("UA: ${WikiNet.USER_AGENT}  templates: ${WikidataTemplates.all.size} wikidata, ${WikipediaTemplates.all.size} wikipedia")
 
+    // ---- answer search self-test: the exact requests and parsing the app uses for answers not in a list
+    fun searchSelfTest() {
+        fun api(base: String, params: List<Pair<String, String>>): String? = runCatching {
+            get(base + "?" + params.joinToString("&") { "${enc(it.first)}=${enc(it.second)}" })
+        }.onFailure { log("SEARCH api failed: ${it.message?.take(100)}") }.getOrNull()
+        fun prompt(id: String, text: String, where: String, limit: Int): Prompt? = runCatching {
+            val t = app.coredump.data.WikidataTemplate(id, text, "PEOPLE", where, 0, limit, 0)
+            WikidataTemplates.parse(t, get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}",
+                "application/sparql-results+json"))
+        }.onFailure { log("SEARCH list $id failed: ${it.message?.take(100)}") }.getOrNull()
+        fun outcome(p: Prompt, input: String): String {
+            val term = input.trim().take(80)
+            val es = api(WikiNet.WD_API, app.coredump.data.AnswerCheck.entityParams(term))
+            val tl = api(WikiNet.WP_API, app.coredump.data.AnswerCheck.titleParams(term))
+            val sr = api(WikiNet.WP_API, app.coredump.data.AnswerCheck.searchParams(term))
+            if (es == null && tl == null && sr == null) return "UNREACHABLE"
+            val cands = app.coredump.data.AnswerCheck.candidates(term, p.people, es, tl, sr)
+            app.coredump.data.AnswerCheck.listed(p, cands)?.let { return "LISTED(${it.name})" }
+            val where = p.check ?: return "MISSING(no class)"
+            val qids = app.coredump.data.AnswerCheck.qids(cands)
+            if (qids.isEmpty()) return "MISSING(no candidates)"
+            val body = runCatching {
+                postForm(WikiNet.WDQS, mapOf("query" to app.coredump.data.AnswerCheck.memberQuery(where, qids), "format" to "json"))
+            }.getOrElse { return "UNREACHABLE(member ${it.message?.take(60)})" }
+            val m = app.coredump.data.AnswerCheck.parseMember(body) ?: return "MISSING(${qids.size} checked)"
+            return "FOUND(${m.label ?: m.qid}, ${m.links} links)"
+        }
+        // small lists (limit) so that well-known answers can also be missing from the list and need the class check
+        val cases = listOf(
+            Triple(prompt("t.pres", "Name a US president", "?item wdt:P39 wd:Q11696 .", 60),
+                listOf("JFK", "Honest Abe", "Obama", "Paris Hilton"), listOf("LISTED", "LISTED", "LISTED", "MISSING")),
+            Triple(prompt("t.dog", "Name a dog breed", "?item wdt:P31 wd:Q39367 .", 40),
+                listOf("Kai Ken", "banana", "Labrador", "Shiba Inu"), listOf("ANY", "MISSING", "ANY", "ANY")),
+            Triple(prompt("t.cheese", "Name a cheese", "?item wdt:P31/wdt:P279* wd:Q10943 .", 40),
+                listOf("Tete de Moine", "Raclette", "toaster"), listOf("ANY", "ANY", "MISSING")),
+            Triple(prompt("t.bball", "Name a famous basketball player", "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q3665646 .", 300),
+                listOf("Jordan", "Shaq", "Lebron"), listOf("LISTED", "LISTED", "LISTED")),
+            Triple(prompt("t.frcity", "Name a city in France", "?item wdt:P31 wd:Q484170 ; wdt:P17 wd:Q142 .", 30),
+                listOf("Marseilles", "Pezenas", "Paris Hilton", "Carcassonne"), listOf("ANY", "ANY", "MISSING", "ANY")),
+        )
+        var pass = 0
+        var fail = 0
+        for ((p, inputs, want) in cases) {
+            if (p == null) { fail += inputs.size; continue }
+            log("SEARCH list ${p.id} '${p.text}' size=${p.size} people=${p.people} check=${p.check != null}")
+            for ((i, input) in inputs.withIndex()) {
+                val t0 = System.currentTimeMillis()
+                // the app first tries its own list (typos, aliases); only a miss goes online
+                val local = app.coredump.core.Judge.judge(p, input, 0)
+                val got = if (local.tier.isValid) "LOCAL(${local.entry?.name})" else outcome(p, input)
+                val w = want[i]
+                val ok = when (w) {
+                    "ANY" -> got.startsWith("LOCAL") || got.startsWith("LISTED") || got.startsWith("FOUND")
+                    "LISTED" -> got.startsWith("LOCAL") || got.startsWith("LISTED")
+                    else -> got.startsWith(w)
+                }
+                if (ok) pass++ else fail++
+                log("SEARCH ${if (ok) "PASS" else "FAIL"} ${p.id.padEnd(9)} ${input.padEnd(14)} -> $got  (want $w, ${System.currentTimeMillis() - t0}ms)")
+                Thread.sleep(250)
+            }
+        }
+        log("SEARCH SUMMARY pass=$pass fail=$fail")
+    }
+
     // ---- "--pool-check": query every on-device pool template once (CI review of new templates), nothing written
     if (args.firstOrNull() == "--pool-check") {
+        runCatching { searchSelfTest() }.onFailure { log("SEARCH crashed: ${it::class.simpleName}: ${it.message?.take(120)}") }
         val only = args.getOrNull(1)?.split(',')?.filter { it.isNotBlank() }
         val list = app.coredump.data.WikidataPool.all.filter { only == null || only.any { o -> it.id.startsWith(o) } }
         log("POOL checking ${list.size} templates")

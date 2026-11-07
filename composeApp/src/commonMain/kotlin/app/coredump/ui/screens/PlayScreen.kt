@@ -77,6 +77,12 @@ import app.coredump.ui.RewardBurst
 import app.coredump.ui.RollingNumber
 import app.coredump.ui.Spinner
 import app.coredump.ui.Style
+import app.coredump.ui.Sfx
+import app.coredump.ui.Cue
+import app.coredump.ui.LocalFx
+import app.coredump.ui.ThemeTouches
+import app.coredump.ui.reportField
+import androidx.compose.runtime.DisposableEffect
 import app.coredump.ui.TButton
 import app.coredump.ui.TLink
 import app.coredump.ui.TText
@@ -105,10 +111,13 @@ class AnswerState {
     var onSubmit: (String) -> Unit = {}
     /** Answer to an autocorrect question: true = take the suggestion, false = search what was typed. */
     var onConfirm: (Boolean) -> Unit = {}
+    /** Sound + theme touch when something is sent. */
+    var onSent: () -> Unit = {}
 
     fun send(v: String = text) {
         val t = v.trim()
         if (t.isEmpty()) return
+        onSent()
         onSubmit(t)
         text = ""
     }
@@ -117,8 +126,10 @@ class AnswerState {
 @Composable
 fun rememberAnswer(st: MatchState, onSubmit: (String) -> Unit, onConfirm: (Boolean) -> Unit = {}): AnswerState {
     val a = remember(st.round) { AnswerState() }
+    val fx = LocalFx.current
     a.onSubmit = onSubmit
     a.onConfirm = onConfirm
+    a.onSent = { fx.sent(); Sfx.play(Cue.SUBMIT) }
     val motion = !LocalLook.current.reduceMotion
     LaunchedEffect(st.round, st.phase) { if (st.phase == Phase.TYPING) { delay(250); runCatching { a.focus.requestFocus() } } }
     LaunchedEffect(st.missTick) {
@@ -156,10 +167,18 @@ fun isRunning(st: MatchState) = (st.phase == Phase.TYPING || st.phase == Phase.L
 /** Themed answer field bound to [a]. */
 @Composable
 fun AnswerField(a: AnswerState, st: MatchState, modifier: Modifier = Modifier, size: TextUnit = 18.sp, prompt: String = "$") {
+    val fx = LocalFx.current
+    // the field is gone (reveal etc.): no more touches around it
+    DisposableEffect(Unit) { onDispose { fx.field = androidx.compose.ui.geometry.Rect.Zero } }
     TermInput(
         value = a.text,
-        onValueChange = { if (it.length <= 60) a.text = it },
-        modifier = modifier,
+        onValueChange = {
+            if (it.length <= 60) {
+                if (it.length > a.text.length) { fx.key(); Sfx.play(Cue.KEY) }
+                a.text = it
+            }
+        },
+        modifier = modifier.reportField(fx),
         prompt = prompt,
         placeholder = if (st.attempts.isEmpty()) Th.say("type an answer…", "Type an answer") else Th.say("try again…", "Try again"),
         onSubmit = { a.send() },
@@ -412,14 +431,33 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
         if (st.phase == Phase.OVER) { delay(400); model.finished(session) }
     }
     LaunchedEffect(st.missTick) {
-        if (st.missTick > 0) { fx.glitch(); haptic(false) }
+        if (st.missTick > 0) {
+            fx.glitch(); haptic(false)
+            Sfx.play(if (st.attempts.lastOrNull()?.offline == true) Cue.OFFLINE else Cue.MISS)
+        }
     }
+    // an answer went off to be searched online
+    val checking = st.attempts.count { it.status == app.coredump.game.AttemptStatus.VERIFYING }
+    LaunchedEffect(checking) { if (checking > 0) Sfx.play(Cue.CHECK) }
     // autocorrect question: close the keyboard so "Yes" / "No, search" are visible
-    LaunchedEffect(st.confirm) { if (st.confirm != null) { keyboard?.hide(); haptic(false) } }
+    LaunchedEffect(st.confirm) { if (st.confirm != null) { keyboard?.hide(); haptic(false); Sfx.play(Cue.CONFIRM) } }
+    // last five seconds: one tick per second
+    LaunchedEffect(st.round, st.phase, st.paused, st.startedAt, st.seconds) {
+        if (st.phase != Phase.TYPING || st.paused || st.seconds <= 0) return@LaunchedEffect
+        val end = st.startedAt + st.seconds * 1000L
+        while (true) {
+            val left = end - Platform.epochMillis()
+            if (left <= 0) break
+            val sec = ((left + 999) / 1000).toInt()
+            if (sec <= 5) Sfx.play(Cue.TICK)
+            delay((left - (sec - 1) * 1000L).coerceAtLeast(30))
+        }
+    }
     var rain by remember { mutableStateOf(false) }
     LaunchedEffect(st.reveal) {
         val v = st.reveal ?: return@LaunchedEffect
         keyboard?.hide()
+        Sfx.hit(v.me.tier)
         when (v.me.tier) {
             Tier.ZERO_DAY -> { fx.flash(tierColor(Tier.ZERO_DAY)); fx.shake(1.3f); haptic(true); delay(110); haptic(true); delay(110); haptic(true); rain = true; delay(1800); rain = false }
             Tier.HEISENBUG -> { fx.flash(tierColor(Tier.HEISENBUG).copy(alpha = 0.5f)); fx.shake(0.45f); haptic(true); delay(120); haptic(true) }
@@ -447,6 +485,7 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
             Style.DESKTOP -> DesktopPlay(model, session, st, a)
             Style.ORACLE -> OraclePlay(model, session, st, a)
         }
+        ThemeTouches(fx, Modifier.fillMaxSize())
         Celebrate(Modifier.fillMaxSize(), rain)
         st.reveal?.let { v -> if (st.phase == Phase.REVEAL) RewardBurst(v.me.tier, v.me.points.coerceAtLeast(0), v.index) }
         if (st.paused && !model.confirmQuit) PauseOverlay({ session.resume() }, { model.confirmQuit = true })

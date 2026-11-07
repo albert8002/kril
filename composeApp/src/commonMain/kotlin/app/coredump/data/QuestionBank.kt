@@ -19,6 +19,7 @@ import io.ktor.http.isSuccess
 import io.ktor.http.parameters
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -68,6 +69,11 @@ data class CollectState(
     val library: Int = 0,
     val lastAt: Long = 0L,
     val message: String = "",
+    /** Categories of the running / last request (empty = all). failed: lists that could not be fetched (count). */
+    val topics: Set<String> = emptySet(),
+    val failed: Int = 0,
+    /** Lists received from the other player during 1v1 (count, since start). */
+    val shared: Int = 0,
 )
 
 /** prompts / answers: totals across all sources (counts). */
@@ -149,6 +155,12 @@ class QuestionBank(private val scope: CoroutineScope) {
 
             val lib = guarded("library", 0) { loadLibrary() }
             log(if (lib > 0) "[ OK ] /var/lib: $lib collected lists" else "[ -- ] /var/lib: no collected lists yet")
+            val shared = guarded("shared", 0) {
+                val ps = readShared().filter { isShareable(it.id) && it.id !in Discards.ids && get(it.id) == null }
+                putAll(ps)
+                ps.size
+            }
+            if (shared > 0) log("[ OK ] /var/shared: $shared lists from friends")
 
             for (kind in listOf(SourceKind.WIKIPEDIA, SourceKind.REMOTE)) {
                 val cached = guarded("cache", emptyList()) {
@@ -198,9 +210,31 @@ class QuestionBank(private val scope: CoroutineScope) {
         }
     }
 
-    /** "FETCH MORE" button: collect a batch now, in the background. */
-    fun requestMore(n: Int = DAILY_BATCH) {
-        scope.launch(Dispatchers.Default) { guarded("collect", Unit) { collectNow(n, auto = false) } }
+    /** "FETCH MORE" button: collect [n] lists now, in the background; [topics] = categories to take them from (empty = all). */
+    fun requestMore(n: Int = DAILY_BATCH, topics: Set<String> = emptySet()) {
+        scope.launch(Dispatchers.Default) { guarded("collect", Unit) { collectNow(n, auto = false, topics = topics) } }
+    }
+
+    private var stopAsked = false
+
+    /** Stops a running fetch after the lists already in flight. */
+    fun stopCollect() { stopAsked = true }
+
+    /** Category of a collectable template (same rule the finished prompt will get). */
+    private fun topicOf(t: WikidataTemplate): String = app.coredump.core.Topics.classify(t.id, t.prompt, t.topic)
+
+    /**
+     * Lists that can still be fetched, per category key (count): not on the device, not discarded, not waiting
+     * after a failure. Niche templates are counted only when [niche] is on.
+     */
+    fun available(niche: Boolean): Map<String, Int> {
+        val meta = readMeta()
+        val now = Platform.epochMillis()
+        val have = snapshot.mapTo(HashSet()) { it.id }.apply { addAll(Discards.ids) }
+        return WikidataPool.all.asSequence()
+            .filter { it.id !in have && (meta.skip[it.id] ?: 0L) <= now }
+            .filter { niche || !app.coredump.core.Topics.isNiche(it.id, it.prompt) }
+            .groupingBy { topicOf(it) }.eachCount()
     }
 
     fun purgeCaches() {
@@ -208,6 +242,7 @@ class QuestionBank(private val scope: CoroutineScope) {
         val meta = readMeta()
         for (f in meta.files) Platform.delete(f)
         Platform.delete(META)
+        Platform.delete(SHARED)
         IndexCache.clear()
     }
 
@@ -331,6 +366,10 @@ class QuestionBank(private val scope: CoroutineScope) {
                 if (keep.isEmpty()) Platform.delete(f) else { Platform.writeText(f, PackCodec.encodeRanked(keep, Platform.epochMillis())); files += f }
             }
             if (files.size != meta.files.size) writeMeta(Meta(files, meta.next, meta.cursor, meta.lastAuto, meta.lastAt, meta.skip))
+            sharedLock.withLock {
+                val sh = readShared()
+                if (sh.any { it.id == id }) Platform.writeText(SHARED, PackCodec.encodeRanked(sh.filter { it.id != id }, Platform.epochMillis()))
+            }
             for (k in listOf(SourceKind.WIKIPEDIA, SourceKind.REMOTE, SourceKind.WIKIDATA)) {
                 val c = readCache(k)
                 if (c.any { it.id == id }) writeCache(k, c.filter { it.id != id }).also { if (c.size == 1) Platform.delete(cacheFile(k)) }
@@ -363,8 +402,9 @@ class QuestionBank(private val scope: CoroutineScope) {
      * Fetches up to [n] lists the device has not got yet. Lists that come back too small are skipped for
      * 60 days; network failures for 2 days. Stops early when the service is clearly unreachable.
      */
-    private suspend fun collectNow(n: Int, auto: Boolean) {
+    private suspend fun collectNow(n: Int, auto: Boolean, topics: Set<String> = emptySet()) {
         if (!collectLock.tryLock()) return
+        stopAsked = false
         try {
             var meta = readMeta()
             val pool = WikidataPool.order
@@ -377,13 +417,16 @@ class QuestionBank(private val scope: CoroutineScope) {
                 val t = pool[cursor.mod(pool.size)]
                 cursor++; scanned++
                 if (t.id in have || (meta.skip[t.id] ?: 0L) > now) continue
+                if (topics.isNotEmpty() && topicOf(t) !in topics) continue
                 picked += t
             }
+            // a category request does not move the daily cursor
+            if (topics.isNotEmpty()) cursor = meta.cursor
             if (picked.isEmpty()) {
-                collectStatus { it.copy(running = false, message = "nothing new left to collect right now") }
+                collectStatus { it.copy(running = false, topics = topics, message = "nothing new left to collect right now") }
                 return
             }
-            collectStatus { it.copy(running = true, done = 0, total = picked.size, added = 0, message = "") }
+            collectStatus { it.copy(running = true, done = 0, total = picked.size, added = 0, failed = 0, topics = topics, message = "") }
             status(SourceKind.WIKIDATA) { it.copy(state = SyncState.SYNCING, done = 0, total = picked.size, detail = "") }
 
             val got = ArrayList<Prompt>()
@@ -398,7 +441,7 @@ class QuestionBank(private val scope: CoroutineScope) {
                 repeat(PARALLEL) {
                     launch {
                         while (true) {
-                            val t = mx.withLock { if (stop || nextIndex >= picked.size) null else picked[nextIndex++] } ?: break
+                            val t = mx.withLock { if (stop || stopAsked || nextIndex >= picked.size) null else picked[nextIndex++] } ?: break
                             var fetched: Pair<Prompt, Int>? = null
                             var err: Throwable? = null
                             try { fetched = fetchWikidata(t) } catch (e: CancellationException) { throw e } catch (e: Throwable) { err = e }
@@ -412,7 +455,7 @@ class QuestionBank(private val scope: CoroutineScope) {
                                 if (got.isEmpty() && failures >= 4) stop = true
                             }
                             if (p != null) putAll(listOf(p))
-                            collectStatus { it.copy(done = it.done + 1, added = got.size) }
+                            collectStatus { it.copy(done = it.done + 1, added = got.size, failed = failures) }
                             status(SourceKind.WIKIDATA) { it.copy(done = it.done + 1) }
                             delay(250)
                         }
@@ -443,6 +486,8 @@ class QuestionBank(private val scope: CoroutineScope) {
 
             val libCount = snapshot.count { it.id.startsWith("wx.") }
             val msg = when {
+                stopAsked && got.isNotEmpty() -> "stopped · +${got.size} new list${if (got.size == 1) "" else "s"}"
+                stopAsked -> "stopped"
                 got.isNotEmpty() -> "+${got.size} new list${if (got.size == 1) "" else "s"}"
                 failures > 0 -> "offline? ${lastErr?.take(60) ?: ""}"
                 else -> "no new lists in this batch"
@@ -454,6 +499,40 @@ class QuestionBank(private val scope: CoroutineScope) {
         } finally {
             collectStatus { if (it.running) it.copy(running = false) else it }
             collectLock.unlock()
+        }
+    }
+
+    // ---------------- lists received from the other player in 1v1 ----------------
+
+    private val poolById by lazy { WikidataPool.all.associateBy { it.id } }
+    private val wpById by lazy { WikipediaTemplates.all.associateBy { it.id } }
+    private val sharedLock = Mutex()
+
+    /** Lists that may be swapped in 1v1: collected Wikidata lists and Wikipedia lists this app version knows. */
+    fun isShareable(id: String): Boolean = id in poolById || id in wpById
+
+    private fun readShared(): List<Prompt> = runCatching {
+        PackCodec.parse(Platform.readText(SHARED) ?: return emptyList(), SourceKind.WIKIDATA)
+    }.getOrElse { emptyList() }
+
+    /**
+     * A list received from the other player ([text]: ranked pack JSON). Rebuilt from this app's own template (prompt,
+     * category, check pattern), so only the ranked answers come from the peer; kept in [SHARED] (newest 400).
+     */
+    suspend fun addShared(id: String, text: String): Unit = withContext(Dispatchers.Default) {
+        guarded("shared", Unit) {
+            if (get(id) != null || id in Discards.ids) return@guarded
+            val p = PackCodec.parse(text, SourceKind.WIKIDATA).firstOrNull { it.id == id } ?: return@guarded
+            if (p.size < 5 || p.size > 3000) return@guarded
+            val fixed = poolById[id]?.let { t -> Prompt(id, t.prompt, t.topic, SourceKind.WIKIDATA, p.entries, t.where, p.cuts) }
+                ?: wpById[id]?.let { t -> Prompt(id, t.prompt, t.topic, SourceKind.WIKIPEDIA, p.entries, null, p.cuts) }
+                ?: return@guarded
+            putAll(listOf(fixed))
+            sharedLock.withLock {
+                val cur = readShared().filter { it.id != id && it.id !in Discards.ids }
+                Platform.writeText(SHARED, PackCodec.encodeRanked((cur + fixed).takeLast(400), Platform.epochMillis()))
+            }
+            collectStatus { it.copy(shared = it.shared + 1, library = snapshot.count { q -> q.id.startsWith("wx.") }) }
         }
     }
 
@@ -629,40 +708,73 @@ class QuestionBank(private val scope: CoroutineScope) {
         return fresh + readCache(kind).filter { it.id !in ids }
     }
 
-    // ---------------- verification of unlisted answers ----------------
+    // ---------------- online search for answers that are not in the list ----------------
 
     private val verifyLock = Mutex()
 
     /**
-     * Checks an answer that is not in the list against Wikidata (one SPARQL request, ≤ 6 s).
-     * Returns null when the prompt has no class pattern, the answer is not found, or anything fails.
+     * Looks an answer up online (see [AnswerCheck]): another name of a list entry, or (lists with a Wikidata class)
+     * an unlisted member. Outcomes are cached on the device; failed lookups are not, so the player can retry.
      */
-    /** Online check of an answer that is not in the list (Wikidata). Results are cached on the device. */
-    suspend fun verify(prompt: Prompt, input: String): WikidataTemplates.Verified? {
-        val where = prompt.check ?: return null
-        val key = prompt.id + "|" + app.coredump.core.Norm.compact(app.coredump.core.Norm.key(input))
-        verifyLock.withLock { VerifyCache.get(key) }?.let { return it.result }
-        var answered = false
-        val result = try {
-            withTimeoutOrNull(6_000) {
-                val body = call {
-                    http.get(WikiNet.WDQS) {
-                        parameter("query", WikidataTemplates.verifyQuery(where, input))
-                        parameter("format", "json")
-                        header("Accept", "application/sparql-results+json")
-                        header("User-Agent", WikiNet.USER_AGENT)
-                    }
-                }
-                answered = true
-                WikidataTemplates.parseVerify(body, input)
+    suspend fun verify(prompt: Prompt, input: String): AnswerCheck.Outcome {
+        val key = prompt.id + "|" + AnswerCheck.key(input)
+        verifyLock.withLock { VerifyCache.get(key) }?.let { return it }
+        val (out, complete) = withTimeoutOrNull(14_000) {
+            try { lookup(prompt, input) } catch (e: CancellationException) { throw e } catch (e: Throwable) {
+                CrashLog.note("verify", e); AnswerCheck.Outcome.Unreachable to false
             }
-        } catch (e: CancellationException) {
-            null   // timeout or screen left: treat as "not verified" (and don't remember it)
-        } catch (e: Throwable) {
-            null
+        } ?: (AnswerCheck.Outcome.Unreachable to false)
+        if (out != AnswerCheck.Outcome.Unreachable && (complete || out != AnswerCheck.Outcome.Missing)) {
+            verifyLock.withLock { VerifyCache.put(key, out) }
         }
-        if (answered) verifyLock.withLock { VerifyCache.put(key, result) }
-        return result
+        return out
+    }
+
+    /** GET returning the body, or null on any failure (offline, timeout, HTTP error, API error). */
+    private suspend fun quick(url: String, ms: Long, params: List<Pair<String, String>>): String? = withTimeoutOrNull(ms) {
+        try {
+            val res = http.get(url) {
+                for ((k, v) in params) parameter(k, v)
+                header("User-Agent", WikiNet.USER_AGENT)
+                header("Api-User-Agent", WikiNet.USER_AGENT)
+            }
+            if (!res.status.isSuccess()) null else res.bodyAsText().takeIf { !AnswerCheck.isApiError(it) }
+        } catch (e: CancellationException) { throw e } catch (e: Throwable) { null }
+    }
+
+    /** Result and whether every lookup answered (only complete "missing" results are worth remembering). */
+    private suspend fun lookup(prompt: Prompt, input: String): Pair<AnswerCheck.Outcome, Boolean> = coroutineScope {
+        val term = input.trim().take(80)
+        val people = prompt.people
+        val es = async { quick(WikiNet.WD_API, 7_000, AnswerCheck.entityParams(term)) }
+        val tl = async { quick(WikiNet.WP_API, 7_000, AnswerCheck.titleParams(term)) }
+        val sr = async { quick(WikiNet.WP_API, 7_000, AnswerCheck.searchParams(term)) }
+        val esB = es.await()
+        val tlB = tl.await()
+        val srB = sr.await()
+        if (esB == null && tlB == null && srB == null) return@coroutineScope AnswerCheck.Outcome.Unreachable to false
+        val complete = esB != null && tlB != null && srB != null
+        val cands = AnswerCheck.candidates(term, people, esB, tlB, srB)
+        // 1. a list entry under another name
+        AnswerCheck.listed(prompt, cands)?.let { return@coroutineScope it to true }
+        // 2. an unlisted member of the list's class
+        val where = prompt.check ?: return@coroutineScope AnswerCheck.Outcome.Missing to complete
+        val qids = AnswerCheck.qids(cands)
+        if (qids.isEmpty()) return@coroutineScope AnswerCheck.Outcome.Missing to complete
+        val body = withTimeoutOrNull(6_500) {
+            try {
+                http.submitForm(url = WikiNet.WDQS, formParameters = parameters {
+                    append("query", AnswerCheck.memberQuery(where, qids))
+                    append("format", "json")
+                }) {
+                    header("Accept", "application/sparql-results+json")
+                    header("User-Agent", WikiNet.USER_AGENT)
+                }.let { if (it.status.isSuccess()) it.bodyAsText() else null }
+            } catch (e: CancellationException) { throw e } catch (e: Throwable) { null }
+        } ?: return@coroutineScope AnswerCheck.Outcome.Unreachable to false
+        val m = AnswerCheck.parseMember(body) ?: return@coroutineScope AnswerCheck.Outcome.Missing to complete
+        val label = m.label ?: cands.firstOrNull { it.qid == m.qid }?.names?.firstOrNull() ?: input.trim()
+        AnswerCheck.Outcome.Found(label, m.links) to true
     }
 
     companion object {
@@ -676,5 +788,6 @@ class QuestionBank(private val scope: CoroutineScope) {
         /** A new batch at most every 20 h (so "daily" also works when the app is opened at varying times). */
         const val AUTO_EVERY = 20L * 3600 * 1000
         private const val META = "lib_meta.json"
+        private const val SHARED = "shared_lists.json"
     }
 }

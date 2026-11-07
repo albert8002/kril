@@ -32,7 +32,8 @@ data class LobbyState(
 )
 
 /** Host lobby: open a relay room (or bind a socket), publish the QR ticket, accept exactly one peer. */
-class HostLobby(private val scope: CoroutineScope, private val myName: String, val mode: LinkMode) {
+class HostLobby(private val scope: CoroutineScope, private val myName: String, val mode: LinkMode,
+                private val wrap: (PeerLink) -> PeerLink = { it }) {
     private val _s = MutableStateFlow(LobbyState())
     val state: StateFlow<LobbyState> = _s.asStateFlow()
     private var lanHost: LanHost? = null
@@ -56,6 +57,7 @@ class HostLobby(private val scope: CoroutineScope, private val myName: String, v
         for (m in l.incoming) {
             if (m is Msg.Hello && m.pin == room) {
                 l.send(Msg.Welcome(myName))
+                link = wrap(l)
                 _s.update { it.copy(status = "peer connected", peer = m.name.ifBlank { "PEER" }, busy = false) }
                 return
             }
@@ -85,7 +87,7 @@ class HostLobby(private val scope: CoroutineScope, private val myName: String, v
             if (hello !is Msg.Hello) { l.close(); continue }
             if (hello.pin != pin) { l.send(Msg.Reject("bad pin")); l.close(); continue }
             l.send(Msg.Welcome(myName))
-            link = l
+            link = wrap(l)
             _s.update { it.copy(status = "peer connected", peer = hello.name.ifBlank { "PEER" }, busy = false) }
             return
         }
@@ -112,7 +114,7 @@ class HostLobby(private val scope: CoroutineScope, private val myName: String, v
 }
 
 /** Guest: connect to a ticket (relay room or direct socket), handshake, hand back a session that waits for the host. */
-class GuestJoin(private val scope: CoroutineScope, private val myName: String) {
+class GuestJoin(private val scope: CoroutineScope, private val myName: String, private val wrap: (PeerLink) -> PeerLink = { it }) {
     private val _s = MutableStateFlow(LobbyState())
     val state: StateFlow<LobbyState> = _s.asStateFlow()
     private var job: Job? = null
@@ -146,7 +148,7 @@ class GuestJoin(private val scope: CoroutineScope, private val myName: String) {
             when (reply) {
                 is Msg.Welcome -> {
                     _s.value = LobbyState(status = "linked", ticket = t, peer = reply.hostName, via = link.via)
-                    val session = GuestSession(link, myName, reply.hostName, scope)
+                    val session = GuestSession(wrap(link), myName, reply.hostName, scope)
                     session.start()
                     onJoined(session)
                 }

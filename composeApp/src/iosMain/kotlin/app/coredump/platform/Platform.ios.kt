@@ -15,6 +15,8 @@ import kotlinx.cinterop.ptr
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.value
+import kotlinx.cinterop.usePinned
+import kotlinx.cinterop.addressOf
 import platform.Foundation.NSDate
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
@@ -119,4 +121,34 @@ object IosBridge {
 
 actual fun setSystemBarsDark(dark: Boolean) {
     runCatching { IosBridge.onDark?.invoke(dark) }
+}
+
+/** Each sound is a short in-memory WAV played by its own AVAudioPlayer (ambient: mixes with music, obeys the silent switch). */
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
+actual object SoundOut {
+    private val players = ArrayList<platform.AVFAudio.AVAudioPlayer>()
+    private var ready = false
+
+    actual fun play(pcm: ShortArray, gain: Float) {
+        runCatching {
+            if (!ready) {
+                ready = true
+                runCatching {
+                    platform.AVFAudio.AVAudioSession.sharedInstance().setCategory(platform.AVFAudio.AVAudioSessionCategoryAmbient, null)
+                    platform.AVFAudio.AVAudioSession.sharedInstance().setActive(true, null)
+                }
+            }
+            val wav = app.coredump.ui.Wav.encode(pcm, app.coredump.ui.Sfx.RATE)
+            val data = wav.usePinned { pinned ->
+                platform.Foundation.NSData.dataWithBytes(pinned.addressOf(0), wav.size.toULong())
+            }
+            val p = platform.AVFAudio.AVAudioPlayer(data = data, error = null)
+            p.volume = gain.coerceIn(0f, 1f)
+            p.prepareToPlay()
+            p.play()
+            players.removeAll { !it.playing }
+            players += p
+            while (players.size > 12) players.removeAt(0)
+        }
+    }
 }

@@ -149,6 +149,7 @@ fun App() {
                             Screen.Manual -> ManualScreen(model)
                             Screen.Stats -> StatsScreen(model)
                             Screen.Appearance -> AppearanceScreen(model)
+                            Screen.Fetch -> app.coredump.ui.screens.FetchScreen(model)
                         }
                     }
 

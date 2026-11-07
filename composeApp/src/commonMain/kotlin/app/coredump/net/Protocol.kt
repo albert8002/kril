@@ -105,6 +105,12 @@ sealed class Msg {
     data class Verdict(val i: Int, val text: String, val status: String, val suggestion: String?) : Msg()
     /** Keep-alive both ways (relay links detect a dead peer by silence). */
     data object Ping : Msg()
+    /** List sharing (both ways, in the background): ids of collected lists I have. Older versions ignore these. */
+    data class LibHave(val ids: List<String>) : Msg()
+    /** Lists I would like to get. */
+    data class LibWant(val ids: List<String>) : Msg()
+    /** One piece of a list (ranked pack JSON split into [of] pieces). */
+    data class LibPart(val id: String, val part: Int, val of: Int, val data: String) : Msg()
     data object Over : Msg()
     data class Bye(val reason: String) : Msg()
 
@@ -134,6 +140,9 @@ sealed class Msg {
             put("sug", suggestion?.let { JsonPrimitive(it) } ?: JsonNull)
         }
         Ping -> obj("ping") {}
+        is LibHave -> obj("lib_have") { put("ids", JsonArray(ids.map { JsonPrimitive(it) })) }
+        is LibWant -> obj("lib_want") { put("ids", JsonArray(ids.map { JsonPrimitive(it) })) }
+        is LibPart -> obj("lib_part") { put("id", id); put("n", part); put("of", of); put("d", data) }
         Over -> obj("over") {}
         is Bye -> obj("bye") { put("reason", reason) }
     }
@@ -168,6 +177,9 @@ sealed class Msg {
                 "attempt" -> Attempt(i("i"), s("a"), o["ms"]?.jsonPrimitive?.long ?: 0L, o["raw"]?.jsonPrimitive?.booleanOrNull ?: false)
                 "verdict" -> Verdict(i("i"), s("a"), s("st"), o["sug"]?.jsonPrimitive?.contentOrNull)
                 "ping" -> Ping
+                "lib_have" -> LibHave(o["ids"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty().take(2000))
+                "lib_want" -> LibWant(o["ids"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty().take(200))
+                "lib_part" -> LibPart(s("id"), i("n"), i("of"), s("d"))
                 "over" -> Over
                 "bye" -> Bye(s("reason"))
                 else -> null

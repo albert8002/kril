@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +47,9 @@ fun ConfigScreen(model: AppModel) {
     val bank by model.bank.state.collectAsState()
     var handle by remember { mutableStateOf(s.handle) }
     var urls by remember { mutableStateOf(s.remoteUrls.joinToString("\n")) }
+    var secret by remember { mutableStateOf(false) }
+    var taps by remember { mutableStateOf(0) }
+    var lastTap by remember { mutableStateOf(0L) }
 
     Frame(model, Th.say("vim ~/.coredumprc", "Settings")) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
@@ -78,7 +83,7 @@ fun ConfigScreen(model: AppModel) {
                 if (col.message.isNotEmpty()) TText(col.message, size = 11.sp, color = C.dim)
                 Spacer(Modifier.height(8.dp))
                 TButton(if (col.running) "collecting ${col.done}/${col.total}…" else Th.say("FETCH MORE LISTS", "Fetch more lists"),
-                    { model.bank.requestMore() }, Modifier.fillMaxWidth(), enabled = !col.running, textSize = 12.sp)
+                    { model.go(Screen.Fetch) }, Modifier.fillMaxWidth(), textSize = 12.sp)
                 TText("about ${app.coredump.data.QuestionBank.DAILY_BATCH} new lists are added automatically once a day while the app is used.", size = 10.sp, color = C.dim)
                 Spacer(Modifier.height(8.dp))
                 KV("answers checked online (cached)", "${app.coredump.data.VerifyCache.size()}")
@@ -98,8 +103,10 @@ fun ConfigScreen(model: AppModel) {
                 Toggle("bundled packs", true, {}, "always on · offline")
                 Toggle("collect new Wikidata lists", s.useWikidata, { v -> model.update { it.copy(useWikidata = v) } },
                     "daily batch + FETCH MORE · ranked lists also ship inside the app")
-                Toggle("verify unlisted answers online", s.verifyOnline, { v -> model.update { it.copy(verifyOnline = v) } },
-                    "not in the list? check Wikidata · score by how many wikipedias cover it")
+                Toggle("search answers online", s.verifyOnline, { v -> model.update { it.copy(verifyOnline = v) } },
+                    "not in the list? look it up on Wikipedia / Wikidata: other names count, and unlisted answers that fit score by fame")
+                Toggle("share lists in 1v1", s.shareLists, { v -> model.update { it.copy(shareLists = v) } },
+                    "swap collected lists with the other player in the background")
                 Toggle("wikipedia list scraping", s.useWikipedia, { v -> model.update { it.copy(useWikipedia = v) } },
                     "\"List of …\" pages · rarity = wikipedia language editions")
                 Spacer(Modifier.height(8.dp))
@@ -138,6 +145,29 @@ fun ConfigScreen(model: AppModel) {
                 KV("theme", "${Th.style.label} · ${Th.pal.name}")
                 TLink(Th.say("change theme, colours, text size", "Change theme, colours and text size"), { model.go(Screen.Appearance) }, color = C.hot)
                 Toggle("haptics", s.haptics, { v -> model.update { it.copy(haptics = v) } })
+                if (secret || s.spicyNames) {
+                    Toggle(Th.say("spicy rank names", "Spicy rank names"), s.spicyNames, { v -> model.update { it.copy(spicyNames = v) } },
+                        "crude names for answer tiers and end-of-run ranks")
+                }
+            }
+            Spacer(Modifier.height(14.dp))
+            Panel(Th.say("AUDIO", "Sound")) {
+                Toggle(Th.say("sound effects", "Sound effects"), s.sound, { v ->
+                    model.update { it.copy(sound = v) }
+                    if (v) app.coredump.ui.Sfx.play(app.coredump.ui.Cue.HIT, 4)
+                }, "every theme has its own sounds")
+                if (s.sound) {
+                    Spacer(Modifier.height(6.dp))
+                    TText("volume", size = 13.sp, color = C.dim)
+                    Spacer(Modifier.height(6.dp))
+                    val levels = listOf(0.25f, 0.5f, 0.75f, 1f)
+                    Choice(levels, levels.minByOrNull { kotlin.math.abs(it - s.volume) } ?: 0.75f, { "${(it * 100).toInt()}%" }) { v ->
+                        model.update { it.copy(volume = v) }
+                        app.coredump.ui.Sfx.play(app.coredump.ui.Cue.HIT, 3)
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    TLink(Th.say("play a sample", "Play a sample"), { app.coredump.ui.Sfx.play(app.coredump.ui.Cue.HIT, 6) }, color = C.hot)
+                }
             }
             Spacer(Modifier.height(14.dp))
             Panel(Th.say("CRASH REPORTS", "Crash reports"), color = if (model.lastCrash != null) C.blood else C.line) {
@@ -161,7 +191,14 @@ fun ConfigScreen(model: AppModel) {
                 }
             }
             Spacer(Modifier.height(14.dp))
-            TText("CORE DUMP 1.1 · ${Platform.name} · fonts: DejaVu, Lora, Poppins, Inter (free licenses)", size = 10.sp, color = C.dim)
+            TText("CORE DUMP 1.1 · ${Platform.name} · fonts: DejaVu, Lora, Poppins, Inter (free licenses)",
+                Modifier.clickable(remember { MutableInteractionSource() }, null) {
+                    // hidden: five quick taps reveal the spicy-names switch
+                    val now = Platform.epochMillis()
+                    taps = if (now - lastTap < 1500) taps + 1 else 1
+                    lastTap = now
+                    if (taps >= 5 && !secret) { secret = true; model.toast = "hidden setting unlocked (Look)" }
+                }, size = 10.sp, color = C.dim)
             TText("lists from Wikidata (CC0) and Wikipedia (CC BY-SA). no data leaves the device except those queries.",
                 size = 10.sp, color = C.dim)
             Spacer(Modifier.height(20.dp))

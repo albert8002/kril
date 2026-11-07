@@ -36,6 +36,7 @@ sealed interface Screen {
     data object Manual : Screen
     data object Stats : Screen
     data object Appearance : Screen
+    data object Fetch : Screen
 }
 
 /** Daily run number: days since 2026-01-01 UTC (epoch day 20454). */
@@ -70,16 +71,20 @@ class AppModel(val scope: CoroutineScope) {
     init {
         History.load()
         app.coredump.ui.Th.set(app.coredump.ui.Style.byName(settings.theme), settings.palette)
+        app.coredump.core.Names.spicy = settings.spicyNames
+        app.coredump.ui.Sfx.configure(settings.sound, settings.volume)
     }
 
     fun go(s: Screen, push: Boolean = true) {
         if (push && screen != Screen.Boot) stack += screen
+        if (screen != Screen.Boot) app.coredump.ui.Sfx.play(app.coredump.ui.Cue.NAV)
         screen = s
         fx.glitch()
     }
 
     fun home() {
         stack.clear()
+        app.coredump.ui.Sfx.play(app.coredump.ui.Cue.NAV)
         screen = Screen.Menu
         fx.glitch()
     }
@@ -99,6 +104,7 @@ class AppModel(val scope: CoroutineScope) {
         if (cur is Screen.Summary || cur is Screen.Lobby) { closeLobbies() }
         if (stack.isEmpty()) return false
         screen = stack.removeAt(stack.size - 1)
+        app.coredump.ui.Sfx.play(app.coredump.ui.Cue.NAV)
         fx.glitch()
         return true
     }
@@ -112,7 +118,13 @@ class AppModel(val scope: CoroutineScope) {
         if (old.theme != settings.theme || old.palette != settings.palette) {
             app.coredump.ui.Th.set(app.coredump.ui.Style.byName(settings.theme), settings.palette)
         }
+        app.coredump.core.Names.spicy = settings.spicyNames
+        app.coredump.ui.Sfx.configure(settings.sound, settings.volume)
     }
+
+    /** 1v1 links swap collected lists in the background (when allowed in settings). */
+    private fun shareWrap(l: app.coredump.net.PeerLink): app.coredump.net.PeerLink =
+        app.coredump.game.SharingLink(l, bank, scope, settings.shareLists)
 
     fun isDiscarded(id: String) = id in discarded
 
@@ -207,12 +219,12 @@ class AppModel(val scope: CoroutineScope) {
         val cur = hostLobby
         if (cur != null && cur.mode == mode) return cur
         cur?.close()
-        return HostLobby(scope, settings.handle, mode).also { hostLobby = it }
+        return HostLobby(scope, settings.handle, mode, ::shareWrap).also { hostLobby = it }
     }
 
     fun openGuest(): GuestJoin {
         hostLobby?.close(); hostLobby = null
-        return guestJoin ?: GuestJoin(scope, settings.handle).also { guestJoin = it }
+        return guestJoin ?: GuestJoin(scope, settings.handle, ::shareWrap).also { guestJoin = it }
     }
 
     fun startHosted() {

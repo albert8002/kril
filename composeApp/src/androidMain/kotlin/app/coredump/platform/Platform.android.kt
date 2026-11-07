@@ -101,3 +101,85 @@ actual fun setSystemBarsDark(dark: Boolean) {
         }
     }
 }
+
+/**
+ * One streaming AudioTrack fed by a small mixer thread (low latency, any number of overlapping sounds).
+ * The track pauses after a second of silence and wakes up on the next sound.
+ */
+actual object SoundOut {
+    private const val FRAMES = 256
+    private class Voice(val pcm: ShortArray, val gain: Float) { var pos = 0 }
+    private val lock = java.lang.Object()
+    private val voices = ArrayList<Voice>()
+    private var thread: Thread? = null
+
+    actual fun play(pcm: ShortArray, gain: Float) {
+        runCatching {
+            synchronized(lock) {
+                if (voices.size >= 10) voices.removeAt(0)
+                voices += Voice(pcm, gain.coerceIn(0f, 1f))
+                if (thread?.isAlive != true) {
+                    thread = Thread({ loop() }, "sfx").apply { isDaemon = true; start() }
+                }
+                lock.notifyAll()
+            }
+        }
+    }
+
+    private fun loop() {
+        val rate = app.coredump.ui.Sfx.RATE
+        val track = runCatching {
+            val min = android.media.AudioTrack.getMinBufferSize(rate, android.media.AudioFormat.CHANNEL_OUT_MONO,
+                android.media.AudioFormat.ENCODING_PCM_16BIT)
+            android.media.AudioTrack.Builder()
+                .setAudioAttributes(android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_GAME)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+                .setAudioFormat(android.media.AudioFormat.Builder().setSampleRate(rate)
+                    .setEncoding(android.media.AudioFormat.ENCODING_PCM_16BIT)
+                    .setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO).build())
+                .setBufferSizeInBytes(maxOf(min, FRAMES * 2 * 4))
+                .setTransferMode(android.media.AudioTrack.MODE_STREAM)
+                .build()
+        }.getOrNull() ?: run { synchronized(lock) { voices.clear(); thread = null }; return }
+        val mix = FloatArray(FRAMES)
+        val out = ShortArray(FRAMES)
+        var quiet = 0
+        try {
+            track.play()
+            while (true) {
+                synchronized(lock) {
+                    if (voices.isEmpty()) {
+                        quiet++
+                        if (quiet > rate / FRAMES) {   // ~1 s of silence: stop until the next sound
+                            track.pause(); track.flush()
+                            while (voices.isEmpty()) lock.wait()
+                            track.play()
+                            quiet = 0
+                        }
+                    } else quiet = 0
+                    java.util.Arrays.fill(mix, 0f)
+                    val it = voices.iterator()
+                    while (it.hasNext()) {
+                        val v = it.next()
+                        val n = minOf(FRAMES, v.pcm.size - v.pos)
+                        for (i in 0 until n) mix[i] += v.pcm[v.pos + i] * v.gain
+                        v.pos += n
+                        if (v.pos >= v.pcm.size) it.remove()
+                    }
+                }
+                for (i in 0 until FRAMES) {
+                    // soft limit so overlapping sounds never clip harshly
+                    val x = mix[i] / 32767f
+                    out[i] = ((x / (1f + kotlin.math.abs(x) * 0.6f)) * 32767f).toInt().coerceIn(-32767, 32767).toShort()
+                }
+                track.write(out, 0, FRAMES)
+            }
+        } catch (e: Throwable) {
+            // audio is a nice-to-have: give up quietly
+        } finally {
+            runCatching { track.release() }
+            synchronized(lock) { voices.clear(); thread = null }
+        }
+    }
+}

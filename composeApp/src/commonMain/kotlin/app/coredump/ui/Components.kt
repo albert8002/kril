@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -317,7 +318,7 @@ fun TButton(
         primary && style != Style.TERMINAL && style != Style.PIXEL && style != Style.PAPER && style != Style.DESKTOP -> C.hot
         else -> C.amber
     }
-    val click = Modifier.clickable(interactionSource = src, indication = null, enabled = enabled) { haptic(primary); onClick() }
+    val click = Modifier.clickable(interactionSource = src, indication = null, enabled = enabled) { haptic(primary); Sfx.play(Cue.TAP); onClick() }
 
     when (style) {
         Style.TERMINAL -> {
@@ -444,7 +445,7 @@ fun TLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, col
     }
     val suffix = when (Th.style) { Style.CLEAN, Style.NEON, Style.PAPER, Style.ABYSS -> "  →"; else -> "" }
     TText("$prefix$label$suffix", modifier.clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {
-        haptic(false); onClick()
+        haptic(false); Sfx.play(Cue.TAP); onClick()
     }.padding(vertical = 6.dp), size = size, color = color,
         decoration = if (Th.style == Style.PAPER || Th.style == Style.DESKTOP) androidx.compose.ui.text.style.TextDecoration.Underline else null)
 }
@@ -701,7 +702,7 @@ fun ChipBox(label: String, on: Boolean, modifier: Modifier = Modifier, size: Tex
             .box(style, if (on) accent else C.line, if (on) accent else (if (style == Style.DESKTOP || style == Style.CHAT) C.panel else Color.Transparent),
                 glow = on && (style == Style.NEON || style == Style.ABYSS || style == Style.DESKTOP),
                 pill = style == Style.NEON || style == Style.CLEAN || style == Style.ABYSS || style == Style.CHAT)
-            .clickable(remember { MutableInteractionSource() }, null, onClick = onClick)
+            .clickable(remember { MutableInteractionSource() }, null) { Sfx.play(Cue.TAP); onClick() }
             .padding(horizontal = if (style == Style.PIXEL) 14.dp else if (style == Style.COMIC) 16.dp else 12.dp, vertical = 11.dp),
         size = size, color = if (style == Style.PIXEL && on) C.bg else ink,
         weight = if (style == Style.CLEAN) FontWeight.SemiBold else FontWeight.Bold, glow = if (on) 0f else 1f,
@@ -723,7 +724,7 @@ fun Toggle(label: String, on: Boolean, onChange: (Boolean) -> Unit, hint: String
     val haptic = rememberHaptic()
     val style = Th.style
     Row(
-        Modifier.fillMaxWidth().clickable(remember { MutableInteractionSource() }, null) { haptic(false); onChange(!on) }
+        Modifier.fillMaxWidth().clickable(remember { MutableInteractionSource() }, null) { haptic(false); Sfx.play(Cue.TAP); onChange(!on) }
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -933,3 +934,53 @@ fun KV(k: String, v: String, color: Color = C.amber) {
 
 /** Horizontal offset used by "jitter" text in the timer's last seconds. */
 fun jitter(on: Boolean): IntOffset = if (on) IntOffset(Random.nextInt(-2, 3), Random.nextInt(-1, 2)) else IntOffset.Zero
+
+/**
+ * Themed progress bar, [fraction] 0..1 (animated): ASCII on the terminal, blocks on the handheld and the desktop,
+ * a filled track (pill-shaped where the theme is round) elsewhere.
+ */
+@Composable
+fun ProgressBar(fraction: Float, modifier: Modifier = Modifier, color: Color = C.hot) {
+    val style = Th.style
+    val f by animateFloatAsState(fraction.coerceIn(0f, 1f), tween(450))
+    when (style) {
+        Style.TERMINAL -> {
+            val n = 22
+            val k = (f * n).toInt().coerceIn(0, n)
+            TText("[" + "#".repeat(k) + "-".repeat(n - k) + "] " + (f * 100).toInt().toString().padStart(3) + "%", modifier,
+                size = 12.sp, color = C.hot)
+        }
+        Style.PIXEL, Style.DESKTOP -> {
+            val track = if (style == Style.DESKTOP) (if (Th.pal.dark) Color.Black else Color.White) else Color.Transparent
+            Box(modifier.fillMaxWidth().height(20.dp).box(style, C.line, track, glow = style == Style.DESKTOP).padding(4.dp)) {
+                val fill = if (style == Style.PIXEL) C.amber else color
+                Canvas(Modifier.fillMaxSize()) {
+                    val bw = 8.dp.toPx()
+                    val gap = 2.dp.toPx()
+                    val n = ((size.width + gap) / (bw + gap)).toInt()
+                    val lit = kotlin.math.ceil(f * n).toInt()
+                    for (i in 0 until lit) drawRect(fill, Offset(i * (bw + gap), 0f), Size(bw, size.height))
+                }
+            }
+        }
+        else -> {
+            val pill = style == Style.NEON || style == Style.CLEAN || style == Style.ABYSS || style == Style.CHAT
+            val track = C.ghost
+            val glow = style == Style.NEON || style == Style.ABYSS
+            Canvas(modifier.fillMaxWidth().height(if (style == Style.COMIC || style == Style.JACKPOT) 14.dp else 8.dp)) {
+                val r = if (pill) size.height / 2f else minOf(style.corner.toPx(), size.height / 2f)
+                drawRoundRect(track, cornerRadius = CornerRadius(r))
+                if (f > 0f) {
+                    val w = (size.width * f).coerceAtLeast(size.height)
+                    if (glow) drawRoundRect(color.copy(alpha = 0.25f), Offset(0f, -2.dp.toPx()), Size(w, size.height + 4.dp.toPx()), CornerRadius(r + 2.dp.toPx()))
+                    drawRoundRect(color, size = Size(w, size.height), cornerRadius = CornerRadius(r))
+                    if (style == Style.COMIC) drawRoundRect(C.line, size = Size(size.width, size.height), cornerRadius = CornerRadius(r), style = Stroke(2.dp.toPx()))
+                    if (style == Style.JACKPOT) {
+                        var x = 6.dp.toPx()
+                        while (x < w - 4.dp.toPx()) { drawCircle(Color.White.copy(alpha = 0.6f), 2.dp.toPx(), Offset(x, size.height / 2f)); x += 10.dp.toPx() }
+                    }
+                }
+            }
+        }
+    }
+}
