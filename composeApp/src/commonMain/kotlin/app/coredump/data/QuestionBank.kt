@@ -754,7 +754,7 @@ class QuestionBank(private val scope: CoroutineScope) {
         val srB = sr.await()
         if (esB == null && tlB == null && srB == null) return@coroutineScope AnswerCheck.Outcome.Unreachable to false
         val complete = esB != null && tlB != null && srB != null
-        val cands = AnswerCheck.candidates(term, people, esB, tlB, srB)
+        val cands = AnswerCheck.candidates(term, people, esB, tlB, srB, AnswerCheck.classWords(prompt.text))
         // 1. a list entry under another name
         AnswerCheck.listed(prompt, cands)?.let { return@coroutineScope it to true }
         // 2. an unlisted member of the list's class

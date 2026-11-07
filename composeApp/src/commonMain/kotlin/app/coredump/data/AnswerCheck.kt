@@ -64,7 +64,35 @@ object AnswerCheck {
         return same(t, last)
     }
 
-    private fun spells(input: String, name: String, people: Boolean) = same(input, name) || same(input, bare(name)) || (people && surname(input, name))
+    private val notClass = setOf("name", "famous", "type", "kind", "from", "any", "the", "and", "with", "that", "other",
+        "than", "not", "world", "anywhere", "well", "known", "one", "some", "popular", "real", "fictional", "ancient")
+
+    /** Words of the prompt that a page or item name may add around the answer ("Name a cheese": "Raclette" → "Raclette cheese"). */
+    fun classWords(promptText: String): Set<String> {
+        val ws = promptText.substringBefore("(").lowercase().split(Regex("[^a-z]+")).filter { it.length >= 3 && it !in notClass }
+        return buildSet {
+            for (w in ws) {
+                add(w)
+                if (w.length > 4 && w.endsWith("s")) add(w.dropLast(1))
+                if (w == "mountain" || w == "mountains") add("mount")
+            }
+        }
+    }
+
+    /** [name] is the input with one class word before or after it ("Raclette cheese", "Mount Everest", "Lake Geneva"). */
+    private fun withClass(input: String, name: String, words: Set<String>): Boolean {
+        if (words.isEmpty()) return false
+        val n = bare(name).trim()
+        val parts = n.split(' ').filter { it.isNotBlank() }
+        if (parts.size < 2) return false
+        val first = parts.first().lowercase()
+        val last = parts.last().lowercase()
+        return (last in words && same(input, parts.dropLast(1).joinToString(" "))) ||
+            (first in words && same(input, parts.drop(1).joinToString(" ")))
+    }
+
+    private fun spells(input: String, name: String, people: Boolean, words: Set<String> = emptySet()) =
+        same(input, name) || same(input, bare(name)) || (people && surname(input, name)) || withClass(input, name, words)
 
     /** Spellings of the input to try as exact Wikipedia titles (titles are case-sensitive after the first letter). */
     fun titleVariants(input: String): List<String> {
@@ -78,7 +106,7 @@ object AnswerCheck {
     private fun JsonObject.str(k: String): String? = this[k]?.jsonPrimitive?.contentOrNull
 
     /** Wikidata wbsearchentities reply → candidates whose label, alias or matched text spells the input. */
-    fun parseEntitySearch(body: String, input: String, people: Boolean): List<Candidate> = runCatching {
+    fun parseEntitySearch(body: String, input: String, people: Boolean, words: Set<String> = emptySet()): List<Candidate> = runCatching {
         val rows = json.parseToJsonElement(body).jsonObject["search"]?.jsonArray ?: return emptyList()
         rows.mapNotNull { el ->
             val o = el.jsonObject
@@ -87,7 +115,7 @@ object AnswerCheck {
             val matched = o["match"]?.jsonObject?.str("text")
             val aliases = o["aliases"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty()
             val names = listOfNotNull(label, matched).plus(aliases).distinct()
-            if (names.none { spells(input, it, people) }) null else Candidate(names, id)
+            if (names.none { spells(input, it, people, words) }) null else Candidate(names, id)
         }
     }.getOrElse { emptyList() }
 
@@ -97,7 +125,7 @@ object AnswerCheck {
      * what the input redirects to); otherwise a page counts only if its title (or a redirect to it) spells the input.
      * Disambiguation pages never count.
      */
-    fun parsePages(body: String, input: String, people: Boolean, exact: Boolean): List<Candidate> = runCatching {
+    fun parsePages(body: String, input: String, people: Boolean, exact: Boolean, words: Set<String> = emptySet()): List<Candidate> = runCatching {
         val q = json.parseToJsonElement(body).jsonObject["query"]?.jsonObject ?: return emptyList()
         val redirectsTo = HashMap<String, MutableList<String>>()
         q["redirects"]?.jsonArray?.forEach { r ->
@@ -116,7 +144,7 @@ object AnswerCheck {
                 if (props?.get("disambiguation") != null) return@mapNotNull null
                 val qid = props?.str("wikibase_item")?.takeIf { qidRe.matches(it) }
                 val from = redirectsTo[title].orEmpty()
-                val ok = exact || spells(input, title, people) || from.any { spells(input, it, people) }
+                val ok = exact || spells(input, title, people, words) || from.any { spells(input, it, people, words) }
                 if (!ok) null else Candidate((listOf(title, bare(title)) + from).distinct(), qid)
             }
     }.getOrElse { emptyList() }
@@ -134,10 +162,11 @@ object AnswerCheck {
         "format" to "json", "formatversion" to "2")
 
     /** Candidates from the three replies (null = that lookup failed), most reliable first. */
-    fun candidates(input: String, people: Boolean, entity: String?, titles: String?, search: String?): List<Candidate> = buildList {
+    fun candidates(input: String, people: Boolean, entity: String?, titles: String?, search: String?,
+                   words: Set<String> = emptySet()): List<Candidate> = buildList {
         if (titles != null) addAll(parsePages(titles, input, people, exact = true))
-        if (entity != null) addAll(parseEntitySearch(entity, input, people))
-        if (search != null) addAll(parsePages(search, input, people, exact = false))
+        if (entity != null) addAll(parseEntitySearch(entity, input, people, words))
+        if (search != null) addAll(parsePages(search, input, people, exact = false, words = words))
     }
 
     /** A candidate that is an entry of [prompt]'s list under one of its names, or null. */

@@ -133,14 +133,14 @@ actual object SoundOut {
         runCatching {
             if (!ready) {
                 ready = true
-                runCatching {
+                // ambient: mixes with other audio and follows the silent switch (the player activates the session)
+                runCatching<Unit> {
                     platform.AVFAudio.AVAudioSession.sharedInstance().setCategory(platform.AVFAudio.AVAudioSessionCategoryAmbient, null)
-                    platform.AVFAudio.AVAudioSession.sharedInstance().setActive(true, null)
                 }
             }
             val wav = app.coredump.ui.Wav.encode(pcm, app.coredump.ui.Sfx.RATE)
-            val data = wav.usePinned { pinned ->
-                platform.Foundation.NSData.dataWithBytes(pinned.addressOf(0), wav.size.toULong())
+            val data: platform.Foundation.NSData = wav.usePinned { pinned ->
+                platform.Foundation.NSData.create(bytes = pinned.addressOf(0), length = wav.size.convert())
             }
             val p = platform.AVFAudio.AVAudioPlayer(data = data, error = null)
             p.volume = gain.coerceIn(0f, 1f)

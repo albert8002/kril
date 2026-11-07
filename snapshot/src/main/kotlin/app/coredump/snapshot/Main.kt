@@ -89,7 +89,7 @@ fun main(args: Array<String>) {
             val tl = api(WikiNet.WP_API, app.coredump.data.AnswerCheck.titleParams(term))
             val sr = api(WikiNet.WP_API, app.coredump.data.AnswerCheck.searchParams(term))
             if (es == null && tl == null && sr == null) return "UNREACHABLE"
-            val cands = app.coredump.data.AnswerCheck.candidates(term, p.people, es, tl, sr)
+            val cands = app.coredump.data.AnswerCheck.candidates(term, p.people, es, tl, sr, app.coredump.data.AnswerCheck.classWords(p.text))
             app.coredump.data.AnswerCheck.listed(p, cands)?.let { return "LISTED(${it.name})" }
             val where = p.check ?: return "MISSING(no class)"
             val qids = app.coredump.data.AnswerCheck.qids(cands)
@@ -108,6 +108,10 @@ fun main(args: Array<String>) {
                 listOf("Kai Ken", "banana", "Labrador", "Shiba Inu"), listOf("ANY", "MISSING", "ANY", "ANY")),
             Triple(prompt("t.cheese", "Name a cheese", "?item wdt:P31/wdt:P279* wd:Q10943 .", 40),
                 listOf("Tete de Moine", "Raclette", "toaster"), listOf("ANY", "ANY", "MISSING")),
+            Triple(prompt("t.mount", "Name a mountain", "?item wdt:P31 wd:Q8502 .", 30),
+                listOf("Everest", "Matterhorn", "Eiger", "Säntis", "Mount Doom"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
+            Triple(prompt("t.lake", "Name a lake", "?item wdt:P31 wd:Q23397 .", 30),
+                listOf("Geneva", "Lake Zurich", "Loch Ness", "Walensee", "Lake Wobegon"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
             Triple(prompt("t.bball", "Name a famous basketball player", "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q3665646 .", 300),
                 listOf("Jordan", "Shaq", "Lebron"), listOf("LISTED", "LISTED", "LISTED")),
             Triple(prompt("t.frcity", "Name a city in France", "?item wdt:P31 wd:Q484170 ; wdt:P17 wd:Q142 .", 30),

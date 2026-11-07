@@ -17,9 +17,9 @@ object WikidataPool {
         "an.kangaroo", "th.candy", "th.snack", "th.toy", "th.comic", "th.tvchannel", "nx.badminton", "nx.fencer",
         "nx.handball", "nx.tabletennis",
         // v20 additions with few very famous members
-        "tv.talkshow", "gm.handheld", "gm.mmo", "gm.rts", "gm.sports", "tc.search", "tc.robot", "tc.homecomputer",
-        "wo.figure", "wo.conlang", "wo.signlang", "ev.appliance", "ev.boat", "fd.beerstyle", "fd.softdrink",
-        "br.department", "na.reef", "ho.horrorseries", "my.angel", "sc.nebula")
+        "gm.mmo", "gm.sports", "tc.search", "wo.figure", "wo.conlang", "wo.signlang", "ev.boat", "fd.beerstyle",
+        "na.canyon", "na.glacier", "pc.fictcity", "pc.fictcountry", "bk.childrens", "mu.orchestra", "gm.n64", "gm.snes",
+        "gm.gameboy")
 
     private fun inst(q: String) = "?item wdt:P31 wd:$q ."
     private fun instSub(q: String) = "?item wdt:P31/wdt:P279* wd:$q ."
@@ -27,10 +27,16 @@ object WikidataPool {
     private fun famous(occ: String) = "?item wdt:P31 wd:Q5 ; wdt:P106 wd:$occ ."
     // written order is kept (optimizer off): find the taxon by name first, then walk down to its species.
     // Left to itself the planner started from "all species" and timed out.
-    private fun species(vararg taxa: String) =
-        "hint:Query hint:optimizer \"None\" . " +
-            "VALUES ?tl { ${taxa.joinToString(" ") { "\"$it\"@en" }} } ?t rdfs:label ?tl ; wdt:P105 ?rank . " +
-            "?item wdt:P171+ ?t . ?item wdt:P105 wd:Q7432 ."
+    // Scientific names ("Picidae") are matched by taxon name (P225), common names ("woodpecker") by English label.
+    private fun species(vararg taxa: String): String {
+        val sci = taxa.filter { it.first().isUpperCase() }
+        val common = taxa.filter { !it.first().isUpperCase() }
+        val find = buildList {
+            if (sci.isNotEmpty()) add("{ VALUES ?tn { ${sci.joinToString(" ") { "\"$it\"" }} } ?t wdt:P225 ?tn . }")
+            if (common.isNotEmpty()) add("{ VALUES ?tl { ${common.joinToString(" ") { "\"$it\"@en" }} } ?t rdfs:label ?tl . }")
+        }.joinToString(" UNION ")
+        return "hint:Query hint:optimizer \"None\" . $find ?t wdt:P105 ?rank . ?item wdt:P171+ ?t . ?item wdt:P105 wd:Q7432 ."
+    }
 
     private val animals = listOf(
         Triple("bat", "Name a bat species", arrayOf("Chiroptera", "bat")),
@@ -228,27 +234,20 @@ object WikidataPool {
 
         // ---- v20: more sources in the thinner categories (each checked by the CI pool check)
         // TV
-        "tv.animated" to ("Name an animated TV series" to (inst("Q581714") to 15)),
-        "tv.talkshow" to ("Name a TV talk show" to (genre("Q5398426", "Q622812") to 8)),
+        "tv.animated" to ("Name an animated TV series" to (instSub("Q581714") to 15)),
         "tv.miniseries" to ("Name a TV miniseries" to (inst("Q1259759") to 12)),
-        "tv.scifi" to ("Name a science fiction TV series" to (genre("Q5398426", "Q24925") to 10)),
         // movies
         "mv.studio" to ("Name a film studio" to (inst("Q375336") to 20)),
         "mv.festival" to ("Name a film festival" to (inst("Q220505") to 15)),
         "mv.bollywood" to ("Name a Bollywood (Hindi) film" to ("?item wdt:P31 wd:Q11424 ; wdt:P364 wd:Q1568 ." to 20)),
         "mv.anime" to ("Name an anime film" to (inst("Q20650540") to 15)),
-        "mv.christmas" to ("Name a Christmas film" to (genre("Q11424", "Q1257444") to 10)),
         "mv.teen" to ("Name a teen film" to (genre("Q11424", "Q1146335") to 10)),
         "mv.spy" to ("Name a spy film" to (genre("Q11424", "Q2297927") to 10)),
         "mv.biopic" to ("Name a biographical film" to (genre("Q11424", "Q645928") to 15)),
         "mv.adventure" to ("Name an adventure film" to (genre("Q11424", "Q319221") to 15)),
         // gaming
-        "gm.handheld" to ("Name a handheld game console" to (inst("Q941818") to 8)),
         "gm.mmo" to ("Name an online role-playing game (MMORPG)" to ("?item wdt:P31 wd:Q7889 ; wdt:P136 wd:Q175173 ." to 8)),
-        "gm.racing" to ("Name a racing video game" to ("?item wdt:P31 wd:Q7889 ; wdt:P136 wd:Q860750 ." to 10)),
-        "gm.fighting" to ("Name a fighting video game" to ("?item wdt:P31 wd:Q7889 ; wdt:P136 wd:Q846224 ." to 10)),
         "gm.sports" to ("Name a sports video game" to ("?item wdt:P31 wd:Q7889 ; wdt:P136 wd:Q868217 ." to 8)),
-        "gm.rts" to ("Name a real-time strategy video game" to ("?item wdt:P31 wd:Q7889 ; wdt:P136 wd:Q4688 ." to 8)),
         "gm.switch" to ("Name a Nintendo Switch game" to ("?item wdt:P31 wd:Q7889 ; wdt:P400 wd:Q19610114 ." to 15)),
         "gm.ps4" to ("Name a PlayStation 4 game" to ("?item wdt:P31 wd:Q7889 ; wdt:P400 wd:Q5014725 ." to 15)),
         "gm.n64" to ("Name a Nintendo 64 game" to ("?item wdt:P31 wd:Q7889 ; wdt:P400 wd:Q184839 ." to 8)),
@@ -259,72 +258,50 @@ object WikidataPool {
         "tc.smartphone" to ("Name a smartphone model" to (inst("Q19723451") to 10)),
         "tc.app" to ("Name a mobile app" to (inst("Q620615") to 15)),
         "tc.search" to ("Name a search engine" to (inst("Q4182287") to 8)),
-        "tc.robot" to ("Name a famous robot" to (inst("Q11012") to 8)),
-        "tc.homecomputer" to ("Name a home computer" to (inst("Q473708") to 8)),
         "tc.programmer" to ("Name a famous programmer" to (famous("Q5482740") to 15)),
         // horror
-        "ho.horrornovel" to ("Name a horror novel" to ("?item wdt:P31 wd:Q7725634 ; wdt:P136 wd:Q193606 ." to 10)),
-        "ho.horrorseries" to ("Name a horror film series" to ("?item wdt:P31 wd:Q24856 ; wdt:P136 wd:Q200092 ." to 8)),
+        "ho.horrornovel" to ("Name a horror novel" to ("?item wdt:P7937 wd:Q8261 ; wdt:P136 wd:Q193606 ." to 10)),
         // words
         "wo.writing" to ("Name a writing system or alphabet" to (inst("Q8192") to 15)),
         "wo.figure" to ("Name a figure of speech" to (inst("Q182545") to 8)),
         "wo.conlang" to ("Name a constructed language" to (inst("Q33215") to 5)),
         "wo.signlang" to ("Name a sign language" to (inst("Q34228") to 5)),
         // body
-        "bd.infection" to ("Name an infectious disease" to (inst("Q18123741") to 30)),
-        "bd.drug" to ("Name a medication" to (inst("Q12140") to 30)),
-        "bd.hormone" to ("Name a hormone" to (anyOfPool("Q8047") to 15)),
+        "bd.infection" to ("Name an infectious disease" to (anyOfPool("Q18123741") to 30)),
         "bd.cancer" to ("Name a type of cancer" to (subOf("Q12078") to 20)),
-        "bd.mental" to ("Name a mental health condition" to (subOf("Q12135") to 30)),
         // myth & religion
         "my.hindu" to ("Name a Hindu deity" to (inst("Q979507") to 15)),
-        "my.angel" to ("Name an angel" to (inst("Q235113") to 8)),
         // nature
-        "na.hurricane" to ("Name a tropical cyclone or hurricane" to (inst("Q8092") to 20)),
         "na.glacier" to ("Name a glacier" to (inst("Q35666") to 15)),
-        "na.reef" to ("Name a coral reef" to (inst("Q11292") to 8)),
         "na.canyon" to ("Name a canyon" to (inst("Q150784") to 10)),
         "na.forest" to ("Name a forest" to (inst("Q4421") to 15)),
         "na.earthquake" to ("Name a famous earthquake" to (inst("Q7944") to 25)),
         // science & space
-        "sc.comet" to ("Name a comet" to (inst("Q3559") to 10)),
-        "sc.galaxy" to ("Name a galaxy" to (inst("Q318") to 10)),
-        "sc.star" to ("Name a star (other than the Sun)" to (inst("Q523") to 20)),
-        "sc.nebula" to ("Name a nebula" to (inst("Q42372") to 8)),
-        "sc.satellite" to ("Name an artificial satellite" to (inst("Q26540") to 15)),
-        "sc.rocket" to ("Name a rocket" to (instSub("Q41291") to 15)),
         "sc.mission" to ("Name a space mission" to (inst("Q2133344") to 15)),
         // everyday
-        "ev.appliance" to ("Name a home appliance" to (subOf("Q212920") to 5)),
         "ev.boat" to ("Name a type of boat" to (subOf("Q35872") to 10)),
         // food & drink
-        "fd.beerstyle" to ("Name a beer style" to (anyOfPool("Q44") to 8)),
-        "fd.grape" to ("Name a grape variety" to (inst("Q10978") to 10)),
+        "fd.beerstyle" to ("Name a beer or beer style" to (anyOfPool("Q44") to 8)),
         "fd.cuisine" to ("Name a national or regional cuisine" to (inst("Q1968435") to 15)),
-        "fd.softdrink" to ("Name a soft drink" to (anyOfPool("Q147538") to 5)),
         // brands
-        "br.department" to ("Name a department store" to (inst("Q216107") to 10)),
         "br.newsagency" to ("Name a news agency" to (inst("Q192283") to 15)),
         // pop culture
         "pc.fictcity" to ("Name a fictional city" to (inst("Q1964689") to 10)),
         "pc.fictcountry" to ("Name a fictional country" to (inst("Q1145276") to 10)),
         // books & art
         "bk.artmuseum" to ("Name an art museum" to (inst("Q207694") to 25)),
-        "bk.bookseries" to ("Name a book series" to (inst("Q277759") to 15)),
-        "bk.poem" to ("Name a famous poem" to (inst("Q5185279") to 15)),
-        "bk.play" to ("Name a stage play" to (inst("Q25379") to 20)),
-        "bk.opera" to ("Name an opera" to (inst("Q1344") to 15)),
-        "bk.novel" to ("Name a novel" to (inst("Q8261") to 40)),
+        "bk.poem" to ("Name a famous poem" to ("?item wdt:P7937 wd:Q5185279 ." to 15)),
+        "bk.play" to ("Name a stage play" to ("?item wdt:P7937 wd:Q25379 ." to 20)),
+        "bk.opera" to ("Name an opera" to ("?item wdt:P7937 wd:Q1344 ." to 15)),
+        "bk.novel" to ("Name a novel" to ("?item wdt:P7937 wd:Q8261 ." to 40)),
         "bk.childrens" to ("Name a children's book" to ("?item wdt:P31 wd:Q7725634 ; wdt:P136 wd:Q131539 ." to 10)),
         "bk.fantasy" to ("Name a fantasy novel" to ("?item wdt:P31 wd:Q7725634 ; wdt:P136 wd:Q132311 ." to 15)),
         "bk.scifi" to ("Name a science fiction novel" to ("?item wdt:P31 wd:Q7725634 ; wdt:P136 wd:Q24925 ." to 15)),
-        "bk.detective" to ("Name a detective novel" to ("?item wdt:P31 wd:Q7725634 ; wdt:P136 wd:Q208505 ." to 10)),
+        "bk.detective" to ("Name a detective novel" to ("?item wdt:P7937 wd:Q8261 ; wdt:P136 wd:Q208505 ." to 10)),
         // history
         "hi.treaty" to ("Name a treaty" to (inst("Q131569") to 25)),
         "hi.pharaoh" to ("Name a pharaoh" to ("?item wdt:P39 wd:Q37110 ." to 15)),
         "hi.ukpm" to ("Name a British prime minister" to ("?item wdt:P39 wd:Q14211 ." to 20)),
-        // sport
-        "sp.golfer" to ("Name a famous golfer" to (famous("Q11303721") to 20)),
         // music
         "mu.orchestra" to ("Name an orchestra" to (inst("Q42998") to 15)),
     )
