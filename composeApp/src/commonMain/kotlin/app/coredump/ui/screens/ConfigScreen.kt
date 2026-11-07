@@ -199,7 +199,8 @@ fun ConfigScreen(model: AppModel) {
                     lastTap = now
                     if (taps >= 5 && !secret) { secret = true; model.toast = "hidden setting unlocked (Look)" }
                 }, size = 10.sp, color = C.dim)
-            TText("lists from Wikidata (CC0) and Wikipedia (CC BY-SA). no data leaves the device except those queries.",
+            TText("lists from Wikidata (CC0) and Wikipedia (CC BY-SA). no data leaves the device except those queries" +
+                (if (s.shareLists) " and, in 1v1, collected lists swapped with the other player." else "."),
                 size = 10.sp, color = C.dim)
             Spacer(Modifier.height(20.dp))
         }
