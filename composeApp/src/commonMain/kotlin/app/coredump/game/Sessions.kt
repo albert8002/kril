@@ -32,10 +32,19 @@ enum class AttemptStatus { REJECTED, VERIFYING }
  * One rejected (or still being checked) answer in the current round. spam: looked like key-mashing (cost points).
  * offline: the online check could not be reached (the same answer may be sent again).
  */
-data class Attempt(val text: String, val status: AttemptStatus, val suggestion: String?, val spam: Boolean = false, val offline: Boolean = false)
+data class Attempt(
+    val text: String,
+    val status: AttemptStatus,
+    /** Answers to offer for this miss ("did you mean …"), best first. */
+    val suggestions: List<String> = emptyList(),
+    val spam: Boolean = false,
+    val offline: Boolean = false,
+) {
+    val suggestion: String? get() = suggestions.firstOrNull()
+}
 
 /** Autocorrect wants to submit [answer] for what was [typed]; the player accepts or asks for a search instead. */
-data class Confirm(val typed: String, val answer: String)
+data class Confirm(val typed: String, val answer: String, val others: List<String> = emptyList())
 
 /**
  * round: 0-based index of the current prompt. total: prompts in the game (count).
@@ -98,8 +107,8 @@ class Arbiter(private val bank: QuestionBank?, private val maxEdit: Int, private
     sealed interface Local {
         class Hit(val j: Judgement) : Local
         /** Matched only with typos: ask the player before accepting. */
-        class Close(val j: Judgement) : Local
-        class Miss(val suggestion: String?, val canVerify: Boolean, val spam: Boolean) : Local
+        class Close(val j: Judgement, val others: List<String> = emptyList()) : Local
+        class Miss(val suggestions: List<String>, val canVerify: Boolean, val spam: Boolean) : Local
     }
 
     /** Outcome of the online search. */
@@ -117,10 +126,21 @@ class Arbiter(private val bank: QuestionBank?, private val maxEdit: Int, private
      */
     fun local(p: Prompt, text: String, fuzzy: Boolean = true): Local {
         val j = Judge.judge(p, text, if (fuzzy) maxEdit else 0)
-        if (j.tier.isValid) return if (j.distance > 0) Local.Close(j) else Local.Hit(j)
-        val sug = if (fuzzy) p.index.suggest(text)?.let { p.entries[it.entry].name } else null
-        val spam = sug == null && Spam.isGibberish(text)
+        if (j.tier.isValid) {
+            if (j.distance == 0) return Local.Hit(j)
+            // matched only with typos: also offer the other names that contain the typed words
+            val others = p.index.wordMatches(text).asSequence().map { p.entries[it].name }.filter { it != j.entry?.name }
+                .take(MAX_SUGGESTIONS - 1).toList()
+            return Local.Close(j, others)
+        }
+        val sug = if (fuzzy) p.index.suggestions(text, MAX_SUGGESTIONS).map { p.entries[it].name } else emptyList()
+        val spam = sug.isEmpty() && Spam.isGibberish(text)
         return Local.Miss(sug, !spam && online && bank != null, spam)
+    }
+
+    companion object {
+        /** "Did you mean" choices shown for one miss (count). */
+        const val MAX_SUGGESTIONS = 5
     }
 
     suspend fun remote(p: Prompt, text: String): Remote {
@@ -140,7 +160,7 @@ class Arbiter(private val bank: QuestionBank?, private val maxEdit: Int, private
 private const val GRACE_MS = 2_500L
 private const val VERIFY_SLACK_MS = 6_500L
 
-private fun List<Attempt>.upsert(text: String, status: AttemptStatus, sug: String?, spam: Boolean = false, offline: Boolean = false): List<Attempt> {
+private fun List<Attempt>.upsert(text: String, status: AttemptStatus, sug: List<String>, spam: Boolean = false, offline: Boolean = false): List<Attempt> {
     val k = Norm.key(text)
     val i = indexOfFirst { Norm.key(it.text) == k }
     val a = Attempt(text, status, sug, spam, offline)
@@ -243,28 +263,28 @@ class SoloSession(
             is Arbiter.Local.Hit -> finish(r.j)
             is Arbiter.Local.Close -> {
                 close = r.j
-                _s.update { it.copy(confirm = Confirm(t, r.j.entry?.name ?: t)) }
+                _s.update { it.copy(confirm = Confirm(t, r.j.entry?.name ?: t, r.others)) }
             }
             is Arbiter.Local.Miss -> if (r.spam) {
                 spam++
-                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, null, spam = true),
+                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, emptyList(), spam = true),
                     missTick = it.missTick + 1, spam = spam) }
             } else if (r.canVerify) {
-                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.VERIFYING, r.suggestion)) }
+                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.VERIFYING, r.suggestions)) }
                 pending++
                 val round = s.round
                 scope.launch {
                     val res = arbiter.remote(p, t)
                     pending--
-                    onRemote(round, t, res, r.suggestion)
+                    onRemote(round, t, res, r.suggestions)
                 }
             } else {
-                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, r.suggestion), missTick = it.missTick + 1) }
+                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, r.suggestions), missTick = it.missTick + 1) }
             }
         }
     }
 
-    private fun onRemote(round: Int, t: String, res: Arbiter.Remote, sug: String?) {
+    private fun onRemote(round: Int, t: String, res: Arbiter.Remote, sug: List<String>) {
         val s = _s.value
         if (s.round != round || s.phase != Phase.TYPING) return
         if (res is Arbiter.Remote.Found) { finish(res.j); return }
@@ -278,7 +298,7 @@ class SoloSession(
         val s = _s.value
         val p = prompts[s.round]
         val elapsed = (Platform.epochMillis() - s.startedAt).coerceAtMost(if (s.seconds > 0) s.seconds * 1000L else Long.MAX_VALUE)
-        val view = RoundView(s.round, p.id, p.text, p.topic, p.size, Views.play(name, j, elapsed, spam), null, Views.ladder(p))
+        val view = RoundView(s.round, p.id, p.text, p.topic, p.size, Views.play(name, j, elapsed, spam), null, Views.ladder(p), Views.all(p))
         close = null
         _s.update { it.copy(phase = Phase.REVEAL, reveal = view, rounds = it.rounds + view, confirm = null) }
     }
@@ -436,14 +456,14 @@ class HostSession(
             is Arbiter.Local.Hit -> lockMine(r.j)
             is Arbiter.Local.Close -> {
                 myClose = r.j
-                _s.update { it.copy(confirm = Confirm(t, r.j.entry?.name ?: t)) }
+                _s.update { it.copy(confirm = Confirm(t, r.j.entry?.name ?: t, r.others)) }
             }
             is Arbiter.Local.Miss -> if (r.spam) {
                 mySpam++
-                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, null, spam = true),
+                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, emptyList(), spam = true),
                     missTick = it.missTick + 1, spam = mySpam) }
             } else if (r.canVerify) {
-                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.VERIFYING, r.suggestion)) }
+                _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.VERIFYING, r.suggestions)) }
                 myPending++
                 val round = s.round
                 scope.launch {
@@ -451,12 +471,12 @@ class HostSession(
                     myPending--
                     if (_s.value.round != round || myJ != null) return@launch
                     if (res is Arbiter.Remote.Found) lockMine(res.j) else {
-                        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, r.suggestion,
+                        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, r.suggestions,
                             offline = res == Arbiter.Remote.Unreachable), missTick = it.missTick + 1) }
                         if (myExpired && myPending == 0) lockMine(timeoutJudgement(_s.value.attempts))
                     }
                 }
-            } else _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, r.suggestion), missTick = it.missTick + 1) }
+            } else _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, r.suggestions), missTick = it.missTick + 1) }
         }
     }
 
@@ -469,19 +489,19 @@ class HostSession(
         val p = prompts[s.round]
         when (val r = arbiter.local(p, t, fuzzy = !m.raw)) {
             is Arbiter.Local.Hit -> acceptGuest(r.j, m)
-            is Arbiter.Local.Close -> scope.launch { link.send(Msg.Verdict(m.i, t, "confirm", r.j.entry?.name)) }
+            is Arbiter.Local.Close -> scope.launch { link.send(Msg.Verdict(m.i, t, "confirm", r.j.entry?.name, r.others)) }
             is Arbiter.Local.Miss -> if (r.spam) {
                 oppSpam++
                 scope.launch { link.send(Msg.Verdict(m.i, t, "spam", null)) }
             } else if (r.canVerify) {
                 scope.launch {
-                    link.send(Msg.Verdict(m.i, t, "verifying", r.suggestion))
+                    link.send(Msg.Verdict(m.i, t, "verifying", r.suggestions.firstOrNull(), r.suggestions))
                     val res = arbiter.remote(p, t)
                     if (_s.value.round != m.i || oppJ != null) return@launch
                     if (res is Arbiter.Remote.Found) acceptGuest(res.j, m)
-                    else link.send(Msg.Verdict(m.i, t, if (res == Arbiter.Remote.Unreachable) "offline" else "miss", r.suggestion))
+                    else link.send(Msg.Verdict(m.i, t, if (res == Arbiter.Remote.Unreachable) "offline" else "miss", r.suggestions.firstOrNull(), r.suggestions))
                 }
-            } else scope.launch { link.send(Msg.Verdict(m.i, t, "miss", r.suggestion)) }
+            } else scope.launch { link.send(Msg.Verdict(m.i, t, "miss", r.suggestions.firstOrNull(), r.suggestions)) }
         }
     }
 
@@ -509,9 +529,14 @@ class HostSession(
             if (oppJ != null) oppMs else full, oppSpam)
         myClose = null
         val ladder = Views.ladder(p)
-        val view = RoundView(s.round, p.id, p.text, p.topic, p.size, me, opp, ladder)
+        val all = Views.all(p)
+        val view = RoundView(s.round, p.id, p.text, p.topic, p.size, me, opp, ladder, all)
         _s.update { it.copy(phase = Phase.REVEAL, reveal = view, rounds = it.rounds + view, oppLocked = true, confirm = null) }
-        scope.launch { link.send(Msg.Result(s.round, me, opp, ladder)) }
+        scope.launch {
+            link.send(Msg.Result(s.round, me, opp, ladder))
+            // the guest has no lists of its own: the full answer list follows in pieces
+            for (piece in Views.pieces(all)) if (!link.send(Msg.Answers(s.round, piece))) break
+        }
     }
 
     override fun next() {
@@ -562,6 +587,7 @@ class GuestSession(
                 is Msg.Locked -> if (m.i == _s.value.round) _s.update { it.copy(oppLocked = true) }
                 is Msg.Verdict -> onVerdict(m)
                 is Msg.Result -> if (m.i == _s.value.round) reveal(m)
+                is Msg.Answers -> onAnswers(m)
                 Msg.Over -> {
                     _s.update { it.copy(phase = Phase.OVER) }
                     val st = _s.value
@@ -606,7 +632,7 @@ class GuestSession(
         val t = text.trim()
         if (s.phase != Phase.TYPING || t.isEmpty()) return
         if (!raw && s.attempts.has(t)) { _s.update { it.copy(missTick = it.missTick + 1) }; return }
-        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.VERIFYING, null), confirm = null) }
+        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.VERIFYING, emptyList()), confirm = null) }
         scope.launch { link.send(Msg.Attempt(s.round, t, Platform.epochMillis() - s.startedAt, raw)) }
     }
 
@@ -629,16 +655,25 @@ class GuestSession(
         if (v.i != s.round) return
         when (v.status) {
             "ok" -> { timer?.cancel(); _s.update { it.copy(phase = Phase.LOCKED) } }
-            "verifying" -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.VERIFYING, v.suggestion)) }
+            "verifying" -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.VERIFYING, v.choices)) }
             "confirm" -> _s.update { st ->
                 val k = Norm.key(v.text)
-                st.copy(attempts = st.attempts.filter { Norm.key(it.text) != k }, confirm = Confirm(v.text, v.suggestion ?: v.text))
+                st.copy(attempts = st.attempts.filter { Norm.key(it.text) != k }, confirm = Confirm(v.text, v.suggestion ?: v.text, v.more.filter { it != v.suggestion }))
             }
-            "spam" -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.REJECTED, null, spam = true),
+            "spam" -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.REJECTED, emptyList(), spam = true),
                 missTick = it.missTick + 1, spam = it.spam + 1) }
-            "offline" -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.REJECTED, v.suggestion, offline = true),
+            "offline" -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.REJECTED, v.choices, offline = true),
                 missTick = it.missTick + 1) }
-            else -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.REJECTED, v.suggestion), missTick = it.missTick + 1) }
+            else -> _s.update { it.copy(attempts = it.attempts.upsert(v.text, AttemptStatus.REJECTED, v.choices), missTick = it.missTick + 1) }
+        }
+    }
+
+    /** A piece of the round's full answer list: added to the reveal (and the kept round). */
+    private fun onAnswers(m: Msg.Answers) = _s.update { st ->
+        val v = st.reveal
+        if (v == null || v.index != m.i || m.groups.isEmpty()) st else {
+            val nv = v.withAll(Views.merge(v.all, m.groups))
+            st.copy(reveal = nv, rounds = st.rounds.map { if (it === v) nv else it })
         }
     }
 

@@ -12,6 +12,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
@@ -177,7 +181,7 @@ private fun Color.isDark(): Boolean = (0.299f * red + 0.587f * green + 0.114f * 
  */
 @Composable
 private fun Badge(text: String, colors: List<Color>, tint: Color, heat: Int, textSize: TextUnit, big: Boolean, animate: Boolean, key: Any,
-                  modifier: Modifier = Modifier) {
+                  modifier: Modifier = Modifier, icon: String? = null) {
     val style = Th.style
     val k = kindOf(style)
     val motion = animate && !LocalLook.current.reduceMotion
@@ -302,7 +306,16 @@ private fun Badge(text: String, colors: List<Color>, tint: Color, heat: Int, tex
             letterSpacing = if (upper) 2.sp else 1.sp, textAlign = TextAlign.Center,
         ) else termStyle(size = textSize, color = ink, weight = if (k == Kind.REACTION || k == Kind.TINT) FontWeight.SemiBold else FontWeight.Bold,
             glow = if (k == Kind.TUBE || k == Kind.GLOW) 0.8f else 0f, spacing = if (upper) 1.2.sp else 0.5.sp)
-        BasicText(label, style = if (shadow != null) base.copy(shadow = shadow) else base, maxLines = if (big) 2 else 1)
+        val text0 = @Composable { BasicText(label, style = if (shadow != null) base.copy(shadow = shadow) else base, maxLines = if (big) 2 else 1) }
+        if (icon != null && CustomLooks.icons[icon] != null) {
+            // the player's own icon in front of the name
+            val d = with(LocalDensity.current) { (textSize * if (big) 1.25f else 1.45f).toDp() }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CustomIcon(icon, d, animated = animate)
+                Spacer(Modifier.width(if (big) 8.dp else 5.dp))
+                text0()
+            }
+        } else text0()
     }
 }
 
@@ -311,13 +324,15 @@ private fun Badge(text: String, colors: List<Color>, tint: Color, heat: Int, tex
 /** Tier of one answer, in the active theme's badge shape. [animate] = false for long lists (tables). */
 @Composable
 fun TierBadge(tier: Tier, size: TextUnit = 13.sp, animate: Boolean = true) {
-    Badge(tier.label, tierLook(tier).gradient, tierColor(tier), tier.heat, size, big = false, animate = animate, key = tier)
+    Badge(tier.label, tierLook(tier).gradient, tierColor(tier), tier.heat, size, big = false, animate = animate, key = tier,
+        icon = if (tier.isValid) customKey(tier) else null)
 }
 
 // ------------------------------------------------------------------ rank badge
 
 /** Readable colour of a rank on the current panels (lightest stop on dark panels, darkest on light ones). */
 fun rankColor(r: Rank): Color {
+    CustomLooks.color(customKey(r))?.let { c -> return if (Th.pal.dark) CustomLooks.onDark(c) else CustomLooks.onLight(c) }
     if (Th.style == Style.PIXEL) return C.amber
     val g = rankGradient(r)
     return if (Th.pal.dark) g.last() else g.first()
@@ -326,7 +341,8 @@ fun rankColor(r: Rank): Color {
 /** End-of-run title as a plaque in the theme's badge shape; higher ranks keep a slow loop. */
 @Composable
 fun RankBadge(rank: Rank, modifier: Modifier = Modifier, size: TextUnit = 24.sp) {
-    Badge(rank.title, rankGradient(rank), rankColor(rank), rank.ordinal, size, big = true, animate = true, key = rank, modifier = modifier)
+    Badge(rank.title, rankGradient(rank), rankColor(rank), rank.ordinal, size, big = true, animate = true, key = rank, modifier = modifier,
+        icon = customKey(rank))
 }
 
 // ------------------------------------------------------------------ reward burst

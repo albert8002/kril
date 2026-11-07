@@ -24,6 +24,16 @@ object SelfTest {
         delay(1800)
     }
 
+    /** First word (4+ letters) of a multi-word answer that is not an answer by itself: should get "did you mean" choices. */
+    private fun wordProbe(p: app.coredump.core.Prompt): String? = p.entries.asSequence()
+        .filter { it.name.trim().contains(' ') }
+        .map { it.name.trim().substringBefore(' ').filter { c -> c.isLetter() } }
+        .filter { it.length >= 4 }
+        .firstOrNull { !Judge.judge(p, it, 2).tier.isValid }
+
+    private const val ICON_STAR = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABbklEQVR42u1bQRKDMAgsDH/y/8e+Kr3YjtNaJ0GEjcDJm2HZ3QCjj0dFRWi01lrk+zl7ATi8+k8KZUExILr6qSXwiUAZcObqY3lAEAvKBDPTH48BATLgzNUvD4AEwFkGnJn+uBJwZAFnrn6ZoAcA6uo7yUDQV1m97yEilcZInRSappf+o2/BopkMywKkb6bwLjpLS5H8LgN+5HAHNvxJ/hCAW0hiZfKRQdLsjYym6sN9wHS+0Jn8UCM0DQgDyQ93gvAgDCavaoVhQVAk322C8NekMvlTAEDcEB3X3OUAhIFwourm47C7Lxglb7oPcAPBMPnaCE0JgPGmiDMsPksCBcDdADD0Ac6s/5IABADBk6Ug7OtUk+XqA2e7QnHX/84E936O8BJBmuDUbIAHYGBu92aDwK6qethg4ANymf4ttjVbNlwkC0FcU3nKQpCXFR4mKahV72bDSR8giy83PBKHO0P0316oZ6moqKioqJgoXrcTBskTfQ3FAAAAAElFTkSuQmCC"
+    private const val ICON_RING = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABh0lEQVR42u1b2xHDIAzDui7TWTpvZ+k46Vfv+tGkPGxhEuk7B5YwxDFKKYIgCMJ1YczJtm3bqgMzs1MI0EJ6hhiWlTRLDGMTvz//j/N68ISwaPI1hHsF8RDBosh7EK8RYlQEW4F4pBBYjfzePL0Hr3mQZxGvyYbWTMDK5H/N35oJ8E7FDCKECfCtbhbyv+JpyQJkqO5mVqNYcd97ngdYdd97xYezpX5r/Dbj4Dv62ImY46g2uM0sWo6eYW01sFa/hvzI872vRWRZ+QgRwitBBoloERB5+nsF7zHOHh+c4d0/Ejeypj5rK6BcHBJAAkgACSABsvXpmLUIstTks2oRRF4+eq2axzh7fJC5Zc0ow5G5b8/4BkFt2ng2KBjkU7bEPqQYPUG3y9FV7gR6L0yRxa01y1OEjH06Zt8APSpmFaHHK4BsxkW2nQ69g2bLgtrXnmshlEWEkTgwmlqzRRj1CNmKLjFPqxw8DxlWNnj6BOUULfIKF7nFi/4XKPpjpFz0nyFBEIRL4w0H09ZeNGJgFQAAAABJRU5ErkJggg=="
+
     private fun typo(s: String): String = if (s.length < 6) s else s.substring(0, 2) + s.substring(3)
 
     private val plan = listOf(
@@ -46,6 +56,20 @@ object SelfTest {
             log("READY prompts=${model.bank.state.value.prompts} answers=${model.bank.state.value.answers}")
             model.update { it.copy(rounds = 3, seconds = 40) }
 
+            // own tier / rank looks: names, colours and animated icons (visible in every theme's shots)
+            val star = app.coredump.ui.B64.decode(ICON_STAR)
+            val ring = app.coredump.ui.B64.decode(ICON_RING)
+            val okStar = star != null && app.coredump.ui.CustomLooks.store("T:HELLO_WORLD", star)
+            val okRing = ring != null && app.coredump.ui.CustomLooks.store("R:INTERN", ring)
+            model.update {
+                it.copy(custom = mapOf(
+                    "T:HELLO_WORLD" to app.coredump.core.Custom(name = "BASIC", color = 0xFFE53935, icon = okStar, anim = "SPIN"),
+                    "T:ZERO_DAY" to app.coredump.core.Custom(name = "GOAT", color = 0xFF00A86B),
+                    "R:INTERN" to app.coredump.core.Custom(name = "ROOKIE", icon = okRing, anim = "PULSE"),
+                ))
+            }
+            log("CUSTOM star=$okStar ring=$okRing label=${app.coredump.core.Tier.HELLO_WORLD.label} rank=${app.coredump.core.Rank.INTERN.title}")
+
             for ((style, pal) in plan) {
                 model.setTheme(style, pal)
                 model.home(); delay(1200)
@@ -64,6 +88,11 @@ object SelfTest {
                     } else {
                         val e = p.entries.firstOrNull { it.name.length >= 7 } ?: p.entries[Random.nextInt(p.entries.size)]
                         if (round == 0) {
+                            // one word of a longer answer: the "did you mean" choices list the answers containing it
+                            wordProbe(p)?.let { w ->
+                                s.submit(w); delay(450)
+                                log("SUGGEST '$w' -> ${s.state.value.attempts.lastOrNull { it.suggestions.isNotEmpty() }?.suggestions}")
+                            }
                             shot("play_${style.name.lowercase()}")
                             // the theme's typing / sending touches around the answer field
                             repeat(3) { model.fx.key(); delay(70) }
@@ -83,7 +112,13 @@ object SelfTest {
                     var w = 0
                     while (s.state.value.phase == Phase.TYPING && w < 8000) { delay(200); w += 200 }
                     delay(1300)
-                    if (round == 0) { delay(300); shot("reveal_${style.name.lowercase()}") }
+                    if (round == 0) {
+                        delay(300); shot("reveal_${style.name.lowercase()}")
+                        val v = s.state.value.reveal
+                        log("ANSWERS ${style.name} groups=${v?.all?.size} names=${v?.all?.sumOf { it.names.size }} list=${v?.listSize}")
+                        app.coredump.ui.screens.RevealProbe.ping++; delay(900)
+                        shot("answers_${style.name.lowercase()}")
+                    }
                     s.next()
                 }
                 delay(2500)
@@ -95,6 +130,8 @@ object SelfTest {
                 shot("config_${style.name.lowercase()}")
                 model.go(Screen.Fetch); delay(1000)
                 shot("fetch_${style.name.lowercase()}")
+                model.go(Screen.Looks); delay(1200)
+                shot("looks_${style.name.lowercase()}")
             }
             for ((style, pal) in extra) {
                 model.setTheme(style, pal)

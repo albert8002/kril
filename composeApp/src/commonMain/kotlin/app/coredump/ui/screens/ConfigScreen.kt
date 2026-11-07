@@ -144,6 +144,7 @@ fun ConfigScreen(model: AppModel) {
             Panel(Th.say("DISPLAY", "Look")) {
                 KV("theme", "${Th.style.label} · ${Th.pal.name}")
                 TLink(Th.say("change theme, colours, text size", "Change theme, colours and text size"), { model.go(Screen.Appearance) }, color = C.hot)
+                TLink(Th.say("own tier & rank names, colours, icons", "Customize tiers and ranks"), { model.go(Screen.Looks) }, color = C.hot)
                 Toggle("haptics", s.haptics, { v -> model.update { it.copy(haptics = v) } })
                 if (secret || s.spicyNames) {
                     Toggle(Th.say("spicy rank names", "Spicy rank names"), s.spicyNames, { v -> model.update { it.copy(spicyNames = v) } },

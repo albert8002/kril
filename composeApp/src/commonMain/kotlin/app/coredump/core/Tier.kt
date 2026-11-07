@@ -1,11 +1,38 @@
 package app.coredump.core
 
 /**
- * Which names players see. Plain names by default; [spicy] = the crude names (a hidden setting).
- * Set from the settings at start-up and whenever they change.
+ * A player's own look for one tier or rank. Key: "T:<tier enum name>" or "R:<rank enum name>".
+ * name: own name ("" = default). color: ARGB colour (null = default). icon: an uploaded icon file exists.
+ * anim: icon micro-animation (see [IconAnim]).
+ */
+data class Custom(val name: String = "", val color: Long? = null, val icon: Boolean = false, val anim: String = "NONE") {
+    val isDefault: Boolean get() = name.isBlank() && color == null && !icon && anim == "NONE"
+
+    companion object {
+        fun keyOf(t: Tier) = "T:${t.name}"
+        fun keyOf(r: Rank) = "R:${r.name}"
+    }
+}
+
+/** Micro-animations a player can give an uploaded tier / rank icon. */
+enum class IconAnim(val label: String) {
+    NONE("still"), PULSE("pulse"), BOUNCE("bounce"), SPIN("spin"), WOBBLE("wobble"), FLOAT("float"), BLINK("blink"),
+    SHAKE("shake"), FLIP("flip");
+
+    companion object {
+        fun byName(n: String?): IconAnim = entries.firstOrNull { it.name == n } ?: NONE
+    }
+}
+
+/**
+ * Which names players see. Plain names by default; [spicy] = the crude names (a hidden setting);
+ * [custom] = the player's own names (they win over both). Set from the settings at start-up and whenever they change.
  */
 object Names {
     var spicy: Boolean = false
+    var custom: Map<String, Custom> = emptyMap()
+
+    internal fun own(key: String): String? = custom[key]?.name?.trim()?.takeIf { it.isNotEmpty() }
 }
 
 /**
@@ -31,7 +58,9 @@ enum class Tier(
     HEISENBUG(85, "RARE", "PORNOGRAPHIC MEMORY", "0x0055", "how do you even know that.", 5),
     ZERO_DAY(100, "LEGENDARY", "OILED UP", "0x0064", "the rarest answer on the list.", 6);
 
-    val label: String get() = if (Names.spicy) spicy else plain
+    /** Name before any custom name (plain or spicy). */
+    val defaultLabel: String get() = if (Names.spicy) spicy else plain
+    val label: String get() = (if (isValid) Names.own(Custom.keyOf(this)) else null) ?: defaultLabel
     val isValid: Boolean get() = points > 0
 
     companion object {
@@ -51,7 +80,8 @@ enum class Rank(private val plain: String, private val spicy: String, val minAvg
     EXORCIST("MASTER", "WALKING WIKIPEDIA", 62, "citation not needed."),
     ROOT("GRANDMASTER", "OMNISCIENT", 78, "you are the list.");
 
-    val title: String get() = if (Names.spicy) spicy else plain
+    val defaultTitle: String get() = if (Names.spicy) spicy else plain
+    val title: String get() = Names.own(Custom.keyOf(this)) ?: defaultTitle
 
     companion object {
         fun of(avgPoints: Double): Rank = entries.last { avgPoints >= it.minAvg }

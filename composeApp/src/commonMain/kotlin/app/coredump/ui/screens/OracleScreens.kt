@@ -469,6 +469,7 @@ fun OracleSummary(model: AppModel, session: MatchSession) {
                     }
                 }
                 SpreadCard(1, "THE PRESENT", Modifier.weight(1f)) {
+                    app.coredump.ui.CustomIcon(app.coredump.ui.customKey(t.rank), 30.dp)
                     TText(t.rank.title, size = 13.sp, weight = FontWeight.Bold, color = rankColor(t.rank), align = TextAlign.Center, maxLines = 3)
                 }
                 SpreadCard(2, "THE FUTURE", Modifier.weight(1f)) {

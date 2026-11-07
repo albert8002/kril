@@ -9,6 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import java.io.File
@@ -78,6 +81,52 @@ actual fun rememberQrScanLauncher(onResult: (String?) -> Unit): () -> Unit {
             )
         }
     }
+}
+
+@Composable
+actual fun rememberImagePicker(maxSide: Int, onResult: (ByteArray?) -> Unit): () -> Unit {
+    val cb by rememberUpdatedState(onResult)
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val launcher = rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) cb(null) else scope.launch {
+            val png = withContext(Dispatchers.IO) { runCatching { shrinkImage(uri, maxSide) }.getOrNull() }
+            cb(png)
+        }
+    }
+    return remember(launcher) {
+        {
+            launcher.launch(androidx.activity.result.PickVisualMediaRequest(
+                androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
+    }
+}
+
+/** Decodes [uri] at a small size (photo orientation applied on Android 9+) and returns it as PNG bytes. */
+private fun shrinkImage(uri: android.net.Uri, maxSide: Int): ByteArray? {
+    val cr = AndroidContext.app.contentResolver
+    val bmp: android.graphics.Bitmap = if (android.os.Build.VERSION.SDK_INT >= 28) {
+        val src = android.graphics.ImageDecoder.createSource(cr, uri)
+        android.graphics.ImageDecoder.decodeBitmap(src) { dec, info, _ ->
+            val w = info.size.width
+            val h = info.size.height
+            val s = minOf(1f, maxSide.toFloat() / maxOf(w, h).coerceAtLeast(1))
+            dec.setTargetSize(maxOf(1, (w * s).toInt()), maxOf(1, (h * s).toInt()))
+            dec.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+        }
+    } else {
+        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        cr.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, bounds) }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        var sample = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= maxSide) sample *= 2
+        val opts = android.graphics.BitmapFactory.Options().apply { inSampleSize = sample }
+        val raw = cr.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, opts) } ?: return null
+        val s = minOf(1f, maxSide.toFloat() / maxOf(raw.width, raw.height))
+        if (s < 1f) android.graphics.Bitmap.createScaledBitmap(raw, maxOf(1, (raw.width * s).toInt()), maxOf(1, (raw.height * s).toInt()), true) else raw
+    }
+    val out = java.io.ByteArrayOutputStream()
+    if (!bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)) return null
+    return out.toByteArray()
 }
 
 actual fun shareText(text: String) {

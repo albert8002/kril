@@ -262,10 +262,17 @@ private val tierLooks: Map<Tier, TierLook> = mapOf(
     Tier.ZERO_DAY to TierLook(listOf(Color(0xFF231463), Color(0xFF5B3BFF), Color(0xFF00C8FF), Color(0xFFFF4FD8)), Color(0xFF8FE9FF), Color(0xFF4B2BB5)),
 )
 
-fun tierLook(t: Tier): TierLook = tierLooks.getValue(t)
+fun tierLook(t: Tier): TierLook {
+    if (t.isValid) CustomLooks.color(customKey(t))?.let { c ->
+        return TierLook(CustomLooks.gradient(c), CustomLooks.onDark(c), CustomLooks.onLight(c))
+    }
+    return tierLooks.getValue(t)
+}
 
 /** Text colour of a tier on the current background (the monochrome QUEST palettes keep their own ink). */
 fun tierColor(t: Tier): Color {
+    // the player's own colour wins everywhere
+    if (t.isValid) CustomLooks.color(customKey(t))?.let { c -> return if (Th.pal.dark) CustomLooks.onDark(c) else CustomLooks.onLight(c) }
     if (Th.style == Style.PIXEL) return when (t) {
         Tier.TIMEOUT, Tier.SEGFAULT, Tier.SKIPPED -> C.blood
         Tier.HELLO_WORLD, Tier.COPYPASTA -> C.dim
@@ -277,7 +284,7 @@ fun tierColor(t: Tier): Color {
 }
 
 /** Colours of the run ranks, lowest to highest (2–4 stops each). */
-fun rankGradient(r: app.coredump.core.Rank): List<Color> = when (r.ordinal) {
+fun rankGradient(r: app.coredump.core.Rank): List<Color> = CustomLooks.color(customKey(r))?.let { CustomLooks.gradient(it) } ?: when (r.ordinal) {
     0 -> listOf(Color(0xFF6B7280), Color(0xFFB8C0CC))
     1 -> listOf(Color(0xFF7A3F14), Color(0xFFD08A4E), Color(0xFFF2C28A))
     2 -> listOf(Color(0xFF0E6B5E), Color(0xFF3CB8A3), Color(0xFFA6F0E1))

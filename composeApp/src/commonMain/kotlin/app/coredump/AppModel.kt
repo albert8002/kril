@@ -37,6 +37,8 @@ sealed interface Screen {
     data object Stats : Screen
     data object Appearance : Screen
     data object Fetch : Screen
+    /** Own names, colours and icons for tiers and ranks. */
+    data object Looks : Screen
 }
 
 /** Daily run number: days since 2026-01-01 UTC (epoch day 20454). */
@@ -72,6 +74,8 @@ class AppModel(val scope: CoroutineScope) {
         History.load()
         app.coredump.ui.Th.set(app.coredump.ui.Style.byName(settings.theme), settings.palette)
         app.coredump.core.Names.spicy = settings.spicyNames
+        app.coredump.core.Names.custom = settings.custom
+        app.coredump.ui.CustomLooks.changed(settings.custom)
         app.coredump.ui.Sfx.configure(settings.sound, settings.volume)
     }
 
@@ -119,6 +123,8 @@ class AppModel(val scope: CoroutineScope) {
             app.coredump.ui.Th.set(app.coredump.ui.Style.byName(settings.theme), settings.palette)
         }
         app.coredump.core.Names.spicy = settings.spicyNames
+        app.coredump.core.Names.custom = settings.custom
+        app.coredump.ui.CustomLooks.changed(settings.custom)
         app.coredump.ui.Sfx.configure(settings.sound, settings.volume)
     }
 

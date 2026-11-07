@@ -41,6 +41,8 @@ fun ManualScreen(model: AppModel) {
                     "type any valid answer. every valid answer scores.",
                     "wrong? keep typing. free retries until the clock dies.",
                     "close to an answer? the app asks: submit the suggestion, or search what you typed.",
+                    "typed part of a name (\"mario\", \"ferdinand\")? tap one of the answers that contain it.",
+                    "after each prompt: the full list of answers, by tier.",
                     "people: a surname is enough (\"einstein\", \"van gogh\").",
                     "\"river\", \"lake\", \"mount\", word order, accents and plurals don't matter.",
                     "not in the list? it's checked online (Wikidata) and scored by obscurity. results are cached.",

@@ -291,10 +291,11 @@ fun ChatPlay(model: AppModel, session: MatchSession, st: MatchState, a: AnswerSt
                 if (c != null) {
                     key(c) {
                         Bubble("Did you mean “${c.answer}”?", me = false)
-                        QuickReplies(listOf("Yes, submit" to { a.onConfirm(true) }, "No, search mine" to { a.onConfirm(false) }))
+                        QuickReplies(listOf("Yes, submit" to { a.onConfirm(true) }, "No, search mine" to { a.onConfirm(false) }) +
+                            c.others.take(3).map { s -> "$s?" to { a.send(s) } })
                     }
                 } else if (st.phase == Phase.TYPING) {
-                    suggestionOf(st)?.let { s -> QuickReplies(listOf("$s?" to { a.send(s) })) }
+                    suggestionsOf(st).take(3).takeIf { it.isNotEmpty() }?.let { l -> QuickReplies(l.map { s -> "$s?" to { a.send(s) } }) }
                 }
                 when (st.phase) {
                     Phase.LOCKED -> { Bubble("✓ Locked in", me = true); BotTyping("waiting for ${st.oppName ?: "your friend"}") }

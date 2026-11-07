@@ -275,15 +275,18 @@ fun GazettePlay(model: AppModel, session: MatchSession, st: MatchState, a: Answe
                 Phase.TYPING -> if (!st.paused) {
                     TText("Your answer", size = 11.sp, color = C.dim)
                     AnswerField(a, st, Modifier.fillMaxWidth().shakeX(a), size = 20.sp)
-                    val s = suggestionOf(st)
+                    val sugs = suggestionsOf(st)
                     val c = st.confirm
                     if (c != null) {
                         Spacer(Modifier.height(10.dp))
                         ConfirmCard(c, a)
-                    } else if (s != null) {
+                    } else if (sugs.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
-                        TText("Perhaps you meant “$s”?", Modifier.clickable(remember { MutableInteractionSource() }, null) { a.send(s) },
-                            size = 14.sp, color = C.hot, decoration = TextDecoration.Underline)
+                        TText(if (sugs.size == 1) "Perhaps you meant:" else "Perhaps you meant one of:", size = 12.sp, color = C.dim)
+                        for (s in sugs) key(s) {
+                            TText("“$s”", Modifier.padding(vertical = 2.dp).clickable(remember { MutableInteractionSource() }, null) { a.send(s) },
+                                size = 14.sp, color = C.hot, decoration = TextDecoration.Underline)
+                        }
                     }
                     if (st.attempts.isNotEmpty()) {
                         Spacer(Modifier.height(10.dp))

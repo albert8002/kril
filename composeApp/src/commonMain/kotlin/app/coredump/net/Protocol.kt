@@ -102,7 +102,10 @@ sealed class Msg {
     /** [raw] = the guest rejected the autocorrect: judge exactly what was typed (then check online). */
     data class Attempt(val i: Int, val text: String, val elapsedMs: Long, val raw: Boolean = false) : Msg()
     /** Host → guest: verdict for an attempt. status = miss | verifying | ok | confirm (suggestion = answer to offer) | spam. */
-    data class Verdict(val i: Int, val text: String, val status: String, val suggestion: String?) : Msg()
+    data class Verdict(val i: Int, val text: String, val status: String, val suggestion: String?, val more: List<String> = emptyList()) : Msg() {
+        /** All "did you mean" choices (older hosts send only [suggestion]). */
+        val choices: List<String> get() = more.ifEmpty { listOfNotNull(suggestion) }
+    }
     /** Keep-alive both ways (relay links detect a dead peer by silence). */
     data object Ping : Msg()
     /** List sharing (both ways, in the background): ids of collected lists I have. Older versions ignore these. */
@@ -111,6 +114,8 @@ sealed class Msg {
     data class LibWant(val ids: List<String>) : Msg()
     /** One piece of a list (ranked pack JSON split into [of] pieces). */
     data class LibPart(val id: String, val part: Int, val of: Int, val data: String) : Msg()
+    /** Host → guest after a [Result]: one piece of the round's full answer list (older guests ignore it). */
+    data class Answers(val i: Int, val groups: List<TierGroup>) : Msg()
     data object Over : Msg()
     data class Bye(val reason: String) : Msg()
 
@@ -138,6 +143,16 @@ sealed class Msg {
         is Verdict -> obj("verdict") {
             put("i", i); put("a", text); put("st", status)
             put("sug", suggestion?.let { JsonPrimitive(it) } ?: JsonNull)
+            if (more.size > 1 || (status == "confirm" && more.isNotEmpty())) put("sugs", JsonArray(more.map { JsonPrimitive(it) }))
+        }
+        is Answers -> obj("answers") {
+            put("i", i)
+            put("g", buildJsonArray {
+                for (g in groups) add(buildJsonObject {
+                    put("t", g.tier.name)
+                    put("n", JsonArray(g.names.map { JsonPrimitive(it) }))
+                })
+            })
         }
         Ping -> obj("ping") {}
         is LibHave -> obj("lib_have") { put("ids", JsonArray(ids.map { JsonPrimitive(it) })) }
@@ -175,7 +190,13 @@ sealed class Msg {
                 )
                 "ready" -> Ready(i("i"))
                 "attempt" -> Attempt(i("i"), s("a"), o["ms"]?.jsonPrimitive?.long ?: 0L, o["raw"]?.jsonPrimitive?.booleanOrNull ?: false)
-                "verdict" -> Verdict(i("i"), s("a"), s("st"), o["sug"]?.jsonPrimitive?.contentOrNull)
+                "verdict" -> Verdict(i("i"), s("a"), s("st"), o["sug"]?.jsonPrimitive?.contentOrNull,
+                    o["sugs"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty().take(8))
+                "answers" -> Answers(i("i"), o["g"]?.jsonArray?.mapNotNull { el ->
+                    val g = el.jsonObject
+                    val t = Tier.byName(g["t"]?.jsonPrimitive?.contentOrNull.orEmpty())?.takeIf { it.isValid } ?: return@mapNotNull null
+                    TierGroup(t, g["n"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty())
+                }.orEmpty())
                 "ping" -> Ping
                 "lib_have" -> LibHave(o["ids"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty().take(2000))
                 "lib_want" -> LibWant(o["ids"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty().take(200))

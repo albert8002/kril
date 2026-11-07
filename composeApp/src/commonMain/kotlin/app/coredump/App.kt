@@ -150,6 +150,7 @@ fun App() {
                             Screen.Stats -> StatsScreen(model)
                             Screen.Appearance -> AppearanceScreen(model)
                             Screen.Fetch -> app.coredump.ui.screens.FetchScreen(model)
+                            Screen.Looks -> app.coredump.ui.screens.LooksScreen(model)
                         }
                     }
 

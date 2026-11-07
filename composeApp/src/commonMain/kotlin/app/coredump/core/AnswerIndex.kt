@@ -13,7 +13,7 @@ import kotlin.math.abs
  * Memory: about 3 map keys per answer. (The old symmetric-delete index cost ~17 MB per
  * 1,500-answer list and was the cause of out-of-memory crashes.)
  */
-class AnswerIndex(entries: List<AnswerEntry>, private val people: Boolean = false) {
+class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Boolean = false) {
 
     class Hit(val entry: Int, val distance: Int, val key: String)
 
@@ -106,6 +106,91 @@ class AnswerIndex(entries: List<AnswerEntry>, private val people: Boolean = fals
         return nearest(qc, (qc.length / 3).coerceIn(1, 3), allowExact = false)
     }
 
+    /**
+     * "Did you mean" choices for a rejected input (entry indexes, best first, at most [max]):
+     *  1. the nearest name with typos ([suggest]),
+     *  2. names that contain the typed word(s) as whole words: "mario" → "Mario Kart 3", "ferdinand" → "Carl Ferdinand
+     *     Mungavo", "kart 3" → "Mario Kart 3",
+     *  3. names with a word that starts with the typed word ("ferdin" → "Ferdinand …"; the last typed word for several),
+     *  4. one typed word of 5+ letters one typo away from a word of a name ("ferdinant" → "… Ferdinand …").
+     * Inside each group the most familiar answers come first. Only runs on a miss.
+     */
+    fun suggestions(input: String, max: Int): List<Int> {
+        val out = LinkedHashSet<Int>()
+        suggest(input)?.let { out += it.entry }
+        if (out.size < max) for (e in wordMatches(input)) { if (out.size >= max) break; out += e }
+        return out.toList()
+    }
+
+    /** Words of every name and alias (built on the first miss that needs them). */
+    private class Words(val tokens: Array<List<List<String>>>, val byWord: HashMap<String, IntBag>)
+
+    private val words: Words by lazy {
+        val tokens = Array(entries.size) { i ->
+            val e = entries[i]
+            (listOf(e.name) + e.aliases).map { n -> Norm.key(n).split(' ').filter { it.isNotEmpty() } }.filter { it.isNotEmpty() }
+        }
+        val by = HashMap<String, IntBag>()
+        for (i in tokens.indices) {
+            val seen = HashSet<String>()
+            for (ts in tokens[i]) for (t in ts) if (seen.add(t)) by.getOrPut(t) { IntBag() }.add(i)
+        }
+        Words(tokens, by)
+    }
+
+    /** Entry indexes whose name contains the typed words (see [suggestions] 2–4), best match first. */
+    fun wordMatches(input: String): List<Int> {
+        val q = Norm.key(input).split(' ').filter { it.isNotEmpty() }
+        if (q.isEmpty() || q.sumOf { it.length } < 3) return emptyList()
+        if (q.size == 1 && q[0] in fillers) return emptyList()
+        val w = words
+        // words in the names that may stand for the first typed word, with how loose the match is (0 = same word)
+        val first = q[0]
+        val heads = HashMap<String, Int>()
+        if (w.byWord.containsKey(first)) heads[first] = 0
+        val prefixOk = q.size == 1 && first.length >= 4
+        val typoOk = first.length >= 5
+        if (prefixOk || typoOk) for (k in w.byWord.keys) {
+            if (k == first) continue
+            if (prefixOk && k.length > first.length && k.startsWith(first)) heads[k] = minOf(heads[k] ?: 9, 1)
+            else if (typoOk && abs(k.length - first.length) <= 1 && k.length >= 5 && Edits.osa(first, k, 1) <= 1) heads[k] = minOf(heads[k] ?: 9, 2)
+        }
+        if (heads.isEmpty()) return emptyList()
+        val best = HashMap<Int, Int>()   // entry -> loosest-word level of its best match
+        for ((head, level) in heads) {
+            val bag = w.byWord[head] ?: continue
+            for (j in 0 until bag.size) {
+                val e = bag[j]
+                val lv = matchLevel(w.tokens[e], q, head, level) ?: continue
+                if (lv < (best[e] ?: 9)) best[e] = lv
+            }
+        }
+        return best.entries.sortedWith(compareBy({ it.value }, { it.key })).map { it.key }
+    }
+
+    /** Level (0 = whole words) when [q] appears as consecutive words in one of [names], its first word read as [head]. */
+    private fun matchLevel(names: List<List<String>>, q: List<String>, head: String, headLevel: Int): Int? {
+        var best: Int? = null
+        for (ts in names) for (start in ts.indices) {
+            if (ts[start] != head || start + q.size > ts.size) continue
+            var lv = headLevel
+            var ok = true
+            for (k in 1 until q.size) {
+                val t = ts[start + k]
+                val typed = q[k]
+                lv = when {
+                    t == typed -> lv
+                    k == q.size - 1 && t.startsWith(typed) -> maxOf(lv, 1)
+                    typed.length >= 5 && Edits.osa(typed, t, 1) <= 1 -> maxOf(lv, 2)
+                    else -> { ok = false; lv }
+                }
+                if (!ok) break
+            }
+            if (ok && (best == null || lv < best)) best = lv
+        }
+        return best
+    }
+
     private fun nearest(qc: String, bound: Int, allowExact: Boolean): Hit? {
         var best: Hit? = null
         val lo = (qc.length - bound).coerceAtLeast(0)
@@ -127,6 +212,9 @@ class AnswerIndex(entries: List<AnswerEntry>, private val people: Boolean = fals
     }
 
     companion object {
+        /** Words too common to suggest from on their own. */
+        private val fillers = setOf("the", "and", "of", "for", "with", "from", "les", "los", "las", "der", "die", "das",
+            "des", "del", "della", "von", "van", "une", "una", "uno")
         /** Allowed typos by input length (compact form). */
         fun toleranceFor(len: Int): Int = when {
             len <= 3 -> 0

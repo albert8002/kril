@@ -321,6 +321,7 @@ fun ComicSummary(model: AppModel, session: MatchSession) {
                 Tape("PTS", tilt = -6f)
             }
             Spacer(Modifier.height(10.dp))
+            app.coredump.ui.CustomIcon(app.coredump.ui.customKey(t.rank), 48.dp)
             RansomText(t.rank.title, 26.sp, seed = t.rank.ordinal + 5)
             Spacer(Modifier.height(10.dp))
             Tape(t.rank.line.uppercase(), tilt = 1.5f)

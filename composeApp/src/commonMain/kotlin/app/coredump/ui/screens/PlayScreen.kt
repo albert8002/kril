@@ -34,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,6 +51,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
@@ -143,9 +147,13 @@ fun rememberAnswer(st: MatchState, onSubmit: (String) -> Unit, onConfirm: (Boole
 /** Horizontal shake for the input after a wrong answer. */
 fun Modifier.shakeX(a: AnswerState): Modifier = graphicsLayer { translationX = sin(a.shake.value * 30f) * 14f * a.shake.value }
 
-/** The latest "did you mean" hint, unless already tried. */
-fun suggestionOf(st: MatchState): String? =
-    st.attempts.lastOrNull { it.suggestion != null }?.suggestion?.takeIf { s -> st.attempts.none { it.text.equals(s, ignoreCase = true) } }
+/** The latest "did you mean" choices, without answers already tried. */
+fun suggestionsOf(st: MatchState): List<String> =
+    st.attempts.lastOrNull { it.suggestions.isNotEmpty() }?.suggestions.orEmpty()
+        .filter { s -> st.attempts.none { it.text.equals(s, ignoreCase = true) } }
+
+/** The best "did you mean" choice, unless already tried. */
+fun suggestionOf(st: MatchState): String? = suggestionsOf(st).firstOrNull()
 
 /** Epoch ms, ticking every frame while [running]. */
 @Composable
@@ -191,21 +199,44 @@ fun AnswerField(a: AnswerState, st: MatchState, modifier: Modifier = Modifier, s
  * Autocorrect question ("Submit X?" with yes / "no, search what I typed") when the last answer only matched with
  * typos; otherwise a "Did you mean X?" chip after a miss.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SuggestionChip(st: MatchState, a: AnswerState) {
     val c = st.confirm
     if (c != null) { ConfirmCard(c, a); return }
-    val s = suggestionOf(st) ?: return
-    TText(
-        Th.say("did you mean  $s ?  ↵", "Did you mean $s?"),
-        Modifier.box(Th.style, C.hot, C.panel, pill = Th.style == Style.CLEAN || Th.style == Style.NEON || Th.style == Style.ABYSS || Th.style == Style.CHAT)
-            .clickable(remember { MutableInteractionSource() }, null) { a.send(s) }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        size = 13.sp, color = C.hot, weight = FontWeight.Bold,
-    )
+    val list = suggestionsOf(st)
+    if (list.isEmpty()) return
+    val pill = Th.style == Style.CLEAN || Th.style == Style.NEON || Th.style == Style.ABYSS || Th.style == Style.CHAT
+    if (list.size == 1) {
+        val s = list[0]
+        TText(
+            Th.say("did you mean  $s ?  ↵", "Did you mean $s?"),
+            Modifier.box(Th.style, C.hot, C.panel, pill = pill)
+                .clickable(remember { MutableInteractionSource() }, null) { a.send(s) }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            size = 13.sp, color = C.hot, weight = FontWeight.Bold,
+        )
+        return
+    }
+    // several answers contain what was typed: one chip each
+    Column {
+        TText(Th.say("did you mean:", "Did you mean"), size = 11.sp, color = C.dim)
+        Spacer(Modifier.height(4.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            for ((i, s) in list.withIndex()) {
+                TText(
+                    s,
+                    Modifier.box(Th.style, if (i == 0) C.hot else C.line, C.panel, pill = pill)
+                        .clickable(remember { MutableInteractionSource() }, null) { a.send(s) }
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    size = 12.sp, color = if (i == 0) C.hot else C.amber, weight = FontWeight.Bold, maxLines = 2,
+                )
+            }
+        }
+    }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun ConfirmCard(c: Confirm, a: AnswerState) {
     val pop = remember(c) { Animatable(0.85f) }
@@ -226,6 +257,18 @@ fun ConfirmCard(c: Confirm, a: AnswerState) {
             TButton(Th.say("YES, SUBMIT", "Yes, submit"), { a.onConfirm(true) }, Modifier.weight(1f), primary = true, textSize = 13.sp)
             Spacer(Modifier.width(8.dp))
             TButton(Th.say("NO, SEARCH", "No, search mine"), { a.onConfirm(false) }, Modifier.weight(1f), textSize = 13.sp)
+        }
+        if (c.others.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            TText(Th.say("or one of:", "Or one of these"), size = 11.sp, color = C.dim)
+            Spacer(Modifier.height(4.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                for (s in c.others) {
+                    TText(s, Modifier.box(Th.style, C.line, C.bg, pill = Th.style == Style.CLEAN || Th.style == Style.NEON || Th.style == Style.ABYSS || Th.style == Style.CHAT)
+                        .clickable(remember { MutableInteractionSource() }, null) { a.send(s) }
+                        .padding(horizontal = 10.dp, vertical = 7.dp), size = 12.sp, color = C.amber, weight = FontWeight.Bold, maxLines = 2)
+                }
+            }
         }
     }
 }
@@ -587,6 +630,67 @@ fun RevealExtras(v: RoundView, multi: Boolean) {
                     TText(g.tier.label, Modifier.width(150.dp), size = 11.sp, color = tierColor(g.tier), weight = FontWeight.Bold)
                     TText(g.names.take(3).joinToString(" · "), size = 11.sp, color = C.amber, maxLines = 2)
                 }
+            }
+        }
+    }
+    AnswerList(v)
+}
+
+/** Names shown per tier before "show all" (count). */
+private const val FOLD = 30
+
+/** Bumped by the self-test to scroll the reveal down to the answer list (for a screenshot). */
+object RevealProbe {
+    var ping by mutableIntStateOf(0)
+}
+
+/**
+ * Every answer on the list after a prompt, by tier (most common first, most familiar first inside a tier).
+ * The answers given this round are marked in their tier colour. Long tiers fold to [FOLD] names.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AnswerList(v: RoundView) {
+    // a 1v1 guest gets the full list from the host a moment after the result (older hosts: only the top few)
+    val full = v.all.isNotEmpty()
+    val groups = if (full) v.all else v.ladder.reversed()
+    if (groups.isEmpty()) return
+    val total = if (full) groups.sumOf { it.names.size } else v.listSize
+    val given = listOfNotNull(v.me.canonical, v.opp?.canonical).map { app.coredump.core.Norm.key(it) }.toSet()
+    Spacer(Modifier.height(12.dp))
+    val view = remember { BringIntoViewRequester() }
+    LaunchedEffect(RevealProbe.ping) { if (RevealProbe.ping > 0) runCatching { view.bringIntoView() } }
+    Panel(Th.say("FULL LIST · ${group(total)} ANSWERS", "All ${group(total)} answers"), Modifier.bringIntoViewRequester(view)) {
+        if (!full) {
+            TText(Th.say("top answers only (full list not received)", "Only the top answers (the full list did not arrive)"), size = 10.sp, color = C.dim)
+            Spacer(Modifier.height(6.dp))
+        }
+        for ((gi, g) in groups.withIndex()) key(v.index, g.tier) {
+            var open by remember { mutableStateOf(false) }
+            val shown = if (open) g.names else g.names.take(FOLD)
+            if (gi > 0) Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TierBadge(g.tier, 10.sp, animate = false)
+                Spacer(Modifier.width(8.dp))
+                TText("${g.names.size} · +${g.tier.points}", size = 10.sp, color = C.dim)
+            }
+            Spacer(Modifier.height(4.dp))
+            val mark = tierColor(g.tier)
+            TText(
+                buildAnnotatedString {
+                    shown.forEachIndexed { i, n ->
+                        if (i > 0) append("  ·  ")
+                        if (app.coredump.core.Norm.key(n) in given) {
+                            withStyle(SpanStyle(color = mark, fontWeight = FontWeight.Bold, textDecoration = TextDecoration.Underline)) { append(n) }
+                        } else append(n)
+                    }
+                },
+                size = 12.sp, color = C.amber,
+            )
+            if (g.names.size > FOLD) {
+                Spacer(Modifier.height(2.dp))
+                TLink(if (open) Th.say("fold", "Show fewer") else Th.say("+${g.names.size - FOLD} more", "Show all ${g.names.size}"),
+                    { open = !open }, size = 11.sp, color = C.hot)
             }
         }
     }

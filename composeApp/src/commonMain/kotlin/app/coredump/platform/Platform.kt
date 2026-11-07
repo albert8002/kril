@@ -21,6 +21,13 @@ expect fun PlatformBack(enabled: Boolean, onBack: () -> Unit)
 @Composable
 expect fun rememberQrScanLauncher(onResult: (String?) -> Unit): () -> Unit
 
+/**
+ * Returns a function that opens the system photo picker and reports the chosen image as a small PNG
+ * (longest side ≤ [maxSide] px), or null (cancelled / unreadable). The result arrives on the main thread.
+ */
+@Composable
+expect fun rememberImagePicker(maxSide: Int, onResult: (ByteArray?) -> Unit): () -> Unit
+
 /** Opens the system share sheet with [text]. */
 expect fun shareText(text: String)
 

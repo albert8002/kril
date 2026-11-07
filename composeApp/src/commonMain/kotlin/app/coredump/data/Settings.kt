@@ -56,12 +56,16 @@ data class Settings(
     val fetchCount: Int = 20,
     /** Share collected lists with the other player during 1v1 (silently, in the background). */
     val shareLists: Boolean = true,
+    /** The player's own names, colours, icons and icon animations for tiers and ranks (see [app.coredump.core.Custom]). */
+    val custom: Map<String, app.coredump.core.Custom> = emptyMap(),
 ) {
     fun gameConfig() = GameConfig(rounds, seconds, difficulty, topics, niche)
 }
 
 object SettingsStore {
     private const val FILE = "settings.json"
+    /** Longest own tier / rank name (characters). */
+    const val MAX_NAME = 24
     private val json = Json { ignoreUnknownKeys = true }
 
     fun load(): Settings = runCatching {
@@ -98,6 +102,17 @@ object SettingsStore {
             fetchTopics = list("fetchTopics")?.filter { it in app.coredump.core.Topics.keys }?.toSet() ?: d.fetchTopics,
             fetchCount = (i("fetchCount") ?: d.fetchCount).coerceIn(1, 200),
             shareLists = b("shareLists") ?: d.shareLists,
+            custom = o["custom"]?.jsonObject?.mapNotNull { (k, v) ->
+                runCatching {
+                    val c = v.jsonObject
+                    k to app.coredump.core.Custom(
+                        name = c["n"]?.jsonPrimitive?.contentOrNull.orEmpty().take(MAX_NAME),
+                        color = c["c"]?.jsonPrimitive?.contentOrNull?.toLongOrNull(16),
+                        icon = c["i"]?.jsonPrimitive?.booleanOrNull ?: false,
+                        anim = c["a"]?.jsonPrimitive?.contentOrNull ?: "NONE",
+                    )
+                }.getOrNull()
+            }?.toMap()?.filterValues { !it.isDefault } ?: d.custom,
         )
     }.getOrElse { Settings() }
 
@@ -128,6 +143,14 @@ object SettingsStore {
             put("fetchTopics", JsonArray(s.fetchTopics.map { JsonPrimitive(it) }))
             put("fetchCount", s.fetchCount)
             put("shareLists", s.shareLists)
+            put("custom", buildJsonObject {
+                for ((k, c) in s.custom) if (!c.isDefault) put(k, buildJsonObject {
+                    put("n", c.name)
+                    c.color?.let { put("c", it.toString(16)) }
+                    put("i", c.icon)
+                    put("a", c.anim)
+                })
+            })
         }
         runCatching { Platform.writeText(FILE, o.toString()) }
     }
