@@ -9,7 +9,10 @@ object WikidataPool {
 
     private fun t(id: String, prompt: String, topic: String, where: String, minLinks: Int = 0, limit: Int = 800) =
         WikidataTemplate("wx.$id", prompt, topic, where, minLinks, limit,
-            when { id == "br.hotelchain" -> 0; id in everyday -> 2; else -> WikidataTemplates.FAMOUS_MIN })
+            when { id in anyFame -> 0; id in everyday -> 2; else -> WikidataTemplates.FAMOUS_MIN })
+
+    /** Lists people know well although each answer has few Wikipedia pages. */
+    private val anyFame = setOf("br.hotelchain", "pc.fictcity", "mu.orchestra")
 
     /** Everyday-object lists: few answers have many Wikipedia pages, but people know them. */
     private val everyday = setOf("ev.hat", "ev.shoe", "ev.cardgame", "fd.coffee", "fd.noodle", "fd.tea", "br.supermarket",
@@ -18,7 +21,7 @@ object WikidataPool {
         "nx.handball", "nx.tabletennis",
         // v20 additions with few very famous members
         "gm.mmo", "gm.sports", "tc.search", "wo.figure", "wo.conlang", "wo.signlang", "ev.boat", "fd.beerstyle",
-        "na.canyon", "na.glacier", "pc.fictcity", "pc.fictcountry", "bk.childrens", "mu.orchestra", "gm.n64", "gm.snes",
+        "an.cephalopod", "na.canyon", "na.glacier", "pc.fictcity", "pc.fictcountry", "bk.childrens", "mu.orchestra", "gm.n64", "gm.snes",
         "gm.gameboy")
 
     private fun inst(q: String) = "?item wdt:P31 wd:$q ."
@@ -259,8 +262,6 @@ object WikidataPool {
         "tc.app" to ("Name a mobile app" to (inst("Q620615") to 15)),
         "tc.search" to ("Name a search engine" to (inst("Q4182287") to 8)),
         "tc.programmer" to ("Name a famous programmer" to (famous("Q5482740") to 15)),
-        // horror
-        "ho.horrornovel" to ("Name a horror novel" to ("?item wdt:P7937 wd:Q8261 ; wdt:P136 wd:Q193606 ." to 10)),
         // words
         "wo.writing" to ("Name a writing system or alphabet" to (inst("Q8192") to 15)),
         "wo.figure" to ("Name a figure of speech" to (inst("Q182545") to 8)),
@@ -297,7 +298,6 @@ object WikidataPool {
         "bk.childrens" to ("Name a children's book" to ("?item wdt:P31 wd:Q7725634 ; wdt:P136 wd:Q131539 ." to 10)),
         "bk.fantasy" to ("Name a fantasy novel" to ("?item wdt:P31 wd:Q7725634 ; wdt:P136 wd:Q132311 ." to 15)),
         "bk.scifi" to ("Name a science fiction novel" to ("?item wdt:P31 wd:Q7725634 ; wdt:P136 wd:Q24925 ." to 15)),
-        "bk.detective" to ("Name a detective novel" to ("?item wdt:P7937 wd:Q8261 ; wdt:P136 wd:Q208505 ." to 10)),
         // history
         "hi.treaty" to ("Name a treaty" to (inst("Q131569") to 25)),
         "hi.pharaoh" to ("Name a pharaoh" to ("?item wdt:P39 wd:Q37110 ." to 15)),

@@ -93,11 +93,12 @@ fun main(args: Array<String>) {
             app.coredump.data.AnswerCheck.listed(p, cands)?.let { return "LISTED(${it.name})" }
             val where = p.check ?: return "MISSING(no class)"
             val qids = app.coredump.data.AnswerCheck.qids(cands)
+            val seen = cands.take(4).joinToString("; ") { c -> "${c.qid}:${c.names.take(2).joinToString("/")}" }
             if (qids.isEmpty()) return "MISSING(no candidates)"
             val body = runCatching {
                 postForm(WikiNet.WDQS, mapOf("query" to app.coredump.data.AnswerCheck.memberQuery(where, qids), "format" to "json"))
             }.getOrElse { return "UNREACHABLE(member ${it.message?.take(60)})" }
-            val m = app.coredump.data.AnswerCheck.parseMember(body) ?: return "MISSING(${qids.size} checked)"
+            val m = app.coredump.data.AnswerCheck.parseMember(body) ?: return "MISSING(${qids.size} checked: $seen)"
             return "FOUND(${m.label ?: m.qid}, ${m.links} links)"
         }
         // small lists (limit) so that well-known answers can also be missing from the list and need the class check

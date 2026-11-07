@@ -66,9 +66,11 @@ object SelfTest {
                         if (round == 0) {
                             shot("play_${style.name.lowercase()}")
                             // the theme's typing / sending touches around the answer field
-                            repeat(4) { model.fx.key(); delay(70) }
-                            model.fx.sent(); delay(280)
+                            repeat(3) { model.fx.key(); delay(70) }
+                            model.fx.sent(); delay(200)
                             shot("touch_${style.name.lowercase()}")
+                            // the screenshot is taken a moment after the log line: keep the touches coming meanwhile
+                            repeat(12) { model.fx.key(); if (it % 3 == 0) model.fx.sent(); delay(110) }
                         }
                         s.submit(typo(e.name))
                         delay(500)
