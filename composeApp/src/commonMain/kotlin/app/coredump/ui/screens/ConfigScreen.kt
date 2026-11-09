@@ -171,7 +171,7 @@ fun ConfigScreen(model: AppModel) {
                 }
                 Spacer(Modifier.height(10.dp))
                 Toggle(Th.say("music", "Music"), s.music, { v -> model.update { it.copy(music = v) } },
-                    "one theme in 7/4, arranged for every look")
+                    "one theme in 7/4 with a returning hook")
                 if (s.music) {
                     Spacer(Modifier.height(6.dp))
                     TText(Th.say("music volume", "Music volume"), size = 13.sp, color = C.dim)
@@ -179,6 +179,13 @@ fun ConfigScreen(model: AppModel) {
                     val mLevels = listOf(0.25f, 0.5f, 0.75f, 1f)
                     Choice(mLevels, mLevels.minByOrNull { kotlin.math.abs(it - s.musicVolume) } ?: 0.5f, { "${(it * 100).toInt()}%" }) { v ->
                         model.update { it.copy(musicVolume = v) }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    TText(Th.say("arrangement", "Arrangement"), size = 13.sp, color = C.dim)
+                    Spacer(Modifier.height(6.dp))
+                    Choice(listOf("ABYSS", "MATCH"), if (s.musicLook == "MATCH") "MATCH" else "ABYSS",
+                        { if (it == "MATCH") Th.say("match the look", "Match the look") else Th.say("deep sea (all looks)", "Deep sea, all looks") }) { v ->
+                        model.update { it.copy(musicLook = v) }
                     }
                 }
             }

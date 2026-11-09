@@ -16,19 +16,24 @@ import kotlin.random.Random
  *  - kick and bass mark the group starts, beats 1 and 5; the snare answers on beats 3 and 7,
  *  - chords change on beats 1 and 5,
  *  - the final group of three is laid back by a hair (8 ms) so it never rushes the bar line,
- *  - bar 8 ends with a snare fill over A7 that falls back into bar 1.
- * Key: D minor (dorian colour). 8 bars, chords per half bar (beats 1–4 | 5–7):
- *   | Dm7 | B♭maj7 C | Gm7 Am7 | B♭ A7sus4 | Dm7 | B♭maj7 C | Gm7 Am7 | B♭ A7 |
- * Melody: an 8-bar line; bars 5–8 answer bars 1–4, climb to G5 and end on C♯ (the leading tone) → back to A.
+ *  - the bar before each return of the theme ends with a snare fill.
+ * Key: D minor. Form A – B – A' (12 bars), so the theme comes back every loop:
+ *  - the hook ([HOOK]): D – F – E – A, long-short-short-long, filling beats 1–4; three rising notes answer it on
+ *    beats 5–7. Bars 1–3 state it three times, each a step lower (D, C, B♭), bar 4 cadences on A7sus4.
+ *  - B (bars 5–8): a higher, longer-breathed answer over B♭maj7 C | Am7 Dm7 | Gm7 C | B♭ A7, falling to A.
+ *  - A' (bars 9–12): the hook returns, doubled an octave up, and closes on C♯ → E, back into bar 1.
+ * The same hook is the "lists fetched" and end-of-game sound ([Sfx]), so it recurs outside the music too.
  *
  * Rendered once on the device into one loop (mono 16-bit, [RATE] Hz). Note tails, echo and filter wrap around the
  * end of the loop, so it repeats without a seam.
  */
 internal object Score {
     const val RATE = 22050
-    const val BARS = 8
     /** Eighth notes per bar (7 quarter beats). */
     const val EIGHTHS = 14
+
+    /** The hook as (start eighth, length in eighths, semitones from its first note): D F E A. */
+    val HOOK = intArrayOf(0, 3, 0, 3, 1, 3, 4, 2, 2, 6, 2, -5)
 
     // ---- the composition
 
@@ -46,21 +51,45 @@ internal object Score {
 
     /** Two chords per bar: [bar * 2] for beats 1–4, [bar * 2 + 1] for beats 5–7. */
     private val halves = listOf(
+        // A
         DM7, DM7, BBMAJ7, C, GM7, AM7, BB, A7SUS,
+        // B
+        BBMAJ7, C, AM7, DM7, GM7, C, BB, A7,
+        // A'
         DM7, DM7, BBMAJ7, C, GM7, AM7, BB, A7,
     )
 
-    /** Melody per bar: (start eighth, length in eighths, MIDI note) triples. A4 = 69. */
-    private val melody: List<IntArray> = listOf(
-        intArrayOf(0, 3, 69, 3, 1, 72, 4, 2, 74, 6, 2, 72, 8, 2, 69, 10, 2, 67, 12, 2, 65),   // A C D C | A G F
-        intArrayOf(0, 4, 74, 4, 2, 77, 6, 2, 76, 8, 2, 76, 10, 1, 74, 11, 1, 72, 12, 2, 67),  // D F E | E D C G
-        intArrayOf(0, 3, 70, 3, 1, 69, 4, 2, 67, 6, 2, 70, 8, 3, 72, 11, 1, 76, 12, 2, 74),   // B♭ A G B♭ | C E D
-        intArrayOf(0, 6, 74, 6, 2, 72, 8, 4, 74, 12, 2, 76),                                  // D C | D (sus) E
-        intArrayOf(0, 2, 69, 2, 2, 74, 4, 3, 77, 7, 1, 76, 8, 2, 74, 10, 2, 72, 12, 2, 69),   // A D F E | D C A
-        intArrayOf(0, 2, 70, 2, 2, 74, 4, 2, 77, 6, 2, 79, 8, 4, 76, 12, 2, 72),              // B♭ D F G | E C
-        intArrayOf(0, 3, 74, 3, 1, 72, 4, 2, 70, 6, 2, 69, 8, 2, 67, 10, 2, 69, 12, 2, 72),   // D C B♭ A | G A C
-        intArrayOf(0, 8, 69, 8, 3, 73, 11, 1, 76, 12, 2, 79),                                 // A (maj7 of B♭) | C♯ E G
+    /** The hook on [first] (MIDI) at the start of a bar, then [answer]: (start, length, note) triples. */
+    private fun hookBar(first: Int, vararg answer: Int): IntArray {
+        val out = ArrayList<Int>()
+        var i = 0
+        while (i + 2 < HOOK.size) { out += HOOK[i]; out += HOOK[i + 1]; out += first + HOOK[i + 2]; i += 3 }
+        return (out + answer.toList()).toIntArray()
+    }
+
+    // MIDI: D4 62, F4 65, G4 67, A4 69, B♭4 70, C5 72, C♯5 73, D5 74, E5 76, F5 77, G5 79
+    private val themeA: List<IntArray> = listOf(
+        hookBar(74, 8, 2, 67, 10, 2, 69, 12, 2, 72),          // D F E A | G A C
+        hookBar(72, 8, 2, 65, 10, 2, 67, 12, 2, 70),          // C E D G | F G B♭   (a step lower)
+        hookBar(70, 8, 2, 67, 10, 2, 69, 12, 2, 72),          // B♭ D C F | G A C   (a step lower again)
     )
+
+    /** Melody per bar: (start eighth, length in eighths, MIDI note) triples. */
+    private val melody: List<IntArray> = themeA + listOf(
+        intArrayOf(0, 6, 74, 6, 2, 72, 8, 4, 74, 12, 2, 76),                                  // D C | D E (over A7sus4)
+        // B
+        intArrayOf(0, 4, 77, 4, 2, 76, 6, 2, 74, 8, 4, 76, 12, 2, 79),                        // F E D | E G
+        intArrayOf(0, 6, 76, 6, 2, 72, 8, 4, 69, 12, 2, 74),                                  // E C | A D
+        intArrayOf(0, 3, 70, 3, 1, 72, 4, 2, 74, 6, 2, 77, 8, 2, 76, 10, 2, 74, 12, 2, 72),   // B♭ C D F | E D C
+        intArrayOf(0, 6, 74, 6, 2, 77, 8, 2, 76, 10, 2, 73, 12, 2, 69),                       // D F | E C♯ A → the hook
+    ) + themeA + listOf(
+        intArrayOf(0, 6, 74, 6, 2, 72, 8, 4, 73, 12, 2, 76),                                  // D C | C♯ E → bar 1
+    )
+
+    /** Bars where the hook returns brighter (doubled an octave up). */
+    private val doubled = 8..10
+
+    val BARS: Int get() = melody.size
 
     /** Arpeggio order over a chord's four tones, per eighth (4-beat half, then 3-beat half). */
     private val arpLong = intArrayOf(0, 2, 1, 3, 2, 1, 3, 2)
@@ -107,9 +136,9 @@ internal object Score {
         Style.COMIC -> Arr(120f, Inst(W.SINE, 0.002f, 0.1f, 0.5f, decay = 7f, octave = 1), Inst(W.TRI, 0.003f, 0.05f, 0.55f, decay = 4f),
             null, null, Kit.SOFT, tone = 0.9f, swing = 0.1f, drums = 0.45f)
         // the deep: slow sine lead in a long echo, pad, glassy arpeggio, a heartbeat
-        Style.ABYSS -> Arr(80f, Inst(W.SINE, 0.06f, 0.6f, 0.36f, decay = 0.3f, vibrato = 0.003f), Inst(W.SINE, 0.03f, 0.3f, 0.5f),
-            Inst(W.SINE, 0.6f, 1.2f, 0.12f), Inst(W.GLASS, 0.004f, 0.5f, 0.07f, decay = 2f, octave = 1), Kit.HEART,
-            tone = 0.3f, echo = 0.45f, echoBeats = 1.5f, transpose = -2)
+        Style.ABYSS -> Arr(80f, Inst(W.SINE, 0.05f, 0.6f, 0.42f, decay = 0.3f, vibrato = 0.003f), Inst(W.SINE, 0.03f, 0.3f, 0.5f),
+            Inst(W.SINE, 0.6f, 1.2f, 0.12f), Inst(W.GLASS, 0.004f, 0.5f, 0.06f, decay = 2f, octave = 1), Kit.HEART,
+            tone = 0.3f, echo = 0.38f, echoBeats = 1.5f, transpose = -2)
         // station: chimes, steady rail-click hats
         Style.METRO -> Arr(112f, Inst(W.CHIME, 0.003f, 0.4f, 0.38f, decay = 1.5f), Inst(W.TRI, 0.006f, 0.08f, 0.5f),
             null, null, Kit.SOFT, tone = 0.7f, echo = 0.15f, drums = 0.55f)
@@ -182,13 +211,15 @@ internal object Score {
                 for ((i, k) in order.withIndex()) play(p, ch.tones[k] + 12, at(b, e0 + i), 0.9f * e8, if (i == 0) 1f else 0.75f)
             }
         }
-        // melody
+        // melody (the returning hook doubled an octave up, softly)
         for ((b, m) in melody.withIndex()) {
             var i = 0
             while (i + 2 < m.size) {
                 val start = m[i]
                 val len = m[i + 1]
-                play(a.lead, m[i + 2], at(b, start), len * e8 * 0.92f, if (start == 0 || start == 8) 1f else 0.85f)
+                val g = if (start == 0 || start == 8) 1f else 0.85f
+                play(a.lead, m[i + 2], at(b, start), len * e8 * 0.92f, g)
+                if (b in doubled && start < 8) play(a.lead, m[i + 2] + 12, at(b, start), len * e8 * 0.92f, g * 0.32f)
                 i += 3
             }
         }
@@ -254,7 +285,8 @@ internal object Score {
     /** One bar of drums. Kick on 1 and 5 (+ a push on the "and" of 2), snare on 3 and 7, hats on eighths; bar 8 fills. */
     private fun drumBar(out: FloatArray, a: Arr, b: Int, at: (Int, Int) -> Float, rnd: Random) {
         val lv = a.drums
-        val fill = b == BARS - 1
+        // fill into each return of the theme (and into the B section)
+        val fill = b == BARS - 1 || b == 7
         when (a.kit) {
             Kit.HEART -> {
                 // just a soft double heartbeat on the group starts

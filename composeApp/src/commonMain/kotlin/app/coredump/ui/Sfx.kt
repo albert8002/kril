@@ -100,7 +100,7 @@ internal object Synth {
     fun mix(v: Voice, notes: List<Note>): ShortArray {
         if (notes.isEmpty()) return ShortArray(0)
         val end = notes.maxOf { it.at + it.dur + v.decay * 0.6f } + v.echo * v.delay * 6f
-        val n = (end * R).toInt().coerceIn(1, R * 3)
+        val n = (end * R).toInt().coerceIn(1, R * 4)
         val out = FloatArray(n)
         val rnd = Random(7)
         for (note in notes) {
@@ -137,8 +137,8 @@ internal object Synth {
             val d = (v.delay * R).toInt().coerceAtLeast(1)
             for (i in d until n) out[i] += out[i - d] * v.echo
         }
-        // gentle fade at the very end, then scale
-        val tail = (0.01f * R).toInt().coerceAtMost(n)
+        // gentle fade at the very end (longer when the 4 s cap cut a tail), then scale
+        val tail = ((if (n >= R * 4) 0.25f else 0.01f) * R).toInt().coerceAtMost(n)
         for (i in 0 until tail) out[n - 1 - i] *= i.toFloat() / tail
         var peak = 0.0001f
         for (x in out) peak = maxOf(peak, abs(x))
@@ -261,13 +261,26 @@ internal object Synth {
                 else -> arp(level, 0.07f, 0.12f)
             }
             Cue.RANK -> {
+                // the music's hook, then the rank chord (major from rank 3 up)
+                val e = if (s == Style.ORACLE || s == Style.ABYSS) 0.13f else 0.1f
+                val lead = hook(e, -12f, 0.6f)
+                val after = Score.HOOK[Score.HOOK.size - 3] * e + Score.HOOK[Score.HOOK.size - 2] * e
                 val chord = if (level >= 3) intArrayOf(0, 4, 7, 12) else intArrayOf(0, 3, 7)
                 val roll = if (s == Style.ORACLE || s == Style.ABYSS) 0.12f else 0.05f
-                chord.mapIndexed { i, st -> Note(st.toFloat() - 12f, i * roll, 0.6f + level * 0.08f, 0.8f) } +
-                    if (level >= 5) listOf(Note(12f, chord.size * roll + 0.1f, 0.5f, 0.9f)) else emptyList()
+                lead + chord.mapIndexed { i, st -> Note(st.toFloat() - 12f, after + i * roll, 0.6f + level * 0.08f, 0.8f) } +
+                    if (level >= 5) listOf(Note(12f, after + chord.size * roll + 0.1f, 0.5f, 0.9f)) else emptyList()
             }
             Cue.DISCARD -> listOf(Note(-20f, 0f, 0.12f, 0.6f, slide = -8f, wave = N))
-            Cue.FETCHED -> listOf(Note(0f, 0f, 0.1f, 0.6f), Note(7f, 0.1f, 0.1f, 0.6f), Note(12f, 0.2f, 0.25f, 0.7f))
+            // lists arrived: the music's hook, quick
+            Cue.FETCHED -> hook(0.075f, 0f, 0.6f)
+        }
+    }
+
+    /** The music's hook ([Score.HOOK]: D F E A, long-short-short-long) as a phrase; [e]: s per eighth. */
+    private fun hook(e: Float, base: Float, gain: Float): List<Note> {
+        val h = Score.HOOK
+        return (0 until h.size / 3).map { k ->
+            Note(base + h[k * 3 + 2], h[k * 3] * e, h[k * 3 + 1] * e * 0.9f, if (k == 0) gain + 0.1f else gain)
         }
     }
 }

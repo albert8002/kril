@@ -78,7 +78,7 @@ class AppModel(val scope: CoroutineScope) {
         app.coredump.ui.CustomLooks.changed(settings.custom)
         app.coredump.ui.Sfx.configure(settings.sound, settings.volume)
         app.coredump.ui.Music.configure(settings.music, settings.musicVolume,
-            app.coredump.ui.Style.byName(settings.theme))
+            app.coredump.ui.Style.byName(if (settings.musicLook == "MATCH") settings.theme else settings.musicLook))
     }
 
     fun go(s: Screen, push: Boolean = true) {
@@ -129,7 +129,7 @@ class AppModel(val scope: CoroutineScope) {
         app.coredump.ui.CustomLooks.changed(settings.custom)
         app.coredump.ui.Sfx.configure(settings.sound, settings.volume)
         app.coredump.ui.Music.configure(settings.music, settings.musicVolume,
-            app.coredump.ui.Style.byName(settings.theme))
+            app.coredump.ui.Style.byName(if (settings.musicLook == "MATCH") settings.theme else settings.musicLook))
     }
 
     /** 1v1 links swap collected lists in the background (when allowed in settings). */
