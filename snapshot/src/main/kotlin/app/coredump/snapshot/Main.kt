@@ -78,8 +78,9 @@ fun main(args: Array<String>) {
         fun api(base: String, params: List<Pair<String, String>>): String? = runCatching {
             get(base + "?" + params.joinToString("&") { "${enc(it.first)}=${enc(it.second)}" })
         }.onFailure { log("SEARCH api failed: ${it.message?.take(100)}") }.getOrNull()
-        fun prompt(id: String, text: String, where: String, limit: Int): Prompt? = runCatching {
-            val t = app.coredump.data.WikidataTemplate(id, text, "PEOPLE", where, 0, limit, 0)
+        // [minLinks]: big classes (all films, all actors) are only sortable within the query time limit when cut first
+        fun prompt(id: String, text: String, where: String, limit: Int, minLinks: Int = 0): Prompt? = runCatching {
+            val t = app.coredump.data.WikidataTemplate(id, text, "PEOPLE", where, minLinks, limit, 0)
             WikidataTemplates.parse(t, get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}",
                 "application/sparql-results+json"))
         }.onFailure { log("SEARCH list $id failed: ${it.message?.take(100)}") }.getOrNull()
@@ -125,13 +126,13 @@ fun main(args: Array<String>) {
                 listOf("Everest", "Matterhorn", "Eiger", "Säntis", "Mount Doom"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
             Triple(prompt("t.lake", "Name a lake", "?item wdt:P31 wd:Q23397 .", 30),
                 listOf("Geneva", "Lake Zurich", "Loch Ness", "Walensee", "Lake Wobegon"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
-            Triple(prompt("t.actor", "Name a famous actor or actress", "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q33999 .", 40),
+            Triple(prompt("t.actor", "Name a famous actor or actress", "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q33999 .", 40, 60),
                 listOf("Tom Holland", "Florence Pugh", "Zendaya", "Paul Mescal", "Albert Einstein"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
-            Triple(prompt("t.film", "Name a famous film", "?item wdt:P31 wd:Q11424 .", 40),
+            Triple(prompt("t.film", "Name a famous film", "?item wdt:P31 wd:Q11424 .", 40, 60),
                 listOf("Turning Red", "Oppenheimer", "Spirited Away", "Rocky 4", "Inside Out 2", "Fortnite"), listOf("ANY", "ANY", "ANY", "ANY", "ANY", "MISSING")),
             Triple(prompt("t.game", "Name a video game", "?item wdt:P31 wd:Q7889 .", 40),
                 listOf("Breath of the Wild", "Final Fantasy 7", "Hollow Knight", "Stardew Valley", "Balatro", "Barack Obama"), listOf("ANY", "ANY", "ANY", "ANY", "ANY", "MISSING")),
-            Triple(prompt("t.tv", "Name a TV series", "?item wdt:P31 wd:Q5398426 .", 40),
+            Triple(prompt("t.tv", "Name a TV series", "?item wdt:P31 wd:Q5398426 .", 40, 40),
                 listOf("Arcane", "Severance", "Bluey"), listOf("ANY", "ANY", "ANY")),
             Triple(prompt("t.bball", "Name a famous basketball player", "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q3665646 .", 300),
                 listOf("Jordan", "Shaq", "Lebron"), listOf("LISTED", "LISTED", "LISTED")),
@@ -218,9 +219,7 @@ fun main(args: Array<String>) {
     fun fileAt(name: String) = runCatching { PackCodec.cacheTime(File(dir, name).readText()) }.getOrNull() ?: System.currentTimeMillis()
     log("SNAP restored ${wdOut.size} wikidata + ${wpOut.size} wikipedia prompts, ${state.size} state rows")
     val freshMs = 10L * 24 * 3600 * 1000
-    // a template whose class now takes its whole family (actor → film actor …) is fetched again
-    fun hashWd(t: app.coredump.data.WikidataTemplate) = stableHash("${t.where}|${t.prompt}|${t.limit}|${t.minLinks}|${t.topic}|r2" +
-        (if (app.coredump.data.ClassFamilies.expand(t.where) != t.where) "|fam1" else ""))
+    fun hashWd(t: app.coredump.data.WikidataTemplate) = stableHash("${t.where}|${t.prompt}|${t.limit}|${t.minLinks}|${t.topic}|r2")
     fun hashWp(t: app.coredump.data.WikipediaTemplate) = stableHash("${t.page}|${t.prompt}|${t.max}|${t.topic}|x${WikipediaTemplates.EXTRACT_VERSION}|r2")
     fun isFresh(id: String, hash: Int, have: Boolean): Boolean {
         val st = state[id] ?: return false
@@ -230,11 +229,12 @@ fun main(args: Array<String>) {
         state.putIfAbsent(id, St(fileAt("live_wikidata.json"), hashWd(t), true)) }
     for (id in wpOut.keys) WikipediaTemplates.all.firstOrNull { it.id == id }?.let { t ->
         state.putIfAbsent(id, St(fileAt("live_wikipedia.json"), hashWp(t), true)) }
-    // drop outputs whose template was removed or changed
+    // drop outputs whose template was removed; a changed template is fetched again (its hash differs), and its old
+    // list stays until the new one arrives, so a slow or failed query never loses a prompt
     val wdIds = WikidataTemplates.all.associateBy { it.id }
-    wdOut.keys.retainAll { id -> wdIds[id]?.let { state[id]?.hash == hashWd(it) } == true }
+    wdOut.keys.retainAll { id -> wdIds[id] != null }
     val wpIds = WikipediaTemplates.all.associateBy { it.id }
-    wpOut.keys.retainAll { id -> wpIds[id]?.let { state[id]?.hash == hashWp(it) } == true }
+    wpOut.keys.retainAll { id -> wpIds[id] != null }
 
     // ---- wikipedia first (19 small pages, capped at 4 minutes)
     val wpEnd = System.currentTimeMillis() + 4 * 60_000

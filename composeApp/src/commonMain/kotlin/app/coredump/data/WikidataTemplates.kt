@@ -44,7 +44,8 @@ class WikidataTemplate(
 
 /**
  * Wikidata classes whose members are often filed under a narrower class: many actors are only "film actor" or
- * "television actor", many films only "animated feature film". Lists and answer checks take the whole family.
+ * "television actor", many films only "animated feature film". Answer checks take the whole family; lists keep the
+ * plain class (joining a whole family makes the big list queries, all films or all actors, time out).
  */
 object ClassFamilies {
     /** occupation (P106) → itself and its common narrower occupations */
@@ -72,24 +73,6 @@ object ClassFamilies {
         "P31" -> classes[q]
         else -> null
     } ?: listOf(q)
-
-    private val plain = Regex("""wdt:(P31|P106) wd:(Q\d+)""")
-
-    /** [where] with every family written out as a VALUES list (for list queries); unchanged when none applies. */
-    fun expand(where: String): String {
-        var n = 0
-        val values = StringBuilder()
-        val body = plain.replace(where) { m ->
-            val (p, q) = m.destructured
-            val fam = of(p, q)
-            if (fam.size == 1) m.value else {
-                val v = "?fam${n++}"
-                values.append("VALUES $v { ${fam.joinToString(" ") { "wd:$it" }} } ")
-                "wdt:$p $v"
-            }
-        }
-        return if (n == 0) where else values.toString() + body
-    }
 }
 
 object WikidataTemplates {
@@ -110,10 +93,10 @@ object WikidataTemplates {
 
     /** Everyday categories anyone can name a few of (validated by the CI snapshot). */
     val generic: List<WikidataTemplate> = listOf(
-        WikidataTemplate("wg.film", "Name a famous film", "CULTURE", inst("Q11424"), minLinks = 35, limit = 2500),
-        WikidataTemplate("wg.tv", "Name a TV series", "CULTURE", inst("Q5398426"), minLinks = 25, limit = 2000),
+        WikidataTemplate("wg.film", "Name a famous film", "CULTURE", inst("Q11424"), minLinks = 60),
+        WikidataTemplate("wg.tv", "Name a TV series", "CULTURE", inst("Q5398426"), minLinks = 40),
         WikidataTemplate("wg.sitcom", "Name a sitcom", "CULTURE", "?item wdt:P31 wd:Q5398426 ; wdt:P136 wd:Q170238 .", minLinks = 15),
-        WikidataTemplate("wg.song", "Name a famous song", "CULTURE", "VALUES ?k { wd:Q7366 wd:Q134556 } ?item wdt:P31 ?k .", minLinks = 20, limit = 2000),
+        WikidataTemplate("wg.song", "Name a famous song", "CULTURE", "VALUES ?k { wd:Q7366 wd:Q134556 } ?item wdt:P31 ?k .", minLinks = 30),
         WikidataTemplate("wg.album", "Name a famous album", "CULTURE", inst("Q482994"), minLinks = 20, limit = 2000),
         WikidataTemplate("wg.band", "Name a band or music group", "CULTURE", inst("Q215380"), minLinks = 30, limit = 2000),
         WikidataTemplate("wg.painting", "Name a famous painting", "CULTURE", inst("Q3305213"), minLinks = 25),
@@ -159,7 +142,7 @@ object WikidataTemplates {
         WikidataTemplate("wg.frog", "Name a frog or toad", "NATURE", species("Anura"), minLinks = 20),
         WikidataTemplate("wg.deer", "Name a deer", "NATURE", species("Cervidae"), minLinks = 10),
         WikidataTemplate("wg.cactus", "Name a cactus", "NATURE", species("Cactaceae"), minLinks = 8),
-        WikidataTemplate("wg.actor", "Name a famous actor or actress", "PEOPLE", famous("Q33999"), minLinks = 40, limit = 2500),
+        WikidataTemplate("wg.actor", "Name a famous actor or actress", "PEOPLE", famous("Q33999"), minLinks = 60),
         WikidataTemplate("wg.writer", "Name a famous writer", "PEOPLE", famous("Q36180"), minLinks = 80),
         WikidataTemplate("wg.politician", "Name a famous politician", "PEOPLE", famous("Q82955"), minLinks = 100),
         WikidataTemplate("wg.model", "Name a famous model", "PEOPLE", famous("Q4610556"), minLinks = 30),
@@ -241,7 +224,7 @@ object WikidataTemplates {
         val filter = if (t.minLinks > 0) "FILTER(?links >= ${t.minLinks})" else ""
         return """
             SELECT ?item ?itemLabel ?itemAltLabel ?links WHERE {
-              { SELECT DISTINCT ?item ?links WHERE { ${ClassFamilies.expand(t.where)} ?item wikibase:sitelinks ?links . $filter }
+              { SELECT DISTINCT ?item ?links WHERE { ${t.where} ?item wikibase:sitelinks ?links . $filter }
                 ORDER BY DESC(?links) LIMIT ${t.limit} }
               SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
             } ORDER BY DESC(?links)
