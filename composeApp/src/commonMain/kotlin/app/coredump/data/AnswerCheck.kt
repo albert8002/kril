@@ -3,6 +3,7 @@ package app.coredump.data
 import app.coredump.core.AnswerIndex
 import app.coredump.core.Edits
 import app.coredump.core.Judge
+import app.coredump.core.Lenient
 import app.coredump.core.Prompt
 import app.coredump.core.Norm
 import kotlinx.serialization.json.Json
@@ -98,7 +99,27 @@ object AnswerCheck {
     }
 
     private fun spells(input: String, name: String, people: Boolean, words: Set<String> = emptySet()) =
-        same(input, name) || same(input, bare(name)) || (people && surname(input, name)) || withClass(input, name, words)
+        same(input, name) || same(input, bare(name)) || (people && surname(input, name)) || withClass(input, name, words) ||
+            numbered(input, name) || subtitle(input, name)
+
+    /** "Final Fantasy 7" = "Final Fantasy VII", "Rocky 4" = "Rocky IV". */
+    private fun numbered(input: String, name: String): Boolean {
+        val a = Norm.key(input)
+        val b = Norm.key(name)
+        val na = Lenient.numeralKey(a)
+        val nb = Lenient.numeralKey(b)
+        if (na == null && nb == null) return false
+        return Norm.compact(na ?: a) == Norm.compact(nb ?: b)
+    }
+
+    /** The subtitle alone, when it is telling (2+ words): "Breath of the Wild" = "The Legend of Zelda: Breath of the Wild". */
+    private fun subtitle(input: String, name: String): Boolean {
+        for (sep in listOf(": ", " – ", " - ")) if (sep in name) {
+            val sub = name.substringAfterLast(sep)
+            if (Norm.key(sub).count { it == ' ' } >= 1 && Norm.compact(Norm.key(sub)).length >= 8 && same(input, sub)) return true
+        }
+        return false
+    }
 
     /** Spellings of the input to try as exact Wikipedia titles (titles are case-sensitive after the first letter). */
     fun titleVariants(input: String): List<String> {
@@ -178,8 +199,11 @@ object AnswerCheck {
      * and direct subclasses only, so the filter is never wider than the class. Anything else (variables, VALUES, FILTER, other subjects) → null.
      */
     fun statementFilters(where: String): List<String>? {
-        val w = where.replace("hint:Query hint:optimizer \"None\" .", " ").trim()
+        var w = where.replace("hint:Query hint:optimizer \"None\" .", " ").trim()
         if (w.isEmpty()) return null
+        // "VALUES ?k { wd:A wd:B } ?item wdt:P31 ?k ." → P31=A|P31=B
+        val values = HashMap<String, List<String>>()
+        w = valuesRe.replace(w) { m -> values[m.groupValues[1]] = Regex("wd:(Q\\d+)").findAll(m.groupValues[2]).map { it.groupValues[1] }.toList(); " " }.trim()
         val out = ArrayList<String>()
         for (raw in w.split(Regex("\\s+\\.(\\s+|$)"))) {
             val t = raw.trim().removeSuffix(".").trim()
@@ -188,17 +212,28 @@ object AnswerCheck {
             for (po in t.removePrefix("?item ").split(';')) {
                 val x = po.trim()
                 if (x.isEmpty()) continue
-                val m = tripleRe.find(x) ?: return null
-                val (p, path, q) = m.destructured
-                out += when {
-                    path.isEmpty() -> "$p=$q"
-                    path == "+" -> if (p == "P279") "P279=$q" else return null   // "subclass of … (any depth)": direct ones
-                    else -> "$p=$q|P279=$q"
+                varRe.find(x)?.let { vm ->
+                    val qs = values[vm.groupValues[2]] ?: return null
+                    out += qs.flatMap { q -> ClassFamilies.of(vm.groupValues[1], q) }.distinct().joinToString("|") { "${vm.groupValues[1]}=$it" }
+                    return@let
+                } ?: run {
+                    val m = tripleRe.find(x) ?: return null
+                    val (p, path, q) = m.destructured
+                    // the class's family too ("film actor" for actor, "animated feature film" for film)
+                    val fam = ClassFamilies.of(p, q).joinToString("|") { "$p=$it" }
+                    out += when {
+                        path.isEmpty() -> fam
+                        path == "+" -> if (p == "P279") "P279=$q" else return null   // "subclass of … (any depth)": direct ones
+                        else -> "$fam|P279=$q"
+                    }
                 }
             }
         }
         return out.ifEmpty { null }
     }
+
+    private val valuesRe = Regex("VALUES\\s+\\?(\\w+)\\s*\\{([^}]*)\\}")
+    private val varRe = Regex("^wdt:(P\\d+)\\s+\\?(\\w+)$")
 
     /** Wikidata search: items of the class whose label or alias (any language) has all the typed words. */
     fun classSearchParams(term: String, filters: List<String>): List<Pair<String, String>> {
@@ -247,10 +282,14 @@ object AnswerCheck {
 
     fun classMatches(items: List<ClassItem>, input: String, people: Boolean, words: Set<String>): ClassResult {
         val typed = Norm.key(input).split(' ').filter { it.isNotEmpty() }
+        // only the prompt's own words ("museum" for art museums): that names nothing
+        val telling = typed.any { it.length >= 3 && it !in words && it.trimEnd('s') !in words }
+        if (!telling) return ClassResult(emptyList(), emptyList())
         val matches = items.filter { it.names.any { n -> spells(input, n, people, words) } }
-        val near = items.filter { it !in matches && typed.isNotEmpty() }
+        // near names: never a list to pick the rarest from
+        val near = items.filter { it !in matches }
             .filter { it.names.any { n -> val ws = Norm.key(n).split(' '); typed.all { t -> ws.any { w -> w == t || (t.length >= 4 && w.startsWith(t)) } } } }
-            .map { it.label }.distinct().take(4)
+            .map { it.label }.distinct().let { if (it.size > 3) it.take(2) else it }
         return ClassResult(matches, near)
     }
 

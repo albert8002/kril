@@ -69,7 +69,7 @@ fun ThemeTouches(fx: Fx, modifier: Modifier = Modifier) {
         if (touches.size > 24) touches.removeAt(0)
         touches += Touch(send, Platform.epochMillis(), Random.nextFloat(), Random.nextFloat(), Random.nextFloat(), at)
     }
-    LaunchedEffect(fx.keyTick) { if (fx.keyTick > 0) spawn(false) }
+    // (no effects while typing: they read as a ghost cursor next to the real one; only sending an answer shows one)
     LaunchedEffect(fx.sendTick) { if (fx.sendTick > 0) spawn(true) }
     // One frame loop for the screen's lifetime: it sleeps while nothing is alive and wakes on the next touch.
     // (A loop keyed on "anything alive" could stop for good when the last touch expired and a new one came in the

@@ -719,11 +719,18 @@ class QuestionBank(private val scope: CoroutineScope) {
     suspend fun verify(prompt: Prompt, input: String): AnswerCheck.Outcome {
         val key = prompt.id + "|" + AnswerCheck.key(input)
         verifyLock.withLock { VerifyCache.get(key) }?.let { return it }
-        val (out, complete) = withTimeoutOrNull(14_000) {
+        suspend fun once(ms: Long) = withTimeoutOrNull(ms) {
             try { lookup(prompt, input) } catch (e: CancellationException) { throw e } catch (e: Throwable) {
                 CrashLog.note("verify", e); AnswerCheck.Outcome.Unreachable to false
             }
         } ?: (AnswerCheck.Outcome.Unreachable to false)
+        var (out, complete) = once(14_000)
+        // a blip (mobile data waking up, one slow server): try once more before calling it offline
+        if (out == AnswerCheck.Outcome.Unreachable) {
+            delay(1_200)
+            val again = once(10_000)
+            out = again.first; complete = again.second
+        }
         if (out != AnswerCheck.Outcome.Unreachable && (complete || (out != AnswerCheck.Outcome.Missing && out !is AnswerCheck.Outcome.Near))) {
             verifyLock.withLock { VerifyCache.put(key, out) }
         }

@@ -171,7 +171,7 @@ fun ConfigScreen(model: AppModel) {
                 }
                 Spacer(Modifier.height(10.dp))
                 Toggle(Th.say("music", "Music"), s.music, { v -> model.update { it.copy(music = v) } },
-                    "one theme in 7/4 with a returning hook")
+                    "one theme in 7/4, a version for every look")
                 if (s.music) {
                     Spacer(Modifier.height(6.dp))
                     TText(Th.say("music volume", "Music volume"), size = 13.sp, color = C.dim)
@@ -181,11 +181,14 @@ fun ConfigScreen(model: AppModel) {
                         model.update { it.copy(musicVolume = v) }
                     }
                     Spacer(Modifier.height(8.dp))
-                    TText(Th.say("arrangement", "Arrangement"), size = 13.sp, color = C.dim)
+                    TText(Th.say("song", "Song"), size = 13.sp, color = C.dim)
                     Spacer(Modifier.height(6.dp))
-                    Choice(listOf("ABYSS", "MATCH"), if (s.musicLook == "MATCH") "MATCH" else "ABYSS",
-                        { if (it == "MATCH") Th.say("match the look", "Match the look") else Th.say("deep sea (all looks)", "Deep sea, all looks") }) { v ->
-                        model.update { it.copy(musicLook = v) }
+                    val songs = listOf("MATCH") + app.coredump.ui.Style.entries.map { it.name }
+                    Choice(songs, if (s.song in songs) s.song else "MATCH", { key ->
+                        if (key == "MATCH") Th.say("match the look", "Match the look") + " · " + app.coredump.ui.Score.nameOf(app.coredump.ui.Style.byName(s.theme))
+                        else app.coredump.ui.Score.nameOf(app.coredump.ui.Style.byName(key))
+                    }) { v ->
+                        model.update { it.copy(song = v) }
                     }
                 }
             }

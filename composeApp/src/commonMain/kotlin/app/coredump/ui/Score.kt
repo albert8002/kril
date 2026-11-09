@@ -10,7 +10,8 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /**
- * "CORE DUMP", the app's music: one theme in 7/4, arranged differently for every look.
+ * "CORE DUMP", the app's music: one theme in 7/4 and a variation of it for every look (own tempo, scale, groove,
+ * bass line and instruments; [arrOf]). Terminal's variation, "Deep Sea", is the standard.
  *
  * Meter: 7 quarter beats per bar, felt as 4 + 3 (like a bar of 4/4 with a bar of 3/4 glued on).
  *  - kick and bass mark the group starts, beats 1 and 5; the snare answers on beats 3 and 7,
@@ -105,56 +106,117 @@ internal object Score {
 
     enum class Kit { NONE, CHIP, SOFT, SYNTH, BRUSH, LOFI, HEART }
 
+    /** Scale the song is played in: aeolian (D minor as written), dorian (B♮), major (F♯ C♯ B♮), harmonic (C♯). */
+    enum class Mode { AEOLIAN, DORIAN, MAJOR, HARMONIC }
+
     /**
+     * Bass line. GROUPS: root, fifth, octave on the 4 + 3 groups (as written). WALK: a quarter-note walk through the
+     * chord into the next one. PULSE: driving eighths on the root. OCTAVE: eighths jumping root ↔ octave. DRONE: one
+     * long root per chord with a soft fifth above.
+     */
+    enum class Bass { GROUPS, WALK, PULSE, OCTAVE, DRONE }
+
+    /**
+     * One variation of the song.
      * bpm: quarter beats per minute. tone: low-pass 0..1 (1 = open). echo: feedback 0..0.6 after [echoBeats] beats.
      * swing: off-beat eighths late by this part of an eighth. drums: drum level 0..1.
+     * mode / bassStyle: see [Mode], [Bass]. twoTwoThree: drums felt 2 + 2 + 3 instead of 4 + 3.
+     * ornament: long melody notes turn around their upper neighbour. legato: held part of each melody note (0..1).
      */
     class Arr(
+        val name: String,
         val bpm: Float, val lead: Inst, val bass: Inst, val pad: Inst?, val arp: Inst?, val kit: Kit,
         val tone: Float = 1f, val echo: Float = 0f, val echoBeats: Float = 0.75f, val swing: Float = 0f,
         val transpose: Int = 0, val drums: Float = 0.5f,
+        val mode: Mode = Mode.AEOLIAN, val bassStyle: Bass = Bass.GROUPS, val twoTwoThree: Boolean = false,
+        val ornament: Boolean = false, val legato: Float = 0.92f,
     )
 
+    /** Every look has its own variation; Terminal's is the deep-sea one. */
     fun arrOf(s: Style): Arr = when (s) {
-        // green-screen chiptune: square lead, triangle bass, beeper drums
-        Style.TERMINAL -> Arr(108f, Inst(W.SQUARE, 0.004f, 0.06f, 0.32f, decay = 1.2f), Inst(W.TRI, 0.004f, 0.05f, 0.55f),
-            null, Inst(W.PULSE, 0.002f, 0.04f, 0.12f, decay = 6f, octave = 1), Kit.CHIP, tone = 0.42f, echo = 0.18f)
-        // newsroom: felt piano, soft upright bass, brushes
-        Style.PAPER -> Arr(96f, Inst(W.BELL, 0.003f, 0.35f, 0.42f, decay = 1.6f), Inst(W.TRI, 0.01f, 0.12f, 0.5f),
-            Inst(W.SINE, 0.25f, 0.6f, 0.1f), null, Kit.BRUSH, tone = 0.55f, echo = 0.12f, swing = 0.08f)
-        // synthwave: saw lead with vibrato, saw bass, pads, arpeggio echo
-        Style.NEON -> Arr(116f, Inst(W.SAW, 0.01f, 0.25f, 0.28f, decay = 0.4f, vibrato = 0.004f), Inst(W.SAW, 0.004f, 0.08f, 0.42f),
-            Inst(W.SAW, 0.3f, 0.7f, 0.07f), Inst(W.PULSE, 0.002f, 0.06f, 0.12f, decay = 4f, octave = 1), Kit.SYNTH,
-            tone = 0.4f, echo = 0.3f, echoBeats = 0.75f, drums = 0.6f)
-        // quiz show: marimba, round bass, light kit
-        Style.CLEAN -> Arr(100f, Inst(W.TRI, 0.002f, 0.12f, 0.45f, decay = 5f), Inst(W.SINE, 0.006f, 0.08f, 0.6f),
-            Inst(W.SINE, 0.2f, 0.5f, 0.08f), null, Kit.SOFT, tone = 0.8f, echo = 0.1f)
-        // handheld RPG: pulse lead, triangle bass, square arpeggio, noise drums
-        Style.PIXEL -> Arr(126f, Inst(W.PULSE, 0.003f, 0.05f, 0.3f, decay = 0.8f), Inst(W.TRI, 0.003f, 0.04f, 0.55f),
-            null, Inst(W.SQUARE, 0.002f, 0.03f, 0.1f, decay = 7f, octave = 1), Kit.CHIP, tone = 0.5f)
-        // cartoon: pizzicato lead, bouncy bass
-        Style.COMIC -> Arr(120f, Inst(W.SINE, 0.002f, 0.1f, 0.5f, decay = 7f, octave = 1), Inst(W.TRI, 0.003f, 0.05f, 0.55f, decay = 4f),
-            null, null, Kit.SOFT, tone = 0.9f, swing = 0.1f, drums = 0.45f)
-        // the deep: slow sine lead in a long echo, pad, glassy arpeggio, a heartbeat
-        Style.ABYSS -> Arr(80f, Inst(W.SINE, 0.05f, 0.6f, 0.42f, decay = 0.3f, vibrato = 0.003f), Inst(W.SINE, 0.03f, 0.3f, 0.5f),
+        // "Deep Sea": slow sine lead in a long echo, pad, glassy arpeggio, a heartbeat (the standard)
+        Style.TERMINAL -> Arr("Deep Sea", 80f, Inst(W.SINE, 0.05f, 0.6f, 0.42f, decay = 0.3f, vibrato = 0.003f), Inst(W.SINE, 0.03f, 0.3f, 0.5f),
             Inst(W.SINE, 0.6f, 1.2f, 0.12f), Inst(W.GLASS, 0.004f, 0.5f, 0.06f, decay = 2f, octave = 1), Kit.HEART,
             tone = 0.3f, echo = 0.38f, echoBeats = 1.5f, transpose = -2)
-        // station: chimes, steady rail-click hats
-        Style.METRO -> Arr(112f, Inst(W.CHIME, 0.003f, 0.4f, 0.38f, decay = 1.5f), Inst(W.TRI, 0.006f, 0.08f, 0.5f),
-            null, null, Kit.SOFT, tone = 0.7f, echo = 0.15f, drums = 0.55f)
-        // lounge: vibraphone, walking-ish bass, brushes, swing
-        Style.JACKPOT -> Arr(104f, Inst(W.BELL, 0.004f, 0.5f, 0.38f, decay = 1.2f, vibrato = 0.006f), Inst(W.SINE, 0.008f, 0.1f, 0.6f),
-            Inst(W.TRI, 0.25f, 0.6f, 0.07f), null, Kit.BRUSH, tone = 0.6f, echo = 0.14f, swing = 0.18f)
-        // lo-fi: electric-piano keys, round bass, dusty drums, everything filtered
-        Style.CHAT -> Arr(88f, Inst(W.KEYS, 0.005f, 0.3f, 0.42f, decay = 1.1f), Inst(W.SINE, 0.01f, 0.1f, 0.6f),
-            Inst(W.KEYS, 0.2f, 0.6f, 0.08f), null, Kit.LOFI, tone = 0.32f, echo = 0.16f, swing = 0.14f, drums = 0.55f)
-        // old desktop: FM-ish keys, square bass, soft kit
-        Style.DESKTOP -> Arr(108f, Inst(W.TRI, 0.004f, 0.2f, 0.42f, decay = 1.8f, vibrato = 0.003f), Inst(W.SQUARE, 0.004f, 0.06f, 0.3f),
-            Inst(W.TRI, 0.2f, 0.5f, 0.07f), null, Kit.SOFT, tone = 0.5f, echo = 0.12f)
-        // tarot table: glass bells, drone pad, chime arpeggio, heartbeat
-        Style.ORACLE -> Arr(84f, Inst(W.GLASS, 0.006f, 0.8f, 0.36f, decay = 0.9f, vibrato = 0.004f), Inst(W.SINE, 0.03f, 0.25f, 0.5f),
+        // "Morning Edition": the song in D major, felt piano, stride-like bass, brushes, a little swing
+        Style.PAPER -> Arr("Morning Edition", 100f, Inst(W.BELL, 0.003f, 0.35f, 0.42f, decay = 1.8f), Inst(W.TRI, 0.006f, 0.08f, 0.5f, decay = 2f),
+            Inst(W.SINE, 0.25f, 0.6f, 0.08f), null, Kit.BRUSH, tone = 0.6f, echo = 0.1f, swing = 0.1f,
+            mode = Mode.MAJOR, bassStyle = Bass.OCTAVE, legato = 0.7f)
+        // "Night Drive": synthwave, driving eighth bass, arpeggio echo, ornamented saw lead
+        Style.NEON -> Arr("Night Drive", 116f, Inst(W.SAW, 0.01f, 0.25f, 0.28f, decay = 0.4f, vibrato = 0.004f), Inst(W.SAW, 0.004f, 0.06f, 0.4f, decay = 3f),
+            Inst(W.SAW, 0.3f, 0.7f, 0.07f), Inst(W.PULSE, 0.002f, 0.06f, 0.12f, decay = 4f, octave = 1), Kit.SYNTH,
+            tone = 0.4f, echo = 0.3f, echoBeats = 0.75f, drums = 0.6f, bassStyle = Bass.PULSE, ornament = true)
+        // "Studio Lights": game-show major, marimba, bright 2 + 2 + 3 kit
+        Style.CLEAN -> Arr("Studio Lights", 112f, Inst(W.TRI, 0.002f, 0.12f, 0.45f, decay = 5f), Inst(W.SINE, 0.006f, 0.08f, 0.6f),
+            Inst(W.SINE, 0.2f, 0.5f, 0.08f), null, Kit.SOFT, tone = 0.85f, echo = 0.1f, mode = Mode.MAJOR, twoTwoThree = true)
+        // "Overworld": fast 8-bit dorian, pulse lead with turns, octave-jumping triangle bass, noise drums
+        Style.PIXEL -> Arr("Overworld", 138f, Inst(W.PULSE, 0.003f, 0.05f, 0.3f, decay = 0.8f), Inst(W.TRI, 0.003f, 0.04f, 0.55f),
+            null, Inst(W.SQUARE, 0.002f, 0.03f, 0.08f, decay = 7f, octave = 1), Kit.CHIP, tone = 0.5f,
+            mode = Mode.DORIAN, bassStyle = Bass.OCTAVE, ornament = true)
+        // "Slapstick": major, pizzicato, bouncy staccato, swing
+        Style.COMIC -> Arr("Slapstick", 126f, Inst(W.SINE, 0.002f, 0.1f, 0.5f, decay = 7f, octave = 1), Inst(W.TRI, 0.003f, 0.05f, 0.55f, decay = 5f),
+            null, null, Kit.SOFT, tone = 0.9f, swing = 0.14f, drums = 0.45f, mode = Mode.MAJOR, legato = 0.45f, twoTwoThree = true)
+        // "Trench": lower, slower and darker than Deep Sea: harmonic minor, drone bass, long echo
+        Style.ABYSS -> Arr("Trench", 68f, Inst(W.SINE, 0.08f, 0.8f, 0.42f, decay = 0.2f, vibrato = 0.004f), Inst(W.SINE, 0.06f, 0.6f, 0.55f),
+            Inst(W.SINE, 0.8f, 1.6f, 0.13f), Inst(W.GLASS, 0.004f, 0.6f, 0.05f, decay = 1.5f), Kit.HEART,
+            tone = 0.25f, echo = 0.45f, echoBeats = 2f, transpose = -7, mode = Mode.HARMONIC, bassStyle = Bass.DRONE)
+        // "Rush Hour": motorik eighth bass, chimes, steady 2 + 2 + 3 rail clicks, dorian
+        Style.METRO -> Arr("Rush Hour", 120f, Inst(W.CHIME, 0.003f, 0.4f, 0.38f, decay = 1.5f), Inst(W.TRI, 0.004f, 0.05f, 0.5f, decay = 3f),
+            null, null, Kit.SOFT, tone = 0.7f, echo = 0.15f, drums = 0.55f, mode = Mode.DORIAN, bassStyle = Bass.PULSE, twoTwoThree = true)
+        // "Lounge": vibraphone, walking bass, brushes, heavy swing
+        Style.JACKPOT -> Arr("Lounge", 104f, Inst(W.BELL, 0.004f, 0.5f, 0.38f, decay = 1.2f, vibrato = 0.006f), Inst(W.SINE, 0.008f, 0.1f, 0.6f),
+            Inst(W.TRI, 0.25f, 0.6f, 0.07f), null, Kit.BRUSH, tone = 0.6f, echo = 0.14f, swing = 0.2f,
+            mode = Mode.DORIAN, bassStyle = Bass.WALK)
+        // "Lo-fi": electric-piano keys, round bass, dusty drums, everything filtered
+        Style.CHAT -> Arr("Lo-fi", 84f, Inst(W.KEYS, 0.005f, 0.3f, 0.42f, decay = 1.1f), Inst(W.SINE, 0.01f, 0.1f, 0.6f),
+            Inst(W.KEYS, 0.2f, 0.6f, 0.08f), null, Kit.LOFI, tone = 0.3f, echo = 0.16f, swing = 0.16f, drums = 0.55f, legato = 0.8f)
+        // "Startup": old-desktop FM keys in major, square bass, soft kit
+        Style.DESKTOP -> Arr("Startup", 108f, Inst(W.TRI, 0.004f, 0.2f, 0.42f, decay = 1.8f, vibrato = 0.003f), Inst(W.SQUARE, 0.004f, 0.06f, 0.3f),
+            Inst(W.TRI, 0.2f, 0.5f, 0.07f), Inst(W.BELL, 0.002f, 0.2f, 0.05f, decay = 5f, octave = 1), Kit.SOFT, tone = 0.5f, echo = 0.12f,
+            mode = Mode.MAJOR)
+        // "Ritual": harmonic minor, glass bells, drone, chime arpeggio, heartbeat
+        Style.ORACLE -> Arr("Ritual", 76f, Inst(W.GLASS, 0.006f, 0.8f, 0.36f, decay = 0.9f, vibrato = 0.004f), Inst(W.SINE, 0.05f, 0.5f, 0.5f),
             Inst(W.SINE, 0.5f, 1.0f, 0.1f), Inst(W.CHIME, 0.004f, 0.4f, 0.06f, decay = 2.5f, octave = 1), Kit.HEART,
-            tone = 0.55f, echo = 0.38f, echoBeats = 1f)
+            tone = 0.55f, echo = 0.38f, echoBeats = 1f, mode = Mode.HARMONIC, bassStyle = Bass.DRONE, ornament = true)
+    }
+
+    /** Name of the song of [s] (shown in the settings). */
+    fun nameOf(s: Style): String = arrOf(s).name
+
+    /** Key of the song of [s]: semitones from D (the key as written) and the scale; the effects play in it ([Sfx]). */
+    fun keyOf(s: Style): Pair<Int, Mode> = arrOf(s).let { it.transpose to it.mode }
+
+    /** [midi] in the variation's [Mode]. */
+    private fun inMode(midi: Int, m: Mode): Int {
+        val pc = ((midi % 12) + 12) % 12
+        val up = when (m) {
+            Mode.AEOLIAN -> false
+            Mode.DORIAN -> pc == 10
+            Mode.MAJOR -> pc == 10 || pc == 5 || pc == 0
+            Mode.HARMONIC -> pc == 0
+        }
+        return if (up) midi + 1 else midi
+    }
+
+    /** The next note of the scale above [midi] (for turns). */
+    private fun stepUp(midi: Int, m: Mode): Int {
+        for (d in 1..2) {
+            val n = midi + d
+            if (inMode(n, m) == n && isInScale(n, m)) return n
+        }
+        return midi + 2
+    }
+
+    private fun isInScale(midi: Int, m: Mode): Boolean {
+        val pc = ((midi % 12) + 12) % 12
+        val aeolian = setOf(2, 4, 5, 7, 9, 10, 0)
+        val scale = when (m) {
+            Mode.AEOLIAN -> aeolian
+            Mode.DORIAN -> aeolian - 10 + 11
+            Mode.MAJOR -> setOf(2, 4, 6, 7, 9, 11, 1)
+            Mode.HARMONIC -> aeolian - 0 + 1
+        }
+        return pc in scale
     }
 
     // ---- rendering
@@ -180,7 +242,11 @@ internal object Score {
             return t
         }
 
+        /** A note as written (put into the variation's scale). */
         fun play(inst: Inst, midi: Int, t: Float, len: Float, gain: Float) =
+            note(out, inst, hz(inMode(midi, a.mode) + a.transpose + inst.octave * 12), t, len, gain)
+        /** A note already in the scale. */
+        fun playExact(inst: Inst, midi: Int, t: Float, len: Float, gain: Float) =
             note(out, inst, hz(midi + a.transpose + inst.octave * 12), t, len, gain)
 
         for (h in 0 until BARS * 2) {
@@ -192,18 +258,33 @@ internal object Score {
             val span = if (first) 8 else 6
             // pad: the chord held for the half bar
             a.pad?.let { p -> for (tn in ch.tones) play(p, tn, at(b, e0), span * e8 * 0.97f, 0.9f) }
-            // bass: group of four = root (dotted), root, fifth, octave; group of three = root, fifth, approach note
+            // bass
             val r = ch.root
-            if (first) {
-                play(a.bass, r, at(b, 0), 2.6f * e8, 1f)
-                play(a.bass, r, at(b, 3), 0.9f * e8, 0.7f)
-                play(a.bass, r + 7, at(b, 4), 1.8f * e8, 0.85f)
-                play(a.bass, r + 12, at(b, 6), 1.8f * e8, 0.8f)
-            } else {
-                val next = halves[(h + 1) % halves.size].root
-                play(a.bass, r, at(b, 8), 1.8f * e8, 0.95f)
-                play(a.bass, r + 7, at(b, 10), 1.8f * e8, 0.8f)
-                play(a.bass, next - 1, at(b, 12), 1.8f * e8, 0.75f)   // chromatic step up into the next bar
+            val next = halves[(h + 1) % halves.size].root
+            when (a.bassStyle) {
+                // group of four = root (dotted), root, fifth, octave; group of three = root, fifth, approach note
+                Bass.GROUPS -> if (first) {
+                    play(a.bass, r, at(b, 0), 2.6f * e8, 1f)
+                    play(a.bass, r, at(b, 3), 0.9f * e8, 0.7f)
+                    play(a.bass, r + 7, at(b, 4), 1.8f * e8, 0.85f)
+                    play(a.bass, r + 12, at(b, 6), 1.8f * e8, 0.8f)
+                } else {
+                    play(a.bass, r, at(b, 8), 1.8f * e8, 0.95f)
+                    play(a.bass, r + 7, at(b, 10), 1.8f * e8, 0.8f)
+                    play(a.bass, next - 1, at(b, 12), 1.8f * e8, 0.75f)   // chromatic step up into the next bar
+                }
+                // quarter notes: root, third, fifth, approach (four beats) or root, fifth, approach (three beats)
+                Bass.WALK -> {
+                    val third = ch.tones[1] - 12
+                    val steps = if (first) listOf(r, third, r + 7, next - 1) else listOf(r, r + 7, next - 1)
+                    for ((k, n) in steps.withIndex()) play(a.bass, n, at(b, e0 + k * 2), 1.85f * e8, if (k == 0) 1f else 0.8f)
+                }
+                Bass.PULSE -> for (k in 0 until span) play(a.bass, r, at(b, e0 + k), 0.8f * e8, if (k == 0) 1f else if (k % 2 == 0) 0.75f else 0.6f)
+                Bass.OCTAVE -> for (k in 0 until span) play(a.bass, if (k % 2 == 0) r else r + 12, at(b, e0 + k), 0.85f * e8, if (k == 0) 1f else 0.7f)
+                Bass.DRONE -> {
+                    play(a.bass, r, at(b, e0), span * e8 * 0.98f, 1f)
+                    play(a.bass, r + 19, at(b, e0 + 1), (span - 1) * e8 * 0.9f, 0.18f)
+                }
             }
             // arpeggio: eighths through the chord, an octave up
             a.arp?.let { p ->
@@ -218,8 +299,14 @@ internal object Score {
                 val start = m[i]
                 val len = m[i + 1]
                 val g = if (start == 0 || start == 8) 1f else 0.85f
-                play(a.lead, m[i + 2], at(b, start), len * e8 * 0.92f, g)
-                if (b in doubled && start < 8) play(a.lead, m[i + 2] + 12, at(b, start), len * e8 * 0.92f, g * 0.32f)
+                val n0 = m[i + 2]
+                if (a.ornament && len >= 3) {
+                    // a turn: the note, its upper neighbour, the note again (held)
+                    play(a.lead, n0, at(b, start), 0.9f * e8, g)
+                    playExact(a.lead, stepUp(inMode(n0, a.mode), a.mode), at(b, start + 1), 0.9f * e8, g * 0.8f)
+                    play(a.lead, n0, at(b, start + 2), (len - 2) * e8 * a.legato, g * 0.9f)
+                } else play(a.lead, n0, at(b, start), len * e8 * a.legato, g)
+                if (b in doubled && start < 8) play(a.lead, n0 + 12, at(b, start), len * e8 * a.legato, g * 0.32f)
                 i += 3
             }
         }
@@ -232,15 +319,17 @@ internal object Score {
         if (a.tone < 1f) lowPass(out, a.tone)
         if (a.echo > 0f) echo(out, (a.echoBeats * beat * RATE).roundToInt(), a.echo)
 
-        // level: peak to 0.85, soft limit
+        // level: every variation about equally loud (RMS), peaks rounded off softly
         var peak = 0.0001f
-        for (x in out) peak = maxOf(peak, abs(x))
-        val g = 0.85f / peak
-        return ShortArray(n) {
-            val x = out[it] * g
-            ((x / (1f + abs(x) * 0.25f)) * 1.25f * 32767f).coerceIn(-32767f, 32767f).toInt().toShort()
-        }
+        var sum = 0.0
+        for (x in out) { peak = maxOf(peak, abs(x)); sum += x * x }
+        val rms = kotlin.math.sqrt(sum / n).toFloat().coerceAtLeast(0.0001f)
+        val g = minOf(TARGET_RMS / rms, 1.6f / peak)
+        return ShortArray(n) { (kotlin.math.tanh(out[it] * g) * 32000f).toInt().toShort() }
     }
+
+    /** Loudness every variation is brought to (RMS of the loop, full scale = 1). */
+    private const val TARGET_RMS = 0.2f
 
     private fun hz(midi: Int): Float = 440f * 2f.pow((midi - 69) / 12f)
 
@@ -299,15 +388,31 @@ internal object Score {
         }
         val chip = a.kit == Kit.CHIP
         val soft = a.kit == Kit.SOFT || a.kit == Kit.BRUSH || a.kit == Kit.LOFI
-        kick(out, at(b, 0), 1f * lv, if (chip) 160f else 110f, rnd, soft = soft, chip = chip)
-        kick(out, at(b, 3), 0.55f * lv, if (chip) 160f else 110f, rnd, soft = soft, chip = chip)
-        kick(out, at(b, 8), 0.9f * lv, if (chip) 160f else 110f, rnd, soft = soft, chip = chip)
-        if (fill) {
-            for ((k, e) in (9..13).withIndex()) snare(out, at(b, e), (0.35f + 0.15f * k) * lv, rnd, a.kit)
+        val f0 = if (chip) 160f else 110f
+        if (a.twoTwoThree) {
+            // 2 + 2 + 3: kick on every group start (beats 1, 3, 5), snare in between (beats 2, 4, 7)
+            kick(out, at(b, 0), 1f * lv, f0, rnd, soft = soft, chip = chip)
+            kick(out, at(b, 4), 0.75f * lv, f0, rnd, soft = soft, chip = chip)
+            kick(out, at(b, 8), 0.9f * lv, f0, rnd, soft = soft, chip = chip)
+            if (fill) {
+                for ((k, e) in (9..13).withIndex()) snare(out, at(b, e), (0.35f + 0.15f * k) * lv, rnd, a.kit)
+            } else {
+                snare(out, at(b, 2), 0.8f * lv, rnd, a.kit)
+                snare(out, at(b, 6), 0.8f * lv, rnd, a.kit)
+                snare(out, at(b, 12), 0.85f * lv, rnd, a.kit)
+            }
         } else {
-            snare(out, at(b, 4), 0.9f * lv, rnd, a.kit)
-            snare(out, at(b, 11), 0.22f * lv, rnd, a.kit)   // ghost note
-            snare(out, at(b, 12), 0.85f * lv, rnd, a.kit)
+            // 4 + 3: kick on beats 1 and 5 (and a push on the "and" of 2), snare on 3 and 7
+            kick(out, at(b, 0), 1f * lv, f0, rnd, soft = soft, chip = chip)
+            kick(out, at(b, 3), 0.55f * lv, f0, rnd, soft = soft, chip = chip)
+            kick(out, at(b, 8), 0.9f * lv, f0, rnd, soft = soft, chip = chip)
+            if (fill) {
+                for ((k, e) in (9..13).withIndex()) snare(out, at(b, e), (0.35f + 0.15f * k) * lv, rnd, a.kit)
+            } else {
+                snare(out, at(b, 4), 0.9f * lv, rnd, a.kit)
+                snare(out, at(b, 11), 0.22f * lv, rnd, a.kit)   // ghost note
+                snare(out, at(b, 12), 0.85f * lv, rnd, a.kit)
+            }
         }
         val hats = if (fill) 0..8 else 0..13
         for (e in hats) {

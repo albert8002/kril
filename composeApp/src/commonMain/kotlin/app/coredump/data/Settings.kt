@@ -52,8 +52,8 @@ data class Settings(
     /** Background music (the 7/4 theme, arranged per look) on/off and its volume (0..1, dimensionless). */
     val music: Boolean = true,
     val musicVolume: Float = 0.5f,
-    /** Which arrangement plays: a look's name (default the deep-sea one, ABYSS) or "MATCH" = the active look's. */
-    val musicLook: String = "ABYSS",
+    /** Which song plays: "MATCH" = the active look's own variation (default), or a look's name = always that one. */
+    val song: String = "MATCH",
     /** Hidden setting: crude tier and rank names instead of the plain ones. */
     val spicyNames: Boolean = false,
     /** Fetch screen: categories to collect (empty = all) and lists per request (count). */
@@ -105,7 +105,7 @@ object SettingsStore {
             volume = (o["volume"]?.jsonPrimitive?.floatOrNull ?: d.volume).coerceIn(0f, 1f),
             music = b("music") ?: d.music,
             musicVolume = (o["musicVolume"]?.jsonPrimitive?.floatOrNull ?: d.musicVolume).coerceIn(0f, 1f),
-            musicLook = o["musicLook"]?.jsonPrimitive?.contentOrNull ?: d.musicLook,
+            song = o["song"]?.jsonPrimitive?.contentOrNull ?: d.song,
             spicyNames = b("spicyNames") ?: d.spicyNames,
             fetchTopics = list("fetchTopics")?.filter { it in app.coredump.core.Topics.keys }?.toSet() ?: d.fetchTopics,
             fetchCount = (i("fetchCount") ?: d.fetchCount).coerceIn(1, 200),
@@ -149,7 +149,7 @@ object SettingsStore {
             put("volume", s.volume)
             put("music", s.music)
             put("musicVolume", s.musicVolume)
-            put("musicLook", s.musicLook)
+            put("song", s.song)
             put("spicyNames", s.spicyNames)
             put("fetchTopics", JsonArray(s.fetchTopics.map { JsonPrimitive(it) }))
             put("fetchCount", s.fetchCount)

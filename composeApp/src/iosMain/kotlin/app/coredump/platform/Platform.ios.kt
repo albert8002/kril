@@ -166,7 +166,8 @@ actual object SoundOut {
                 loop?.stop(); loop = null; loopPcm = null
                 return
             }
-            if (pcm !== loopPcm || loop == null) {
+            val same = pcm === loopPcm && loop != null
+            if (!same) {
                 loop?.stop()
                 if (!ready) {
                     ready = true
@@ -184,7 +185,8 @@ actual object SoundOut {
                 loop = p
                 loopPcm = pcm
             }
-            loop?.volume = loopGain
+            // a level change on the same loop fades (music ducking under big effects); a new loop starts at its level
+            if (same) { loop?.setVolume(loopGain, fadeDuration = 0.25) } else { loop?.volume = loopGain }
             if (front && loop?.playing != true) loop?.play()
         }
     }

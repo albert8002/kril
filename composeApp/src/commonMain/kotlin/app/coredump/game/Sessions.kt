@@ -131,11 +131,12 @@ class Arbiter(private val bank: QuestionBank?, private val maxEdit: Int, private
         if (j.tier.isValid) {
             if (j.distance == 0) return Local.Hit(j)
             // matched only with typos: also offer the other names that contain the typed words
-            val others = p.index.wordMatches(text).asSequence().map { p.entries[it].name }.filter { it != j.entry?.name }
+            val others = p.index.wordMatches(text, AnswerCheck.classWords(p.text)).asSequence().map { p.entries[it].name }.filter { it != j.entry?.name }
                 .take(MAX_SUGGESTIONS - 1).toList()
             return Local.Close(j, others)
         }
-        val sug = if (fuzzy) p.index.suggestions(text, MAX_SUGGESTIONS).map { p.entries[it].name } else emptyList()
+        val promptWords = AnswerCheck.classWords(p.text)
+        val sug = if (fuzzy) p.index.suggestions(text, MAX_SUGGESTIONS, promptWords).map { p.entries[it].name } else emptyList()
         val spam = sug.isEmpty() && Spam.isGibberish(text)
         return Local.Miss(sug, !spam && online && bank != null, spam)
     }

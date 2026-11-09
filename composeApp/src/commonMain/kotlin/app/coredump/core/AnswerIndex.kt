@@ -114,16 +114,17 @@ class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Bo
      *  3. names with a word that starts with the typed word ("ferdin" → "Ferdinand …"; the last typed word for several),
      *  4. one typed word of 5+ letters one typo away from a word of a name ("ferdinant" → "… Ferdinand …").
      * Inside each group the most familiar answers come first. Only runs on a miss.
+     * [promptWords]: words of the prompt itself ("Name an art museum" → art, museum); see [wordMatches].
      */
-    fun suggestions(input: String, max: Int): List<Int> {
+    fun suggestions(input: String, max: Int, promptWords: Set<String> = emptySet()): List<Int> {
         val out = LinkedHashSet<Int>()
         suggest(input)?.let { out += it.entry }
-        if (out.size < max) for (e in wordMatches(input)) { if (out.size >= max) break; out += e }
+        if (out.size < max) for (e in wordMatches(input, promptWords)) { if (out.size >= max) break; out += e }
         return out.toList()
     }
 
-    /** Words of every name and alias (built on the first miss that needs them). */
-    private class Words(val tokens: Array<List<List<String>>>, val byWord: HashMap<String, IntBag>)
+    /** Words of every name and alias, and their initials (built on the first miss that needs them). */
+    private class Words(val tokens: Array<List<List<String>>>, val byWord: HashMap<String, IntBag>, val byInitials: HashMap<String, IntBag>)
 
     private val words: Words by lazy {
         val tokens = Array(entries.size) { i ->
@@ -131,19 +132,34 @@ class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Bo
             (listOf(e.name) + e.aliases).map { n -> Norm.key(n).split(' ').filter { it.isNotEmpty() } }.filter { it.isNotEmpty() }
         }
         val by = HashMap<String, IntBag>()
+        val ini = HashMap<String, IntBag>()
         for (i in tokens.indices) {
             val seen = HashSet<String>()
             for (ts in tokens[i]) for (t in ts) if (seen.add(t)) by.getOrPut(t) { IntBag() }.add(i)
+            val seenIni = HashSet<String>()
+            val e = entries[i]
+            for (raw in listOf(e.name) + e.aliases) for (a in Lenient.initials(raw)) if (seenIni.add(a)) ini.getOrPut(a) { IntBag() }.add(i)
         }
-        Words(tokens, by)
+        Words(tokens, by, ini)
     }
 
-    /** Entry indexes whose name contains the typed words (see [suggestions] 2–4), best match first. */
-    fun wordMatches(input: String): List<Int> {
+    /**
+     * Entry indexes whose name contains the typed words (see [suggestions] 2–4), best match first.
+     * Not a way to browse the list:
+     *  - words of the prompt itself and filler words say nothing: "museum" for "Name an art museum" brings up nothing,
+     *  - a vague word that many answers share brings up only the [VAGUE_SHOWN] best-known ones, never the rare ones
+     *    (so nobody types "museum" and picks the rarest from a list).
+     */
+    fun wordMatches(input: String, promptWords: Set<String> = emptySet()): List<Int> {
         val q = Norm.key(input).split(' ').filter { it.isNotEmpty() }
         if (q.isEmpty() || q.sumOf { it.length } < 3) return emptyList()
-        if (q.size == 1 && q[0] in fillers) return emptyList()
+        if (q.none { it.length >= 3 && it !in fillers && it !in promptWords && it.trimEnd('s') !in promptWords }) return emptyList()
         val w = words
+        val best = HashMap<Int, Int>()   // entry -> loosest-word level of its best match
+        // initials: "gta v" → Grand Theft Auto V, "lotr" → The Lord of the Rings, "botw" → … Breath of the Wild
+        val typedKey = q.joinToString(" ")
+        val ac = Norm.compact(Lenient.numeralKey(typedKey) ?: typedKey)
+        if (ac.length in 2..8 && q.size <= 2) w.byInitials[ac]?.let { bag -> for (j in 0 until bag.size) best[bag[j]] = 3 }
         // words in the names that may stand for the first typed word, with how loose the match is (0 = same word)
         val first = q[0]
         val heads = HashMap<String, Int>()
@@ -155,8 +171,6 @@ class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Bo
             if (prefixOk && k.length > first.length && k.startsWith(first)) heads[k] = minOf(heads[k] ?: 9, 1)
             else if (typoOk && abs(k.length - first.length) <= 1 && k.length >= 5 && Edits.osa(first, k, 1) <= 1) heads[k] = minOf(heads[k] ?: 9, 2)
         }
-        if (heads.isEmpty()) return emptyList()
-        val best = HashMap<Int, Int>()   // entry -> loosest-word level of its best match
         for ((head, level) in heads) {
             val bag = w.byWord[head] ?: continue
             for (j in 0 until bag.size) {
@@ -165,6 +179,8 @@ class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Bo
                 if (lv < (best[e] ?: 9)) best[e] = lv
             }
         }
+        if (best.isEmpty()) return emptyList()
+        if (best.size > VAGUE) return best.keys.sorted().take(VAGUE_SHOWN)
         return best.entries.sortedWith(compareBy({ it.value }, { it.key })).map { it.key }
     }
 
@@ -212,6 +228,9 @@ class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Bo
     }
 
     companion object {
+        /** More matches than this = a vague word: only the [VAGUE_SHOWN] best-known are offered. */
+        const val VAGUE = 3
+        const val VAGUE_SHOWN = 2
         /** Words too common to suggest from on their own. */
         private val fillers = setOf("the", "and", "of", "for", "with", "from", "les", "los", "las", "der", "die", "das",
             "des", "del", "della", "von", "van", "une", "una", "uno")
@@ -265,8 +284,10 @@ object Lenient {
         // subtitle: "Star Wars: Episode IV – A New Hope" -> "a new hope"
         for (sep in listOf(": ", " – ", " - ")) if (sep in raw) {
             val sub = Norm.key(raw.substringAfterLast(sep))
-            if (sub.count { it == ' ' } >= 1 && sub.length >= 6) out += sub
+            if (sub.count { it == ' ' } >= 1 && sub.length >= 6) { out += sub; numeralKey(sub)?.let { out += it } }
         }
+        // numbers: "Final Fantasy VII" also as "final fantasy 7"
+        numeralKey(k)?.let { out += it }
         out.remove(k)
         return out.toList()
     }
@@ -277,7 +298,46 @@ object Lenient {
         out += strip(k)
         out += swapped(k)
         if (',' in raw) Norm.key(raw.substringBefore(',')).takeIf { it.length >= 3 }?.let { out += it }
+        numeralKey(k)?.let { out += it }
         out.remove(k)
+        return out.toList()
+    }
+
+    private val roman = mapOf("ii" to "2", "iii" to "3", "iv" to "4", "v" to "5", "vi" to "6", "vii" to "7", "viii" to "8",
+        "ix" to "9", "x" to "10", "xi" to "11", "xii" to "12", "xiii" to "13", "xiv" to "14", "xv" to "15", "xvi" to "16",
+        "xvii" to "17", "xviii" to "18", "xix" to "19", "xx" to "20")
+
+    /**
+     * Roman numbers as digits, from the second word on: "final fantasy vii" → "final fantasy 7", "henry viii" →
+     * "henry 8". The first word stays ("x men", "v for vendetta"). Null = nothing to change.
+     */
+    fun numeralKey(k: String): String? {
+        val toks = k.split(' ')
+        if (toks.size < 2) return null
+        var changed = false
+        val out = toks.mapIndexed { i, t -> if (i > 0) roman[t]?.also { changed = true } ?: t else t }
+        return if (changed) out.joinToString(" ") else null
+    }
+
+    private val skipFirst = setOf("the", "a", "an")
+
+    /**
+     * Initials a player may type for a name of 2+ words (numbers kept whole): "Grand Theft Auto V" → "gta5" and "gta",
+     * "The Lord of the Rings" → "lotr", and the same for a subtitle ("… Breath of the Wild" → "botw").
+     */
+    fun initials(raw: String): List<String> {
+        val parts = listOf(raw) + listOf(": ", " – ", " - ").filter { it in raw }.map { raw.substringAfterLast(it) }
+        val out = LinkedHashSet<String>()
+        for (p in parts) {
+            val k = Norm.key(p)
+            var toks = (numeralKey(k) ?: k).split(' ').filter { it.isNotEmpty() }
+            if (toks.size > 2 && toks.first() in skipFirst) toks = toks.drop(1)
+            if (toks.size < 2) continue
+            val full = toks.joinToString("") { t -> if (t.all { it.isDigit() }) t else t.take(1) }
+            if (full.length in 2..8) out += full
+            val words = toks.filter { t -> !t.all { it.isDigit() } }
+            if (words.size >= 2 && words.size < toks.size) words.joinToString("") { it.take(1) }.takeIf { it.length in 2..8 }?.let { out += it }
+        }
         return out.toList()
     }
 

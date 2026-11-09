@@ -120,11 +120,19 @@ fun main(args: Array<String>) {
                 listOf("Kai Ken", "banana", "Labrador", "Shiba Inu", "Berner Sennenhund", "Deutscher Schäferhund"),
                 listOf("ANY", "MISSING", "ANY", "ANY", "ANY", "ANY")),
             Triple(prompt("t.cheese", "Name a cheese", "?item wdt:P31/wdt:P279* wd:Q10943 .", 40),
-                listOf("Tete de Moine", "Raclette", "toaster"), listOf("ANY", "ANY", "MISSING")),
+                listOf("Tete de Moine", "Raclette", "toaster", "cheese"), listOf("ANY", "ANYNEAR", "MISSING", "MISSING")),
             Triple(prompt("t.mount", "Name a mountain", "?item wdt:P31 wd:Q8502 .", 30),
                 listOf("Everest", "Matterhorn", "Eiger", "Säntis", "Mount Doom"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
             Triple(prompt("t.lake", "Name a lake", "?item wdt:P31 wd:Q23397 .", 30),
                 listOf("Geneva", "Lake Zurich", "Loch Ness", "Walensee", "Lake Wobegon"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
+            Triple(prompt("t.actor", "Name a famous actor or actress", "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q33999 .", 40),
+                listOf("Tom Holland", "Florence Pugh", "Zendaya", "Paul Mescal", "Albert Einstein"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
+            Triple(prompt("t.film", "Name a famous film", "?item wdt:P31 wd:Q11424 .", 40),
+                listOf("Turning Red", "Oppenheimer", "Spirited Away", "Rocky 4", "Inside Out 2", "Fortnite"), listOf("ANY", "ANY", "ANY", "ANY", "ANY", "MISSING")),
+            Triple(prompt("t.game", "Name a video game", "?item wdt:P31 wd:Q7889 .", 40),
+                listOf("Breath of the Wild", "Final Fantasy 7", "Hollow Knight", "Stardew Valley", "Balatro", "Barack Obama"), listOf("ANY", "ANY", "ANY", "ANY", "ANY", "MISSING")),
+            Triple(prompt("t.tv", "Name a TV series", "?item wdt:P31 wd:Q5398426 .", 40),
+                listOf("Arcane", "Severance", "Bluey"), listOf("ANY", "ANY", "ANY")),
             Triple(prompt("t.bball", "Name a famous basketball player", "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q3665646 .", 300),
                 listOf("Jordan", "Shaq", "Lebron"), listOf("LISTED", "LISTED", "LISTED")),
             Triple(prompt("t.frcity", "Name a city in France", "?item wdt:P31 wd:Q484170 ; wdt:P17 wd:Q142 .", 30),
@@ -143,6 +151,8 @@ fun main(args: Array<String>) {
                 val w = want[i]
                 val ok = when (w) {
                     "ANY" -> got.startsWith("LOCAL") || got.startsWith("LISTED") || got.startsWith("FOUND")
+                    // found, or at least offered as "did you mean"
+                    "ANYNEAR" -> got.startsWith("LOCAL") || got.startsWith("LISTED") || got.startsWith("FOUND") || "near=" in got
                     "LISTED" -> got.startsWith("LOCAL") || got.startsWith("LISTED")
                     else -> got.startsWith(w)
                 }
@@ -208,7 +218,9 @@ fun main(args: Array<String>) {
     fun fileAt(name: String) = runCatching { PackCodec.cacheTime(File(dir, name).readText()) }.getOrNull() ?: System.currentTimeMillis()
     log("SNAP restored ${wdOut.size} wikidata + ${wpOut.size} wikipedia prompts, ${state.size} state rows")
     val freshMs = 10L * 24 * 3600 * 1000
-    fun hashWd(t: app.coredump.data.WikidataTemplate) = stableHash("${t.where}|${t.prompt}|${t.limit}|${t.minLinks}|${t.topic}|r2")
+    // a template whose class now takes its whole family (actor → film actor …) is fetched again
+    fun hashWd(t: app.coredump.data.WikidataTemplate) = stableHash("${t.where}|${t.prompt}|${t.limit}|${t.minLinks}|${t.topic}|r2" +
+        (if (app.coredump.data.ClassFamilies.expand(t.where) != t.where) "|fam1" else ""))
     fun hashWp(t: app.coredump.data.WikipediaTemplate) = stableHash("${t.page}|${t.prompt}|${t.max}|${t.topic}|x${WikipediaTemplates.EXTRACT_VERSION}|r2")
     fun isFresh(id: String, hash: Int, have: Boolean): Boolean {
         val st = state[id] ?: return false

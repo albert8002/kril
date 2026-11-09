@@ -182,7 +182,7 @@ fun AnswerField(a: AnswerState, st: MatchState, modifier: Modifier = Modifier, s
         value = a.text,
         onValueChange = {
             if (it.length <= 60) {
-                if (it.length > a.text.length) { fx.key(); Sfx.play(Cue.KEY) }
+                if (it.length > a.text.length) Sfx.play(Cue.KEY)
                 a.text = it
             }
         },

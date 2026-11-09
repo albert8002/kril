@@ -4,6 +4,7 @@ import app.coredump.platform.SoundOut
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -22,6 +23,10 @@ object Music {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
     private var rendering: Style? = null
+    private var duckJob: Job? = null
+
+    /** The song set to play (its key is the effects' key), null before the first [configure]. */
+    val song: Style? get() = style
 
     /** Music level relative to the effects (the effects stay on top). */
     private fun gain() = volume * 0.45f
@@ -32,6 +37,26 @@ object Music {
         volume = vol.coerceIn(0f, 1f)
         style = theme
         if (changed) apply()
+    }
+
+    /**
+     * Big effects (a rare answer, the final rank, lists fetched) sit on top: the music dips to 40 % for [seconds],
+     * then comes back. Android glides between levels; iOS fades.
+     */
+    fun duck(seconds: Float) {
+        val s = style ?: return
+        val pcm = loops[s] ?: return
+        if (!on || volume <= 0.01f) return
+        runCatching { SoundOut.music(pcm, gain() * 0.4f) }
+        duckJob?.cancel()
+        duckJob = scope.launch {
+            delay((seconds.coerceIn(0.2f, 4f) * 1000).toLong())
+            withContext(Dispatchers.Main) {
+                val now = style
+                val p = if (now != null) loops[now] else null
+                if (on && volume > 0.01f && p != null) runCatching { SoundOut.music(p, gain()) }
+            }
+        }
     }
 
     private fun apply() {
