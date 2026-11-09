@@ -127,7 +127,7 @@ fun main(args: Array<String>) {
             Triple(prompt("t.lake", "Name a lake", "?item wdt:P31 wd:Q23397 .", 30),
                 listOf("Geneva", "Lake Zurich", "Loch Ness", "Walensee", "Lake Wobegon"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
             Triple(prompt("t.actor", "Name a famous actor or actress", "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q33999 .", 40, 60),
-                listOf("Tom Holland", "Florence Pugh", "Zendaya", "Paul Mescal", "Albert Einstein"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
+                listOf("Tom Holland", "Florence Pugh", "Zendaya", "Paul Mescal", "Isaac Newton"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
             Triple(prompt("t.film", "Name a famous film", "?item wdt:P31 wd:Q11424 .", 40, 60),
                 listOf("Turning Red", "Oppenheimer", "Spirited Away", "Rocky 4", "Inside Out 2", "Fortnite"), listOf("ANY", "ANY", "ANY", "ANY", "ANY", "MISSING")),
             Triple(prompt("t.game", "Name a video game", "?item wdt:P31 wd:Q7889 .", 40),

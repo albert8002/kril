@@ -196,11 +196,19 @@ object AnswerCheck {
      * The list's class as Wikidata search filters, or null when it can't be written that way.
      * "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q3665646 ." → ["P31=Q5", "P106=Q3665646"] (all must hold).
      * A path "wdt:P31/wdt:P279* wd:X" becomes "P31=X|P279=X" and "wdt:P279+ wd:X" becomes "P279=X": direct members
-     * and direct subclasses only, so the filter is never wider than the class. Anything else (variables, VALUES, FILTER, other subjects) → null.
+     * and direct subclasses only, so the filter is never wider than the class. VALUES lists and UNIONs of single
+     * statements become alternatives. Anything else (FILTER, other subjects) → null.
      */
     fun statementFilters(where: String): List<String>? {
         var w = where.replace("hint:Query hint:optimizer \"None\" .", " ").trim()
         if (w.isEmpty()) return null
+        // "{ ?item wdt:P31 wd:A } UNION { ?item wdt:P31 wd:B }" → P31=A|P31=B (one statement per branch)
+        if (w.startsWith("{") && w.endsWith("}") && "UNION" in w) {
+            val branches = w.removePrefix("{").removeSuffix("}").split(Regex("\\}\\s*UNION\\s*\\{"))
+            if (branches.size < 2 || branches.any { '{' in it || '}' in it }) return null
+            val parts = branches.map { b -> statementFilters(b.trim())?.singleOrNull() ?: return null }
+            return listOf(parts.flatMap { it.split('|') }.distinct().joinToString("|"))
+        }
         // "VALUES ?k { wd:A wd:B } ?item wdt:P31 ?k ." → P31=A|P31=B
         val values = HashMap<String, List<String>>()
         w = valuesRe.replace(w) { m -> values[m.groupValues[1]] = Regex("wd:(Q\\d+)").findAll(m.groupValues[2]).map { it.groupValues[1] }.toList(); " " }.trim()
