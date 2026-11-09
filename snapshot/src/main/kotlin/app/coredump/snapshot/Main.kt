@@ -89,16 +89,27 @@ fun main(args: Array<String>) {
             val tl = api(WikiNet.WP_API, app.coredump.data.AnswerCheck.titleParams(term))
             val sr = api(WikiNet.WP_API, app.coredump.data.AnswerCheck.searchParams(term))
             if (es == null && tl == null && sr == null) return "UNREACHABLE"
-            val cands = app.coredump.data.AnswerCheck.candidates(term, p.people, es, tl, sr, app.coredump.data.AnswerCheck.classWords(p.text))
+            val words = app.coredump.data.AnswerCheck.classWords(p.text)
+            // class-limited label search (all languages), as in the app
+            val filters = p.check?.let { app.coredump.data.AnswerCheck.statementFilters(it) }
+            val cls = filters?.let { f ->
+                val ids = api(WikiNet.WD_API, app.coredump.data.AnswerCheck.classSearchParams(term, f))?.let { app.coredump.data.AnswerCheck.parseSearchIds(it) }
+                if (ids.isNullOrEmpty()) null else api(WikiNet.WD_API, app.coredump.data.AnswerCheck.entityDataParams(ids))
+                    ?.let { app.coredump.data.AnswerCheck.classMatches(app.coredump.data.AnswerCheck.parseClassItems(it), term, p.people, words) }
+            }
+            val cands = app.coredump.data.AnswerCheck.candidates(term, p.people, es, tl, sr, words) +
+                cls?.matches.orEmpty().map { app.coredump.data.AnswerCheck.Candidate(it.names, it.qid) }
             app.coredump.data.AnswerCheck.listed(p, cands)?.let { return "LISTED(${it.name})" }
+            cls?.matches?.firstOrNull()?.let { return "FOUND(${it.label}, ${it.links} links, class search)" }
+            val near = cls?.near.orEmpty().let { if (it.isEmpty()) "" else " near=$it" }
             val where = p.check ?: return "MISSING(no class)"
             val qids = app.coredump.data.AnswerCheck.qids(cands)
             val seen = cands.take(4).joinToString("; ") { c -> "${c.qid}:${c.names.take(2).joinToString("/")}" }
-            if (qids.isEmpty()) return "MISSING(no candidates)"
+            if (qids.isEmpty()) return "MISSING(no candidates$near)"
             val body = runCatching {
                 postForm(WikiNet.WDQS, mapOf("query" to app.coredump.data.AnswerCheck.memberQuery(where, qids), "format" to "json"))
             }.getOrElse { return "UNREACHABLE(member ${it.message?.take(60)})" }
-            val m = app.coredump.data.AnswerCheck.parseMember(body) ?: return "MISSING(${qids.size} checked: $seen)"
+            val m = app.coredump.data.AnswerCheck.parseMember(body) ?: return "MISSING(${qids.size} checked: $seen$near)"
             return "FOUND(${m.label ?: m.qid}, ${m.links} links)"
         }
         // small lists (limit) so that well-known answers can also be missing from the list and need the class check
@@ -106,7 +117,8 @@ fun main(args: Array<String>) {
             Triple(prompt("t.pres", "Name a US president", "?item wdt:P39 wd:Q11696 .", 60),
                 listOf("JFK", "Honest Abe", "Obama", "Paris Hilton"), listOf("LISTED", "LISTED", "LISTED", "MISSING")),
             Triple(prompt("t.dog", "Name a dog breed", "?item wdt:P31 wd:Q39367 .", 40),
-                listOf("Kai Ken", "banana", "Labrador", "Shiba Inu"), listOf("ANY", "MISSING", "ANY", "ANY")),
+                listOf("Kai Ken", "banana", "Labrador", "Shiba Inu", "Berner Sennenhund", "Deutscher Schäferhund"),
+                listOf("ANY", "MISSING", "ANY", "ANY", "ANY", "ANY")),
             Triple(prompt("t.cheese", "Name a cheese", "?item wdt:P31/wdt:P279* wd:Q10943 .", 40),
                 listOf("Tete de Moine", "Raclette", "toaster"), listOf("ANY", "ANY", "MISSING")),
             Triple(prompt("t.mount", "Name a mountain", "?item wdt:P31 wd:Q8502 .", 30),

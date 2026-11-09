@@ -43,6 +43,7 @@ fun ManualScreen(model: AppModel) {
                     "close to an answer? the app asks: submit the suggestion, or search what you typed.",
                     "typed part of a name (\"mario\", \"ferdinand\")? tap one of the answers that contain it.",
                     "after each prompt: the full list of answers, by tier.",
+                    "music: one theme in 7/4 (felt as 4 + 3), arranged for every look. settings → sound.",
                     "people: a surname is enough (\"einstein\", \"van gogh\").",
                     "\"river\", \"lake\", \"mount\", word order, accents and plurals don't matter.",
                     "not in the list? it's checked online (Wikidata) and scored by obscurity. results are cached.",

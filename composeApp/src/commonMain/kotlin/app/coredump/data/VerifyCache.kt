@@ -18,13 +18,15 @@ import kotlinx.serialization.json.longOrNull
  * key: "<prompt id>|<normalised answer>". (v2 file: results of the older, weaker search are dropped.)
  */
 object VerifyCache {
-    private const val FILE = "verify_cache_v2.json"
-    private const val OLD_FILE = "verify_cache.json"
+    private const val FILE = "verify_cache_v3.json"
+    private val OLD_FILES = listOf("verify_cache.json", "verify_cache_v2.json")
     private const val MAX = 3000
+    private const val SEP = "\u001F"
     private const val FOUND_MS = 60L * 24 * 3600 * 1000
     private const val MISSING_MS = 14L * 24 * 3600 * 1000
 
-    /** kind: L = list entry under another name, F = unlisted member, M = not found. at: epoch ms of the search. */
+    /** kind: L = list entry under another name, F = unlisted member, M = not found, N = not found but near names
+     *  (label: names joined by [SEP]). at: epoch ms of the search. */
     private class Entry(val kind: Char, val label: String?, val links: Int, val at: Long)
 
     private var map: LinkedHashMap<String, Entry>? = null
@@ -32,7 +34,7 @@ object VerifyCache {
     private fun loaded(): LinkedHashMap<String, Entry> {
         map?.let { return it }
         val m = LinkedHashMap<String, Entry>()
-        runCatching { Platform.delete(OLD_FILE) }
+        for (f in OLD_FILES) runCatching { Platform.delete(f) }
         runCatching {
             val rows = Json.parseToJsonElement(Platform.readText(FILE) ?: return@runCatching).jsonObject["e"]?.jsonArray.orEmpty()
             for (r in rows) {
@@ -50,10 +52,12 @@ object VerifyCache {
     fun get(key: String): AnswerCheck.Outcome? {
         val e = loaded()[key] ?: return null
         val age = Platform.epochMillis() - e.at
-        if (age > (if (e.kind == 'M') MISSING_MS else FOUND_MS)) return null
+        if (age > (if (e.kind == 'M' || e.kind == 'N') MISSING_MS else FOUND_MS)) return null
         return when (e.kind) {
             'L' -> e.label?.let { AnswerCheck.Outcome.Listed(it) }
             'F' -> e.label?.let { AnswerCheck.Outcome.Found(it, e.links) }
+            'N' -> e.label?.split(SEP)?.filter { it.isNotBlank() }?.takeIf { it.isNotEmpty() }?.let { AnswerCheck.Outcome.Near(it) }
+                ?: AnswerCheck.Outcome.Missing
             else -> AnswerCheck.Outcome.Missing
         }
     }
@@ -63,6 +67,7 @@ object VerifyCache {
             is AnswerCheck.Outcome.Listed -> Entry('L', v.name, 0, Platform.epochMillis())
             is AnswerCheck.Outcome.Found -> Entry('F', v.label, v.links, Platform.epochMillis())
             AnswerCheck.Outcome.Missing -> Entry('M', null, 0, Platform.epochMillis())
+            is AnswerCheck.Outcome.Near -> Entry('N', v.names.joinToString(SEP), 0, Platform.epochMillis())
             AnswerCheck.Outcome.Unreachable -> return
         }
         val m = loaded()

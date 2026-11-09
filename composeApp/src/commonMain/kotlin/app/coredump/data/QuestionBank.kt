@@ -724,7 +724,7 @@ class QuestionBank(private val scope: CoroutineScope) {
                 CrashLog.note("verify", e); AnswerCheck.Outcome.Unreachable to false
             }
         } ?: (AnswerCheck.Outcome.Unreachable to false)
-        if (out != AnswerCheck.Outcome.Unreachable && (complete || out != AnswerCheck.Outcome.Missing)) {
+        if (out != AnswerCheck.Outcome.Unreachable && (complete || (out != AnswerCheck.Outcome.Missing && out !is AnswerCheck.Outcome.Near))) {
             verifyLock.withLock { VerifyCache.put(key, out) }
         }
         return out
@@ -746,21 +746,41 @@ class QuestionBank(private val scope: CoroutineScope) {
     private suspend fun lookup(prompt: Prompt, input: String): Pair<AnswerCheck.Outcome, Boolean> = coroutineScope {
         val term = input.trim().take(80)
         val people = prompt.people
+        val words = AnswerCheck.classWords(prompt.text)
+        val filters = prompt.check?.let { AnswerCheck.statementFilters(it) }
         val es = async { quick(WikiNet.WD_API, 7_000, AnswerCheck.entityParams(term)) }
         val tl = async { quick(WikiNet.WP_API, 7_000, AnswerCheck.titleParams(term)) }
         val sr = async { quick(WikiNet.WP_API, 7_000, AnswerCheck.searchParams(term)) }
+        // 4. names in any language, limited to the list's class, then those items' names and fame
+        val cl = async {
+            if (filters == null) null else {
+                val ids = quick(WikiNet.WD_API, 6_000, AnswerCheck.classSearchParams(term, filters))?.let { AnswerCheck.parseSearchIds(it) }
+                when {
+                    ids == null -> null
+                    ids.isEmpty() -> AnswerCheck.ClassResult(emptyList(), emptyList())
+                    else -> quick(WikiNet.WD_API, 6_000, AnswerCheck.entityDataParams(ids))
+                        ?.let { AnswerCheck.classMatches(AnswerCheck.parseClassItems(it), term, people, words) }
+                }
+            }
+        }
         val esB = es.await()
         val tlB = tl.await()
         val srB = sr.await()
-        if (esB == null && tlB == null && srB == null) return@coroutineScope AnswerCheck.Outcome.Unreachable to false
+        val clR = cl.await()
+        if (esB == null && tlB == null && srB == null && clR == null) return@coroutineScope AnswerCheck.Outcome.Unreachable to false
         val complete = esB != null && tlB != null && srB != null
-        val cands = AnswerCheck.candidates(term, people, esB, tlB, srB, AnswerCheck.classWords(prompt.text))
-        // 1. a list entry under another name
+        val cands = AnswerCheck.candidates(term, people, esB, tlB, srB, words) +
+            clR?.matches.orEmpty().map { AnswerCheck.Candidate(it.names, it.qid) }
+        // 1. a list entry under another name (also its name in another language)
         AnswerCheck.listed(prompt, cands)?.let { return@coroutineScope it to true }
-        // 2. an unlisted member of the list's class
-        val where = prompt.check ?: return@coroutineScope AnswerCheck.Outcome.Missing to complete
+        // 2. an unlisted member of the list's class: found by the class search (no SPARQL needed) …
+        clR?.matches?.firstOrNull()?.let { return@coroutineScope AnswerCheck.Outcome.Found(it.label, it.links) to true }
+        val near = clR?.near.orEmpty()
+        fun missing() = (if (near.isNotEmpty()) AnswerCheck.Outcome.Near(near) else AnswerCheck.Outcome.Missing) to complete
+        // … or checked with SPARQL
+        val where = prompt.check ?: return@coroutineScope missing()
         val qids = AnswerCheck.qids(cands)
-        if (qids.isEmpty()) return@coroutineScope AnswerCheck.Outcome.Missing to complete
+        if (qids.isEmpty()) return@coroutineScope missing()
         val body = withTimeoutOrNull(6_500) {
             try {
                 http.submitForm(url = WikiNet.WDQS, formParameters = parameters {
@@ -772,7 +792,7 @@ class QuestionBank(private val scope: CoroutineScope) {
                 }.let { if (it.status.isSuccess()) it.bodyAsText() else null }
             } catch (e: CancellationException) { throw e } catch (e: Throwable) { null }
         } ?: return@coroutineScope AnswerCheck.Outcome.Unreachable to false
-        val m = AnswerCheck.parseMember(body) ?: return@coroutineScope AnswerCheck.Outcome.Missing to complete
+        val m = AnswerCheck.parseMember(body) ?: return@coroutineScope missing()
         val label = m.label ?: cands.firstOrNull { it.qid == m.qid }?.names?.firstOrNull() ?: input.trim()
         AnswerCheck.Outcome.Found(label, m.links) to true
     }

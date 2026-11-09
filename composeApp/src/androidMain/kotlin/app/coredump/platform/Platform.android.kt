@@ -166,16 +166,66 @@ actual object SoundOut {
     private val voices = ArrayList<Voice>()
     private var thread: Thread? = null
 
+    // music: the playing loop, the one waiting to replace it (after a short fade), levels and position
+    private var loopPcm: ShortArray? = null
+    private var nextPcm: ShortArray? = null
+    private var hasNext = false
+    private var loopPos = 0
+    private var loopTarget = 0f
+    private var loopGain = 0f
+    private var front = true
+
     actual fun play(pcm: ShortArray, gain: Float) {
         runCatching {
             synchronized(lock) {
                 if (voices.size >= 10) voices.removeAt(0)
                 voices += Voice(pcm, gain.coerceIn(0f, 1f))
-                if (thread?.isAlive != true) {
-                    thread = Thread({ loop() }, "sfx").apply { isDaemon = true; start() }
-                }
+                ensureThread()
                 lock.notifyAll()
             }
+        }
+    }
+
+    actual fun music(pcm: ShortArray?, gain: Float) {
+        runCatching {
+            synchronized(lock) {
+                if (pcm !== loopPcm) { nextPcm = pcm; hasNext = true }
+                loopTarget = if (pcm == null) 0f else gain.coerceIn(0f, 1f)
+                if (pcm != null) ensureThread()
+                lock.notifyAll()
+            }
+        }
+    }
+
+    actual fun foreground(on: Boolean) {
+        runCatching { synchronized(lock) { front = on; if (on && loopPcm != null) ensureThread(); lock.notifyAll() } }
+    }
+
+    /** Call with [lock] held. */
+    private fun ensureThread() {
+        if (thread?.isAlive != true) thread = Thread({ loop() }, "sfx").apply { isDaemon = true; start() }
+    }
+
+    /** Something to play: an effect, or music while the app is in front. Call with [lock] held. */
+    private fun busy(): Boolean = voices.isNotEmpty() || (front && (loopPcm != null || (hasNext && nextPcm != null)))
+
+    /** Adds this block of music to [mix]: level glides (no clicks), a new loop fades the old one out first. */
+    private fun mixMusic(mix: FloatArray) {
+        if (!front) return
+        val want = if (hasNext) 0f else loopTarget
+        val end = loopGain + (want - loopGain) * 0.25f
+        val m = loopPcm
+        if (m != null && m.isNotEmpty()) {
+            for (i in mix.indices) {
+                val g = loopGain + (end - loopGain) * (i.toFloat() / mix.size)
+                mix[i] += m[loopPos] * g
+                loopPos++
+                if (loopPos >= m.size) loopPos = 0
+            }
+        }
+        loopGain = end
+        if (hasNext && (loopGain < 0.003f || m == null)) {
+            loopPcm = nextPcm; nextPcm = null; hasNext = false; loopPos = 0; loopGain = 0f
         }
     }
 
@@ -202,16 +252,17 @@ actual object SoundOut {
             track.play()
             while (true) {
                 synchronized(lock) {
-                    if (voices.isEmpty()) {
+                    if (!busy()) {
                         quiet++
                         if (quiet > rate / FRAMES) {   // ~1 s of silence: stop until the next sound
                             track.pause(); track.flush()
-                            while (voices.isEmpty()) lock.wait()
+                            while (!busy()) lock.wait()
                             track.play()
                             quiet = 0
                         }
                     } else quiet = 0
                     java.util.Arrays.fill(mix, 0f)
+                    mixMusic(mix)
                     val it = voices.iterator()
                     while (it.hasNext()) {
                         val v = it.next()

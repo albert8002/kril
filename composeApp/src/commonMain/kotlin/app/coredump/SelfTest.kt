@@ -169,6 +169,7 @@ object SelfTest {
                     is app.coredump.data.AnswerCheck.Outcome.Listed -> "LISTED(${r.name})"
                     is app.coredump.data.AnswerCheck.Outcome.Found -> "FOUND(${r.label}, ${r.links})"
                     app.coredump.data.AnswerCheck.Outcome.Missing -> "MISSING"
+                    is app.coredump.data.AnswerCheck.Outcome.Near -> "NEAR(${r.names})"
                     app.coredump.data.AnswerCheck.Outcome.Unreachable -> "UNREACHABLE"
                 }
                 log("VERIFY '${p.text}' '$input' -> $out (${t0.elapsedNow().inWholeMilliseconds}ms)")

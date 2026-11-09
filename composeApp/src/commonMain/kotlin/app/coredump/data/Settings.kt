@@ -49,6 +49,9 @@ data class Settings(
     /** Sound effects on/off and volume (0..1, dimensionless). */
     val sound: Boolean = true,
     val volume: Float = 0.7f,
+    /** Background music (the 7/4 theme, arranged per look) on/off and its volume (0..1, dimensionless). */
+    val music: Boolean = true,
+    val musicVolume: Float = 0.5f,
     /** Hidden setting: crude tier and rank names instead of the plain ones. */
     val spicyNames: Boolean = false,
     /** Fetch screen: categories to collect (empty = all) and lists per request (count). */
@@ -98,6 +101,8 @@ object SettingsStore {
             cooldownDays = (i("cooldownDays") ?: d.cooldownDays).coerceIn(0, 30),
             sound = b("sound") ?: d.sound,
             volume = (o["volume"]?.jsonPrimitive?.floatOrNull ?: d.volume).coerceIn(0f, 1f),
+            music = b("music") ?: d.music,
+            musicVolume = (o["musicVolume"]?.jsonPrimitive?.floatOrNull ?: d.musicVolume).coerceIn(0f, 1f),
             spicyNames = b("spicyNames") ?: d.spicyNames,
             fetchTopics = list("fetchTopics")?.filter { it in app.coredump.core.Topics.keys }?.toSet() ?: d.fetchTopics,
             fetchCount = (i("fetchCount") ?: d.fetchCount).coerceIn(1, 200),
@@ -139,6 +144,8 @@ object SettingsStore {
             put("cooldownDays", s.cooldownDays)
             put("sound", s.sound)
             put("volume", s.volume)
+            put("music", s.music)
+            put("musicVolume", s.musicVolume)
             put("spicyNames", s.spicyNames)
             put("fetchTopics", JsonArray(s.fetchTopics.map { JsonPrimitive(it) }))
             put("fetchCount", s.fetchCount)

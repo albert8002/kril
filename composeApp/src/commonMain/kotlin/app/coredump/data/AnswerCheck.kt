@@ -17,13 +17,17 @@ import kotlinx.serialization.json.jsonPrimitive
 /**
  * Online search for an answer that is not in the local list (pure parts: request texts, parsing, matching).
  *
- * Three lookups run side by side:
+ * Four lookups run side by side:
  *  1. Wikidata entity search (labels and aliases, any spelling the input starts),
  *  2. Wikipedia exact title (follows redirects: "JFK" → "John F. Kennedy"),
- *  3. Wikipedia full-text search (catches typos and other word orders).
+ *  3. Wikipedia full-text search (catches typos and other word orders),
+ *  4. for lists whose class is plain statements ("instance of dog breed", "human + occupation basketball player"):
+ *     a Wikidata label search in every language limited to that class ([classSearchParams]), then the names of
+ *     the items found ([entityDataParams]). Fast (no SPARQL) and catches names in other languages.
  * Only names that really spell the input are kept ("candidates"). A candidate that is a list entry under another
  * name counts as that entry; otherwise, for lists with a Wikidata class, the candidates' items are checked for
- * membership in one small SPARQL request.
+ * membership in one small SPARQL request. Class members whose names merely contain the typed words are offered
+ * back as "did you mean" choices ([Outcome.Near]).
  */
 object AnswerCheck {
     sealed interface Outcome {
@@ -32,6 +36,8 @@ object AnswerCheck {
         /** Not in the list but a member of the list's class. links: Wikipedia editions with an article (count). */
         class Found(val label: String, val links: Int) : Outcome
         data object Missing : Outcome
+        /** Not found as typed, but members of the class have names containing the typed words (best known first). */
+        class Near(val names: List<String>) : Outcome
         /** Nothing could be reached: nothing learned. */
         data object Unreachable : Outcome
     }
@@ -160,6 +166,93 @@ object AnswerCheck {
     fun searchParams(term: String) = listOf("action" to "query", "generator" to "search", "gsrsearch" to term, "gsrlimit" to "8",
         "gsrnamespace" to "0", "redirects" to "1", "prop" to "pageprops", "ppprop" to "wikibase_item|disambiguation",
         "format" to "json", "formatversion" to "2")
+
+    // ---- class-limited label search (lookup 4)
+
+    private val tripleRe = Regex("^wdt:(P\\d+)(/wdt:P279\\*|\\+)?\\s+wd:(Q\\d+)$")
+
+    /**
+     * The list's class as Wikidata search filters, or null when it can't be written that way.
+     * "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q3665646 ." → ["P31=Q5", "P106=Q3665646"] (all must hold).
+     * A path "wdt:P31/wdt:P279* wd:X" becomes "P31=X|P279=X" and "wdt:P279+ wd:X" becomes "P279=X": direct members
+     * and direct subclasses only, so the filter is never wider than the class. Anything else (variables, VALUES, FILTER, other subjects) → null.
+     */
+    fun statementFilters(where: String): List<String>? {
+        val w = where.replace("hint:Query hint:optimizer \"None\" .", " ").trim()
+        if (w.isEmpty()) return null
+        val out = ArrayList<String>()
+        for (raw in w.split(Regex("\\s+\\.(\\s+|$)"))) {
+            val t = raw.trim().removeSuffix(".").trim()
+            if (t.isEmpty()) continue
+            if (!t.startsWith("?item ")) return null
+            for (po in t.removePrefix("?item ").split(';')) {
+                val x = po.trim()
+                if (x.isEmpty()) continue
+                val m = tripleRe.find(x) ?: return null
+                val (p, path, q) = m.destructured
+                out += when {
+                    path.isEmpty() -> "$p=$q"
+                    path == "+" -> if (p == "P279") "P279=$q" else return null   // "subclass of … (any depth)": direct ones
+                    else -> "$p=$q|P279=$q"
+                }
+            }
+        }
+        return out.ifEmpty { null }
+    }
+
+    /** Wikidata search: items of the class whose label or alias (any language) has all the typed words. */
+    fun classSearchParams(term: String, filters: List<String>): List<Pair<String, String>> {
+        val words = term.replace('"', ' ').replace('\\', ' ').trim()
+        return listOf("action" to "query", "list" to "search", "srnamespace" to "0", "srlimit" to "8", "srprop" to "",
+            "srsearch" to "inlabel:\"$words\" " + filters.joinToString(" ") { "haswbstatement:$it" },
+            "format" to "json", "formatversion" to "2")
+    }
+
+    /** Item ids in a [classSearchParams] reply (search order). */
+    fun parseSearchIds(body: String): List<String> = runCatching {
+        json.parseToJsonElement(body).jsonObject["query"]?.jsonObject?.get("search")?.jsonArray.orEmpty()
+            .mapNotNull { it.jsonObject.str("title")?.takeIf { t -> qidRe.matches(t) } }.distinct().take(8)
+    }.getOrElse { emptyList() }
+
+    /** Names (several languages) and Wikipedia editions of [qids]. */
+    fun entityDataParams(qids: List<String>) = listOf("action" to "wbgetentities", "ids" to qids.joinToString("|"),
+        "props" to "labels|aliases|sitelinks", "languages" to NAME_LANGS, "languagefallback" to "1", "format" to "json")
+
+    private const val NAME_LANGS = "en|de|fr|it|es|nl|pt|pl|cs|sv|da|no|fi|tr|ru|ja"
+
+    /** One class member from [parseClassItems]: its names, English (or first) label and Wikipedia editions. */
+    class ClassItem(val qid: String, val label: String, val names: List<String>, val links: Int)
+
+    /** [entityDataParams] reply → items, best known first. */
+    fun parseClassItems(body: String): List<ClassItem> = runCatching {
+        val ents = json.parseToJsonElement(body).jsonObject["entities"]?.jsonObject ?: return emptyList()
+        ents.mapNotNull { (id, el) ->
+            if (!qidRe.matches(id)) return@mapNotNull null
+            val o = el.jsonObject
+            if (o["missing"] != null) return@mapNotNull null
+            val labels = o["labels"]?.jsonObject.orEmpty()
+            val en = labels["en"]?.jsonObject?.str("value")
+            val ls = labels.values.mapNotNull { it.jsonObject.str("value") }
+            val al = o["aliases"]?.jsonObject.orEmpty().values.flatMap { a -> a.jsonArray.mapNotNull { it.jsonObject.str("value") } }
+            val names = (listOfNotNull(en) + ls + al).distinct()
+            if (names.isEmpty()) null else ClassItem(id, en ?: names.first(), names, o["sitelinks"]?.jsonObject?.size ?: 0)
+        }.sortedByDescending { it.links }
+    }.getOrElse { emptyList() }
+
+    /**
+     * Class members that the input names (a name spells it) → candidates; members whose names only contain all the
+     * typed words → [near] labels (for "did you mean").
+     */
+    class ClassResult(val matches: List<ClassItem>, val near: List<String>)
+
+    fun classMatches(items: List<ClassItem>, input: String, people: Boolean, words: Set<String>): ClassResult {
+        val typed = Norm.key(input).split(' ').filter { it.isNotEmpty() }
+        val matches = items.filter { it.names.any { n -> spells(input, n, people, words) } }
+        val near = items.filter { it !in matches && typed.isNotEmpty() }
+            .filter { it.names.any { n -> val ws = Norm.key(n).split(' '); typed.all { t -> ws.any { w -> w == t || (t.length >= 4 && w.startsWith(t)) } } } }
+            .map { it.label }.distinct().take(4)
+        return ClassResult(matches, near)
+    }
 
     /** Candidates from the three replies (null = that lookup failed), most reliable first. */
     fun candidates(input: String, people: Boolean, entity: String?, titles: String?, search: String?,

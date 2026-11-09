@@ -55,10 +55,12 @@ fun BrowseScreen(model: AppModel) {
     val counts = remember(bank.prompts) { model.bank.topics().toMap() }
     val topics = app.coredump.core.Topics.all.filter { (counts[it.key] ?: 0) > 0 }
     val list = remember(bank.prompts, q, topic) {
-        val nq = Norm.key(q)
+        // every typed word must appear (any order) in the prompt or its category; a word may be cut short
+        // ("famo bask" finds "Name a famous basketball player"); one typo allowed in longer words
+        val words = Norm.key(q).split(' ').filter { it.isNotEmpty() }
         model.bank.all()
             .filter { topic == null || it.topic == topic }
-            .filter { nq.isEmpty() || Norm.key(it.text).contains(nq) }
+            .filter { p -> words.isEmpty() || listMatches(words, Norm.key(p.text + " " + p.topic).split(' ')) }
             .sortedWith(compareBy<app.coredump.core.Prompt>({ it.topic }, { it.text }))
     }
     val haptic = rememberHaptic()
@@ -167,4 +169,9 @@ fun DumpScreen(model: AppModel, promptId: String) {
             item { Spacer(Modifier.height(20.dp)) }
         }
     }
+}
+
+/** True when every typed word is a word of [have], the start of one, or (5+ letters) one typo away from one. */
+private fun listMatches(typed: List<String>, have: List<String>): Boolean = typed.all { t ->
+    have.any { w -> w == t || w.startsWith(t) || (t.length >= 5 && kotlin.math.abs(w.length - t.length) <= 1 && app.coredump.core.Edits.osa(t, w, 1) <= 1) }
 }

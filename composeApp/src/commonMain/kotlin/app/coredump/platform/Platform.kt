@@ -37,4 +37,10 @@ expect fun setSystemBarsDark(dark: Boolean)
 /** Plays 16-bit mono PCM at [app.coredump.ui.Sfx.RATE] Hz; several sounds may overlap. gain: 0..1. Never throws. */
 expect object SoundOut {
     fun play(pcm: ShortArray, gain: Float)
+
+    /** Loops [pcm] as background music at [gain] (0..1); null stops it. The same array again only changes the level. */
+    fun music(pcm: ShortArray?, gain: Float)
+
+    /** The app went to the background (false) or came back (true): music pauses meanwhile. */
+    fun foreground(on: Boolean)
 }

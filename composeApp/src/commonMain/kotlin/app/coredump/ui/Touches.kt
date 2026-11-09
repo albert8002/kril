@@ -10,6 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -69,15 +71,16 @@ fun ThemeTouches(fx: Fx, modifier: Modifier = Modifier) {
     }
     LaunchedEffect(fx.keyTick) { if (fx.keyTick > 0) spawn(false) }
     LaunchedEffect(fx.sendTick) { if (fx.sendTick > 0) spawn(true) }
-    // one frame loop while anything is alive
-    val alive = touches.isNotEmpty()
-    LaunchedEffect(alive) {
-        while (alive) {
+    // One frame loop for the screen's lifetime: it sleeps while nothing is alive and wakes on the next touch.
+    // (A loop keyed on "anything alive" could stop for good when the last touch expired and a new one came in the
+    // same frame: the new touch then never aged and stayed on screen like a stuck cursor ghost.)
+    LaunchedEffect(style) {
+        while (true) {
+            if (touches.isEmpty()) snapshotFlow { touches.size }.first { it > 0 }
             withFrameMillis { }
             val now = Platform.epochMillis()
             clock.longValue = now
             touches.removeAll { now - it.born > lifeOf(style, it.send) }
-            if (touches.isEmpty()) break
         }
     }
     val hot = C.hot

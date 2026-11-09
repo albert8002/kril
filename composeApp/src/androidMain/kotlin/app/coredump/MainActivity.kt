@@ -22,6 +22,17 @@ class MainActivity : ComponentActivity() {
         setContent { App() }
     }
 
+    // music only while the app is on screen
+    override fun onStart() {
+        super.onStart()
+        app.coredump.platform.SoundOut.foreground(true)
+    }
+
+    override fun onStop() {
+        app.coredump.platform.SoundOut.foreground(false)
+        super.onStop()
+    }
+
     /** Writes a crash report before the default handler kills the process (shown on next launch). */
     private fun installCrashHandler() {
         val prev = Thread.getDefaultUncaughtExceptionHandler()

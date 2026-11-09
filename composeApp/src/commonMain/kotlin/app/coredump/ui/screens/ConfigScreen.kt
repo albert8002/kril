@@ -169,6 +169,18 @@ fun ConfigScreen(model: AppModel) {
                     Spacer(Modifier.height(6.dp))
                     TLink(Th.say("play a sample", "Play a sample"), { app.coredump.ui.Sfx.play(app.coredump.ui.Cue.HIT, 6) }, color = C.hot)
                 }
+                Spacer(Modifier.height(10.dp))
+                Toggle(Th.say("music", "Music"), s.music, { v -> model.update { it.copy(music = v) } },
+                    "one theme in 7/4, arranged for every look")
+                if (s.music) {
+                    Spacer(Modifier.height(6.dp))
+                    TText(Th.say("music volume", "Music volume"), size = 13.sp, color = C.dim)
+                    Spacer(Modifier.height(6.dp))
+                    val mLevels = listOf(0.25f, 0.5f, 0.75f, 1f)
+                    Choice(mLevels, mLevels.minByOrNull { kotlin.math.abs(it - s.musicVolume) } ?: 0.5f, { "${(it * 100).toInt()}%" }) { v ->
+                        model.update { it.copy(musicVolume = v) }
+                    }
+                }
             }
             Spacer(Modifier.height(14.dp))
             Panel(Th.say("CRASH REPORTS", "Crash reports"), color = if (model.lastCrash != null) C.blood else C.line) {

@@ -151,4 +151,59 @@ actual object SoundOut {
             while (players.size > 12) players.removeAt(0)
         }
     }
+
+    private var loopPcm: ShortArray? = null
+    private var loop: platform.AVFAudio.AVAudioPlayer? = null
+    private var loopGain = 0f
+    private var front = true
+    private var watching = false
+
+    actual fun music(pcm: ShortArray?, gain: Float) {
+        runCatching {
+            watch()
+            loopGain = gain.coerceIn(0f, 1f)
+            if (pcm == null) {
+                loop?.stop(); loop = null; loopPcm = null
+                return
+            }
+            if (pcm !== loopPcm || loop == null) {
+                loop?.stop()
+                if (!ready) {
+                    ready = true
+                    runCatching<Unit> {
+                        platform.AVFAudio.AVAudioSession.sharedInstance().setCategory(platform.AVFAudio.AVAudioSessionCategoryAmbient, null)
+                    }
+                }
+                val wav = app.coredump.ui.Wav.encode(pcm, app.coredump.ui.Sfx.RATE)
+                val data: platform.Foundation.NSData = wav.usePinned { pinned ->
+                    platform.Foundation.NSData.create(bytes = pinned.addressOf(0), length = wav.size.convert())
+                }
+                val p = platform.AVFAudio.AVAudioPlayer(data = data, error = null)
+                p.numberOfLoops = -1
+                p.prepareToPlay()
+                loop = p
+                loopPcm = pcm
+            }
+            loop?.volume = loopGain
+            if (front && loop?.playing != true) loop?.play()
+        }
+    }
+
+    actual fun foreground(on: Boolean) {
+        runCatching {
+            front = on
+            if (on) { if (loop?.playing != true) loop?.play() } else loop?.pause()
+        }
+    }
+
+    /** Pause with the app, go on when it is back (also after a phone call or Siri took the audio). */
+    private fun watch() {
+        if (watching) return
+        watching = true
+        val c = platform.Foundation.NSNotificationCenter.defaultCenter
+        c.addObserverForName(platform.UIKit.UIApplicationWillResignActiveNotification, null,
+            platform.Foundation.NSOperationQueue.mainQueue) { _ -> foreground(false) }
+        c.addObserverForName(platform.UIKit.UIApplicationDidBecomeActiveNotification, null,
+            platform.Foundation.NSOperationQueue.mainQueue) { _ -> foreground(true) }
+    }
 }

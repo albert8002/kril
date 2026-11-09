@@ -115,6 +115,8 @@ class Arbiter(private val bank: QuestionBank?, private val maxEdit: Int, private
     sealed interface Remote {
         class Found(val j: Judgement) : Remote
         data object Missing : Remote
+        /** Not found as typed; class members with these names contain the typed words ("did you mean"). */
+        class Near(val names: List<String>) : Remote
         /** No connection / the services did not answer: nothing learned, the player may send it again. */
         data object Unreachable : Remote
     }
@@ -152,6 +154,7 @@ class Arbiter(private val bank: QuestionBank?, private val maxEdit: Int, private
             }
             is AnswerCheck.Outcome.Found -> Remote.Found(Judge.verified(text, r.label, r.links, p))
             AnswerCheck.Outcome.Missing -> Remote.Missing
+            is AnswerCheck.Outcome.Near -> Remote.Near(r.names)
             AnswerCheck.Outcome.Unreachable -> Remote.Unreachable
         }
     }
@@ -159,6 +162,10 @@ class Arbiter(private val bank: QuestionBank?, private val maxEdit: Int, private
 
 private const val GRACE_MS = 2_500L
 private const val VERIFY_SLACK_MS = 6_500L
+
+/** Local "did you mean" choices plus the online near names (class members containing the typed words). */
+private fun withNear(sug: List<String>, res: Arbiter.Remote): List<String> =
+    if (res is Arbiter.Remote.Near) (sug + res.names).distinctBy { it.lowercase() }.take(Arbiter.MAX_SUGGESTIONS + 2) else sug
 
 private fun List<Attempt>.upsert(text: String, status: AttemptStatus, sug: List<String>, spam: Boolean = false, offline: Boolean = false): List<Attempt> {
     val k = Norm.key(text)
@@ -288,7 +295,7 @@ class SoloSession(
         val s = _s.value
         if (s.round != round || s.phase != Phase.TYPING) return
         if (res is Arbiter.Remote.Found) { finish(res.j); return }
-        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, sug, offline = res == Arbiter.Remote.Unreachable),
+        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, withNear(sug, res), offline = res == Arbiter.Remote.Unreachable),
             missTick = it.missTick + 1) }
         if (expired && pending == 0) finish(timeoutJudgement(_s.value.attempts))
     }
@@ -471,7 +478,7 @@ class HostSession(
                     myPending--
                     if (_s.value.round != round || myJ != null) return@launch
                     if (res is Arbiter.Remote.Found) lockMine(res.j) else {
-                        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, r.suggestions,
+                        _s.update { it.copy(attempts = it.attempts.upsert(t, AttemptStatus.REJECTED, withNear(r.suggestions, res),
                             offline = res == Arbiter.Remote.Unreachable), missTick = it.missTick + 1) }
                         if (myExpired && myPending == 0) lockMine(timeoutJudgement(_s.value.attempts))
                     }
@@ -499,7 +506,10 @@ class HostSession(
                     val res = arbiter.remote(p, t)
                     if (_s.value.round != m.i || oppJ != null) return@launch
                     if (res is Arbiter.Remote.Found) acceptGuest(res.j, m)
-                    else link.send(Msg.Verdict(m.i, t, if (res == Arbiter.Remote.Unreachable) "offline" else "miss", r.suggestions.firstOrNull(), r.suggestions))
+                    else {
+                        val all = withNear(r.suggestions, res)
+                        link.send(Msg.Verdict(m.i, t, if (res == Arbiter.Remote.Unreachable) "offline" else "miss", all.firstOrNull(), all))
+                    }
                 }
             } else scope.launch { link.send(Msg.Verdict(m.i, t, "miss", r.suggestions.firstOrNull(), r.suggestions)) }
         }
