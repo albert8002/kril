@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
@@ -267,6 +268,8 @@ private class Mote(val x: Float, val y: Float, val vx: Float, val vy: Float, val
 @Composable
 fun HyperBack(h: Hyper, modifier: Modifier = Modifier) {
     if (!h.on) return
+    // light screens need stronger colour to show
+    val blob = if (C.bg.luminance() > 0.5f) 0.34f else 0.22f
     val motes = remember {
         val r = Random(42)
         List(26) { Mote(r.nextFloat(), r.nextFloat(), (r.nextFloat() - 0.5f) * 0.05f, -0.02f - r.nextFloat() * 0.05f, 4f + r.nextFloat() * 9f, r.nextInt(4), r.nextFloat() * 360f, r.nextFloat() * 6f) }
@@ -280,7 +283,7 @@ fun HyperBack(h: Hyper, modifier: Modifier = Modifier) {
             val cx = w * (0.5f + 0.42f * sin(t * 0.21f * (i + 1) + i * 1.7f))
             val cy = hh * (0.5f + 0.42f * cos(t * 0.17f * (i + 2) + i * 2.3f))
             val r = max(w, hh) * (0.28f + 0.06f * sin(t * 0.5f + i))
-            drawCircle(Brush.radialGradient(listOf(hue(t * 40f + i * 90f, 0.85f, 1f, 0.22f), Color.Transparent), Offset(cx, cy), r), r, Offset(cx, cy))
+            drawCircle(Brush.radialGradient(listOf(hue(t * 40f + i * 90f, 0.85f, 1f, blob), Color.Transparent), Offset(cx, cy), r), r, Offset(cx, cy))
         }
         // floating pieces
         for (m in motes) {

@@ -183,6 +183,8 @@ fun LibraryFooter(model: AppModel, sources: Boolean = true) {
     Spacer(Modifier.height(10.dp))
     TButton(if (col.running) Th.say("FETCH STATUS", "Fetch status") else Th.say("FETCH MORE LISTS", "Fetch more lists"),
         { model.go(Screen.Fetch) }, Modifier.fillMaxWidth(), textSize = 12.sp)
+    // room to scroll the end of the menu above the floating ADHD-fy button
+    Spacer(Modifier.height(44.dp))
     if (!sources) return
     Spacer(Modifier.height(10.dp))
     for (k in SourceKind.entries) {

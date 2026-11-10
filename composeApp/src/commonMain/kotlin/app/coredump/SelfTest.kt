@@ -70,6 +70,8 @@ object SelfTest {
             }
             log("CUSTOM star=$okStar ring=$okRing label=${app.coredump.core.Tier.HELLO_WORLD.label} rank=${app.coredump.core.Rank.INTERN.title}")
 
+            // score runs at a third of the speed, so the screenshot catches one in flight
+            app.coredump.ui.RunProbe.slow = 3f
             for ((style, pal) in plan) {
                 model.setTheme(style, pal)
                 model.home(); delay(1200)
@@ -115,7 +117,7 @@ object SelfTest {
                         delay(400)
                         log("RUN ${style.name} points=${s.state.value.reveal?.me?.points}")
                         shot("run_${style.name.lowercase()}")
-                        delay(2600)
+                        delay(4600)
                     } else delay(1300)
                     if (round == 0) {
                         delay(300); shot("reveal_${style.name.lowercase()}")
@@ -138,6 +140,7 @@ object SelfTest {
                 model.go(Screen.Looks); delay(1200)
                 shot("looks_${style.name.lowercase()}")
             }
+            app.coredump.ui.RunProbe.slow = 1f
             for ((style, pal) in extra) {
                 model.setTheme(style, pal)
                 model.home(); delay(1200)
@@ -229,6 +232,9 @@ object SelfTest {
             shot("menu_after_collect")
             log("DONE ok")
         } catch (e: Throwable) {
+            // the window was rebuilt (e.g. a configuration change while starting): the new screen starts the test
+            // again, so this run just ends quietly
+            if (e is kotlinx.coroutines.CancellationException) { log("RESTART ${e::class.simpleName}"); throw e }
             CrashLog.note("selftest", e)
             log("FAIL ${e::class.simpleName}: ${e.message}")
             log("DONE fail")

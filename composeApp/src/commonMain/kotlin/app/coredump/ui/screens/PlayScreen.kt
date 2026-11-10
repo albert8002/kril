@@ -549,7 +549,9 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
                     ScoreRun(from = (st.myTotal - v.me.points).coerceAtLeast(0), gain = v.me.points, max = st.total * 100,
                         tier = v.me.tier, key = v.index, onArrive = { landed = v.index })
                 }
-                if (landed == v.index) RewardBurst(v.me.tier, v.me.points.coerceAtLeast(0), v.index)
+                // after a run the points were already counted on screen: the burst brings only its pieces
+                val ran = runs && v.me.tier.isValid && v.me.points > 0
+                if (landed == v.index) RewardBurst(v.me.tier, if (ran) 0 else v.me.points.coerceAtLeast(0), v.index)
             }
         }
         if (st.paused && !model.confirmQuit) PauseOverlay({ session.resume() }, { model.confirmQuit = true })

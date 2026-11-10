@@ -48,6 +48,11 @@ import kotlin.math.min
 import kotlin.math.sin
 import kotlin.random.Random
 
+/** The self-test slows runs down so its screenshots catch one in flight (1 = normal speed). */
+object RunProbe {
+    var slow = 1f
+}
+
 /** Time on the arrival screen before the run fades out, and the fade (ms). */
 private const val HOLD = 800f
 private const val FADE = 320f
@@ -169,7 +174,7 @@ private object Words {
 @Composable
 fun ScoreRun(from: Int, gain: Int, max: Int, tier: Tier, key: Any, onArrive: () -> Unit, modifier: Modifier = Modifier) {
     val style = Th.style
-    val travel = Travel.durationMs(gain).toFloat()
+    val travel = Travel.durationMs(gain) * RunProbe.slow
     val clock = remember(key) { mutableFloatStateOf(0f) }
     var done by remember(key) { mutableStateOf(false) }
     var skip by remember(key) { mutableStateOf(false) }
@@ -212,7 +217,7 @@ fun ScoreRun(from: Int, gain: Int, max: Int, tier: Tier, key: Any, onArrive: () 
             val u = Travel.pos(tt)
             val f = Frame(e, travel, u, Travel.speed(tt), from + gain * u, from, gain, max.coerceAtLeast(100),
                 ((e - travel) / 300f).coerceIn(0f, 1f), e / 1000f)
-            drawRect(ink.bg.copy(alpha = 0.95f))
+            drawRect(ink.bg)
             world(style, f, ink, seeds, tm)
             overlay(style, f, ink, tm, tierName)
         }
