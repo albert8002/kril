@@ -945,12 +945,11 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
             val p = Offset(xs[i], ys[i])
             val sc = (1f / dz).coerceIn(0.3f, 5f)
             val tw = 1f + 0.18f * sin(f.sec * 3.1f + i * 1.7f + c)
-            val r = ((if (lit[i]) 3.4f else 2.0f) * sc * tw).dp.toPx()
-            if (lit[i]) {
-                val g = r * (4f + 3f * flare)
-                drawCircle(Brush.radialGradient(listOf(gold.copy(alpha = 0.55f * vis), Color.Transparent), p, g), g, p)
-            }
-            drawCircle((if (lit[i]) Color.White else ink.white).copy(alpha = (if (lit[i]) 1f else 0.6f) * vis), r, p)
+            val r = ((if (lit[i]) 3.4f else 2.4f) * sc * tw).dp.toPx()
+            // joined stars glow gold; the ones still to join glow faintly, so the shape to come stands out from the field
+            val g = r * (if (lit[i]) 4f + 3f * flare else 3f)
+            drawCircle(Brush.radialGradient(listOf((if (lit[i]) gold else ink.white).copy(alpha = (if (lit[i]) 0.55f else 0.22f) * vis), Color.Transparent), p, g), g, p)
+            drawCircle((if (lit[i]) Color.White else ink.white).copy(alpha = (if (lit[i]) 1f else 0.8f) * vis), r, p)
         }
         // a star just joined: a ring and a sparkle on it
         for ((i, e) in con.edges.withIndex()) {
@@ -968,6 +967,33 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
         if (flare > 0f && zc - cam.z > 0.06f) {
             val q = Sky.project(base, zc - cam.z, cam, o, rad)
             drawCircle(gold.copy(alpha = flare * 0.8f), rad * (0.6f + 2.4f * (1f - flare)), q, style = Stroke((5f * flare + 0.5f).dp.toPx()))
+        }
+    }
+
+    // the sky chart so far: every constellation of this game as a small icon, finished ones in gold
+    run {
+        val first = (k - 4).coerceAtLeast(0)
+        val last = k + 1
+        val step = 34.dp.toPx()
+        val ir = 11.dp.toPx()
+        val y = h * 0.255f
+        val x0 = w / 2f - (last - first) * step / 2f
+        for (c in first..last) {
+            val con = Sky.con(c)
+            val cx = x0 + (c - first) * step
+            val dr = when { c < k -> con.edges.size.toFloat(); c > k -> 0f; else -> Sky.drawn(c, f.value) }
+            val full = dr >= con.edges.size
+            val a = if (c > k) 0.35f + 0.4f * cam.travel else 1f
+            if (c == k) drawCircle(gold.copy(alpha = 0.12f), ir * 1.5f, Offset(cx, y))
+            for ((i, e) in con.edges.withIndex()) {
+                val part = (dr - i).coerceIn(0f, 1f)
+                if (part <= 0f) continue
+                val p0 = Offset(cx + con.stars[e.first].x * ir, y + con.stars[e.first].y * ir)
+                val p1 = Offset(cx + con.stars[e.second].x * ir, y + con.stars[e.second].y * ir)
+                drawLine((if (full) gold else ink.white).copy(alpha = 0.9f * a), p0, Offset(p0.x + (p1.x - p0.x) * part, p0.y + (p1.y - p0.y) * part),
+                    strokeWidth = 1.2.dp.toPx(), cap = StrokeCap.Round)
+            }
+            for (sp in con.stars) drawCircle(ink.white.copy(alpha = 0.7f * a), 1.1.dp.toPx(), Offset(cx + sp.x * ir, y + sp.y * ir))
         }
     }
 
