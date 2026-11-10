@@ -103,7 +103,7 @@ jobs:
       - name: Publish pool check log
         if: always()
         run: |
-          grep "POOL \|SEARCH " build.log > pool.txt || true
+          grep "POOL \|SEARCH \|EXTRA " build.log > pool.txt || true
           cp pool.txt build.log
           bash .github/publish-log.sh poolcheck "${{ job.status }}" "${{ github.token }}"
 

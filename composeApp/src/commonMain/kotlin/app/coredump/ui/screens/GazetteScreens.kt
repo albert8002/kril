@@ -161,7 +161,7 @@ fun GazetteMenu(model: AppModel) {
                     Spacer(Modifier.height(12.dp))
                     Story("1v1", "Challenge a Friend", "Same prompts, head to head, online or on Wi-Fi.") { open("duel") }
                     Spacer(Modifier.height(12.dp))
-                    Story("Party", "Meltdown at the Core", "Up to eight players pass a heating core. Hold it at zero and lose a heart.") { open("party") }
+                    Story("Party", "Meltdown at the Core", "Up to eight players pass a heating core. Hold it when it blows and lose a heart.") { open("party") }
                 }
                 Box(Modifier.padding(horizontal = 12.dp).width(1.dp).fillMaxHeight().background(C.line))
                 Column(Modifier.weight(1f)) {

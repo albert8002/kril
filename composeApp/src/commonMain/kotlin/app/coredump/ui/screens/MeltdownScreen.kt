@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.font.FontWeight
@@ -485,7 +486,7 @@ private fun CoreRing(st: MeltState, myId: String, modifier: Modifier) {
     val pass = remember { Animatable(1f) }
     LaunchedEffect(st.holder) { pass.snapTo(0f); pass.animateTo(1f, tween(380)) }
     // chip centres, written by the layout, read when drawing (the layout runs first)
-    val centres = remember { FloatArray(Meltdown.MAX_PLAYERS * 2) }
+    val centres = remember { FloatArray(Meltdown.MAX_PLAYERS * 4) }
     val holderIndex = st.players.indexOfFirst { it.id == st.holder }
     val active = st.phase == MeltPhase.TURN || st.phase == MeltPhase.BLAST
     val style = Th.style
@@ -512,9 +513,17 @@ private fun CoreRing(st: MeltState, myId: String, modifier: Modifier) {
                     style = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 9f), if (still) 0f else -t * 18f)))
                 // beam to the holder
                 if (active && holderIndex in 0 until st.players.size) {
-                    val target = Offset(centres[holderIndex * 2], centres[holderIndex * 2 + 1])
-                    val from = c + (target - c) * (r / (target - c).getDistance().coerceAtLeast(1f))
-                    val end = from + (target - from) * pass.value
+                    val target = Offset(centres[holderIndex * 4], centres[holderIndex * 4 + 1])
+                    val len = (target - c).getDistance().coerceAtLeast(1f)
+                    val dir = (target - c) / len
+                    // stop at the edge of the holder's box, not under its text
+                    val hw = centres[holderIndex * 4 + 2]
+                    val hh = centres[holderIndex * 4 + 3]
+                    val back = min(if (kotlin.math.abs(dir.x) > 0.001f) hw / kotlin.math.abs(dir.x) else Float.MAX_VALUE,
+                        if (kotlin.math.abs(dir.y) > 0.001f) hh / kotlin.math.abs(dir.y) else Float.MAX_VALUE)
+                    val from = c + dir * r
+                    val stop = target - dir * back.coerceAtMost(len - r)
+                    val end = from + (stop - from) * pass.value
                     drawLine(core.copy(alpha = 0.35f), from, end, 7.dp.toPx(), StrokeCap.Round)
                     drawLine(core, from, end, 2.dp.toPx(), StrokeCap.Round,
                         pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 7f), if (still) 0f else -t * 60f))
@@ -616,7 +625,10 @@ private fun CoreRing(st: MeltState, myId: String, modifier: Modifier) {
                 val ry = h / 2f - pl.height / 2f - 2f
                 val cx = w / 2f + cos(a).toFloat() * rx
                 val cy = h / 2f + sin(a).toFloat() * ry
-                if (i < Meltdown.MAX_PLAYERS) { centres[i * 2] = cx; centres[i * 2 + 1] = cy }
+                if (i < Meltdown.MAX_PLAYERS) {
+                    centres[i * 4] = cx; centres[i * 4 + 1] = cy
+                    centres[i * 4 + 2] = pl.width / 2f; centres[i * 4 + 3] = pl.height / 2f
+                }
                 pl.place((cx - pl.width / 2f).roundToInt(), (cy - pl.height / 2f).roundToInt())
             }
         }
@@ -629,7 +641,8 @@ private fun PlayerChip(p: MeltPlayer, holder: Boolean, me: Boolean, winner: Bool
     val beat by loop.animateFloat(0f, 1f, infiniteRepeatable(tween(520, easing = LinearEasing), RepeatMode.Reverse))
     val still = LocalLook.current.reduceMotion
     val stroke = when { winner -> C.hot; holder -> C.blood; me -> C.hot; else -> C.line }
-    val fill = when { holder -> C.blood.copy(alpha = 0.16f); me -> C.hot.copy(alpha = 0.08f); else -> C.panel }
+    // opaque, so the beam and the orbit never show through the text
+    val fill = when { holder -> C.blood.copy(alpha = 0.18f); me -> C.hot.copy(alpha = 0.1f); else -> C.panel }.compositeOver(C.bg.copy(alpha = 1f))
     val pill = Th.style == Style.CHAT || Th.style == Style.CLEAN || Th.style == Style.NEON || Th.style == Style.ABYSS
     Column(
         Modifier.graphicsLayer {

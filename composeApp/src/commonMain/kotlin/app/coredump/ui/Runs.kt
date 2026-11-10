@@ -765,8 +765,8 @@ internal object Sky {
 private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds: List<FloatArray>) {
     val w = size.width
     val h = size.height
-    val o = Offset(w / 2f, h * 0.73f)
-    val rad = min(w * 0.34f, h * 0.14f)
+    val o = Offset(w / 2f, h * 0.71f)
+    val rad = min(w * 0.44f, h * 0.19f)
     val (cam, zoom, flash) = Sky.camera(f.value)
     fun toScreen(p: Offset) = Offset(o.x + (p.x - cam.x) * rad * zoom, o.y + (p.y - cam.y) * rad * zoom)
     // far stars drift the other way (parallax) and stretch while zooming
@@ -794,7 +794,8 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
             val b = pts[e.second]
             val end = Offset(a.x + (b.x - a.x) * part, a.y + (b.y - a.y) * part)
             val col = if (ink.hyper.on) hue(i * 40f + ink.hyper.t * 90f, 0.6f, 1f) else gold
-            drawLine(col.copy(alpha = if (c < k) 0.35f else 0.85f), a, end, strokeWidth = 1.6.dp.toPx(), cap = StrokeCap.Round)
+            if (c == k) drawLine(col.copy(alpha = 0.22f), a, end, strokeWidth = 6.dp.toPx(), cap = StrokeCap.Round)
+            drawLine(col.copy(alpha = if (c < k) 0.35f else 0.9f), a, end, strokeWidth = 2.2.dp.toPx(), cap = StrokeCap.Round)
             lit += e.first
             if (part >= 1f) lit += e.second
         }
@@ -802,7 +803,7 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
             val on = i in lit
             val r = (if (on) 3.6f else 2.2f).dp.toPx()
             if (on) drawCircle(Brush.radialGradient(listOf(gold.copy(alpha = 0.55f), Color.Transparent), p, r * 4f), r * 4f, p)
-            drawCircle(if (on) Color.White else ink.white.copy(alpha = if (c == k) 0.55f else 0.3f), r, p)
+            drawCircle(if (on) Color.White else ink.white.copy(alpha = if (c == k) 0.75f else 0.3f), r, p)
         }
     }
     // the constellation's name; a white flash while zooming to the next

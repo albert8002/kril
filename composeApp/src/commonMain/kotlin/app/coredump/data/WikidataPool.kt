@@ -320,7 +320,7 @@ object WikidataPool {
         Triple("us", "Q30", "American"), Triple("uk", "Q145", "British"), Triple("fr", "Q142", "French"), Triple("de", "Q183", "German"),
         Triple("it", "Q38", "Italian"), Triple("es", "Q29", "Spanish"), Triple("jp", "Q17", "Japanese"), Triple("br", "Q155", "Brazilian"),
         Triple("in", "Q668", "Indian"), Triple("ca", "Q16", "Canadian"), Triple("au", "Q408", "Australian"), Triple("mx", "Q96", "Mexican"),
-        Triple("ru", "Q159", "Russian"), Triple("se", "Q34", "Swedish"), Triple("nl", "Q55", "Dutch"), Triple("ch", "Q39", "Swiss"),
+        Triple("ru", "Q159", "Russian"), Triple("se", "Q34", "Swedish"), Triple("nl", "Q29999", "Dutch"), Triple("ch", "Q39", "Swiss"),
         Triple("kr", "Q884", "South Korean"), Triple("cn", "Q148", "Chinese"), Triple("ar", "Q414", "Argentine"), Triple("ng", "Q1033", "Nigerian"),
         Triple("ie", "Q27", "Irish"), Triple("pl", "Q36", "Polish"), Triple("be", "Q31", "Belgian"), Triple("at", "Q40", "Austrian"),
         Triple("no", "Q20", "Norwegian"), Triple("dk", "Q35", "Danish"), Triple("gr", "Q41", "Greek"), Triple("tr", "Q43", "Turkish"),
