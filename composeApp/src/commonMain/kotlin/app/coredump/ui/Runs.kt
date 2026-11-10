@@ -51,6 +51,8 @@ import kotlin.random.Random
 /** The self-test slows runs down so its screenshots catch one in flight (1 = normal speed). */
 object RunProbe {
     var slow = 1f
+    /** Self-test only: points added to where a run starts (to show a later stretch of a look's world). */
+    var bias = 0
 }
 
 /** Time on the arrival screen before the run fades out, and the fade (ms). */
@@ -103,7 +105,7 @@ private object Words {
         Style.JACKPOT -> "SPINNING"
         Style.CHAT -> "typing…"
         Style.DESKTOP -> "Copying points…"
-        Style.ORACLE -> "THE CARDS ARE TURNING"
+        Style.ORACLE -> "READING THE STARS"
     }
 
     fun counter(s: Style, v: Float): String {
@@ -154,7 +156,7 @@ private object Words {
             Style.JACKPOT -> "WINNER"
             Style.CHAT -> "Delivered · Read"
             Style.DESKTOP -> "Copy complete"
-            Style.ORACLE -> Sky.name(Sky.index(v))
+            Style.ORACLE -> Sky.index(v).let { k -> Sky.name(k) + if (v >= Sky.complete(k)) " · charted" else "" }
         }
     }
 
@@ -216,7 +218,8 @@ fun ScoreRun(from: Int, gain: Int, max: Int, tier: Tier, key: Any, onArrive: () 
             val e = clock.floatValue
             val tt = (e / travel).coerceIn(0f, 1f)
             val u = Travel.pos(tt)
-            val f = Frame(e, travel, u, Travel.speed(tt), from + gain * u, from, gain, max.coerceAtLeast(100),
+            val base = from + RunProbe.bias
+            val f = Frame(e, travel, u, Travel.speed(tt), base + gain * u, base, gain, max.coerceAtLeast(100),
                 ((e - travel) / 300f).coerceIn(0f, 1f), e / 1000f)
             drawRect(ink.bg)
             world(style, f, ink, seeds, tm)
@@ -673,32 +676,55 @@ private fun DrawScope.desktopCopy(f: Frame, ink: Ink, tm: TextMeasurer) {
 }
 
 /**
- * ORACLE: the score is a journey through constellations. Every [PER] points is one constellation of 6–9 stars,
- * joined one line after another as points come in (a low score leaves it half-drawn). When it is complete the view
- * flash-zooms into it and on to the next one, which lies in a random direction.
+ * ORACLE: the score is a voyage through the night sky. Each constellation (6–9 stars) is joined one line at a time,
+ * [EDGE] points a line, so a good answer connects a few stars and a weak one maybe one. When a constellation is
+ * complete the camera flies through it — stars streaking past — banks and turns, and heads for the next one, further
+ * out in a random direction. The sky changes colour on the way; over a game you chart two or three.
  */
 internal object Sky {
-    const val PER = 25f
-    /** Share of a constellation's points spent drawing its lines; the rest is the flash-zoom to the next one. */
-    private const val DRAW = 0.86f
-    /** Distance between neighbouring constellations, in constellation radii. */
-    private const val SPACING = 3.2f
+    /** Points per line. */
+    const val EDGE = 18f
+    /** Points spent flying from a finished constellation to the next. */
+    const val GAP = 36f
+    /** Depth between constellations; camera distance while drawing one (at the start → at the end). */
+    private const val DZ = 3.2f
+    private const val VIEW = 1f
+    private const val NEAR = 0.8f
+    /** Sideways step between neighbouring constellations (constellation radii). */
+    private const val SIDE = 1.8f
 
-    class Con(val stars: List<Offset>, val edges: List<Pair<Int, Int>>)
+    /** Stars (radius 1 around 0,0), each star's small depth offset (3-D when flying through), lines in drawing order. */
+    class Con(val stars: List<Offset>, val depth: FloatArray, val edges: List<Pair<Int, Int>>)
+
+    /** Camera: position (sky units), depth, roll (radians); [travel] 0..1 of the flight to the next; [warp] its speed. */
+    class Cam(val x: Float, val y: Float, val z: Float, val roll: Float, val travel: Float, val warp: Float)
 
     private val names = listOf(
         "The Lantern", "The Heron", "The Key", "The Wolf", "The Crown", "The Ship", "The Serpent", "The Archer",
         "The Mirror", "The Owl", "The Harp", "The Moth", "The Anchor", "The Comet", "The Lyre", "The Twins",
         "The Spindle", "The Lighthouse", "The Fox", "The Chalice", "The Bridge", "The Whale", "The Bell", "The Hourglass",
     )
+    private val skies = listOf(
+        Color(0xFF151B3D), Color(0xFF2B1446), Color(0xFF0C2E3E), Color(0xFF3A1B2C), Color(0xFF10284A), Color(0xFF241238),
+    )
 
     private val cache = HashMap<Int, Con>()
-    private val dirs = HashMap<Int, Offset>()
+    private val starts = arrayListOf(0f)
 
-    fun index(v: Float): Int = floor(v / PER).toInt().coerceAtLeast(0)
     fun name(k: Int): String = names[k % names.size]
 
-    /** Stars of constellation [k] (radius 1 around 0,0) and its lines in drawing order: a path, then 1–2 cross lines. */
+    /** Colour of the sky around constellation [k]. */
+    fun tint(k: Int): Color = skies[k % skies.size]
+
+    /** Repeatable noise, 0..1. */
+    fun noise(i: Int): Float {
+        var x = i * 374761393 + 668265263
+        x = (x xor (x ushr 13)) * 1274126177
+        x = x xor (x ushr 16)
+        return (x and 0xFFFFFF) / 16777215f
+    }
+
+    /** Stars of constellation [k] and its lines: a path through the stars, then 1–2 cross lines. */
     fun con(k: Int): Con = cache.getOrPut(k) {
         val r = Random(k * 7919 + 13)
         val n = 6 + r.nextInt(4)
@@ -706,7 +732,9 @@ internal object Sky {
         var p = Offset(r.nextFloat() * 1.2f - 0.6f, r.nextFloat() * 1.2f - 0.6f)
         var ang = r.nextFloat() * 2f * PI.toFloat()
         stars += p
-        while (stars.size < n) {
+        var tries = 0
+        while (stars.size < n && tries < 400) {
+            tries++
             ang += (r.nextFloat() - 0.5f) * 2.2f
             val step = 0.38f + 0.3f * r.nextFloat()
             var q = Offset(p.x + cos(ang) * step, p.y + sin(ang) * step)
@@ -716,109 +744,257 @@ internal object Sky {
             stars += q
             p = q
         }
+        val m = stars.size
         val edges = ArrayList<Pair<Int, Int>>()
-        for (i in 0 until n - 1) edges += i to i + 1
+        for (i in 0 until m - 1) edges += i to i + 1
         repeat(1 + r.nextInt(2)) {
-            val a = r.nextInt(n)
-            var b = r.nextInt(n)
-            if (abs(a - b) <= 1) b = (a + n / 2) % n
-            if (edges.none { (it.first == a && it.second == b) || (it.first == b && it.second == a) }) edges += a to b
+            val a = r.nextInt(m)
+            var b = r.nextInt(m)
+            if (abs(a - b) <= 1) b = (a + m / 2) % m
+            if (a != b && edges.none { (it.first == a && it.second == b) || (it.first == b && it.second == a) }) edges += a to b
         }
-        Con(stars, edges)
+        Con(stars, FloatArray(m) { (r.nextFloat() - 0.5f) * 0.3f }, edges)
     }
 
-    /** Unit direction from constellation [k] to [k] + 1 (random). */
-    private fun dir(k: Int): Offset = dirs.getOrPut(k) {
-        val a = Random(k * 104729 + 7).nextFloat() * 2f * PI.toFloat()
-        Offset(cos(a), sin(a))
+    /** Points at which constellation [k] starts (its first line). */
+    fun start(k: Int): Float {
+        while (starts.size <= k) {
+            val j = starts.size - 1
+            starts += starts[j] + con(j).edges.size * EDGE + GAP
+        }
+        return starts[k]
     }
 
-    /** Centre of constellation [k] in the sky (constellation radii). */
-    fun center(k: Int): Offset {
-        var c = Offset.Zero
-        for (j in 0 until k) c += dir(j) * SPACING
-        return c
+    /** Points at which constellation [k] is complete. */
+    fun complete(k: Int): Float = start(k) + con(k).edges.size * EDGE
+
+    /** Points at which line [i] of constellation [k] is finished. */
+    fun lineDone(k: Int, i: Int): Float = start(k) + (i + 1) * EDGE
+
+    fun index(v: Float): Int {
+        var k = 0
+        while (start(k + 1) <= v) k++
+        return k
     }
 
     /** Lines of constellation [k] drawn at [v] points: 0..edges (fractional = the line being drawn). */
-    fun drawn(k: Int, v: Float): Float {
-        val local = v / PER - k
-        return (local / DRAW).coerceIn(0f, 1f) * con(k).edges.size
+    fun drawn(k: Int, v: Float): Float = ((v - start(k)) / EDGE).coerceIn(0f, con(k).edges.size.toFloat())
+
+    fun depth(k: Int): Float = k * DZ
+
+    /** Sideways position of constellation [k]: each one a step in a random direction from the last. */
+    fun side(k: Int): Offset {
+        var x = 0f
+        var y = 0f
+        for (j in 0 until k) {
+            val a = noise(j * 2 + 11) * 2f * PI.toFloat()
+            x += cos(a) * SIDE
+            y += sin(a) * SIDE
+        }
+        return Offset(x, y)
     }
 
-    /** Camera at [v] points: centre (sky units), zoom, and the flash (0..1). */
-    fun camera(v: Float): Triple<Offset, Float, Float> {
-        val k = index(v)
-        val local = v / PER - k
-        val tr = ((local - DRAW) / (1f - DRAW)).coerceIn(0f, 1f)
-        val e = tr * tr * (3f - 2f * tr)
-        val from = center(k)
-        val to = center(k + 1)
-        val pos = Offset(from.x + (to.x - from.x) * e, from.y + (to.y - from.y) * e)
-        val zoom = 1f + 1.6f * sin(tr * PI.toFloat())
-        val flash = sin(tr * PI.toFloat()).let { it * it * it * it }
-        return Triple(pos, zoom, flash)
+    private fun roll(k: Int): Float = (noise(k * 3 + 5) - 0.5f) * 1.3f
+
+    private fun smooth(t: Float): Float {
+        val x = t.coerceIn(0f, 1f)
+        return x * x * x * (x * (x * 6f - 15f) + 10f)
     }
+
+    /** Where the camera is at [v] points. */
+    fun cam(v: Float): Cam {
+        val k = index(v)
+        val done = complete(k)
+        val c = side(k)
+        if (v < done) {
+            // drawing: drifting slowly closer
+            val p = ((v - start(k)) / (done - start(k)).coerceAtLeast(1f)).coerceIn(0f, 1f)
+            return Cam(c.x + 0.06f * sin(p * 3f), c.y + 0.05f * cos(p * 2.3f), depth(k) - VIEW + (VIEW - NEAR) * p, roll(k) + 0.1f * p, 0f, 0f)
+        }
+        // flying: through the finished one, turning toward the next before reaching it, banking on the way
+        val t = ((v - done) / (start(k + 1) - done)).coerceIn(0f, 1f)
+        val e = smooth(t)
+        val turn = smooth(t * 1.5f)
+        val n = side(k + 1)
+        val bank = 0.55f * sin(t * PI.toFloat()) * (if (noise(k + 77) < 0.5f) -1f else 1f)
+        val z0 = depth(k) - NEAR
+        val z1 = depth(k + 1) - VIEW
+        return Cam(c.x + (n.x - c.x) * turn, c.y + (n.y - c.y) * turn, z0 + (z1 - z0) * e,
+            roll(k) + 0.1f + (roll(k + 1) - roll(k) - 0.1f) * e + bank, e, sin(t * PI.toFloat()))
+    }
+
+    /** Screen point of sky point [p] that lies [dz] (> 0) ahead of the camera. */
+    fun project(p: Offset, dz: Float, cam: Cam, o: Offset, rad: Float): Offset {
+        val s = rad / dz
+        val dx = (p.x - cam.x) * s
+        val dy = (p.y - cam.y) * s
+        val cr = cos(cam.roll)
+        val sr = sin(cam.roll)
+        return Offset(o.x + dx * cr - dy * sr, o.y + dx * sr + dy * cr)
+    }
+
+    /** How visible something [dz] ahead is: fades in from far away, fades out as the camera passes it. */
+    fun seen(dz: Float): Float = ((dz - 0.06f) / 0.4f).coerceIn(0f, 1f) * (1f - ((dz - 3.4f) / 2.4f).coerceIn(0f, 1f))
 }
 
-/** ORACLE world of the score run: constellations joining up, flash-zooming from one to the next. */
+/** Milliseconds since the run passed [vx] points (−1 if it does not pass it in this run). */
+private fun ageOf(f: Frame, vx: Float): Float {
+    if (f.gain <= 0 || vx <= f.from || vx > f.from + f.gain) return -1f
+    return f.e - Travel.timeAt((vx - f.from) / f.gain) * f.travel
+}
+
+/** ORACLE world of the score run: flying through the night sky, joining stars, on to the next constellation. */
 private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds: List<FloatArray>) {
     val w = size.width
     val h = size.height
-    val o = Offset(w / 2f, h * 0.71f)
-    val rad = min(w * 0.44f, h * 0.19f)
-    val (cam, zoom, flash) = Sky.camera(f.value)
-    fun toScreen(p: Offset) = Offset(o.x + (p.x - cam.x) * rad * zoom, o.y + (p.y - cam.y) * rad * zoom)
-    // far stars drift the other way (parallax) and stretch while zooming
-    for (i in 0 until 70) {
-        val sd = seeds[i % seeds.size]
-        val px = (((sd[0] * 3f - cam.x * 0.08f) % 1f) + 1f) % 1f * w
-        val py = (((sd[1] * 3f - cam.y * 0.08f) % 1f) + 1f) % 1f * h
-        val dx = (px - o.x) * (zoom - 1f) * 0.15f
-        val dy = (py - o.y) * (zoom - 1f) * 0.15f
-        drawLine(tint(ink, ink.white, i, 0.18f + 0.35f * sd[2]), Offset(px, py), Offset(px + dx + 0.5f, py + dy + 0.5f),
-            strokeWidth = (1f + sd[3] * 1.5f).dp.toPx(), cap = StrokeCap.Round)
-    }
+    val o = Offset(w / 2f, h * 0.70f)
+    val rad = min(w * 0.40f, h * 0.18f)
+    val cam = Sky.cam(f.value)
     val k = Sky.index(f.value)
     val gold = Color(0xFFE9C46A)
+    val hy = ink.hyper
+    val more = if (hy.on) 2 else 1
+    val night = Color(0xFF05040C)
+
+    // the sky's colour shifts on the way to the next constellation
+    drawRect(Brush.verticalGradient(listOf(night, lerp(Sky.tint(k), Sky.tint(k + 1), cam.travel), night)))
+
+    // nebulae far behind each constellation
+    for (c in k..k + 1) for (j in 0 until 2) {
+        val n0 = Sky.noise(c * 13 + j * 7 + 1)
+        val n1 = Sky.noise(c * 17 + j * 5 + 2)
+        val n2 = Sky.noise(c * 19 + j * 3 + 3)
+        val dz = Sky.depth(c) + 1.2f + n2 - cam.z
+        if (dz < 0.2f) continue
+        val s = Sky.side(c)
+        val q = Sky.project(Offset(s.x + (n0 - 0.5f) * 3f, s.y + (n1 - 0.5f) * 3f), dz, cam, o, rad)
+        val rr = rad * 2.2f / dz
+        val col = if (hy.on) hue(hy.t * 40f + c * 90f + j * 140f, 0.6f, 1f) else hue(250f + c * 47f + j * 80f, 0.55f, 0.9f)
+        val a = 0.22f * Sky.seen(dz).coerceAtLeast(0.35f)
+        drawCircle(Brush.radialGradient(listOf(col.copy(alpha = a), Color.Transparent), q, rr), rr, q)
+    }
+
+    // the star field: points while drifting, streaks while flying (longer the faster)
+    val zr = 6f
+    val warp = 0.015f + (0.5f * cam.warp + 0.04f) * (0.3f + f.v)
+    for (i in 0 until 110 * more) {
+        val sd = seeds[i % seeds.size]
+        val n = Sky.noise(i * 31 + 9)
+        val px = cam.x + (((sd[0] * 6f + n - cam.x) % 6f + 6f) % 6f) - 3f
+        val py = cam.y + (((sd[1] * 6f - n - cam.y) % 6f + 6f) % 6f) - 4f
+        val dz = (((sd[2] * zr + n * 2.3f - cam.z) % zr + zr) % zr) + 0.08f
+        val p = Offset(px, py)
+        val a = Sky.project(p, dz, cam, o, rad)
+        val b = Sky.project(p, dz + warp, cam, o, rad)
+        val bright = ((1f - dz / zr) * (0.45f + 0.55f * sd[3])).coerceIn(0f, 1f) * (0.75f + 0.25f * sin(f.sec * (2f + sd[3] * 3f) + i))
+        drawLine(tint(ink, Color.White, i, bright), b, a, strokeWidth = (0.7f + 1.3f / dz.coerceAtLeast(0.7f)).dp.toPx(), cap = StrokeCap.Round)
+    }
+
+    // the constellations: the one behind (until we pass it), the current one, the next one far ahead
     for (c in (k - 1).coerceAtLeast(0)..k + 1) {
         val con = Sky.con(c)
-        val center = Sky.center(c)
-        val pts = con.stars.map { toScreen(center + it) }
+        val n = con.stars.size
+        val base = Sky.side(c)
+        val zc = Sky.depth(c)
+        // the next one is only a faint hint until we set off toward it
+        val far = if (c > k) 0.45f + 0.55f * cam.travel else 1f
+        val xs = FloatArray(n)
+        val ys = FloatArray(n)
+        val dzs = FloatArray(n)
+        for (i in 0 until n) {
+            dzs[i] = zc + con.depth[i] - cam.z
+            if (dzs[i] > 0.06f) {
+                val q = Sky.project(base + con.stars[i], dzs[i], cam, o, rad)
+                xs[i] = q.x
+                ys[i] = q.y
+            }
+        }
         val drawn = when { c < k -> con.edges.size.toFloat(); c > k -> 0f; else -> Sky.drawn(c, f.value) }
-        val lit = HashSet<Int>()
+        // completed during this run: its lines flare up for a moment
+        val doneAge = ageOf(f, Sky.complete(c))
+        val flare = if (doneAge in 0f..1600f) 1f - doneAge / 1600f else 0f
+        val lit = BooleanArray(n)
         for ((i, e) in con.edges.withIndex()) {
             val part = (drawn - i).coerceIn(0f, 1f)
             if (part <= 0f) continue
-            val a = pts[e.first]
-            val b = pts[e.second]
+            lit[e.first] = true
+            if (part >= 1f) lit[e.second] = true
+            val dzA = dzs[e.first]
+            val dzB = dzs[e.second]
+            if (dzA <= 0.06f || dzB <= 0.06f) continue
+            val vis = Sky.seen(min(dzA, dzB)) * far
+            if (vis <= 0.01f) continue
+            val a = Offset(xs[e.first], ys[e.first])
+            val b = Offset(xs[e.second], ys[e.second])
             val end = Offset(a.x + (b.x - a.x) * part, a.y + (b.y - a.y) * part)
-            val col = if (ink.hyper.on) hue(i * 40f + ink.hyper.t * 90f, 0.6f, 1f) else gold
-            if (c == k) drawLine(col.copy(alpha = 0.22f), a, end, strokeWidth = 6.dp.toPx(), cap = StrokeCap.Round)
-            drawLine(col.copy(alpha = if (c < k) 0.35f else 0.9f), a, end, strokeWidth = 2.2.dp.toPx(), cap = StrokeCap.Round)
-            lit += e.first
-            if (part >= 1f) lit += e.second
+            val sc = (1f / min(dzA, dzB)).coerceIn(0.3f, 5f)
+            val col = if (hy.on) hue(i * 40f + hy.t * 90f, 0.6f, 1f) else gold
+            drawLine(col.copy(alpha = (0.2f + 0.35f * flare) * vis), a, end, strokeWidth = ((5f + 9f * flare) * sc).dp.toPx(), cap = StrokeCap.Round)
+            drawLine(col.copy(alpha = 0.95f * vis), a, end, strokeWidth = (1.8f * sc).dp.toPx(), cap = StrokeCap.Round)
+            if (part < 1f) {
+                // the line being drawn has a bright head
+                val hr = (9f * sc).dp.toPx()
+                drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.9f * vis), Color.Transparent), end, hr), hr, end)
+            }
         }
-        for ((i, p) in pts.withIndex()) {
-            val on = i in lit
-            val r = (if (on) 3.6f else 2.2f).dp.toPx()
-            if (on) drawCircle(Brush.radialGradient(listOf(gold.copy(alpha = 0.55f), Color.Transparent), p, r * 4f), r * 4f, p)
-            drawCircle(if (on) Color.White else ink.white.copy(alpha = if (c == k) 0.75f else 0.3f), r, p)
+        for (i in 0 until n) {
+            val dz = dzs[i]
+            if (dz <= 0.06f) continue
+            val vis = Sky.seen(dz) * far
+            if (vis <= 0.01f) continue
+            val p = Offset(xs[i], ys[i])
+            val sc = (1f / dz).coerceIn(0.3f, 5f)
+            val tw = 1f + 0.18f * sin(f.sec * 3.1f + i * 1.7f + c)
+            val r = ((if (lit[i]) 3.4f else 2.0f) * sc * tw).dp.toPx()
+            if (lit[i]) {
+                val g = r * (4f + 3f * flare)
+                drawCircle(Brush.radialGradient(listOf(gold.copy(alpha = 0.55f * vis), Color.Transparent), p, g), g, p)
+            }
+            drawCircle((if (lit[i]) Color.White else ink.white).copy(alpha = (if (lit[i]) 1f else 0.6f) * vis), r, p)
+        }
+        // a star just joined: a ring and a sparkle on it
+        for ((i, e) in con.edges.withIndex()) {
+            val age = ageOf(f, Sky.lineDone(c, i))
+            if (age < 0f || age > 900f) continue
+            val dz = dzs[e.second]
+            if (dz <= 0.06f) continue
+            val a = age / 900f
+            val p = Offset(xs[e.second], ys[e.second])
+            val sc = (1f / dz).coerceIn(0.3f, 2f)
+            drawCircle(gold.copy(alpha = (1f - a) * 0.9f), (6f + 34f * a).dp.toPx() * sc, p, style = Stroke((2.5f * (1f - a) + 0.5f).dp.toPx()))
+            sparkle(p, (14f * (1f - a * 0.6f)).dp.toPx(), Color.White.copy(alpha = 1f - a), a * 90f)
+        }
+        // the whole constellation just completed: a wide ring from its centre
+        if (flare > 0f && zc - cam.z > 0.06f) {
+            val q = Sky.project(base, zc - cam.z, cam, o, rad)
+            drawCircle(gold.copy(alpha = flare * 0.8f), rad * (0.6f + 2.4f * (1f - flare)), q, style = Stroke((5f * flare + 0.5f).dp.toPx()))
         }
     }
-    // the constellation's name; a white flash while zooming to the next
-    say(tm, Sky.name(k).uppercase(), w / 2f, h * 0.885f, st(ink, 12.sp, ink.hot, spacing = 3.sp), 0.85f * (1f - flash))
-    if (flash > 0.01f) drawRect(Color.White.copy(alpha = 0.55f * flash))
+
+    // where we are: the constellation's name (the next one's once we are half way there), how much of it is joined
+    val shown = if (cam.travel > 0.5f) k + 1 else k
+    val nameA = (1f - cam.warp).coerceIn(0f, 1f)
+    val doneAge = ageOf(f, Sky.complete(k))
+    val pop = if (doneAge in 0f..900f) 1f + 0.3f * sin(doneAge / 900f * PI.toFloat()) else 1f
+    scale(pop, Offset(w / 2f, h * 0.885f)) {
+        say(tm, "✦  " + Sky.name(shown).uppercase() + "  ✦", w / 2f, h * 0.885f, st(ink, 13.sp, if (shown == k && f.value >= Sky.complete(k)) gold else ink.hot, spacing = 3.sp), 0.9f * nameA)
+    }
+    val sub = when {
+        shown > k -> "next constellation"
+        f.value >= Sky.complete(k) -> "charted" + if (k > 0) " · ${k + 1} so far" else ""
+        else -> "${Sky.drawn(k, f.value).toInt()} of ${Sky.con(k).edges.size} lines"
+    }
+    say(tm, sub, w / 2f, h * 0.918f, st(ink, 11.sp, ink.dim, bold = false, spacing = 1.sp), 0.8f * nameA)
 }
 
 /**
- * ORACLE play screen: the run's total as a small sky — the current constellation joins up as points come in and
- * flash-zooms to the next when it is complete (same sky as the score run).
+ * ORACLE play screen: the run's total as a small window on the same sky — the current constellation joins up as
+ * points come in, and the view flies on to the next when it is complete.
  */
 @Composable
 fun ConstellationStrip(total: Int, modifier: Modifier = Modifier) {
     val v by androidx.compose.animation.core.animateFloatAsState(total.toFloat(),
-        androidx.compose.animation.core.tween(2200, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+        androidx.compose.animation.core.tween(2600, easing = androidx.compose.animation.core.FastOutSlowInEasing))
     val gold = Color(0xFFE9C46A)
     val dim = C.dim
     val hot = C.hot
@@ -829,29 +1005,43 @@ fun ConstellationStrip(total: Int, modifier: Modifier = Modifier) {
         val h = size.height
         val o = Offset(w * 0.42f, h / 2f)
         val rad = h * 0.42f
-        val (cam, zoom, flash) = Sky.camera(v)
+        val cam = Sky.cam(v)
         val k = Sky.index(v)
-        for (c in (k - 1).coerceAtLeast(0)..k + 1) {
-            val con = Sky.con(c)
-            val center = Sky.center(c)
-            val pts = con.stars.map { p -> Offset(o.x + (center.x + p.x - cam.x) * rad * zoom, o.y + (center.y + p.y - cam.y) * rad * zoom) }
-            val drawn = when { c < k -> con.edges.size.toFloat(); c > k -> 0f; else -> Sky.drawn(c, v) }
-            for ((i, e) in con.edges.withIndex()) {
-                val part = (drawn - i).coerceIn(0f, 1f)
-                if (part <= 0f) continue
-                val a = pts[e.first]
-                val b = pts[e.second]
-                drawLine(gold.copy(alpha = if (c < k) 0.3f else 0.8f), a, Offset(a.x + (b.x - a.x) * part, a.y + (b.y - a.y) * part),
-                    strokeWidth = 1.2.dp.toPx(), cap = StrokeCap.Round)
-            }
-            for ((i, p) in pts.withIndex()) {
-                val on = con.edges.withIndex().any { (j, e) -> (e.first == i && drawn - j > 0f) || (e.second == i && drawn - j >= 1f) }
-                if (p.x < -10f || p.x > w + 10f) continue
-                drawCircle(if (on) Color.White else dim.copy(alpha = 0.5f), (if (on) 2.4f else 1.5f).dp.toPx(), p)
+        clipRect {
+            for (c in (k - 1).coerceAtLeast(0)..k + 1) {
+                val con = Sky.con(c)
+                val base = Sky.side(c)
+                val zc = Sky.depth(c)
+                val far = if (c > k) 0.4f + 0.6f * cam.travel else 1f
+                val drawn = when { c < k -> con.edges.size.toFloat(); c > k -> 0f; else -> Sky.drawn(c, v) }
+                val n = con.stars.size
+                val lit = BooleanArray(n)
+                for ((i, e) in con.edges.withIndex()) {
+                    val part = (drawn - i).coerceIn(0f, 1f)
+                    if (part <= 0f) continue
+                    lit[e.first] = true
+                    if (part >= 1f) lit[e.second] = true
+                    val dzA = zc + con.depth[e.first] - cam.z
+                    val dzB = zc + con.depth[e.second] - cam.z
+                    if (dzA <= 0.06f || dzB <= 0.06f) continue
+                    val vis = Sky.seen(min(dzA, dzB)) * far
+                    val a = Sky.project(base + con.stars[e.first], dzA, cam, o, rad)
+                    val b = Sky.project(base + con.stars[e.second], dzB, cam, o, rad)
+                    drawLine(gold.copy(alpha = 0.85f * vis), a, Offset(a.x + (b.x - a.x) * part, a.y + (b.y - a.y) * part),
+                        strokeWidth = (1.2f / min(dzA, dzB).coerceAtLeast(0.4f)).dp.toPx(), cap = StrokeCap.Round)
+                }
+                for (i in 0 until n) {
+                    val dz = zc + con.depth[i] - cam.z
+                    if (dz <= 0.06f) continue
+                    val vis = Sky.seen(dz) * far
+                    val p = Sky.project(base + con.stars[i], dz, cam, o, rad)
+                    drawCircle((if (lit[i]) Color.White else dim).copy(alpha = (if (lit[i]) 1f else 0.5f) * vis),
+                        ((if (lit[i]) 2.4f else 1.5f) / dz.coerceAtLeast(0.5f)).dp.toPx(), p)
+                }
             }
         }
-        val label = tm.measure(Sky.name(k).uppercase(), TextStyle(color = hot, fontSize = 9.sp, fontFamily = font, letterSpacing = 2.sp))
-        drawText(label, topLeft = Offset(w - label.size.width - 4.dp.toPx(), h - label.size.height), alpha = 0.8f * (1f - flash))
-        if (flash > 0.01f) drawRect(Color.White.copy(alpha = 0.35f * flash))
+        val shown = if (cam.travel > 0.5f) k + 1 else k
+        val label = tm.measure(Sky.name(shown).uppercase(), TextStyle(color = hot, fontSize = 9.sp, fontFamily = font, letterSpacing = 2.sp))
+        drawText(label, topLeft = Offset(w - label.size.width - 4.dp.toPx(), h - label.size.height), alpha = 0.8f * (1f - cam.warp))
     }
 }

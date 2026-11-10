@@ -127,6 +127,33 @@ object SelfTest {
         model.home(); delay(500)
     }
 
+    /**
+     * ORACLE: a run that finishes a constellation and flies to the next (started just before the end of the first
+     * one), slowed down, with shots before, during and after the flight.
+     */
+    private suspend fun oracleFlight(model: AppModel) {
+        model.setTheme(Style.ORACLE, plan.first { it.first == Style.ORACLE }.second)
+        model.home(); delay(600)
+        app.coredump.ui.RunProbe.bias = (app.coredump.ui.Sky.complete(0) - 30f).toInt()
+        app.coredump.ui.RunProbe.slow = 3f
+        model.startSolo(); delay(1500)
+        val s = (model.screen as? Screen.Play)?.session
+        val e = s?.promptAt(0)?.entries?.lastOrNull()
+        if (s != null && e != null) {
+            delay(900)
+            s.submit(e.name)
+            log("RUN oracle flight from=${app.coredump.ui.RunProbe.bias} points=${s.state.value.reveal?.me?.points}")
+            for ((name, wait) in listOf("oracle_fly_1" to 2200L, "oracle_fly_2" to 1500L, "oracle_fly_3" to 1100L, "oracle_fly_4" to 1300L, "oracle_fly_5" to 2200L)) {
+                delay(wait)
+                log("SHOT $name")
+            }
+            delay(3500)
+        }
+        app.coredump.ui.RunProbe.bias = 0
+        app.coredump.ui.RunProbe.slow = 1f
+        s?.let { model.abortRun(it) }
+    }
+
     suspend fun run(model: AppModel) {
         try {
             log("START")
@@ -247,6 +274,7 @@ object SelfTest {
                 model.abortRun(s)
             }
             model.update { it.copy(hyper = emptySet()) }
+            oracleFlight(model)
             model.setTheme(Style.TERMINAL, "amber")
             model.home(); delay(600)
             model.startDaily(); delay(2000)
