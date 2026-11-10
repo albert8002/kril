@@ -79,6 +79,7 @@ fun App() {
         flicker = s.flicker,
         reduceMotion = s.reduceMotion,
         haptics = s.haptics,
+        hyper = s.theme in s.hyper && !s.reduceMotion,
     )
     if (SelfTest.enabled) LaunchedEffect(Unit) { SelfTest.run(model) }
 

@@ -128,6 +128,12 @@ fun AppearanceScreen(model: AppModel) {
                 Spacer(Modifier.height(8.dp))
                 Toggle("reduce motion", s.reduceMotion, { v -> model.update { it.copy(reduceMotion = v) } },
                     "no shake, typing, scramble or rain")
+                Toggle("score runs", s.scoreRuns, { v -> model.update { it.copy(scoreRuns = v) } },
+                    "points travel: speed up, count, slow down")
+                val look = Th.style.name
+                Toggle("ADHD-fy ${Th.style.label.lowercase()}", look in s.hyper, { v ->
+                    model.update { it.copy(hyper = if (v) it.hyper + look else it.hyper - look) }
+                }, "more motion, more colour, flourishes everywhere (this look only)")
                 if (Th.style == Style.TERMINAL) {
                     Toggle("scanlines", s.scanlines, { v -> model.update { it.copy(scanlines = v) } })
                     Toggle("phosphor flicker", s.flicker, { v -> model.update { it.copy(flicker = v) } })

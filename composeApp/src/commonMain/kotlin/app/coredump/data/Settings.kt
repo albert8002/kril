@@ -63,6 +63,10 @@ data class Settings(
     val shareLists: Boolean = true,
     /** The player's own names, colours, icons and icon animations for tiers and ranks (see [app.coredump.core.Custom]). */
     val custom: Map<String, app.coredump.core.Custom> = emptyMap(),
+    /** Looks (style names) switched to ADHD-fy: more motion, more colour, flourishes everywhere. */
+    val hyper: Set<String> = emptySet(),
+    /** The travel animation when points are scored (accelerate, count, slow down). */
+    val scoreRuns: Boolean = true,
 ) {
     fun gameConfig() = GameConfig(rounds, seconds, difficulty, topics, niche)
 }
@@ -110,6 +114,8 @@ object SettingsStore {
             fetchTopics = list("fetchTopics")?.filter { it in app.coredump.core.Topics.keys }?.toSet() ?: d.fetchTopics,
             fetchCount = (i("fetchCount") ?: d.fetchCount).coerceIn(1, 200),
             shareLists = b("shareLists") ?: d.shareLists,
+            hyper = list("hyper")?.toSet() ?: d.hyper,
+            scoreRuns = b("scoreRuns") ?: d.scoreRuns,
             custom = o["custom"]?.jsonObject?.mapNotNull { (k, v) ->
                 runCatching {
                     val c = v.jsonObject
@@ -154,6 +160,8 @@ object SettingsStore {
             put("fetchTopics", JsonArray(s.fetchTopics.map { JsonPrimitive(it) }))
             put("fetchCount", s.fetchCount)
             put("shareLists", s.shareLists)
+            put("hyper", JsonArray(s.hyper.map { JsonPrimitive(it) }))
+            put("scoreRuns", s.scoreRuns)
             put("custom", buildJsonObject {
                 for ((k, c) in s.custom) if (!c.isDefault) put(k, buildJsonObject {
                     put("n", c.name)

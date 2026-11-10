@@ -12,6 +12,8 @@ import kotlin.random.Random
 /** Moments that make a sound. */
 enum class Cue {
     TAP, NAV, KEY, SUBMIT, CHECK, MISS, OFFLINE, CONFIRM, SKIP, TICK, TIMEOUT, HIT, RANK, DISCARD, FETCHED,
+    /** The score run (level = points): a riser that speeds up and slows down with the picture, ticking as it counts. */
+    RUN,
 }
 
 /**
@@ -55,7 +57,7 @@ object Sfx {
         val k = "${style.name}|${song.name}|${cue.name}|$level|$variant"
         val pcm = cache.getOrPut(k) { runCatching { Synth.render(style, song, cue, level, variant) }.getOrElse { ShortArray(0) } }
         if (pcm.isEmpty()) return
-        if (cue == Cue.RANK || cue == Cue.FETCHED || (cue == Cue.HIT && level >= 3)) runCatching { Music.duck(pcm.size.toFloat() / RATE) }
+        if (cue == Cue.RANK || cue == Cue.FETCHED || cue == Cue.RUN || (cue == Cue.HIT && level >= 3)) runCatching { Music.duck(pcm.size.toFloat() / RATE) }
         runCatching { SoundOut.play(pcm, volume * gainOf(cue)) }
     }
 
@@ -71,6 +73,7 @@ object Sfx {
         Cue.NAV -> 0.45f
         Cue.TAP -> 0.6f
         Cue.TICK, Cue.CHECK -> 0.6f
+        Cue.RUN -> 0.8f
         else -> 1f
     }
 }
@@ -82,7 +85,7 @@ internal object Synth {
     enum class Wave { SINE, TRI, SQUARE, PULSE, SAW, NOISE, BELL, GLASS, CHIME }
 
     /** One note. semi: semitones from the base pitch; at / dur: s; slide: semitones over the note; gain 0..1. */
-    class Note(val semi: Float, val at: Float, val dur: Float, val gain: Float = 1f, val slide: Float = 0f, val wave: Wave? = null)
+    class Note(val semi: Float, val at: Float, val dur: Float, val gain: Float = 1f, val slide: Float = 0f, val wave: Wave? = null, val swell: Boolean = false)
 
     /**
      * Instrument. base: Hz of the key's root. attack / decay: s (decay = time to fall to ~5 %).
@@ -145,6 +148,8 @@ internal object Synth {
                 val f = hz(f0, note.slide * prog + vib)
                 phase += f / R
                 val env = when {
+                    // follows the run's speed: up, steady, down; then a quick release
+                    note.swell -> if (t < note.dur) Travel.speed(prog) * minOf(1f, t / 0.01f) else exp(-3f * (t - note.dur) / 0.05f)
                     t < attack -> t / attack
                     t < note.dur -> exp(-3f * (t - attack) / decay.coerceAtLeast(0.01f) * 0.35f)
                     else -> exp(-3f * (note.dur - attack).coerceAtLeast(0f) / decay.coerceAtLeast(0.01f) * 0.35f) * exp(-3f * (t - note.dur) / (decay * 0.5f).coerceAtLeast(0.01f))
@@ -342,6 +347,22 @@ internal object Synth {
                     if (level >= 5) listOf(Note(12f + base + 12f, after + chord.size * roll + 0.1f, 0.5f, 0.8f)) else emptyList()
             }
             Cue.DISCARD -> listOf(Note(-20f, 0f, 0.12f, 0.5f, slide = -8f, wave = N))
+            // score run: a whoosh and a rising engine shaped like the travel, ticks as the counter passes each step
+            Cue.RUN -> {
+                val len = Travel.durationMs(level) / 1000f
+                val n = (level / 5).coerceIn(4, 16)
+                val clicky = s == Style.JACKPOT || s == Style.DESKTOP || s == Style.PAPER || s == Style.METRO
+                val ticks = List(n) { i ->
+                    val at = len * Travel.timeAt((i + 1f) / n)
+                    if (clicky) Note(-20f, at, 0.008f, 0.5f, wave = N)
+                    else Note(k.s((i * 8) / n), at, 0.03f, 0.25f + 0.3f * i / n)
+                }
+                val base = if (high) -19f else -7f
+                listOf(
+                    Note(-24f, 0f, len, 0.32f, wave = N, swell = true),
+                    Note(base, 0f, len, 0.2f, slide = 12f, wave = if (s == Style.ABYSS || s == Style.ORACLE) Wave.SINE else Wave.TRI, swell = true),
+                ) + ticks
+            }
             // lists arrived: the music's hook, quick
             Cue.FETCHED -> hook(k, 0.075f, if (high) 0f else 12f, 0.55f)
         }

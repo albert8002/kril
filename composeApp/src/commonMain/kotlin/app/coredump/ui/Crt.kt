@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -56,6 +57,10 @@ import kotlin.random.Random
 fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
     val style = Th.style
     val motion = !look.reduceMotion
+    // ADHD-fy: one clock for every rainbow / bob / sparkle, ticking only while it is on
+    val hyperClock = rememberClock(look.hyper)
+    val hyper = remember(look.hyper) { Hyper(look.hyper, hyperClock) }
+    val taps = rememberTaps()
 
     var flicker by remember { mutableFloatStateOf(1f) }
     LaunchedEffect(look.flicker, motion, style) {
@@ -118,7 +123,8 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
     }
 
     val bg = C.bg
-    Box(Modifier.fillMaxSize().background(bg)) {
+    CompositionLocalProvider(LocalHyper provides hyper) {
+    Box(Modifier.fillMaxSize().background(bg).watchTaps(look.hyper, { hyperClock.value }, taps)) {
         // ---- backdrop
         when (style) {
             Style.NEON -> NeonBackdrop(if (motion) gridT else 0f)
@@ -130,6 +136,8 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
             Style.ORACLE -> StarBackdrop(if (motion) drift else 0f)
             Style.TERMINAL, Style.CLEAN, Style.PIXEL, Style.CHAT, Style.DESKTOP -> Unit
         }
+        IdleAmbience(style, motion)
+        HyperBack(hyper)
 
         // ---- content (+ shake / tear)
         Box(
@@ -187,6 +195,8 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
             val fv = flash.value
             if (fv > 0f) drawRect(fx.flashColor.copy(alpha = fv))
         })
+        HyperFront(hyper, taps)
+    }
     }
 }
 

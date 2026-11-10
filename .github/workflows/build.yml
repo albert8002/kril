@@ -107,6 +107,26 @@ jobs:
           cp pool.txt build.log
           bash .github/publish-log.sh poolcheck "${{ job.status }}" "${{ github.token }}"
 
+  compile:
+    # Quick check: compiles the app's Kotlin (Android target) without waiting for the snapshot (never blocks a build).
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew :composeApp:compileReleaseKotlinAndroid --stacktrace 2>&1 | tee build.log
+      - name: Publish compile log
+        if: always()
+        run: bash .github/publish-log.sh compile "${{ job.status }}" "${{ github.token }}"
+
   android:
     needs: [ snapshot ]
     runs-on: ubuntu-latest

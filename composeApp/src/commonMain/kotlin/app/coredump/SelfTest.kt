@@ -110,7 +110,13 @@ object SelfTest {
                     }
                     var w = 0
                     while (s.state.value.phase == Phase.TYPING && w < 8000) { delay(200); w += 200 }
-                    delay(1300)
+                    if (round == 0) {
+                        // the score run in flight (or arriving), then the reveal once it has gone
+                        delay(400)
+                        log("RUN ${style.name} points=${s.state.value.reveal?.me?.points}")
+                        shot("run_${style.name.lowercase()}")
+                        delay(2600)
+                    } else delay(1300)
                     if (round == 0) {
                         delay(300); shot("reveal_${style.name.lowercase()}")
                         val v = s.state.value.reveal
@@ -137,6 +143,28 @@ object SelfTest {
                 model.home(); delay(1200)
                 shot("menu_${style.name.lowercase()}_$pal")
             }
+            // ADHD-fy: every look's menu with it on, and one score run with it on
+            model.update { it.copy(hyper = Style.entries.map { st -> st.name }.toSet()) }
+            for ((style, pal) in plan) {
+                model.setTheme(style, pal)
+                model.home(); delay(1500)
+                shot("hyper_menu_${style.name.lowercase()}")
+            }
+            model.setTheme(Style.ABYSS, plan.first { it.first == Style.ABYSS }.second)
+            model.startSolo(); delay(1500)
+            (model.screen as? Screen.Play)?.session?.let { s ->
+                delay(900)
+                val p = s.promptAt(0)
+                val e = p?.entries?.lastOrNull()
+                if (e != null) {
+                    s.submit(e.name); delay(700)
+                    log("RUN hyper points=${s.state.value.reveal?.me?.points}")
+                    shot("hyper_run_abyss")
+                    delay(3000)
+                }
+                model.abortRun(s)
+            }
+            model.update { it.copy(hyper = emptySet()) }
             model.setTheme(Style.TERMINAL, "amber")
             model.home(); delay(600)
             model.startDaily(); delay(2000)

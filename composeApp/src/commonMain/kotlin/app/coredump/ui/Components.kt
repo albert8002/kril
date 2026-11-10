@@ -10,6 +10,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -290,7 +291,18 @@ fun RollingNumber(
     weight: FontWeight = FontWeight.Bold,
 ) {
     val v by animateIntAsState(value, tween(durationMs, easing = FastOutSlowInEasing))
-    TText(group(v) + suffix, modifier, size = size, color = color, weight = weight)
+    // a small pop each time the number changes (not on first show)
+    val pop = remember { Animatable(1f) }
+    val seen = remember { intArrayOf(value) }
+    val still = LocalLook.current.reduceMotion
+    val big = LocalHyper.current.on
+    LaunchedEffect(value) {
+        if (value == seen[0] || still) return@LaunchedEffect
+        seen[0] = value
+        pop.snapTo(if (big) 1.35f else 1.16f)
+        pop.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = 420f))
+    }
+    TText(group(v) + suffix, modifier.graphicsLayer { scaleX = pop.value; scaleY = pop.value }.hyperText(value), size = size, color = color, weight = weight)
 }
 
 // ------------------------------------------------------------------ buttons
@@ -319,6 +331,11 @@ fun TButton(
         else -> C.amber
     }
     val click = Modifier.clickable(interactionSource = src, indication = null, enabled = enabled) { haptic(primary); Sfx.play(Cue.TAP); onClick() }
+    // every look: its own press feel, a slow pulse on main buttons; ADHD-fy: rainbow frame and bob
+    val seed = label.hashCode()
+    @Suppress("NAME_SHADOWING")
+    val modifier = modifier.breathe(primary && enabled, seed).press(pressed && enabled)
+        .hyperFrame(seed, pill = style == Style.NEON || style == Style.ABYSS || style == Style.CHAT)
 
     when (style) {
         Style.TERMINAL -> {
@@ -461,6 +478,9 @@ fun Panel(
     titleColor: Color = C.dim,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // arrives its look's way the first time; ADHD-fy: rainbow frame, gentle bob
+    @Suppress("NAME_SHADOWING")
+    val modifier = modifier.entrance().hyperFrame(title.hashCode(), bob = 0.5f)
     when (Th.style) {
         Style.TERMINAL -> Box(modifier.padding(top = if (title != null) 8.dp else 0.dp)) {
             Column(
@@ -696,13 +716,28 @@ fun ChipBox(label: String, on: Boolean, modifier: Modifier = Modifier, size: Tex
     val style = Th.style
     val accent = when (style) { Style.TERMINAL, Style.PAPER, Style.PIXEL -> C.amber; else -> C.hot }
     val ink = if (on) (if (style == Style.TERMINAL) C.bg else onColor(accent)) else C.amber
+    val src = remember { MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
+    // a pop when it becomes the selected one
+    val pop = remember { Animatable(1f) }
+    val was = remember { booleanArrayOf(on) }
+    val still = LocalLook.current.reduceMotion
+    LaunchedEffect(on) {
+        if (on == was[0]) return@LaunchedEffect
+        was[0] = on
+        if (on && !still) { pop.snapTo(1.12f); pop.animateTo(1f, spring(dampingRatio = 0.42f, stiffness = 520f)) }
+    }
+    val pill = style == Style.NEON || style == Style.CLEAN || style == Style.ABYSS || style == Style.CHAT
     TText(
         label,
         modifier
+            .graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+            .press(pressed)
+            .hyperFrame(label.hashCode(), pill = pill, bob = 0.6f)
             .box(style, if (on) accent else C.line, if (on) accent else (if (style == Style.DESKTOP || style == Style.CHAT) C.panel else Color.Transparent),
                 glow = on && (style == Style.NEON || style == Style.ABYSS || style == Style.DESKTOP),
-                pill = style == Style.NEON || style == Style.CLEAN || style == Style.ABYSS || style == Style.CHAT)
-            .clickable(remember { MutableInteractionSource() }, null) { Sfx.play(Cue.TAP); onClick() }
+                pill = pill)
+            .clickable(src, null) { Sfx.play(Cue.TAP); onClick() }
             .padding(horizontal = if (style == Style.PIXEL) 14.dp else if (style == Style.COMIC) 16.dp else 12.dp, vertical = 11.dp),
         size = size, color = if (style == Style.PIXEL && on) C.bg else ink,
         weight = if (style == Style.CLEAN) FontWeight.SemiBold else FontWeight.Bold, glow = if (on) 0f else 1f,

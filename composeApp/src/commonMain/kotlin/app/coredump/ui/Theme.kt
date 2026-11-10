@@ -323,6 +323,8 @@ data class Look(
     val flicker: Boolean = true,
     val reduceMotion: Boolean = false,
     val haptics: Boolean = true,
+    /** ADHD-fy is on for the active look. */
+    val hyper: Boolean = false,
 )
 
 /** Font of the active style (name kept from the mono-only days). */

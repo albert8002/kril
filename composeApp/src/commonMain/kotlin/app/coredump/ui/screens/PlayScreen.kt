@@ -1,5 +1,7 @@
 package app.coredump.ui.screens
 
+import app.coredump.ui.LocalHyper
+import app.coredump.ui.ScoreRun
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -497,10 +499,21 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
         }
     }
     var rain by remember { mutableStateOf(false) }
-    LaunchedEffect(st.reveal) {
+    // Score run: a valid answer first travels (picture + rising sound); the hit lands when the run stops or is skipped.
+    val runs = model.settings.scoreRuns && !LocalLook.current.reduceMotion
+    val hyper = LocalHyper.current.on
+    var landed by remember(session) { mutableIntStateOf(-1) }
+    LaunchedEffect(session, st.reveal?.index) {
         val v = st.reveal ?: return@LaunchedEffect
         keyboard?.hide()
+        if (runs && v.me.tier.isValid && v.me.points > 0) Sfx.play(Cue.RUN, v.me.points.coerceAtMost(100)) else landed = v.index
+    }
+    LaunchedEffect(landed) {
+        val v = st.reveal ?: return@LaunchedEffect
+        if (landed < 0 || v.index != landed) return@LaunchedEffect
         Sfx.hit(v.me.tier)
+        // ADHD-fy: confetti for anything solid or better, and a shake to go with it
+        if (hyper && v.me.tier.heat >= 3 && v.me.tier != Tier.ZERO_DAY) { fx.shake(0.5f); rain = true; delay(1400); rain = false }
         when (v.me.tier) {
             Tier.ZERO_DAY -> { fx.flash(tierColor(Tier.ZERO_DAY)); fx.shake(1.3f); haptic(true); delay(110); haptic(true); delay(110); haptic(true); rain = true; delay(1800); rain = false }
             Tier.HEISENBUG -> { fx.flash(tierColor(Tier.HEISENBUG).copy(alpha = 0.5f)); fx.shake(0.45f); haptic(true); delay(120); haptic(true) }
@@ -530,7 +543,15 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
         }
         ThemeTouches(fx, Modifier.fillMaxSize())
         Celebrate(Modifier.fillMaxSize(), rain)
-        st.reveal?.let { v -> if (st.phase == Phase.REVEAL) RewardBurst(v.me.tier, v.me.points.coerceAtLeast(0), v.index) }
+        st.reveal?.let { v ->
+            if (st.phase == Phase.REVEAL) {
+                if (runs && v.me.tier.isValid && v.me.points > 0) {
+                    ScoreRun(from = (st.myTotal - v.me.points).coerceAtLeast(0), gain = v.me.points, max = st.total * 100,
+                        tier = v.me.tier, key = v.index, onArrive = { landed = v.index })
+                }
+                if (landed == v.index) RewardBurst(v.me.tier, v.me.points.coerceAtLeast(0), v.index)
+            }
+        }
         if (st.paused && !model.confirmQuit) PauseOverlay({ session.resume() }, { model.confirmQuit = true })
         if (model.confirmQuit) ConfirmQuit(session.isMulti,
             onKeep = { model.confirmQuit = false; session.resume() },

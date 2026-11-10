@@ -389,14 +389,16 @@ fun RewardBurst(tier: Tier, points: Int, key: Any, modifier: Modifier = Modifier
     val p = remember(key) { Animatable(0f) }
     LaunchedEffect(key) { p.animateTo(1f, tween(if (kind == Burst.BUBBLES || kind == Burst.STARS) 1700 else 1200, easing = LinearEasing)) }
     val heat = tier.heat
-    val colors = when (kind) {
+    val hyper = LocalHyper.current.on
+    val shift = remember(key) { Random.nextFloat() * 360f }
+    val colors = if (hyper) rainbow(shift, 6).dropLast(1) else when (kind) {
         Burst.PIXELS -> listOf(C.amber, C.dim)
         Burst.COINS -> listOf(Color(0xFFFFD45A), Color(0xFFE3A51A), Color(0xFFFFF1B8))
         Burst.INK -> listOf(tierColor(tier), C.amber)
         else -> tierLook(tier).gradient
     }
     val parts = remember(key) {
-        val n = intArrayOf(0, 5, 7, 10, 14, 20, 28)[heat.coerceIn(0, 6)]
+        val n = intArrayOf(0, 5, 7, 10, 14, 20, 28)[heat.coerceIn(0, 6)] * (if (hyper) 2 else 1)
         List(n) { Particle(Random.nextFloat(), Random.nextFloat(), Random.nextFloat(), 3f + Random.nextFloat() * (2f + heat * 0.6f), Random.nextInt(colors.size)) }
     }
     val t = p.value

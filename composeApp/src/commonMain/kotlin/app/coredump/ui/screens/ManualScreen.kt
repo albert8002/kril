@@ -44,6 +44,8 @@ fun ManualScreen(model: AppModel) {
                     "typed part of a name (\"mario\", \"ferdinand\")? tap one of the answers that contain it.",
                     "after each prompt: the full list of answers, by tier.",
                     "music: one theme in 7/4 (felt as 4 + 3) with a returning hook, arranged 12 ways, one per look; terminal plays Deep Sea. pick a song or match the look in settings → sound.",
+                    "score runs: points travel in each look's own world (toward the kernel, deeper down, past stations …), speeding up, counting and slowing down. tap to skip; off in appearance.",
+                    "ADHD-fy: a switch on every look's menu (and in appearance) for more motion, more colour and flourishes everywhere. each look keeps its own setting.",
                     "people: a surname is enough (\"einstein\", \"van gogh\").",
                     "\"river\", \"lake\", \"mount\", word order, accents and plurals don't matter.",
                     "not in the list? it's checked online (Wikidata) and scored by obscurity. results are cached.",

@@ -68,6 +68,7 @@ import app.coredump.ui.onColor
 import app.coredump.ui.ransomFonts
 import app.coredump.ui.TText
 import app.coredump.ui.Th
+import app.coredump.ui.hyperText
 import app.coredump.ui.rememberHaptic
 import kotlinx.coroutines.delay
 import kotlin.math.PI
@@ -100,7 +101,7 @@ fun Header(model: AppModel, title: String, onBack: (() -> Unit)? = { model.back(
             val plain = style == Style.CLEAN || style == Style.CHAT
             TText(
                 if (style == Style.PAPER || style == Style.PIXEL || style == Style.METRO || style == Style.ORACLE || style == Style.ABYSS) title.uppercase() else title,
-                Modifier.weight(1f),
+                Modifier.weight(1f).hyperText(7),
                 size = if (plain) 17.sp else 13.sp,
                 weight = FontWeight.Bold,
                 spacing = if (plain) 0.sp else if (style == Style.ABYSS) 3.sp else 2.sp,

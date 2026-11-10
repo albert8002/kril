@@ -1,5 +1,12 @@
 package app.coredump.ui.screens
 
+import androidx.compose.foundation.layout.Box
+import app.coredump.ui.Cue
+import app.coredump.ui.Sfx
+import app.coredump.ui.hyperText
+import app.coredump.ui.hyperFrame
+import app.coredump.ui.press
+import app.coredump.ui.breathe
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -88,20 +95,54 @@ fun menuItems(model: AppModel): List<Item> {
 
 @Composable
 fun MenuScreen(model: AppModel) {
-    when (Th.style) {
-        Style.TERMINAL -> TerminalMenu(model)
-        Style.NEON -> ArcadeMenu(model)
-        Style.PAPER -> GazetteMenu(model)
-        Style.CLEAN -> QuizMenu(model)
-        Style.PIXEL -> QuestMenu(model)
-        Style.COMIC -> ComicMenu(model)
-        Style.ABYSS -> AbyssMenu(model)
-        Style.METRO -> MetroMenu(model)
-        Style.JACKPOT -> JackpotMenu(model)
-        Style.CHAT -> ChatMenu(model)
-        Style.DESKTOP -> DesktopMenu(model)
-        Style.ORACLE -> OracleMenu(model)
+    Box(Modifier.fillMaxSize()) {
+        when (Th.style) {
+            Style.TERMINAL -> TerminalMenu(model)
+            Style.NEON -> ArcadeMenu(model)
+            Style.PAPER -> GazetteMenu(model)
+            Style.CLEAN -> QuizMenu(model)
+            Style.PIXEL -> QuestMenu(model)
+            Style.COMIC -> ComicMenu(model)
+            Style.ABYSS -> AbyssMenu(model)
+            Style.METRO -> MetroMenu(model)
+            Style.JACKPOT -> JackpotMenu(model)
+            Style.CHAT -> ChatMenu(model)
+            Style.DESKTOP -> DesktopMenu(model)
+            Style.ORACLE -> OracleMenu(model)
+        }
+        HyperButton(model, Modifier.align(Alignment.BottomEnd)
+            .padding(end = 14.dp, bottom = if (Th.style == Style.DESKTOP) 52.dp else 14.dp))
     }
+}
+
+/**
+ * ADHD-fy switch for the active look (every look's menu has one, bottom right): more motion, more colour,
+ * flourishes everywhere. Each look remembers its own setting.
+ */
+@Composable
+fun HyperButton(model: AppModel, modifier: Modifier = Modifier) {
+    val style = Th.style
+    val on = style.name in model.settings.hyper
+    val haptic = rememberHaptic()
+    val src = remember { MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
+    val pill = style == Style.NEON || style == Style.CLEAN || style == Style.ABYSS || style == Style.CHAT
+    TText(
+        if (on) "ADHD-FY: ON" else "ADHD-FY",
+        modifier
+            .breathe(true, 3)
+            .press(pressed)
+            .hyperFrame(5, pill = pill)
+            .box(style, if (on) C.hot else C.line, if (on) C.hot.copy(alpha = 0.18f) else C.bg.copy(alpha = 0.85f), pill = pill)
+            .clickable(src, null) {
+                haptic(true)
+                Sfx.play(if (on) Cue.SKIP else Cue.CONFIRM)
+                model.update { it.copy(hyper = if (on) it.hyper - style.name else it.hyper + style.name) }
+            }
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .hyperText(9),
+        size = 11.sp, color = if (on) C.hot else C.dim, weight = FontWeight.Bold, spacing = 1.sp,
+    )
 }
 
 /** Crash notice from the previous session (any archetype). */
