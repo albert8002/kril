@@ -306,8 +306,33 @@ object WikidataPool {
         "mu.orchestra" to ("Name an orchestra" to (inst("Q42998") to 15)),
     )
 
+    /** Jobs × nationalities: "Name a famous Brazilian swimmer". Group key picks the category ([app.coredump.core.Topics]). */
+    private val byJob = listOf(
+        Triple("mv", "Q33999", "actor"), Triple("mv", "Q2526255", "film director"), Triple("mu", "Q177220", "singer"),
+        Triple("mu", "Q2252262", "rapper"), Triple("fd", "Q3499072", "chef"), Triple("sp", "Q10833314", "tennis player"),
+        Triple("sp", "Q3665646", "basketball player"), Triple("sp", "Q2309784", "cyclist"), Triple("sp", "Q10843402", "swimmer"),
+        Triple("sp", "Q378622", "racing driver"), Triple("sp", "Q11338576", "boxer"), Triple("sp", "Q10873124", "chess player"),
+        Triple("bk", "Q49757", "poet"), Triple("bk", "Q4964182", "philosopher"), Triple("bk", "Q42973", "architect"),
+        Triple("sc", "Q169470", "physicist"), Triple("sc", "Q170790", "mathematician"), Triple("tv", "Q245068", "comedian"),
+        Triple("pc", "Q4610556", "model"), Triple("pc", "Q3501317", "fashion designer"),
+    )
+    private val nations = listOf(
+        Triple("us", "Q30", "American"), Triple("uk", "Q145", "British"), Triple("fr", "Q142", "French"), Triple("de", "Q183", "German"),
+        Triple("it", "Q38", "Italian"), Triple("es", "Q29", "Spanish"), Triple("jp", "Q17", "Japanese"), Triple("br", "Q155", "Brazilian"),
+        Triple("in", "Q668", "Indian"), Triple("ca", "Q16", "Canadian"), Triple("au", "Q408", "Australian"), Triple("mx", "Q96", "Mexican"),
+        Triple("ru", "Q159", "Russian"), Triple("se", "Q34", "Swedish"), Triple("nl", "Q55", "Dutch"), Triple("ch", "Q39", "Swiss"),
+        Triple("kr", "Q884", "South Korean"), Triple("cn", "Q148", "Chinese"), Triple("ar", "Q414", "Argentine"), Triple("ng", "Q1033", "Nigerian"),
+        Triple("ie", "Q27", "Irish"), Triple("pl", "Q36", "Polish"), Triple("be", "Q31", "Belgian"), Triple("at", "Q40", "Austrian"),
+        Triple("no", "Q20", "Norwegian"), Triple("dk", "Q35", "Danish"), Triple("gr", "Q41", "Greek"), Triple("tr", "Q43", "Turkish"),
+        Triple("eg", "Q79", "Egyptian"), Triple("za", "Q258", "South African"),
+    )
+
     val all: List<WikidataTemplate> by lazy {
         buildList {
+            for ((g, q, job) in byJob) for ((cc, nq, adj) in nations) {
+                add(WikidataTemplate("wx.$g.by.${job.filter { it.isLetter() }}.$cc", "Name a famous $adj $job",
+                    if (g == "sp") "SPORT" else "PEOPLE", "?item wdt:P31 wd:Q5 ; wdt:P106 wd:$q ; wdt:P27 wd:$nq .", 6, 600, 3))
+            }
             for ((id, prompt, taxa) in animals) add(t("an.$id", prompt, "NATURE", species(*taxa), 10))
             for ((q, job) in jobs) add(t("job.${job.filter { it.isLetter() }}", "Name a famous $job",
                 if (job.endsWith("player") || job.endsWith("skier") || job.endsWith("athlete") || job.endsWith("skater") ||

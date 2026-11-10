@@ -16,7 +16,7 @@ LC=$!
 adb shell am start -W -n $PKG/.MainActivity --ez selftest true >/dev/null 2>&1
 log "launched self-test"
 seen=0
-end=$((SECONDS + 900))
+end=$((SECONDS + 1260))
 while [ $SECONDS -lt $end ]; do
   sleep 0.4
   mapfile -t shots < <(grep -o "SELFTEST SHOT [A-Za-z0-9_]*" "$OUT/logcat_full.txt" | awk '{print $3}')

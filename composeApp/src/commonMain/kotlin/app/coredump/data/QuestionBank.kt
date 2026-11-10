@@ -231,10 +231,15 @@ class QuestionBank(private val scope: CoroutineScope) {
         val meta = readMeta()
         val now = Platform.epochMillis()
         val have = snapshot.mapTo(HashSet()) { it.id }.apply { addAll(Discards.ids) }
-        return WikidataPool.all.asSequence()
+        val wd = WikidataPool.all.asSequence()
             .filter { it.id !in have && (meta.skip[it.id] ?: 0L) <= now }
             .filter { niche || !app.coredump.core.Topics.isNiche(it.id, it.prompt) }
-            .groupingBy { topicOf(it) }.eachCount()
+            .map { topicOf(it) }
+        val ex = ExtraSources.all.asSequence()
+            .filter { it.id !in have && (meta.skip[it.id] ?: 0L) <= now }
+            .filter { niche || !app.coredump.core.Topics.isNiche(it.id, it.prompt) }
+            .map { app.coredump.core.Topics.classify(it.id, it.prompt, it.topic) }
+        return (wd + ex).groupingBy { it }.eachCount()
     }
 
     fun purgeCaches() {
@@ -327,7 +332,7 @@ class QuestionBank(private val scope: CoroutineScope) {
 
     private suspend fun loadLibrary(): Int {
         val meta = readMeta()
-        val pool = WikidataPool.all.mapTo(HashSet()) { it.id }
+        val pool = WikidataPool.all.mapTo(HashSet()) { it.id }.apply { addAll(ExtraSources.byId.keys) }
         var n = 0
         val keptFiles = ArrayList<String>()
         for (f in meta.files) {
@@ -407,17 +412,18 @@ class QuestionBank(private val scope: CoroutineScope) {
         stopAsked = false
         try {
             var meta = readMeta()
-            val pool = WikidataPool.order
+            val pool = collectOrder
             val now = Platform.epochMillis()
             val have = snapshot.mapTo(HashSet()) { it.id }.apply { addAll(Discards.ids) }
-            val picked = ArrayList<WikidataTemplate>()
+            val picked = ArrayList<Any>()
             var cursor = meta.cursor
             var scanned = 0
             while (picked.size < n && scanned < pool.size) {
                 val t = pool[cursor.mod(pool.size)]
                 cursor++; scanned++
-                if (t.id in have || (meta.skip[t.id] ?: 0L) > now) continue
-                if (topics.isNotEmpty() && topicOf(t) !in topics) continue
+                val id = idOf(t)
+                if (id in have || (meta.skip[id] ?: 0L) > now) continue
+                if (topics.isNotEmpty() && pickTopic(t) !in topics) continue
                 picked += t
             }
             // a category request does not move the daily cursor
@@ -442,14 +448,20 @@ class QuestionBank(private val scope: CoroutineScope) {
                     launch {
                         while (true) {
                             val t = mx.withLock { if (stop || stopAsked || nextIndex >= picked.size) null else picked[nextIndex++] } ?: break
-                            var fetched: Pair<Prompt, Int>? = null
+                            var p: Prompt? = null
                             var err: Throwable? = null
-                            try { fetched = fetchWikidata(t) } catch (e: CancellationException) { throw e } catch (e: Throwable) { err = e }
-                            val p = fetched?.takeIf { it.second >= t.famousMin && it.first.size >= WikidataTemplates.minAnswers(t) }?.first
+                            try {
+                                p = when (t) {
+                                    is WikidataTemplate -> fetchWikidata(t).takeIf { it.second >= t.famousMin && it.first.size >= WikidataTemplates.minAnswers(t) }?.first
+                                    is ExtraSources.Item -> ExtraSources.fetch(t) { url -> getText(url) }
+                                    else -> null
+                                }
+                            } catch (e: CancellationException) { throw e } catch (e: Throwable) { err = e }
+                            val tid = idOf(t)
                             mx.withLock {
                                 when {
-                                    err != null -> { failures++; lastErr = err.message ?: err::class.simpleName; skip[t.id] = now + 2 * DAY }
-                                    p == null -> skip[t.id] = now + 60 * DAY
+                                    err != null -> { failures++; lastErr = err.message ?: err::class.simpleName; skip[tid] = now + 2 * DAY }
+                                    p == null -> skip[tid] = now + 60 * DAY
                                     else -> got += p
                                 }
                                 if (got.isEmpty() && failures >= 4) stop = true
@@ -505,11 +517,46 @@ class QuestionBank(private val scope: CoroutineScope) {
     // ---------------- lists received from the other player in 1v1 ----------------
 
     private val poolById by lazy { WikidataPool.all.associateBy { it.id } }
+
+    /**
+     * Order in which the device works through everything it can collect: Wikidata pool lists and lists from the
+     * other free sources ([ExtraSources]), mixed (two Wikidata lists, then one other) so every batch is varied.
+     */
+    private val collectOrder: List<Any> by lazy {
+        val wd = WikidataPool.order
+        val ex = ExtraSources.all.groupBy { it.kind }.values.map { it.toMutableList() }.let { groups ->
+            val out = ArrayList<ExtraSources.Item>()
+            var i = 0
+            while (out.size < ExtraSources.all.size) { for (g in groups) if (i < g.size) out += g[i]; i++ }
+            out
+        }
+        val out = ArrayList<Any>(wd.size + ex.size)
+        var a = 0
+        var b = 0
+        while (a < wd.size || b < ex.size) {
+            repeat(2) { if (a < wd.size) out += wd[a++] }
+            if (b < ex.size) out += ex[b++]
+        }
+        out
+    }
+
+    private fun idOf(t: Any): String = when (t) { is WikidataTemplate -> t.id; is ExtraSources.Item -> t.id; else -> "" }
+
+    private fun pickTopic(t: Any): String = when (t) {
+        is WikidataTemplate -> topicOf(t)
+        is ExtraSources.Item -> app.coredump.core.Topics.classify(t.id, t.prompt, t.topic)
+        else -> ""
+    }
+
+    /** One GET for the other sources (same client, user agent and retry rules as the Wikidata calls). */
+    private suspend fun getText(url: String): String = call {
+        http.get(url) { header("User-Agent", WikiNet.USER_AGENT); header("Accept", "application/json") }
+    }
     private val wpById by lazy { WikipediaTemplates.all.associateBy { it.id } }
     private val sharedLock = Mutex()
 
     /** Lists that may be swapped in 1v1: collected Wikidata lists and Wikipedia lists this app version knows. */
-    fun isShareable(id: String): Boolean = id in poolById || id in wpById
+    fun isShareable(id: String): Boolean = id in poolById || id in wpById || id in ExtraSources.byId
 
     private fun readShared(): List<Prompt> = runCatching {
         PackCodec.parse(Platform.readText(SHARED) ?: return emptyList(), SourceKind.WIKIDATA)
@@ -526,6 +573,7 @@ class QuestionBank(private val scope: CoroutineScope) {
             if (p.size < 5 || p.size > 3000) return@guarded
             val fixed = poolById[id]?.let { t -> Prompt(id, t.prompt, t.topic, SourceKind.WIKIDATA, p.entries, t.where, p.cuts) }
                 ?: wpById[id]?.let { t -> Prompt(id, t.prompt, t.topic, SourceKind.WIKIPEDIA, p.entries, null, p.cuts) }
+                ?: ExtraSources.byId[id]?.let { x -> Prompt(id, x.prompt, x.topic, SourceKind.WIKIDATA, p.entries, null, null) }
                 ?: return@guarded
             putAll(listOf(fixed))
             sharedLock.withLock {

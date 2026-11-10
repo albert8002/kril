@@ -152,6 +152,8 @@ fun App() {
                             Screen.Appearance -> AppearanceScreen(model)
                             Screen.Fetch -> app.coredump.ui.screens.FetchScreen(model)
                             Screen.Looks -> app.coredump.ui.screens.LooksScreen(model)
+                            Screen.Meltdown -> app.coredump.ui.screens.MeltdownScreen(model)
+                            is Screen.Melt -> app.coredump.ui.screens.MeltScreen(model, screen.session)
                         }
                     }
 

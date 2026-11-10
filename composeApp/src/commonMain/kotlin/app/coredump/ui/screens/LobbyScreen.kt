@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -51,11 +52,14 @@ import app.coredump.ui.TText
 import app.coredump.ui.TermInput
 import app.coredump.ui.Th
 
-private enum class Tab(val label: String) { HOST("HOST"), JOIN("JOIN") }
+private enum class Tab(val label: String) { HOST("HOST"), JOIN("JOIN"), FRIENDS("FRIENDS") }
+
+/** Self-test only: the tab the 1v1 screen opens on. */
+internal object LobbyProbe { var tab = 0 }
 
 @Composable
 fun LobbyScreen(model: AppModel) {
-    var tab by remember { mutableStateOf(Tab.HOST) }
+    var tab by remember { mutableStateOf(Tab.entries[LobbyProbe.tab.coerceIn(0, Tab.entries.size - 1)]) }
     Frame(model, Th.say("./run --peer", "1v1")) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
             Choice(Tab.entries, tab, { it.label }) { tab = it }
@@ -63,6 +67,7 @@ fun LobbyScreen(model: AppModel) {
             when (tab) {
                 Tab.HOST -> HostPane(model)
                 Tab.JOIN -> JoinPane(model)
+                Tab.FRIENDS -> FriendsPane(model) { tab = it }
             }
             Spacer(Modifier.height(16.dp))
             TText("online relay: messages pass through a free public MQTT server (room code = key). direct: same Wi-Fi, no internet.",
@@ -104,8 +109,8 @@ private fun HostPane(model: AppModel) {
         Spacer(Modifier.height(10.dp))
         if (t.isRelay) {
             TText("or type this room code:", size = 11.sp, color = C.dim)
-            TText(JoinTicket.pretty(t.room!!) + if (t.broker != 0) " /${t.broker}" else "", size = 28.sp,
-                weight = FontWeight.Bold, color = C.hot, spacing = 3.sp)
+            TText(JoinTicket.pretty(t.room!!), size = 28.sp, weight = FontWeight.Bold, color = C.hot, spacing = 3.sp)
+            TText("this is your own code: it stays the same, even if you leave the app to send it.", size = 10.sp, color = C.dim)
         } else {
             TText("manual:  ${t.host}:${t.port} ${t.pin}", size = 13.sp, weight = FontWeight.Bold, color = C.hot)
         }
@@ -116,6 +121,7 @@ private fun HostPane(model: AppModel) {
         Spacer(Modifier.height(12.dp))
         Panel(Th.say("LINK ESTABLISHED", "Connected")) {
             TText("peer ${peer.uppercase()} is attached to your process.", size = 13.sp, color = C.hot)
+            AddFriendLink(model, peer, st.peerCode)
         }
         Spacer(Modifier.height(12.dp))
         TButton(Th.say("EXECUTE MATCH", "Start match"), { model.startHosted() }, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
@@ -132,6 +138,10 @@ private fun JoinPane(model: AppModel) {
     val st by join.state.collectAsState()
     var manual by remember { mutableStateOf("") }
     fun dial(raw: String?) {
+        if (raw != null && raw.trim().startsWith("coredump://party?")) {
+            // a MELTDOWN party code scanned here: go to the party screen and join it
+            model.go(Screen.Meltdown); model.joinParty(raw); return
+        }
         val t = raw?.let { JoinTicket.parse(it) }
         if (t == null) { if (raw != null) model.toast = "not a CORE_DUMP code"; return }
         join.connect(t) { session -> model.joined(session) }
@@ -150,6 +160,98 @@ private fun JoinPane(model: AppModel) {
     TButton("CONNECT", { dial(manual) }, Modifier.fillMaxWidth(), enabled = manual.isNotBlank())
     Spacer(Modifier.height(14.dp))
     if (st.status != "idle") StatusLine(st)
+    st.peer?.let { AddFriendLink(model, it, st.peerCode) }
+    if (model.settings.friends.isNotEmpty()) {
+        Spacer(Modifier.height(16.dp))
+        Panel(Th.say("FRIENDS", "Join a friend")) {
+            for (f in model.settings.friends.sortedBy { it.name.lowercase() }) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    TText(f.name, Modifier.weight(1f), size = 14.sp, weight = FontWeight.Bold)
+                    TLink("join", { model.joinFriend(f) }, color = C.hot)
+                }
+            }
+        }
+    }
+}
+
+/** "Add as friend" under a connected player, when their code is known and they are not a friend yet. */
+@Composable
+private fun AddFriendLink(model: AppModel, name: String, code: String?) {
+    if (code == null || model.isFriend(code)) return
+    TLink("add ${name} as a friend", { model.addFriend(name, code) }, color = C.hot)
+}
+
+/** Friends: my code (never changes), add by code, each friend with our record and a join button, then every 1v1. */
+@Composable
+private fun FriendsPane(model: AppModel, goTab: (Tab) -> Unit) {
+    val s = model.settings
+    val code = remember { model.myRoom() }
+    Panel(Th.say("YOUR CODE", "Your code")) {
+        TText(JoinTicket.pretty(code), size = 28.sp, weight = FontWeight.Bold, color = C.hot, spacing = 3.sp)
+        TText("it never changes. friends with this code can join you whenever you are on the host screen.", size = 11.sp, color = C.dim)
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth()) {
+            TButton("Share code", {
+                app.coredump.platform.shareText("Play CORE DUMP with me! My code: ${JoinTicket.pretty(code)}\n" +
+                    JoinTicket("", 0, "", s.handle, code, s.roomBroker).toUri())
+            }, Modifier.weight(1f))
+            Spacer(Modifier.width(10.dp))
+            TButton("Host now", { goTab(Tab.HOST) }, Modifier.weight(1f), primary = true)
+        }
+    }
+    Spacer(Modifier.height(14.dp))
+    var name by remember { mutableStateOf("") }
+    var fcode by remember { mutableStateOf("") }
+    Panel(Th.say("ADD FRIEND", "Add a friend")) {
+        TermInput(name, { name = it.take(24) }, Modifier.fillMaxWidth(), prompt = "name", placeholder = "their name", size = 15.sp)
+        Spacer(Modifier.height(8.dp))
+        TermInput(fcode, { fcode = it.uppercase().take(12) }, Modifier.fillMaxWidth(), prompt = "code", placeholder = "K7Q2-M9XA", size = 15.sp,
+            onSubmit = { if (model.addFriend(name, fcode)) { name = ""; fcode = "" } })
+        Spacer(Modifier.height(8.dp))
+        TButton("Add", { if (model.addFriend(name, fcode)) { name = ""; fcode = "" } }, Modifier.fillMaxWidth(), enabled = fcode.isNotBlank())
+    }
+    val duels = app.coredump.data.History.runs.filter { it.mode == "1v1" }
+    fun vs(f: app.coredump.data.Friend) = duels.filter { r -> (r.oppCode != null && r.oppCode == f.code) || (r.oppCode == null && r.opponent == f.name) }
+    Spacer(Modifier.height(14.dp))
+    Panel(Th.say("FRIENDS", "Friends") + " (${s.friends.size})") {
+        if (s.friends.isEmpty()) TText("no friends yet: add one by code, or after a 1v1.", size = 12.sp, color = C.dim)
+        for (f in s.friends.sortedBy { it.name.lowercase() }) {
+            val games = vs(f)
+            val w = games.count { (it.oppPoints ?: 0) < it.points }
+            val l = games.count { (it.oppPoints ?: 0) > it.points }
+            val d = games.size - w - l
+            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    TText(f.name, size = 15.sp, weight = FontWeight.Bold)
+                    TText((if (f.code.isNotEmpty()) JoinTicket.pretty(f.code) + " · " else "") +
+                        if (games.isEmpty()) "no games yet" else "you $w – $l them" + if (d > 0) " · $d draw${if (d > 1) "s" else ""}" else "",
+                        size = 11.sp, color = C.dim)
+                }
+                TLink("join", { goTab(Tab.JOIN); model.joinFriend(f) }, color = C.hot)
+                Spacer(Modifier.width(12.dp))
+                TLink("remove", { model.removeFriend(f) })
+            }
+        }
+    }
+    Spacer(Modifier.height(14.dp))
+    Panel(Th.say("1V1 HISTORY", "1v1 history") + " (${duels.size})") {
+        if (duels.isEmpty()) TText("no 1v1 games yet.", size = 12.sp, color = C.dim)
+        for (r in duels.take(60)) {
+            val op = r.oppPoints ?: 0
+            val result = when { r.points > op -> "WON"; r.points < op -> "LOST"; else -> "DRAW" }
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    TText("${r.opponent ?: "?"} · ${r.points} – $op", size = 13.sp, weight = FontWeight.Bold)
+                    TText(dayLabel(r.at), size = 10.sp, color = C.dim)
+                }
+                TText(result, size = 12.sp, weight = FontWeight.Bold, color = when (result) { "WON" -> C.hot; "LOST" -> C.blood; else -> C.dim })
+                if (r.oppCode != null && !model.isFriend(r.oppCode)) {
+                    Spacer(Modifier.width(10.dp))
+                    TLink("+ friend", { model.addFriend(r.opponent ?: "FRIEND", r.oppCode) }, color = C.hot)
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -196,4 +298,19 @@ fun QrSigil(data: String, modifier: Modifier = Modifier) {
         corner(e, size.height - e, 1f, -1f); corner(size.width - e, size.height - e, -1f, -1f)
         drawRect(C.line, origin, Size(side, side), style = Stroke(1f))
     }
+}
+
+
+/** "2026-11-10" from epoch ms (UTC calendar date). */
+internal fun dayLabel(ms: Long): String {
+    val z = ms / 86_400_000L + 719_468L
+    val era = (if (z >= 0) z else z - 146_096L) / 146_097L
+    val doe = z - era * 146_097L
+    val yoe = (doe - doe / 1_460L + doe / 36_524L - doe / 146_096L) / 365L
+    val doy = doe - (365L * yoe + yoe / 4L - yoe / 100L)
+    val mp = (5L * doy + 2L) / 153L
+    val d = doy - (153L * mp + 2L) / 5L + 1L
+    val m = if (mp < 10L) mp + 3L else mp - 9L
+    val y = yoe + era * 400L + if (m <= 2L) 1L else 0L
+    return "$y-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}"
 }

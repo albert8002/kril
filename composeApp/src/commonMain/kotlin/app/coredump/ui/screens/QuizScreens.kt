@@ -149,7 +149,8 @@ fun QuizMenu(model: AppModel) {
         Spacer(Modifier.height(10.dp))
         val grid = listOf(
             Triple("solo", "🎯", "Solo"), Triple("duel", "⚔️", "1v1"),
-            Triple("stats", "📊", "Stats"), Triple("browse", "📚", "Lists"),
+            Triple("party", "☢️", "Meltdown"), Triple("stats", "📊", "Stats"),
+            Triple("browse", "📚", "Lists"), Triple("manual", "❓", "How to play"),
         )
         for (row in grid.chunked(2)) {
             Row(Modifier.fillMaxWidth()) {
@@ -174,7 +175,7 @@ fun QuizMenu(model: AppModel) {
         Spacer(Modifier.height(10.dp))
         TText("More", size = 17.sp, weight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
-        for ((key, emoji, label) in listOf(Triple("theme", "🎨", "Theme"), Triple("settings", "⚙️", "Settings"), Triple("manual", "❓", "How to play"))) {
+        for ((key, emoji, label) in listOf(Triple("theme", "🎨", "Theme"), Triple("settings", "⚙️", "Settings"))) {
             val src = remember { MutableInteractionSource() }
             val pressed by src.collectIsPressedAsState()
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).box(Th.style, C.line.copy(alpha = 0.7f), if (pressed) C.ghost else C.panel)

@@ -95,6 +95,7 @@ private fun cardName(it: Item): String = when (it.key) {
     "daily" -> "THE SUN"
     "solo" -> "THE HERMIT"
     "duel" -> "THE RIVALS"
+    "party" -> "THE TOWER"
     "stats" -> "THE WHEEL"
     "browse" -> "THE ARCHIVE"
     "theme" -> "THE MOON"
@@ -160,6 +161,15 @@ private fun CardGlyph(key: String, modifier: Modifier) {
                 drawLine(g, p(0.42f, -0.2f), p(0f, -0.55f), sw, StrokeCap.Round)
                 drawCircle(g, r * 0.12f, p(0f, -0.72f), style = st)
                 drawCircle(g, r * 0.1f, p(0f, 0.2f))
+            }
+            "party" -> {
+                val tower = Path().apply { moveTo(p(-0.3f, 0.8f).x, p(0f, 0.8f).y); lineTo(p(-0.22f, -0.4f).x, p(0f, -0.4f).y)
+                    lineTo(p(0.22f, -0.4f).x, p(0f, -0.4f).y); lineTo(p(0.3f, 0.8f).x, p(0f, 0.8f).y); close() }
+                drawPath(tower, g, style = st)
+                val bolt = Path().apply { moveTo(p(0.5f, -0.9f).x, p(0f, -0.9f).y); lineTo(p(0.1f, -0.5f).x, p(0f, -0.5f).y)
+                    lineTo(p(0.3f, -0.45f).x, p(0f, -0.45f).y); lineTo(p(-0.1f, -0.05f).x, p(0f, -0.05f).y) }
+                drawPath(bolt, g, style = st)
+                drawCircle(g, r * 0.08f, p(0f, 0.2f))
             }
             "duel" -> {
                 drawLine(g, p(-0.7f, 0.7f), p(0.7f, -0.7f), sw, StrokeCap.Round)
@@ -299,6 +309,8 @@ fun OraclePlay(model: AppModel, session: MatchSession, st: MatchState, a: Answer
             RollingNumber(st.myTotal, size = 16.sp, color = C.hot)
             PauseQuit(model, session, st, color = C.hot)
         }
+        // the run's sky: stars join up as points come in, then it flashes on to the next constellation
+        app.coredump.ui.ConstellationStrip(st.myTotal, Modifier.fillMaxWidth().height(58.dp).padding(horizontal = 18.dp))
         Box(Modifier.padding(horizontal = 18.dp)) { PeerLine(session, st) }
         if (st.seconds > 0) Candle(left, st.seconds, isRunning(st))
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 12.dp)) {

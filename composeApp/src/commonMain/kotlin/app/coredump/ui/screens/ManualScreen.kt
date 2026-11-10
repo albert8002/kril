@@ -86,6 +86,7 @@ fun ManualScreen(model: AppModel) {
                     "WIKIDATA · ranked lists. rarity = how many Wikipedias cover the answer.",
                     "WIKIPEDIA · \"List of …\" pages, ranked the same way.",
                     "REMOTE · any JSON pack URL you add in settings.",
+                    "MORE · rhymes, synonyms and word endings (Datamuse), top songs per artist (Deezer), games per Steam tag (SteamSpy), books per subject (Open Library), Pokémon per type (PokéAPI), famous people by job and nationality (Wikidata).",
                     "hundreds of lists ship inside the app. about 30 more are downloaded each day; tap FETCH MORE LISTS for more.",
                 )) TText(l, size = 11.sp, color = C.amber)
             }
@@ -97,6 +98,19 @@ fun ManualScreen(model: AppModel) {
                     "same prompts, same clock. the rarer answer takes the round.",
                     "ONLINE RELAY works on any network (Android ↔ iPhone, LiveContainer).",
                     "DIRECT WI-FI needs both on one network that allows device-to-device traffic.",
+                    "your room code never changes: send it, leave the app, come back. the host screen reconnects with the same code.",
+                    "FRIENDS tab: add people by code, see your record and every 1v1, join a friend in one tap.",
+                )) TText("· $l", size = 12.sp, color = C.amber)
+            }
+            Spacer(Modifier.height(12.dp))
+            Panel("MELTDOWN") {
+                for (l in listOf(
+                    "battle royale for 2–8 players: bots offline, or friends online (HOST PARTY / JOIN PARTY, same code as 1v1).",
+                    "one player holds the core. name an answer nobody said yet this round: the core passes on.",
+                    "a wrong or repeated answer does not pass it. keep trying.",
+                    "the fuse is hidden (16–30 s) and keeps burning between turns. hold the core when it blows: −1 heart, new category.",
+                    "rarer answers fill your meter faster (common +1 … legendary +6). full meter (10): +1 heart, 3 at most.",
+                    "everyone starts with 2 hearts. 0 hearts: out. the last one standing wins.",
                 )) TText("· $l", size = 12.sp, color = C.amber)
             }
             Spacer(Modifier.height(24.dp))

@@ -17,7 +17,7 @@ xcrun simctl install "$DEV" "$APP" && log "installed"
 xcrun simctl launch --console-pty "$DEV" app.coredump.ios -selftest > "$OUT/console.txt" 2>&1 &
 LP=$!
 seen=0
-end=$((SECONDS + 1100))
+end=$((SECONDS + 1500))
 while [ $SECONDS -lt $end ]; do
   sleep 0.4
   shots=($(grep -o "SELFTEST SHOT [A-Za-z0-9_]*" "$OUT/console.txt" | awk '{print $3}'))

@@ -1,5 +1,7 @@
 package app.coredump.ui
 
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.draw.shadow
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -478,13 +480,14 @@ fun Panel(
     titleColor: Color = C.dim,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    // arrives its look's way the first time; ADHD-fy: rainbow frame, gentle bob
+    // arrives its look's way the first time; ADHD-fy: the look's decoration, on the box itself (not on the title)
     @Suppress("NAME_SHADOWING")
-    val modifier = modifier.entrance().hyperFrame(title.hashCode(), bob = 0.5f)
+    val modifier = modifier.entrance()
+    val deco = Modifier.hyperFrame(title.hashCode(), bob = 0.5f)
     when (Th.style) {
         Style.TERMINAL -> Box(modifier.padding(top = if (title != null) 8.dp else 0.dp)) {
             Column(
-                Modifier.fillMaxWidth().box(Style.TERMINAL, color, C.panel.copy(alpha = 0.55f)).padding(14.dp),
+                Modifier.fillMaxWidth().then(deco).box(Style.TERMINAL, color, C.panel.copy(alpha = 0.55f)).padding(14.dp),
                 content = content,
             )
             if (title != null) {
@@ -492,13 +495,13 @@ fun Panel(
             }
         }
         Style.PIXEL -> Box(modifier.padding(top = if (title != null) 10.dp else 0.dp)) {
-            Column(Modifier.fillMaxWidth().box(Style.PIXEL, if (color == C.line) C.amber else color, C.panel).padding(16.dp), content = content)
+            Column(Modifier.fillMaxWidth().then(deco).box(Style.PIXEL, if (color == C.line) C.amber else color, C.panel).padding(16.dp), content = content)
             if (title != null) {
                 TText(" ${title.uppercase()} ", Modifier.offset(x = 14.dp, y = (-10).dp).background(if (color == C.line) C.amber else color)
                     .padding(horizontal = 2.dp, vertical = 2.dp), size = 11.sp, color = C.bg)
             }
         }
-        Style.PAPER -> Column(modifier.fillMaxWidth()) {
+        Style.PAPER -> Column(modifier.fillMaxWidth().then(deco)) {
             val ruleColor = if (color == C.line) C.amber else color
             Box(Modifier.fillMaxWidth().height(2.dp).background(ruleColor))
             if (title != null) {
@@ -511,7 +514,7 @@ fun Panel(
             Column(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 6.dp), content = content)
         }
         Style.NEON -> Column(
-            modifier.fillMaxWidth().box(Style.NEON, if (color == C.line) C.amber.copy(alpha = 0.55f) else color, C.panel.copy(alpha = 0.72f),
+            modifier.fillMaxWidth().then(deco).box(Style.NEON, if (color == C.line) C.amber.copy(alpha = 0.55f) else color, C.panel.copy(alpha = 0.72f),
                 strokeWidth = 1.5.dp, glow = true).padding(16.dp),
         ) {
             if (title != null) {
@@ -521,7 +524,7 @@ fun Panel(
             content()
         }
         Style.CLEAN -> Column(
-            modifier.fillMaxWidth().box(Style.CLEAN, if (color == C.line) C.line.copy(alpha = 0.7f) else color, C.panel).padding(16.dp),
+            modifier.fillMaxWidth().then(deco).box(Style.CLEAN, if (color == C.line) C.line.copy(alpha = 0.7f) else color, C.panel).padding(16.dp),
         ) {
             if (title != null) {
                 TText(title.lowercase().replaceFirstChar { it.uppercase() }, size = 12.sp,
@@ -532,7 +535,7 @@ fun Panel(
         }
         Style.COMIC -> Box(modifier.padding(top = if (title != null) 12.dp else 0.dp)) {
             Column(
-                Modifier.fillMaxWidth().box(Style.COMIC, if (color == C.line) C.line else color, C.panel, 2.dp)
+                Modifier.fillMaxWidth().then(deco).box(Style.COMIC, if (color == C.line) C.line else color, C.panel, 2.dp)
                     .padding(start = 20.dp, end = 20.dp, top = if (title != null) 20.dp else 16.dp, bottom = 16.dp),
                 content = content,
             )
@@ -544,7 +547,7 @@ fun Panel(
             }
         }
         Style.ABYSS -> Column(
-            modifier.fillMaxWidth().box(Style.ABYSS, if (color == C.line) C.line else color, C.panel.copy(alpha = 0.62f)).padding(16.dp),
+            modifier.fillMaxWidth().then(deco).box(Style.ABYSS, if (color == C.line) C.line else color, C.panel.copy(alpha = 0.62f)).padding(16.dp),
         ) {
             if (title != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -556,7 +559,7 @@ fun Panel(
             }
             content()
         }
-        Style.METRO -> Column(modifier.fillMaxWidth().box(Style.METRO, C.line, C.panel)) {
+        Style.METRO -> Column(modifier.fillMaxWidth().then(deco).box(Style.METRO, C.line, C.panel)) {
             if (title != null) {
                 val strip = if (color == C.line) C.hot else color
                 TText(title.uppercase(), Modifier.fillMaxWidth().background(strip, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
@@ -566,7 +569,7 @@ fun Panel(
         }
         Style.JACKPOT -> Box(modifier.padding(top = if (title != null) 12.dp else 0.dp)) {
             Column(
-                Modifier.fillMaxWidth().box(Style.JACKPOT, if (color == C.line) C.line else color, C.panel, 1.5.dp)
+                Modifier.fillMaxWidth().then(deco).box(Style.JACKPOT, if (color == C.line) C.line else color, C.panel, 1.5.dp)
                     .padding(start = 16.dp, end = 16.dp, top = if (title != null) 22.dp else 16.dp, bottom = 16.dp),
                 content = content,
             )
@@ -581,9 +584,9 @@ fun Panel(
                 TText(title.uppercase(), Modifier.padding(start = 14.dp, bottom = 6.dp), size = 11.sp, color = titleColor,
                     weight = FontWeight.SemiBold, spacing = 0.5.sp)
             }
-            Column(Modifier.fillMaxWidth().box(Style.CHAT, if (color == C.line) Color.Transparent else color, C.panel).padding(16.dp), content = content)
+            Column(Modifier.fillMaxWidth().then(deco).box(Style.CHAT, if (color == C.line) Color.Transparent else color, C.panel).padding(16.dp), content = content)
         }
-        Style.DESKTOP -> Column(modifier.fillMaxWidth().box(Style.DESKTOP, C.line, C.panel).padding(3.dp)) {
+        Style.DESKTOP -> Column(modifier.fillMaxWidth().then(deco).box(Style.DESKTOP, C.line, C.panel).padding(3.dp)) {
             if (title != null) {
                 DesktopTitleBar(title, color = if (color == C.line) C.hot else color)
             }
@@ -591,7 +594,7 @@ fun Panel(
         }
         Style.ORACLE -> Box(modifier.padding(top = if (title != null) 10.dp else 0.dp)) {
             Column(
-                Modifier.fillMaxWidth().box(Style.ORACLE, if (color == C.line) C.line else color, C.panel, 1.dp)
+                Modifier.fillMaxWidth().then(deco).box(Style.ORACLE, if (color == C.line) C.line else color, C.panel, 1.dp)
                     .padding(start = 18.dp, end = 18.dp, top = if (title != null) 20.dp else 16.dp, bottom = 16.dp),
                 content = content,
             )
@@ -599,6 +602,81 @@ fun Panel(
                 TText("✦ ${title.uppercase()} ✦", Modifier.align(Alignment.TopCenter).offset(y = (-9).dp).background(C.bg).padding(horizontal = 8.dp),
                     size = 11.sp, color = if (titleColor == C.dim) C.hot else titleColor, weight = FontWeight.Bold, spacing = 2.5.sp)
             }
+        }
+    }
+}
+
+/**
+ * A pop-up card (quit, confirm …) in the look's own style: a clipping on newsprint, a chat alert, a desktop dialog
+ * window, a pixel dialogue box, a tilted comic panel, a station notice, a gold-framed card … never a bare rectangle.
+ */
+@Composable
+fun ModalCard(title: String, accent: Color, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val style = Th.style
+    val m = modifier.widthIn(max = 440.dp).entrance()
+    when (style) {
+        Style.DESKTOP -> Column(m.box(Style.DESKTOP, C.line, C.panel).padding(3.dp)) {
+            DesktopTitleBar(title, color = accent)
+            Column(Modifier.padding(14.dp), content = content)
+        }
+        Style.PAPER -> Column(
+            m.graphicsLayer { rotationZ = -0.8f }.shadow(10.dp).background(C.bg).padding(horizontal = 20.dp, vertical = 16.dp),
+        ) {
+            Box(Modifier.fillMaxWidth().height(3.dp).background(C.amber))
+            Spacer(Modifier.height(2.dp))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(C.amber))
+            Spacer(Modifier.height(10.dp))
+            TText(title.uppercase(), size = 22.sp, color = accent, weight = FontWeight.Bold, spacing = 1.sp)
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(C.amber.copy(alpha = 0.6f)))
+            Spacer(Modifier.height(12.dp))
+            content()
+            Spacer(Modifier.height(10.dp))
+            Box(Modifier.fillMaxWidth().height(3.dp).background(C.amber))
+        }
+        Style.CHAT -> Column(
+            m.shadow(18.dp, RoundedCornerShape(24.dp)).background(C.panel, RoundedCornerShape(24.dp)).padding(horizontal = 20.dp, vertical = 22.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            TText(title, Modifier.fillMaxWidth(), size = 18.sp, color = C.amber, weight = FontWeight.SemiBold, align = TextAlign.Center)
+            Spacer(Modifier.height(10.dp))
+            content()
+        }
+        Style.PIXEL -> Column(m.box(Style.PIXEL, C.amber, C.bg).padding(18.dp)) {
+            TText("▶ " + title.uppercase(), size = 14.sp, color = accent)
+            Spacer(Modifier.height(12.dp))
+            content()
+        }
+        Style.COMIC -> Box(m.padding(top = 12.dp)) {
+            Column(Modifier.graphicsLayer { rotationZ = -1.2f }.box(Style.COMIC, C.line, C.panel, 3.dp, glow = true)
+                .padding(start = 24.dp, end = 24.dp, top = 26.dp, bottom = 20.dp), content = content)
+            TText(title.uppercase(), Modifier.offset(x = 16.dp, y = (-10).dp).graphicsLayer { rotationZ = -4f }
+                .background(accent).padding(horizontal = 10.dp, vertical = 4.dp), size = 15.sp, color = onColor(accent), weight = FontWeight.Bold, glow = 0f)
+        }
+        Style.METRO -> Column(m.shadow(12.dp, RoundedCornerShape(8.dp)).box(Style.METRO, C.line, C.panel)) {
+            TText(title.uppercase(), Modifier.fillMaxWidth().background(accent, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                .padding(horizontal = 16.dp, vertical = 10.dp), size = 13.sp, color = onColor(accent), weight = FontWeight.Bold, spacing = 1.sp)
+            Column(Modifier.padding(16.dp), content = content)
+        }
+        Style.JACKPOT -> Column(m.box(Style.JACKPOT, C.hot, C.panel, 2.dp).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            TText("◆ ${title.uppercase()} ◆", size = 16.sp, color = C.hot, weight = FontWeight.Bold, spacing = 2.sp)
+            Spacer(Modifier.height(12.dp))
+            content()
+        }
+        Style.ORACLE -> Column(m.box(Style.ORACLE, C.line, C.panel).padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            TText("✦ ${title.uppercase()} ✦", size = 13.sp, color = C.hot, weight = FontWeight.Bold, spacing = 2.5.sp)
+            Spacer(Modifier.height(12.dp))
+            content()
+        }
+        Style.CLEAN -> Column(m.shadow(16.dp, RoundedCornerShape(20.dp)).box(Style.CLEAN, Color.Transparent, C.panel).padding(22.dp)) {
+            TText(title, size = 19.sp, color = C.amber, weight = FontWeight.Bold)
+            Spacer(Modifier.height(10.dp))
+            content()
+        }
+        else -> Column(m.box(style, accent, C.bg, 1.5.dp, glow = style == Style.NEON || style == Style.ABYSS).padding(20.dp)) {
+            TText(if (style == Style.TERMINAL) "[ $title ]" else title.uppercase(), size = 13.sp, color = accent, weight = FontWeight.Bold, spacing = 1.sp)
+            Spacer(Modifier.height(12.dp))
+            content()
         }
     }
 }

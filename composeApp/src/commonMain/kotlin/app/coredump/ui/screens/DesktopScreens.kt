@@ -91,6 +91,7 @@ private fun deskLabel(it: Item): String = when (it.key) {
     "daily" -> dailyLabel(it.label, "Daily")
     "solo" -> "Solo"
     "duel" -> "1v1"
+    "party" -> "Meltdown"
     "stats" -> "Stats"
     "browse" -> "Lists"
     "theme" -> "Theme"
@@ -174,6 +175,13 @@ private fun DeskIcon(key: String, modifier: Modifier) {
                 for (r in 0..2) for (c in 0..3) drawRect(Color(0xFF555555), Offset(w * (0.2f + c * 0.16f), h * (0.42f + r * 0.15f)), Size(w * 0.09f, h * 0.08f))
             }
             "solo" -> monitor(w * 0.06f, h * 0.06f, w * 0.88f)
+            "party" -> {
+                val tri = Path().apply { moveTo(w * 0.5f, h * 0.08f); lineTo(w * 0.94f, h * 0.88f); lineTo(w * 0.06f, h * 0.88f); close() }
+                drawPath(tri, Color(0xFFF2C230))
+                drawPath(tri, Color.Black, style = Stroke(px))
+                drawRect(Color.Black, Offset(w * 0.46f, h * 0.34f), Size(w * 0.08f, h * 0.3f))
+                drawRect(Color.Black, Offset(w * 0.46f, h * 0.7f), Size(w * 0.08f, h * 0.08f))
+            }
             "duel" -> {
                 monitor(0f, 0f, w * 0.6f)
                 monitor(w * 0.4f, h * 0.36f, w * 0.6f)

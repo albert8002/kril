@@ -193,6 +193,25 @@ fun main(args: Array<String>) {
         ex.shutdown()
         ex.awaitTermination(budgetMs + 120_000, TimeUnit.MILLISECONDS)
         log("POOL SUMMARY ok=${ok.get()} bad=${bad.get()} of ${list.size}")
+        // the other free sources: a few lists of each kind
+        run {
+            val sample = app.coredump.data.ExtraSources.all.groupBy { it.kind }.values.flatMap { g -> listOf(g.first(), g[g.size / 2], g.last()).distinct() }
+            var eok = 0
+            var ebad = 0
+            for (x in sample) {
+                val t0 = System.currentTimeMillis()
+                try {
+                    val p = kotlinx.coroutines.runBlocking { app.coredump.data.ExtraSources.fetch(x) { url -> get(url) } }
+                    if (p != null) eok++ else ebad++
+                    log("EXTRA ${x.id.padEnd(30)} ${if (p != null) "OK   " else "SMALL"} ${(p?.size ?: 0).toString().padStart(5)} ${(System.currentTimeMillis() - t0).toString().padStart(6)}ms [${p?.topic}] ${x.prompt} :: ${p?.entries?.take(8)?.joinToString(" | ") { it.name + "/" + it.tier.name }}")
+                } catch (e: Exception) {
+                    ebad++
+                    log("EXTRA ${x.id.padEnd(30)} FAIL  ${(System.currentTimeMillis() - t0).toString().padStart(6)}ms ${e::class.simpleName}: ${e.message?.take(140)}")
+                }
+                Thread.sleep(600)
+            }
+            log("EXTRA SUMMARY ok=$eok bad=$ebad of ${sample.size}")
+        }
         return
     }
 

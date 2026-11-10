@@ -101,6 +101,7 @@ private fun chatTitle(it: Item): String = when (it.key) {
     "daily" -> dailyLabel(it.label, "Daily drop")
     "solo" -> "Solo practice"
     "duel" -> "1v1 with a friend"
+    "party" -> "Meltdown group game"
     "stats" -> "Your stats"
     "browse" -> "All lists"
     "theme" -> "Theme"
@@ -110,7 +111,7 @@ private fun chatTitle(it: Item): String = when (it.key) {
 }
 
 private fun chatInitial(key: String): String = when (key) {
-    "daily" -> "D"; "solo" -> "S"; "duel" -> "1v1"; "stats" -> "%"; "browse" -> "≡"; "theme" -> "Aa"; "settings" -> "⋯"; "manual" -> "?"; else -> "•"
+    "daily" -> "D"; "solo" -> "S"; "duel" -> "1v1"; "party" -> "☢"; "stats" -> "%"; "browse" -> "≡"; "theme" -> "Aa"; "settings" -> "⋯"; "manual" -> "?"; else -> "•"
 }
 
 @Composable

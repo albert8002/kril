@@ -198,47 +198,6 @@ fun Modifier.breathe(on: Boolean, seed: Int = 0): Modifier {
 
 // ------------------------------------------------------------------ ADHD-fy pieces
 
-/** ADHD-fy: a rainbow frame that flows round the element, plus a little bob and sway. No-op when off. */
-@Composable
-fun Modifier.hyperFrame(seed: Int = 0, corner: Dp = Th.style.corner, pill: Boolean = false, bob: Float = 1f): Modifier {
-    val h = LocalHyper.current
-    if (!h.on) return this
-    return this
-        .graphicsLayer {
-            val t = h.t + seed * 0.37f
-            translationY = sin(t * 2.6f) * 1.6.dp.toPx() * bob
-            rotationZ = sin(t * 1.9f + 1f) * 0.6f * bob
-            val s = 1f + sin(t * 3.1f + 2f) * 0.012f * bob
-            scaleX = s; scaleY = s
-        }
-        .drawWithContent {
-            drawContent()
-            val sw = 2.dp.toPx()
-            val r = if (pill) size.height / 2f else corner.toPx()
-            drawRoundRect(
-                Brush.sweepGradient(rainbow(h.t * 140f + seed * 47f), Offset(size.width / 2f, size.height / 2f)),
-                topLeft = Offset(sw / 2f, sw / 2f), size = Size(size.width - sw, size.height - sw),
-                cornerRadius = CornerRadius(r), style = Stroke(sw), alpha = 0.9f,
-            )
-        }
-}
-
-/** ADHD-fy: tints the element (text, numbers) with a flowing rainbow. No-op when off. */
-@Composable
-fun Modifier.hyperText(seed: Int = 0): Modifier {
-    val h = LocalHyper.current
-    if (!h.on) return this
-    return this
-        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-        .drawWithContent {
-            drawContent()
-            drawRect(
-                Brush.linearGradient(rainbow(h.t * 110f + seed * 31f, 5), Offset.Zero, Offset(size.width.coerceAtLeast(1f), size.height * 0.4f)),
-                alpha = 0.85f, blendMode = BlendMode.SrcAtop,
-            )
-        }
-}
-
 /** A finger came down at [at] (root px) at clock time [born] (s). */
 class Tap(val at: Offset, val born: Float, val seed: Int)
 
@@ -262,80 +221,6 @@ fun Modifier.watchTaps(on: Boolean, now: () -> Float, taps: SnapshotStateList<Ta
 @Composable
 fun rememberTaps(): SnapshotStateList<Tap> = remember { mutableStateListOf() }
 
-private class Mote(val x: Float, val y: Float, val vx: Float, val vy: Float, val size: Float, val shape: Int, val hue: Float, val phase: Float)
-
-/** ADHD-fy, behind the content: big soft colour blobs drifting, and confetti / stars / rings floating. */
-@Composable
-fun HyperBack(h: Hyper, modifier: Modifier = Modifier) {
-    if (!h.on) return
-    // light screens need stronger colour to show
-    val blob = if (C.bg.luminance() > 0.5f) 0.34f else 0.22f
-    val motes = remember {
-        val r = Random(42)
-        List(26) { Mote(r.nextFloat(), r.nextFloat(), (r.nextFloat() - 0.5f) * 0.05f, -0.02f - r.nextFloat() * 0.05f, 4f + r.nextFloat() * 9f, r.nextInt(4), r.nextFloat() * 360f, r.nextFloat() * 6f) }
-    }
-    Canvas(modifier.fillMaxSize()) {
-        val t = h.t
-        val w = size.width
-        val hh = size.height
-        // colour blobs
-        for (i in 0 until 4) {
-            val cx = w * (0.5f + 0.42f * sin(t * 0.21f * (i + 1) + i * 1.7f))
-            val cy = hh * (0.5f + 0.42f * cos(t * 0.17f * (i + 2) + i * 2.3f))
-            val r = max(w, hh) * (0.28f + 0.06f * sin(t * 0.5f + i))
-            drawCircle(Brush.radialGradient(listOf(hue(t * 40f + i * 90f, 0.85f, 1f, blob), Color.Transparent), Offset(cx, cy), r), r, Offset(cx, cy))
-        }
-        // floating pieces
-        for (m in motes) {
-            val x = ((m.x + m.vx * t) % 1f + 1f) % 1f * w + sin(t * 1.3f + m.phase) * 10.dp.toPx()
-            val y = ((m.y + m.vy * t) % 1f + 1f) % 1f * hh
-            val c = hue(m.hue + t * 60f, 0.8f, 1f, 0.55f)
-            val s = m.size.dp.toPx() * (0.8f + 0.2f * sin(t * 3f + m.phase))
-            when (m.shape) {
-                0 -> drawCircle(c, s * 0.5f, Offset(x, y))
-                1 -> sparkle(Offset(x, y), s, c, t * 90f + m.phase * 60f)
-                2 -> drawCircle(c, s * 0.7f, Offset(x, y), style = Stroke(1.5.dp.toPx()))
-                else -> rotateRect(Offset(x, y), s, c, t * 120f + m.phase * 50f)
-            }
-        }
-    }
-}
-
-/** ADHD-fy, on top: shimmering rainbow screen edge, twinkles in the corners, sparkle bursts where fingers land. */
-@Composable
-fun HyperFront(h: Hyper, taps: List<Tap>, modifier: Modifier = Modifier) {
-    if (!h.on) return
-    Canvas(modifier.fillMaxSize()) {
-        val t = h.t
-        val w = size.width
-        val hh = size.height
-        val sw = 3.dp.toPx()
-        drawRect(Brush.sweepGradient(rainbow(t * 90f), Offset(w / 2f, hh / 2f)), Offset(sw / 2f, sw / 2f), Size(w - sw, hh - sw),
-            style = Stroke(sw), alpha = 0.55f + 0.2f * sin(t * 4f))
-        // corner twinkles
-        for (i in 0 until 4) {
-            val cx = if (i % 2 == 0) 18.dp.toPx() else w - 18.dp.toPx()
-            val cy = if (i < 2) 18.dp.toPx() + 30.dp.toPx() else hh - 40.dp.toPx()
-            val tw = sin(t * 3f + i * 1.6f).let { it * it }
-            sparkle(Offset(cx, cy), (5f + 6f * tw).dp.toPx(), hue(t * 70f + i * 90f, 0.7f, 1f, 0.5f + 0.4f * tw), t * 40f)
-        }
-        // sparkle bursts under taps
-        for (tap in taps) {
-            val p = ((t - tap.born) / 0.85f)
-            if (p < 0f || p >= 1f) continue
-            val r = Random(tap.seed)
-            val ease = 1f - (1f - p) * (1f - p)
-            drawCircle(hue(r.nextFloat() * 360f, 0.7f, 1f, (1f - p) * 0.7f), 8.dp.toPx() + 46.dp.toPx() * ease, tap.at, style = Stroke((3f * (1f - p) + 0.5f).dp.toPx()))
-            for (k in 0 until 10) {
-                val ang = (k / 10f + r.nextFloat() * 0.05f) * 2f * PI.toFloat()
-                val d = (14f + 50f * r.nextFloat()).dp.toPx() * ease
-                val c = hue(k * 36f + t * 120f, 0.85f, 1f, 1f - p)
-                sparkle(Offset(tap.at.x + cos(ang) * d, tap.at.y + sin(ang) * d - 18.dp.toPx() * p * p), (5f + 4f * r.nextFloat()).dp.toPx() * (1f - p * 0.6f), c, p * 360f + k * 30f)
-            }
-        }
-    }
-}
-
 /** Four-point sparkle star of radius [s], turned by [deg]. */
 fun DrawScope.sparkle(c: Offset, s: Float, color: Color, deg: Float = 0f) {
     val a = deg * PI.toFloat() / 180f
@@ -351,7 +236,7 @@ fun DrawScope.sparkle(c: Offset, s: Float, color: Color, deg: Float = 0f) {
     drawPath(path, color)
 }
 
-private fun DrawScope.rotateRect(c: Offset, s: Float, color: Color, deg: Float) {
+internal fun DrawScope.rotateRect(c: Offset, s: Float, color: Color, deg: Float) {
     val a = deg * PI.toFloat() / 180f
     val path = Path()
     for (i in 0 until 4) {

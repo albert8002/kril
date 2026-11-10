@@ -116,6 +116,7 @@ private fun questLabel(key: String, fallback: String) = when (key) {
     "daily" -> "DAILY QUEST"
     "solo" -> "ADVENTURE"
     "duel" -> "DUEL"
+    "party" -> "ARENA"
     "stats" -> "RECORDS"
     "browse" -> "BESTIARY"
     "theme" -> "APPEARANCE"

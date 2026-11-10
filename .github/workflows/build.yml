@@ -99,7 +99,7 @@ jobs:
         run: |
           set -o pipefail
           chmod +x gradlew
-          ./gradlew :snapshot:run --args="--pool-check wx.tv.animated,wx.tv.miniseries,wx.mv.studio,wx.mv.festival,wx.mv.bollywood,wx.mv.anime,wx.mv.teen,wx.mv.spy,wx.mv.biopic,wx.mv.adventure,wx.gm.mmo,wx.gm.sports,wx.gm.switch,wx.gm.ps4,wx.gm.n64,wx.gm.snes,wx.gm.gameboy,wx.gm.publisher,wx.tc.smartphone,wx.tc.app,wx.tc.search,wx.tc.programmer,wx.ho.horrornovel,wx.wo.writing,wx.wo.figure,wx.wo.conlang,wx.wo.signlang,wx.bd.infection,wx.bd.cancer,wx.my.hindu,wx.na.glacier,wx.na.canyon,wx.na.forest,wx.na.earthquake,wx.sc.mission,wx.ev.boat,wx.fd.beerstyle,wx.fd.cuisine,wx.br.newsagency,wx.pc.fictcity,wx.pc.fictcountry,wx.bk.artmuseum,wx.bk.poem,wx.bk.play,wx.bk.opera,wx.bk.novel,wx.bk.childrens,wx.bk.fantasy,wx.bk.scifi,wx.bk.detective,wx.hi.treaty,wx.hi.pharaoh,wx.hi.ukpm,wx.mu.orchestra,wx.an." 2>&1 | tee build.log
+          ./gradlew :snapshot:run --args="--pool-check wx.mv.by.actor.fr,wx.mv.by.actor.jp,wx.mv.by.filmdirector.kr,wx.mu.by.singer.br,wx.mu.by.rapper.us,wx.mu.by.rapper.fr,wx.sp.by.swimmer.au,wx.sp.by.chessplayer.ru,wx.sp.by.tennisplayer.es,wx.sp.by.cyclist.be,wx.sp.by.racingdriver.de,wx.sp.by.boxer.mx,wx.sp.by.basketballplayer.us,wx.fd.by.chef.it,wx.fd.by.chef.fr,wx.sc.by.physicist.de,wx.sc.by.mathematician.in,wx.tv.by.comedian.uk,wx.tv.by.comedian.us,wx.pc.by.model.us,wx.pc.by.fashiondesigner.it,wx.bk.by.poet.ie,wx.bk.by.philosopher.gr,wx.bk.by.architect.ch,wx.mv.by.actor.ng,wx.mu.by.singer.kr,wx.sp.by.swimmer.cn,wx.mv.by.actor.tr" 2>&1 | tee build.log
       - name: Publish pool check log
         if: always()
         run: |
@@ -271,7 +271,7 @@ jobs:
             ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build 2>&1 | tee build.log | tail -5
       - name: Run self-test in the simulator
         continue-on-error: true
-        timeout-minutes: 25
+        timeout-minutes: 32
         run: bash .github/sim-test.sh
       - name: Publish simulator output
         if: always()

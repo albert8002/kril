@@ -39,6 +39,10 @@ sealed interface Screen {
     data object Fetch : Screen
     /** Own names, colours and icons for tiers and ranks. */
     data object Looks : Screen
+    /** MELTDOWN setup: bots, host a party, join one. */
+    data object Meltdown : Screen
+    /** A MELTDOWN game in progress (or just over). */
+    data class Melt(val session: app.coredump.game.MeltSession) : Screen
 }
 
 /** Daily run number: days since 2026-01-01 UTC (epoch day 20454). */
@@ -69,6 +73,16 @@ class AppModel(val scope: CoroutineScope) {
         private set
     var guestJoin: GuestJoin? = null
         private set
+    var partyHost by mutableStateOf<app.coredump.game.PartyHost?>(null)
+        private set
+    var partyGuest by mutableStateOf<app.coredump.game.PartyGuest?>(null)
+        private set
+    /** Bots and bot level of the last offline MELTDOWN game (for "again"). */
+    var lastMelt = 3 to 1
+        private set
+    /** Back pressed during a MELTDOWN game: ask before leaving. */
+    var confirmLeaveMelt by mutableStateOf(false)
+    private var partyWatch: Job? = null
 
     init {
         History.load()
@@ -107,7 +121,12 @@ class AppModel(val scope: CoroutineScope) {
             }
             return true
         }
+        if (cur is Screen.Melt) {
+            if (cur.session.state.value.phase == app.coredump.game.MeltPhase.OVER) leaveMelt(cur.session) else confirmLeaveMelt = true
+            return true
+        }
         if (cur is Screen.Summary || cur is Screen.Lobby) { closeLobbies() }
+        if (cur is Screen.Meltdown) { closeParty() }
         if (stack.isEmpty()) return false
         screen = stack.removeAt(stack.size - 1)
         app.coredump.ui.Sfx.play(app.coredump.ui.Cue.NAV)
@@ -229,12 +248,13 @@ class AppModel(val scope: CoroutineScope) {
         val cur = hostLobby
         if (cur != null && cur.mode == mode) return cur
         cur?.close()
-        return HostLobby(scope, settings.handle, mode, ::shareWrap).also { hostLobby = it }
+        return HostLobby(scope, settings.handle, mode, ::shareWrap, myRoom(), settings.roomBroker,
+            onBroker = { b -> if (b != settings.roomBroker) update { it.copy(roomBroker = b) } }).also { hostLobby = it }
     }
 
     fun openGuest(): GuestJoin {
         hostLobby?.close(); hostLobby = null
-        return guestJoin ?: GuestJoin(scope, settings.handle, ::shareWrap).also { guestJoin = it }
+        return guestJoin ?: GuestJoin(scope, settings.handle, ::shareWrap, myRoom()).also { guestJoin = it }
     }
 
     fun startHosted() {
@@ -250,6 +270,137 @@ class AppModel(val scope: CoroutineScope) {
     fun joined(s: MatchSession) {
         guestJoin = null
         go(Screen.Play(s), push = false)
+    }
+
+    /** Adds (or renames) a friend by room code. Returns false when the code is not a room code. */
+    fun addFriend(name: String, code: String): Boolean {
+        val c = code.uppercase().filter { it in app.coredump.net.JoinTicket.ROOM_ALPHABET }
+        if (c.length != app.coredump.net.JoinTicket.ROOM_LEN) { toast = "a friend code has 8 letters/digits (e.g. K7Q2-M9XA)"; return false }
+        if (c == settings.room) { toast = "that is your own code"; return false }
+        val n = name.trim().ifBlank { "FRIEND" }.take(24)
+        update { s -> s.copy(friends = s.friends.filter { it.code != c } + app.coredump.data.Friend(n, c, app.coredump.platform.Platform.epochMillis())) }
+        toast = "$n added to friends"
+        return true
+    }
+
+    fun removeFriend(f: app.coredump.data.Friend) {
+        update { s -> s.copy(friends = s.friends.filter { it != f }) }
+    }
+
+    fun isFriend(code: String?): Boolean = code != null && settings.friends.any { it.code == code }
+
+    /** Joins a friend's room (they must be on their host screen). */
+    fun joinFriend(f: app.coredump.data.Friend) {
+        if (f.code.length != app.coredump.net.JoinTicket.ROOM_LEN) { toast = "no code for ${f.name} yet"; return }
+        openGuest().connect(app.coredump.net.JoinTicket("", 0, "", f.name, f.code, 0)) { s -> joined(s) }
+    }
+
+    /** My own room code (made the first time it is needed, then kept for good). */
+    fun myRoom(): String {
+        if (settings.room.length != app.coredump.net.JoinTicket.ROOM_LEN) update { it.copy(room = app.coredump.net.JoinTicket.newRoom()) }
+        return settings.room
+    }
+
+    // ------------------------------------------------------------------ MELTDOWN
+
+    private val meltSeen = HashSet<String>()
+
+    /** Next MELTDOWN category: a big list (60+ answers) nobody saw in this game; never a niche one. */
+    fun meltPrompt(): Prompt? {
+        val all = bank.all().filter { !it.niche && it.id !in discarded }
+        val big = all.filter { it.size >= 60 }.ifEmpty { all.filter { it.size >= 30 } }
+        val fresh = big.filter { it.id !in meltSeen }.ifEmpty { meltSeen.clear(); big }
+        val p = fresh.randomOrNull() ?: return null
+        meltSeen += p.id
+        return p
+    }
+
+    private fun me() = app.coredump.game.MeltPlayer(app.coredump.game.Meltdown.newId(), settings.handle.ifBlank { "YOU" }.take(16), bot = false)
+
+    /** Offline game against [bots] bots (level 0 easy … 2 hard). */
+    fun startMeltBots(bots: Int, level: Int) {
+        closeParty()
+        lastMelt = bots to level
+        meltSeen.clear()
+        val me = me()
+        val used = mutableSetOf(me.name)
+        val rivals = app.coredump.game.Meltdown.botNames.filter { it !in used }.shuffled().take(bots.coerceIn(1, app.coredump.game.Meltdown.MAX_PLAYERS - 1))
+            .map { app.coredump.game.MeltPlayer("bot-" + it.lowercase(), it, bot = true) }
+        val game = app.coredump.game.MeltdownGame(scope, (listOf(me) + rivals).shuffled(), ::meltPrompt, level)
+        val s = app.coredump.game.LocalMelt(scope, me.id, game)
+        game.start()
+        go(Screen.Melt(s))
+    }
+
+    /** Opens my party room (same code as 1v1: friends join with it). */
+    fun openPartyHost(): app.coredump.game.PartyHost {
+        partyGuest?.leave(); partyGuest = null
+        closeLobbies()
+        partyHost?.let { return it }
+        return app.coredump.game.PartyHost(scope, myRoom(), me(), settings.roomBroker,
+            onBroker = { b -> if (b != settings.roomBroker) update { it.copy(roomBroker = b) } }).also { partyHost = it; it.open() }
+    }
+
+    fun startParty(bots: Int, level: Int) {
+        val h = partyHost ?: return
+        if (h.lobby.value.players.size + bots < 2) { toast = "need at least 2 players: wait for a friend or add bots"; return }
+        meltSeen.clear()
+        val myId = h.lobby.value.players.first().id
+        val game = h.start(bots, level, ::meltPrompt)
+        val s = app.coredump.game.LocalMelt(scope, myId, game, online = true, onLeave = { h.close(); if (partyHost === h) partyHost = null })
+        go(Screen.Melt(s))
+    }
+
+    /** Joins a party by code / QR text / friend code; moves to the arena when the host starts. */
+    fun joinParty(raw: String, name: String = "HOST") {
+        val t = app.coredump.net.JoinTicket.parse(raw.replace("coredump://party?", "coredump://join?"))
+        if (t?.room == null) { toast = "not a party code (8 letters/digits, e.g. K7Q2-M9XA)"; return }
+        val room: String = t.room
+        if (room == settings.room) { toast = "that is your own code"; return }
+        partyHost?.close(); partyHost = null
+        closeLobbies()
+        partyGuest?.leave()
+        val g = app.coredump.game.PartyGuest(scope, settings.handle.ifBlank { "GUEST" }.take(16), room, t.broker)
+        partyGuest = g
+        g.connect()
+        partyWatch?.cancel()
+        partyWatch = scope.launch {
+            g.state.collect { st ->
+                if (st.phase != app.coredump.game.MeltPhase.LOBBY && partyGuest === g && screen == Screen.Meltdown) {
+                    if (t.hostName != "HOST") app.coredump.game.PeerBook.note(t.hostName, room)
+                    go(Screen.Melt(g))
+                }
+            }
+        }
+        if (name != "HOST") toast = "calling $name…"
+    }
+
+    fun leaveMelt(s: app.coredump.game.MeltSession) {
+        confirmLeaveMelt = false
+        val st = s.state.value
+        if (st.phase == app.coredump.game.MeltPhase.OVER) {
+            val me = st.player(s.myId)
+            if (me != null) update { it.copy(meltGames = it.meltGames + 1, meltWins = it.meltWins + if (me.place == 1) 1 else 0) }
+        }
+        s.leave()
+        if (s === partyGuest) partyGuest = null
+        partyWatch?.cancel(); partyWatch = null
+        partyHost?.close(); partyHost = null
+        // back to the MELTDOWN setup
+        while (stack.isNotEmpty() && stack.last() is Screen.Melt) stack.removeAt(stack.size - 1)
+        if (stack.lastOrNull() == Screen.Meltdown) { screen = stack.removeAt(stack.size - 1); fx.glitch() } else home()
+    }
+
+    /** Offline game over: same bots, new game. */
+    fun meltAgain(s: app.coredump.game.MeltSession) {
+        leaveMelt(s)
+        startMeltBots(lastMelt.first, lastMelt.second)
+    }
+
+    fun closeParty() {
+        partyWatch?.cancel(); partyWatch = null
+        partyHost?.close(); partyHost = null
+        partyGuest?.leave(); partyGuest = null
     }
 
     fun closeLobbies() {

@@ -557,7 +557,8 @@ class HostSession(
             _s.update { it.copy(phase = Phase.OVER) }
             val st = _s.value
             History.recordRun(prompts.map { it.id }, st.rounds.map { it.me.tier }, mode = "1v1", daily = null,
-                topics = prompts.map { it.topic }, opponent = st.oppName, oppPoints = st.oppTotal, points = st.myTotal)
+                topics = prompts.map { it.topic }, opponent = st.oppName, oppPoints = st.oppTotal, points = st.myTotal,
+                oppCode = PeerBook.codeOf(st.oppName))
             scope.launch { link.send(Msg.Over) }
         } else scope.launch { begin(s.round + 1) }
     }
@@ -603,7 +604,8 @@ class GuestSession(
                     _s.update { it.copy(phase = Phase.OVER) }
                     val st = _s.value
                     History.recordRun(emptyList(), st.rounds.map { it.me.tier }, mode = "1v1", daily = null,
-                        topics = st.rounds.map { it.topic }, opponent = st.oppName, oppPoints = st.oppTotal, points = st.myTotal)
+                        topics = st.rounds.map { it.topic }, opponent = st.oppName, oppPoints = st.oppTotal, points = st.myTotal,
+                        oppCode = PeerBook.codeOf(st.oppName))
                 }
                 is Msg.Bye -> fail("host left: ${m.reason}")
                 else -> Unit

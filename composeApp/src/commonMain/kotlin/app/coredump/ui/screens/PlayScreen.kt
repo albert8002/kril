@@ -1,5 +1,6 @@
 package app.coredump.ui.screens
 
+import app.coredump.ui.ModalCard
 import app.coredump.ui.LocalHyper
 import app.coredump.ui.ScoreRun
 import androidx.compose.animation.core.Animatable
@@ -893,8 +894,22 @@ fun PauseOverlay(onResume: () -> Unit, onAbort: () -> Unit) {
 fun ConfirmQuit(multi: Boolean, onKeep: () -> Unit, onAbort: () -> Unit) {
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.82f))
         .clickable(remember { MutableInteractionSource() }, null) { }, contentAlignment = Alignment.Center) {
-        Panel(Th.say("CONFIRM", "Quit?"), Modifier.padding(28.dp).background(C.bg), color = C.blood, titleColor = C.blood) {
-            TText(Th.say("kill -9 this run?", "Quit this run?"), size = 18.sp, weight = FontWeight.Bold, color = C.blood)
+        val (head, ask) = when (Th.style) {
+            Style.TERMINAL -> "CONFIRM" to "kill -9 this run?"
+            Style.PAPER -> "Stop the presses?" to "Pull this edition?"
+            Style.NEON -> "Game over?" to "Quit this game?"
+            Style.CLEAN -> "Quit?" to "Quit this round?"
+            Style.PIXEL -> "Quit quest?" to "Leave the battle?"
+            Style.COMIC -> "Bail out?!" to "Leave this issue?"
+            Style.ABYSS -> "Surface now?" to "End this dive?"
+            Style.METRO -> "Leave the train?" to "Get off at this stop?"
+            Style.JACKPOT -> "Cash out?" to "Leave the machine?"
+            Style.CHAT -> "Leave the chat?" to "Quit this run?"
+            Style.DESKTOP -> "Confirm" to "Are you sure you want to quit this run?"
+            Style.ORACLE -> "Abandon the reading?" to "Put the cards away?"
+        }
+        ModalCard(head, C.blood, Modifier.padding(28.dp)) {
+            TText(ask, size = 18.sp, weight = FontWeight.Bold, color = C.blood)
             Spacer(Modifier.height(6.dp))
             TText(if (multi) Th.say("your peer will be disconnected.", "Your opponent will be disconnected.")
                 else Th.say("progress in this run is lost.", "Progress in this run is lost."), size = 12.sp, color = C.dim)

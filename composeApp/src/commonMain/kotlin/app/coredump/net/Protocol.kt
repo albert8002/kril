@@ -88,8 +88,9 @@ data class JoinTicket(
 
 /** Wire messages: one JSON object per line. */
 sealed class Msg {
-    data class Hello(val name: String, val pin: String, val version: Int = PROTOCOL_VERSION) : Msg()
-    data class Welcome(val hostName: String) : Msg()
+    /** [me]: the sender's own room code (friends list, 1v1 history); older versions send none. */
+    data class Hello(val name: String, val pin: String, val version: Int = PROTOCOL_VERSION, val me: String = "") : Msg()
+    data class Welcome(val hostName: String, val me: String = "") : Msg()
     data class Reject(val reason: String) : Msg()
     data class Start(val rounds: Int, val seconds: Int, val difficulty: String) : Msg()
     data class Round(val i: Int, val text: String, val topic: String, val size: Int, val seconds: Int) : Msg()
@@ -117,13 +118,15 @@ sealed class Msg {
     /** Host → guest after a [Result]: one piece of the round's full answer list (older guests ignore it). */
     data class Answers(val i: Int, val groups: List<TierGroup>) : Msg()
     data object Over : Msg()
+    /** Battle royale (MELTDOWN) traffic: a JSON body of its own (see app.coredump.game.Party). */
+    data class Party(val body: String) : Msg()
     data class Bye(val reason: String) : Msg()
 
     fun encode(): String = toJson().toString()
 
     private fun toJson(): JsonObject = when (this) {
-        is Hello -> obj("hello") { put("name", name); put("pin", pin); put("v", version) }
-        is Welcome -> obj("welcome") { put("name", hostName) }
+        is Hello -> obj("hello") { put("name", name); put("pin", pin); put("v", version); if (me.isNotEmpty()) put("me", me) }
+        is Welcome -> obj("welcome") { put("name", hostName); if (me.isNotEmpty()) put("me", me) }
         is Reject -> obj("reject") { put("reason", reason) }
         is Start -> obj("start") { put("rounds", rounds); put("sec", seconds); put("diff", difficulty) }
         is Round -> obj("round") { put("i", i); put("q", text); put("t", topic); put("n", size); put("sec", seconds) }
@@ -159,6 +162,7 @@ sealed class Msg {
         is LibWant -> obj("lib_want") { put("ids", JsonArray(ids.map { JsonPrimitive(it) })) }
         is LibPart -> obj("lib_part") { put("id", id); put("n", part); put("of", of); put("d", data) }
         Over -> obj("over") {}
+        is Party -> obj("party") { put("d", body) }
         is Bye -> obj("bye") { put("reason", reason) }
     }
 
@@ -170,8 +174,8 @@ sealed class Msg {
             fun s(k: String) = o[k]?.jsonPrimitive?.contentOrNull.orEmpty()
             fun i(k: String) = o[k]?.jsonPrimitive?.intOrNull ?: 0
             when (s("k")) {
-                "hello" -> Hello(s("name"), s("pin"), i("v"))
-                "welcome" -> Welcome(s("name"))
+                "hello" -> Hello(s("name"), s("pin"), i("v"), s("me").take(12))
+                "welcome" -> Welcome(s("name"), s("me").take(12))
                 "reject" -> Reject(s("reason"))
                 "start" -> Start(i("rounds"), i("sec"), s("diff"))
                 "round" -> Round(i("i"), s("q"), s("t"), i("n"), i("sec"))
@@ -202,6 +206,7 @@ sealed class Msg {
                 "lib_want" -> LibWant(o["ids"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty().take(200))
                 "lib_part" -> LibPart(s("id"), i("n"), i("of"), s("d"))
                 "over" -> Over
+                "party" -> Party(s("d"))
                 "bye" -> Bye(s("reason"))
                 else -> null
             }

@@ -48,6 +48,85 @@ object SelfTest {
         Style.ORACLE to "parchment",
     )
 
+    /** Answers for me whenever I hold the core (a real entry nobody said yet), so the game moves on. */
+    private fun meltAnswer(model: AppModel, st: app.coredump.game.MeltState): String? {
+        val p = model.bank.all().firstOrNull { it.text == st.prompt } ?: return null
+        val said = st.used.map { it.name }.toSet()
+        return p.entries.firstOrNull { it.name !in said && it.name.length >= 4 }?.name
+    }
+
+    /** MELTDOWN: the setup, a game against bots (with shots in a few looks), then a party over the real relay. */
+    private suspend fun meltdownChecks(model: AppModel) {
+        for (style in listOf(Style.TERMINAL, Style.ABYSS, Style.COMIC, Style.ORACLE)) {
+            model.setTheme(style, plan.first { it.first == style }.second)
+            model.home(); delay(400)
+            model.go(Screen.Meltdown); delay(1300)
+            if (style == Style.TERMINAL) shot("meltdown_setup_terminal")
+            model.startMeltBots(5, 1); delay(4500)
+            val s = (model.screen as? Screen.Melt)?.session ?: run { log("MELT no session"); return }
+            log("MELT ${style.name} phase=${s.state.value.phase} players=${s.state.value.players.size} prompt='${s.state.value.prompt}'")
+            shot("meltdown_${style.name.lowercase()}")
+            if (style == Style.TERMINAL) {
+                // play on: answer whenever I hold the core, until a blast or 40 s
+                var t = 0
+                var answered = 0
+                var blasts = 0
+                var lastEvn = -1
+                while (t < 40_000) {
+                    val st = s.state.value
+                    if (st.evn != lastEvn) { lastEvn = st.evn; if (st.event.isNotEmpty()) log("MELT event ${st.eventKind}: ${st.event}"); if (st.eventKind == "blast") blasts++ }
+                    if (st.phase == app.coredump.game.MeltPhase.TURN && st.holder == s.myId) {
+                        meltAnswer(model, st)?.let { s.submit(it); answered++ }
+                    }
+                    if (blasts > 0 && t > 20_000) break
+                    if (st.phase == app.coredump.game.MeltPhase.OVER) break
+                    delay(700); t += 700
+                    if (t == 7_000) shot("meltdown_terminal_turns")
+                }
+                log("MELT played answered=$answered blasts=$blasts heat=${s.state.value.heat} round=${s.state.value.round}")
+                shot("meltdown_terminal_late")
+            }
+            model.leaveMelt(s); delay(500)
+        }
+
+        // a party over the real relay: this device hosts, a second (headless) seat joins it with the code
+        model.setTheme(Style.METRO, plan.first { it.first == Style.METRO }.second)
+        model.home(); delay(300)
+        model.go(Screen.Meltdown); delay(600)
+        val host = model.openPartyHost()
+        var w = 0
+        while (!host.lobby.value.open && w < 30_000) { delay(250); w += 250 }
+        log("PARTY host open=${host.lobby.value.open} status=${host.lobby.value.status}")
+        val guest = app.coredump.game.PartyGuest(model.scope, "GUESTBOT", host.room, model.settings.roomBroker)
+        guest.connect()
+        w = 0
+        while (host.lobby.value.players.size < 2 && w < 30_000) { delay(250); w += 250 }
+        log("PARTY seated=${host.lobby.value.players.map { it.name }} guest=${guest.lobby.value.status}")
+        if (host.lobby.value.players.size >= 2) {
+            model.startParty(1, 0); delay(5000)
+            val hs = (model.screen as? Screen.Melt)?.session
+            log("PARTY host phase=${hs?.state?.value?.phase} guest phase=${guest.state.value.phase} guest players=${guest.state.value.players.size} prompt='${guest.state.value.prompt}'")
+            shot("party_metro")
+            // the guest answers when it holds the core; its state must follow the host's
+            var t = 0
+            var gAnswers = 0
+            while (t < 20_000) {
+                val gs = guest.state.value
+                if (gs.phase == app.coredump.game.MeltPhase.TURN && gs.holder == guest.myId) { meltAnswer(model, gs)?.let { guest.submit(it); gAnswers++ } }
+                val me = hs?.state?.value
+                if (hs != null && me != null && me.phase == app.coredump.game.MeltPhase.TURN && me.holder == hs.myId) { meltAnswer(model, me)?.let { hs.submit(it) } }
+                delay(800); t += 800
+            }
+            log("PARTY after guestAnswers=$gAnswers hostSeq=${hs?.state?.value?.seq} guestSeq=${guest.state.value.seq} used=${guest.state.value.used.size} event='${guest.state.value.event}'")
+            guest.leave()
+            if (hs != null) model.leaveMelt(hs)
+        } else {
+            guest.leave()
+        }
+        model.closeParty()
+        model.home(); delay(500)
+    }
+
     suspend fun run(model: AppModel) {
         try {
             log("START")
@@ -173,6 +252,30 @@ object SelfTest {
             model.startDaily(); delay(2000)
             shot("daily_terminal")
             (model.screen as? Screen.Play)?.session?.let { model.abortRun(it) }
+
+            // quit pop-ups in a few looks
+            for (style in listOf(Style.PAPER, Style.CHAT, Style.DESKTOP, Style.METRO)) {
+                model.setTheme(style, plan.first { it.first == style }.second)
+                model.home(); delay(500)
+                model.startSolo(); delay(1500)
+                (model.screen as? Screen.Play)?.session?.let { s ->
+                    s.pause(); model.confirmQuit = true; delay(900)
+                    shot("quit_${style.name.lowercase()}")
+                    model.abortRun(s)
+                }
+            }
+
+            // friends: add one, then the FRIENDS tab of the 1v1 screen
+            model.setTheme(Style.TERMINAL, "amber")
+            model.addFriend("ALEX", "K7Q2-M9XA")
+            app.coredump.ui.screens.LobbyProbe.tab = 2
+            model.home(); delay(400)
+            model.go(Screen.Lobby); delay(1500)
+            shot("friends_terminal")
+            app.coredump.ui.screens.LobbyProbe.tab = 0
+            model.back(); delay(600)
+
+            meltdownChecks(model)
 
             // stress: lookups across many lists (index cache must keep memory flat)
             val all = model.bank.all()

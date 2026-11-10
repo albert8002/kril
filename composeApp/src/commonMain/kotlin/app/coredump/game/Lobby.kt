@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.random.Random
@@ -29,11 +30,27 @@ data class LobbyState(
     val error: String? = null,
     val busy: Boolean = false,
     val via: String? = null,
+    /** The other player's own room code (for the friends list and 1v1 history). */
+    val peerCode: String? = null,
 )
 
-/** Host lobby: open a relay room (or bind a socket), publish the QR ticket, accept exactly one peer. */
+/** Who I last played (name → room code), so the 1v1 record and "add friend" know their code. */
+object PeerBook {
+    private val codes = HashMap<String, String>()
+    fun note(name: String?, code: String?) { if (!name.isNullOrBlank() && !code.isNullOrBlank()) codes[name] = code }
+    fun codeOf(name: String?): String? = name?.let { codes[it] }
+}
+
+/**
+ * Host lobby: open a relay room (or bind a socket), publish the QR ticket, accept exactly one peer.
+ * Relay rooms use [room], my own code that never changes, so the code or QR sent to a friend stays valid: when the
+ * connection drops (the phone left the app, the network changed), the lobby reconnects to the same room by itself.
+ * [onBroker]: the relay that worked (tried first next time, so the QR stays the same too).
+ */
 class HostLobby(private val scope: CoroutineScope, private val myName: String, val mode: LinkMode,
-                private val wrap: (PeerLink) -> PeerLink = { it }) {
+                private val wrap: (PeerLink) -> PeerLink = { it },
+                private val room: String = JoinTicket.newRoom(), private val preferBroker: Int? = null,
+                private val onBroker: (Int) -> Unit = {}) {
     private val _s = MutableStateFlow(LobbyState())
     val state: StateFlow<LobbyState> = _s.asStateFlow()
     private var lanHost: LanHost? = null
@@ -46,23 +63,41 @@ class HostLobby(private val scope: CoroutineScope, private val myName: String, v
     }
 
     private suspend fun openRelay() {
-        _s.value = LobbyState(status = "contacting relay…", busy = true)
-        val room = JoinTicket.newRoom()
-        val (l, broker) = runCatching { RelayLink.open(scope, room, asHost = true, brokerIndex = null) }.getOrElse {
-            _s.value = LobbyState(status = "relay unreachable", error = "no internet, or all relays blocked. ${it.message ?: ""}")
-            return
-        }
-        link = l
-        _s.value = LobbyState(status = "listening", ticket = JoinTicket("", 0, "", myName, room, broker), busy = true, via = l.via)
-        for (m in l.incoming) {
-            if (m is Msg.Hello && m.pin == room) {
-                l.send(Msg.Welcome(myName))
-                link = wrap(l)
-                _s.update { it.copy(status = "peer connected", peer = m.name.ifBlank { "PEER" }, busy = false) }
-                return
+        var broker = preferBroker
+        var failures = 0
+        while (true) {
+            val ticketNow = _s.value.ticket
+            _s.value = LobbyState(status = if (ticketNow == null) "contacting relay…" else "reconnecting… (same code)", ticket = ticketNow, busy = true)
+            // the relay that worked before first (same QR), then any other
+            val opened = runCatching { RelayLink.open(scope, room, asHost = true, brokerIndex = broker) }.getOrNull()
+                ?: runCatching { RelayLink.open(scope, room, asHost = true, brokerIndex = null) }.getOrNull()
+            if (opened == null) {
+                failures++
+                _s.value = LobbyState(status = "relay unreachable · retrying", ticket = ticketNow,
+                    error = "no internet, or all relays blocked. the code stays the same.", busy = true)
+                delay((2_000L * failures).coerceAtMost(15_000L))
+                continue
             }
+            val (l, b) = opened
+            failures = 0
+            broker = b
+            onBroker(b)
+            link = l
+            _s.value = LobbyState(status = "listening", ticket = JoinTicket("", 0, "", myName, room, b), busy = true, via = l.via)
+            for (m in l.incoming) {
+                if (m is Msg.Hello && m.pin == room) {
+                    l.send(Msg.Welcome(myName, room))
+                    link = wrap(l)
+                    PeerBook.note(m.name.ifBlank { "PEER" }, m.me)
+                    _s.update { it.copy(status = "peer connected", peer = m.name.ifBlank { "PEER" }, busy = false, peerCode = m.me.ifBlank { null }) }
+                    return
+                }
+            }
+            // the link dropped before anyone joined (app in the background, network change): same room again
+            link = null
+            if (_s.value.peer != null) return
+            delay(1_000)
         }
-        if (_s.value.peer == null) _s.update { it.copy(status = "relay dropped", error = "connection to relay lost. retry.", busy = false) }
     }
 
     private suspend fun openDirect() {
@@ -86,9 +121,10 @@ class HostLobby(private val scope: CoroutineScope, private val myName: String, v
             val hello = withTimeoutOrNull(10_000) { l.incoming.receiveCatching().getOrNull() }
             if (hello !is Msg.Hello) { l.close(); continue }
             if (hello.pin != pin) { l.send(Msg.Reject("bad pin")); l.close(); continue }
-            l.send(Msg.Welcome(myName))
+            l.send(Msg.Welcome(myName, room))
             link = wrap(l)
-            _s.update { it.copy(status = "peer connected", peer = hello.name.ifBlank { "PEER" }, busy = false) }
+            PeerBook.note(hello.name.ifBlank { "PEER" }, hello.me)
+            _s.update { it.copy(status = "peer connected", peer = hello.name.ifBlank { "PEER" }, busy = false, peerCode = hello.me.ifBlank { null }) }
             return
         }
     }
@@ -113,8 +149,12 @@ class HostLobby(private val scope: CoroutineScope, private val myName: String, v
     }
 }
 
-/** Guest: connect to a ticket (relay room or direct socket), handshake, hand back a session that waits for the host. */
-class GuestJoin(private val scope: CoroutineScope, private val myName: String, private val wrap: (PeerLink) -> PeerLink = { it }) {
+/**
+ * Guest: connect to a ticket (relay room or direct socket), handshake, hand back a session that waits for the host.
+ * A typed code does not say which relay the host is on: the ticket's relay is tried first, then the others.
+ */
+class GuestJoin(private val scope: CoroutineScope, private val myName: String, private val wrap: (PeerLink) -> PeerLink = { it },
+                private val myCode: String = "") {
     private val _s = MutableStateFlow(LobbyState())
     val state: StateFlow<LobbyState> = _s.asStateFlow()
     private var job: Job? = null
@@ -124,30 +164,41 @@ class GuestJoin(private val scope: CoroutineScope, private val myName: String, p
         job = scope.launch {
             val where = if (t.isRelay) "room ${JoinTicket.pretty(t.room!!)}" else "${t.host}:${t.port}"
             _s.value = LobbyState(status = "dialing $where…", ticket = t, busy = true)
-            val link: PeerLink = runCatching {
-                if (t.isRelay) RelayLink.open(scope, t.room!!, asHost = false, brokerIndex = t.broker).first
-                else LanClient.connect(scope, t.host, t.port)
-            }.getOrElse {
-                _s.value = LobbyState(status = "connection failed", ticket = t,
-                    error = if (t.isRelay) "relay unreachable. check internet." else "can't reach host. same Wi-Fi? local network allowed?")
-                return@launch
-            }
             val pin = if (t.isRelay) t.room!! else t.pin
-            // QoS-0 relay: repeat the hello until the host answers (it may subscribe late).
+            // relay: the ticket's relay first, then the others (a typed code carries no relay)
+            val order = if (t.isRelay) (listOf(t.broker) + app.coredump.net.Brokers.all.indices.filter { it != t.broker }) else listOf(-1)
+            var link: PeerLink? = null
             var reply: Msg? = null
-            for (attempt in 0 until 14) {
-                link.send(Msg.Hello(myName, pin))
-                reply = withTimeoutOrNull(1_500) {
-                    var m = link.incoming.receiveCatching().getOrNull()
-                    while (m != null && m !is Msg.Welcome && m !is Msg.Reject) m = link.incoming.receiveCatching().getOrNull()
-                    m
+            for ((n, b) in order.withIndex()) {
+                val l: PeerLink = runCatching {
+                    if (t.isRelay) RelayLink.open(scope, t.room!!, asHost = false, brokerIndex = b).first
+                    else LanClient.connect(scope, t.host, t.port)
+                }.getOrNull() ?: continue
+                // QoS-0 relay: repeat the hello until the host answers (it may subscribe late)
+                val tries = if (n == 0) 10 else 6
+                for (attempt in 0 until tries) {
+                    l.send(Msg.Hello(myName, pin, me = myCode))
+                    reply = withTimeoutOrNull(1_500) {
+                        var m = l.incoming.receiveCatching().getOrNull()
+                        while (m != null && m !is Msg.Welcome && m !is Msg.Reject) m = l.incoming.receiveCatching().getOrNull()
+                        m
+                    }
+                    if (reply != null) break
+                    _s.update { it.copy(status = "waiting for host… (${attempt + 1}${if (order.size > 1) " · relay ${n + 1}/${order.size}" else ""})") }
                 }
-                if (reply != null) break
-                _s.update { it.copy(status = "waiting for host… (${attempt + 1})") }
+                if (reply != null) { link = l; break }
+                l.close()
+            }
+            if (link == null) {
+                _s.value = LobbyState(status = "no answer", ticket = t,
+                    error = if (t.isRelay) "host not found. is the host screen open? (codes stay the same, try again)"
+                    else "can't reach host. same Wi-Fi? local network allowed?")
+                return@launch
             }
             when (reply) {
                 is Msg.Welcome -> {
-                    _s.value = LobbyState(status = "linked", ticket = t, peer = reply.hostName, via = link.via)
+                    PeerBook.note(reply.hostName, reply.me.ifBlank { t.room })
+                    _s.value = LobbyState(status = "linked", ticket = t, peer = reply.hostName, via = link.via, peerCode = reply.me.ifBlank { t.room })
                     val session = GuestSession(wrap(link), myName, reply.hostName, scope)
                     session.start()
                     onJoined(session)

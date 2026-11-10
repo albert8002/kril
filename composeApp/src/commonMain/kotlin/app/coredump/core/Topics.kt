@@ -184,7 +184,7 @@ object Topics {
         "wf.occ.sculptor", "wf.occ.cartoonist", "wf.occ.fashiondesigner", "wf.occ.chemist",
         "wx.an.bat", "wx.an.bovid", "wx.an.mustelid", "wx.an.monkey", "wx.an.woodpecker", "wx.an.hummingbird", "wx.an.salmonid",
         "wx.an.gull", "wx.an.heron", "wx.pl.peninsula", "wx.pl.bay", "wx.pl.cave", "wx.th.rock", "wx.th.ballet", "wx.th.radio",
-        "wx.job.", "wx.nx.",
+        "wx.job.", "wx.nx.", "wx.sc.by.", "wx.bk.by.philosopher.", "wx.bk.by.architect.", "wx.bk.by.poet.", "wx.wo.end.",
     )
     private val broadJobs = setOf(
         "wx.job.singersongwriter", "wx.job.voiceactor", "wx.job.entrepreneur", "wx.job.CEO", "wx.job.monarch",

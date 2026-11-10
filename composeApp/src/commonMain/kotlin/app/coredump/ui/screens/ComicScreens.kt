@@ -78,6 +78,7 @@ private fun comicLabel(key: String, fallback: String) = when (key) {
     "daily" -> "DAILY HIT"
     "solo" -> "SOLO"
     "duel" -> "1V1 BRAWL"
+    "party" -> "FREE-FOR-ALL"
     "stats" -> "SCORECARD"
     "browse" -> "THE LISTS"
     "theme" -> "RESTYLE"

@@ -14,6 +14,7 @@ import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
@@ -67,6 +68,15 @@ data class Settings(
     val hyper: Set<String> = emptySet(),
     /** The travel animation when points are scored (accelerate, count, slow down). */
     val scoreRuns: Boolean = true,
+    /** My own online room code (made once, kept): hosting always uses it, so a code sent to friends stays valid. */
+    val room: String = "",
+    /** Relay that last worked for [room]. */
+    val roomBroker: Int = 0,
+    /** Friends: people I played or added by code. */
+    val friends: List<Friend> = emptyList(),
+    /** MELTDOWN games finished / won. */
+    val meltGames: Int = 0,
+    val meltWins: Int = 0,
 ) {
     fun gameConfig() = GameConfig(rounds, seconds, difficulty, topics, niche)
 }
@@ -115,6 +125,17 @@ object SettingsStore {
             fetchCount = (i("fetchCount") ?: d.fetchCount).coerceIn(1, 200),
             shareLists = b("shareLists") ?: d.shareLists,
             hyper = list("hyper")?.toSet() ?: d.hyper,
+            room = s("room")?.takeIf { r -> r.length == app.coredump.net.JoinTicket.ROOM_LEN } ?: d.room,
+            roomBroker = o["roomBroker"]?.jsonPrimitive?.intOrNull ?: d.roomBroker,
+            meltGames = o["meltGames"]?.jsonPrimitive?.intOrNull ?: d.meltGames,
+            meltWins = o["meltWins"]?.jsonPrimitive?.intOrNull ?: d.meltWins,
+            friends = o["friends"]?.jsonArray?.mapNotNull { el ->
+                runCatching {
+                    val f = el.jsonObject
+                    Friend(f["n"]?.jsonPrimitive?.contentOrNull.orEmpty().take(24), f["c"]?.jsonPrimitive?.contentOrNull.orEmpty(),
+                        f["at"]?.jsonPrimitive?.longOrNull ?: 0L)
+                }.getOrNull()?.takeIf { it.name.isNotBlank() }
+            } ?: d.friends,
             scoreRuns = b("scoreRuns") ?: d.scoreRuns,
             custom = o["custom"]?.jsonObject?.mapNotNull { (k, v) ->
                 runCatching {
@@ -161,6 +182,11 @@ object SettingsStore {
             put("fetchCount", s.fetchCount)
             put("shareLists", s.shareLists)
             put("hyper", JsonArray(s.hyper.map { JsonPrimitive(it) }))
+            put("room", s.room)
+            put("roomBroker", s.roomBroker)
+            put("meltGames", s.meltGames)
+            put("meltWins", s.meltWins)
+            put("friends", JsonArray(s.friends.map { f -> buildJsonObject { put("n", f.name); put("c", f.code); put("at", f.at) } }))
             put("scoreRuns", s.scoreRuns)
             put("custom", buildJsonObject {
                 for ((k, c) in s.custom) if (!c.isDefault) put(k, buildJsonObject {
@@ -185,7 +211,12 @@ data class RunRecord(
     val daily: Int?,
     val opponent: String?,
     val oppPoints: Int?,
+    /** The opponent's room code (1v1), when they sent it. */
+    val oppCode: String? = null,
 )
+
+/** A friend: shown name, their room code (blank if unknown: added before codes were exchanged), when added. */
+data class Friend(val name: String, val code: String, val at: Long)
 
 /** Run history (for stats), recently played prompt ids (to avoid repeats), best score. */
 object History {
@@ -218,6 +249,7 @@ object History {
                         daily = r["d"]?.jsonPrimitive?.intOrNull,
                         opponent = r["o"]?.jsonPrimitive?.contentOrNull,
                         oppPoints = r["op"]?.jsonPrimitive?.intOrNull,
+                        oppCode = r["oc"]?.jsonPrimitive?.contentOrNull,
                     )
                 }.getOrNull()
             }.orEmpty()
@@ -243,12 +275,13 @@ object History {
         opponent: String? = null,
         oppPoints: Int? = null,
         points: Int = tiers.sumOf { it.points },
+        oppCode: String? = null,
     ) {
         recent = (promptIds + recent).distinct().take(KEEP_IDS)
         // a daily run counts once: replays of the same day are not recorded as daily
         val d = if (daily != null && playedDaily(daily) == null) daily else null
         val rec = RunRecord(Platform.epochMillis(), if (daily != null && d == null) "solo" else mode,
-            points, tiers, topics, d, opponent, oppPoints)
+            points, tiers, topics, d, opponent, oppPoints, oppCode)
         runs = (listOf(rec) + runs).take(KEEP_RUNS)
         save()
     }
@@ -265,6 +298,7 @@ object History {
                     r.daily?.let { put("d", it) }
                     r.opponent?.let { put("o", it) }
                     r.oppPoints?.let { put("op", it) }
+                    r.oppCode?.let { put("oc", it) }
                 }
             }))
         }
