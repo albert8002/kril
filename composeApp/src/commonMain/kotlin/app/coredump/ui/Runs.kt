@@ -86,6 +86,7 @@ private object Words {
     /** Points between two marks on the track (0 = no marks). */
     fun every(s: Style): Int = when (s) {
         Style.ABYSS -> 25
+        Style.CLEAN -> 2
         Style.JACKPOT, Style.DESKTOP -> 0
         else -> 10
     }
@@ -130,7 +131,7 @@ private object Words {
         Style.ABYSS -> "${k * 50} m"
         Style.PAPER -> "EDITION No. ${k + 1}"
         Style.NEON -> "${k * 10}"
-        Style.CLEAN -> "${k * 10}"
+        Style.CLEAN -> "${k * 2}"
         Style.COMIC -> booms[k % booms.size]
         Style.METRO -> stations[k % stations.size]
         Style.ORACLE -> arcana[k % arcana.size]
@@ -380,7 +381,7 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
             for ((k, d) in marks(s, f, h / ppp)) {
                 if (k == 0) continue
                 val y = h * 0.42f - d * ppp
-                val near = (1f - abs(d) / 10f).coerceIn(0f, 1f)
+                val near = (1f - abs(d) / 2f).coerceIn(0f, 1f)
                 val pw = w * (0.5f + 0.08f * near)
                 val ph = 40.dp.toPx()
                 drawRoundRect(lerp(ink.panel, ink.hot, near * 0.8f), Offset(w / 2f - pw / 2f, y - ph / 2f), Size(pw, ph), CornerRadius(ph / 2f))
@@ -394,7 +395,7 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
             for (i in 0 until 4) {
                 val sd = seeds[i]
                 val x = snap(w - ((sd[0] * w + scroll * 0.2f) % (w + 120.dp.toPx())))
-                val y = snap(h * (0.12f + 0.15f * sd[1]))
+                val y = snap(h * (0.22f + 0.12f * sd[1]))
                 drawRect(ink.amber.copy(alpha = 0.18f), Offset(x, y), Size(snap(60.dp.toPx()), snap(16.dp.toPx())))
             }
             val ground = snap(h * 0.72f)
@@ -407,15 +408,17 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
                 val bob = if (((f.sec * 4f).toInt() % 2) == 0) 0f else g
                 drawRect(tint(ink, ink.hot, 3, 1f), Offset(cx - g, ground - g * 8 - bob), Size(g * 2, g * 3))
             }
-            // hero (blocky): legs swap with distance
+            // hero (blocky, 2× pixels): legs swap with distance, dust behind when fast
             val hx = snap(w * 0.3f)
-            val step = ((scroll / (g * 6)).toInt() % 2 == 0)
+            val b = g * 2
+            val step = ((scroll / (b * 4)).toInt() % 2 == 0)
             val c = ink.amber
-            drawRect(c, Offset(hx - g * 2, ground - g * 10), Size(g * 4, g * 4))      // head
-            drawRect(c, Offset(hx - g * 2, ground - g * 6), Size(g * 4, g * 3))       // body
-            drawRect(c, Offset(hx - g * (if (step) 2 else 1), ground - g * 3), Size(g, g * 3))
-            drawRect(c, Offset(hx + g * (if (step) 1 else 0), ground - g * 3), Size(g, g * 3))
-            if (f.v > 0.4f) for (i in 1..3) drawRect(c.copy(alpha = 0.3f), Offset(hx - g * (4 + i * 3), ground - g * (4 + i)), Size(g * 2, g))
+            drawRect(c, Offset(hx - b * 2, ground - b * 10), Size(b * 4, b * 4))      // head
+            drawRect(ink.bg, Offset(hx + b, ground - b * 9), Size(b, b))               // eye
+            drawRect(c, Offset(hx - b * 2, ground - b * 6), Size(b * 4, b * 3))       // body
+            drawRect(c, Offset(hx - b * (if (step) 2 else 1), ground - b * 3), Size(b, b * 3))
+            drawRect(c, Offset(hx + b * (if (step) 1 else 0), ground - b * 3), Size(b, b * 3))
+            if (f.v > 0.4f) for (i in 1..3) drawRect(c.copy(alpha = 0.3f), Offset(hx - b * (3 + i * 2), ground - b * (1 + i)), Size(b, b))
             // XP bar
             val frac = (f.value % 100f) / 100f
             drawRect(ink.amber, Offset(w * 0.1f, h * 0.08f), Size(w * 0.8f, g * 4), style = Stroke(g / 2))
@@ -552,7 +555,7 @@ private fun DrawScope.overlay(s: Style, f: Frame, ink: Ink, tm: TextMeasurer, ti
         }
     }
     // the gain, then where we are and the tier on arrival
-    say(tm, Words.gain(s, f.gain), w / 2f, cy + 58.dp.toPx(), st(ink, 18.sp, ink.tier), (f.e / 300f).coerceIn(0f, 1f))
+    say(tm, Words.gain(s, f.gain), w / 2f, cy + 58.dp.toPx(), st(ink, 18.sp, if (s == Style.PIXEL) ink.amber else ink.tier), (f.e / 300f).coerceIn(0f, 1f))
     if (f.arrive > 0f) {
         val a = f.arrive
         say(tm, Words.place(s, f.from + f.gain.toFloat(), f.max), w / 2f, cy + 96.dp.toPx() + 10.dp.toPx() * (1f - a), st(ink, 16.sp, ink.white), a)
