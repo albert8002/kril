@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
@@ -628,7 +629,7 @@ private fun DrawScope.reels(f: Frame, ink: Ink, tm: TextMeasurer) {
             val frac = roll - d0
             val style = st(ink, 40.sp, Color(0xFF1A1A1A), display = true)
             val blur = (f.v * (if (place == 0) 1f else 0.5f)).coerceIn(0f, 1f)
-            androidx.compose.ui.graphics.drawscope.clipRect(x, cy - rh / 2f, x + rw, cy + rh / 2f) {
+            clipRect(x, cy - rh / 2f, x + rw, cy + rh / 2f) {
                 for (k in -1..1) {
                     val digit = ((d0 + k) % 10 + 10) % 10
                     val y = cy + (k - frac) * rh * 0.8f
