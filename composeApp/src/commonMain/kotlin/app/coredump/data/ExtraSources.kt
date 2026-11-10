@@ -35,6 +35,7 @@ object ExtraSources {
     private const val DATAMUSE = "https://api.datamuse.com/words"
     private const val DEEZER = "https://api.deezer.com"
     private const val STEAMSPY = "https://steamspy.com/api.php"
+    private const val STEAM_ON = false
     private const val OPENLIB = "https://openlibrary.org/subjects"
     private const val POKEAPI = "https://pokeapi.co/api/v2"
 
@@ -46,7 +47,7 @@ object ExtraSources {
     private val synonyms = listOf(
         "big", "small", "fast", "happy", "sad", "angry", "smart", "stupid", "beautiful", "ugly", "good", "bad", "strange",
         "scared", "tired", "funny", "rich", "poor", "cold", "hot", "old", "new", "loud", "quiet", "brave", "lazy", "crazy",
-        "dirty", "clean", "walk", "run", "talk", "eat", "look", "steal",
+        "dirty", "clean", "walk", "run", "talk", "eat", "look",
     )
     private val endings = listOf("ology", "graphy", "cracy", "itis", "phobia", "ism", "archy", "scope", "meter", "cide", "onomy", "ship", "hood", "ware")
     private val artists = listOf(
@@ -93,7 +94,8 @@ object ExtraSources {
             for (w in synonyms) add(Item("wx.wo.syn.$w", "Name a word that means “$w”", "WORDS", Kind.SYNONYM, w))
             for (e in endings) add(Item("wx.wo.end.$e", "Name a word ending in “-$e”", "WORDS", Kind.ENDING, e))
             for (a in artists) add(Item("wx.mu.dz.${slug(a)}", "Name a song by $a", "MUSIC", Kind.DEEZER, a))
-            for ((tag, words) in steamTags) add(Item("wx.gm.steam.${slug(tag)}", "Name a $words video game", "GAMING", Kind.STEAM, tag))
+            // SteamSpy's tag lists came back empty in CI (Nov 2026): kept in code, not offered
+            if (STEAM_ON) for ((tag, words) in steamTags) add(Item("wx.gm.steam.${slug(tag)}", "Name a $words video game", "GAMING", Kind.STEAM, tag))
             for ((sub, prompt) in subjects) add(Item("wx.bk.ol.${slug(sub)}", prompt, "BOOKS", Kind.BOOKS, sub))
             for (t in types) add(Item("wx.gm.poke.$t", "Name a ${t.replaceFirstChar { it.uppercase() }}-type Pokémon", "GAMING", Kind.POKEMON, t))
         }
@@ -124,8 +126,12 @@ object ExtraSources {
             Kind.SYNONYM -> words(get("$DATAMUSE?rel_syn=${enc(x.key)}&md=f&max=1000"), x.key)
             Kind.ENDING -> words(get("$DATAMUSE?sp=*${enc(x.key)}&md=f&max=1000"), x.key).filter { it.name.length > x.key.length + 1 }
             Kind.DEEZER -> {
-                val found = json.parseToJsonElement(get("$DEEZER/search/artist?q=${enc(x.key)}&limit=1")).jsonObject["data"]?.jsonArray
-                val id = found?.firstOrNull()?.jsonObject?.get("id")?.jsonPrimitive?.longOrNull ?: return null
+                val found = json.parseToJsonElement(get("$DEEZER/search/artist?q=${enc(x.key)}&limit=8")).jsonObject["data"]?.jsonArray.orEmpty()
+                    .mapNotNull { it as? JsonObject }
+                // the artist with exactly this name and the most fans (a search for "Queen" also finds "Queen Naija")
+                val best = found.filter { it.str("name").equals(x.key, ignoreCase = true) }
+                    .maxByOrNull { it["nb_fan"]?.jsonPrimitive?.longOrNull ?: 0L } ?: found.firstOrNull()
+                val id = best?.get("id")?.jsonPrimitive?.longOrNull ?: return null
                 val rows = ArrayList<Pair<String, Long>>()
                 var url: String? = "$DEEZER/artist/$id/top?limit=100"
                 var pages = 0
@@ -155,6 +161,8 @@ object ExtraSources {
                 o["works"]?.jsonArray.orEmpty().mapNotNull { el ->
                     val w = el.jsonObject
                     val title = w.str("title")?.trim()?.takeIf { it.length in 2..70 } ?: return@mapNotNull null
+                    // Latin script only (a work listed under "Ἰλιάς" is not typed that way)
+                    if (title.any { c -> c.code in 0x0370..0x052F || c.code in 0x0590..0x06FF || c.code >= 0x3000 }) return@mapNotNull null
                     val eds = w["edition_count"]?.jsonPrimitive?.intOrNull ?: 0
                     if (eds < 3) null else title to eds
                 }.sortedByDescending { it.second }.map { RawAnswer(it.first) }

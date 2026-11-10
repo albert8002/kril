@@ -86,7 +86,7 @@ fun ManualScreen(model: AppModel) {
                     "WIKIDATA · ranked lists. rarity = how many Wikipedias cover the answer.",
                     "WIKIPEDIA · \"List of …\" pages, ranked the same way.",
                     "REMOTE · any JSON pack URL you add in settings.",
-                    "MORE · rhymes, synonyms and word endings (Datamuse), top songs per artist (Deezer), games per Steam tag (SteamSpy), books per subject (Open Library), Pokémon per type (PokéAPI), famous people by job and nationality (Wikidata).",
+                    "MORE · rhymes, synonyms and word endings (Datamuse), top songs per artist (Deezer), books per subject (Open Library), Pokémon per type (PokéAPI), famous people by job and nationality (Wikidata).",
                     "hundreds of lists ship inside the app. about 30 more are downloaded each day; tap FETCH MORE LISTS for more.",
                 )) TText(l, size = 11.sp, color = C.amber)
             }
