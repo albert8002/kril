@@ -216,6 +216,21 @@ private fun PartyHostPane(model: AppModel) {
         }
         if (lobby.players.size < 2) TText("waiting for friends… or add bots below.", size = 11.sp, color = C.dim)
     }
+    if (s.friends.isNotEmpty()) {
+        Spacer(Modifier.height(12.dp))
+        Panel(Th.say("INVITE", "Invite friends")) {
+            for (f in s.friends.sortedBy { it.name.lowercase() }) {
+                val seated = lobby.players.any { it.name.equals(f.name, ignoreCase = true) }
+                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TText(f.name, Modifier.weight(1f), size = 14.sp, weight = FontWeight.Bold)
+                    if (seated) TText("seated", size = 11.sp, color = C.hot)
+                    else TLink("invite", { model.inviteFriend(f, "party") }, color = C.hot)
+                }
+            }
+            InviteStatus(model, "party")
+            TText("they get a pop-up in the app (it must be open) and sit down with one tap.", size = 10.sp, color = C.dim)
+        }
+    }
     Spacer(Modifier.height(12.dp))
     val maxBots = (Meltdown.MAX_PLAYERS - lobby.players.size).coerceAtLeast(0)
     TText("add bots", size = 12.sp, color = C.dim)

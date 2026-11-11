@@ -220,6 +220,7 @@ sealed class Msg {
             put("c", p.canonical?.let { JsonPrimitive(it) } ?: JsonNull)
             put("t", p.tier.name); put("ms", p.elapsedMs)
             if (p.penalty != 0) put("pen", p.penalty)
+            p.note?.let { put("n", it) }
         }
 
         private fun unplay(o: JsonObject): PlayView = PlayView(
@@ -229,6 +230,7 @@ sealed class Msg {
             tier = Tier.byName(o["t"]?.jsonPrimitive?.contentOrNull.orEmpty()) ?: Tier.SEGFAULT,
             elapsedMs = o["ms"]?.jsonPrimitive?.long ?: 0L,
             penalty = o["pen"]?.jsonPrimitive?.intOrNull ?: 0,
+            note = o["n"]?.jsonPrimitive?.contentOrNull,
         )
     }
 }

@@ -39,9 +39,12 @@ class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Bo
                     val vc = Norm.compact(v)
                     if (vc.length >= 5 && seenCompact.add(vc)) { fuzzyKeys += vc; fuzzyEntry += i }
                 }
+                // people: a surname alone counts only spelled exactly ("Jordan", never "Jordon");
+                // two-word forms ("van gogh", "john kennedy") may have a typo
                 if (people) for (v in Lenient.surnameForms(raw)) {
                     addExact(v, i)
-                    if (v.length >= 5 && seenCompact.add(v)) { fuzzyKeys += v; fuzzyEntry += i }
+                    val vc = Norm.compact(v)
+                    if (' ' in v && vc.length >= 5 && seenCompact.add(vc)) { fuzzyKeys += vc; fuzzyEntry += i }
                 }
             }
         }
@@ -102,8 +105,9 @@ class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Bo
      */
     fun suggest(input: String): Hit? {
         val qc = Norm.compact(Norm.key(input))
-        if (qc.length < 3) return null
-        return nearest(qc, (qc.length / 3).coerceIn(1, 3), allowExact = false)
+        val bound = SuggestRules.typos(qc.length)
+        if (bound <= 0) return null
+        return nearest(qc, bound, allowExact = false)
     }
 
     /**
@@ -118,9 +122,15 @@ class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Bo
      */
     fun suggestions(input: String, max: Int, promptWords: Set<String> = emptySet()): List<Int> {
         val out = LinkedHashSet<Int>()
-        suggest(input)?.let { out += it.entry }
+        suggest(input)?.let { if (offerable(input, it.entry)) out += it.entry }
         if (out.size < max) for (e in wordMatches(input, promptWords)) { if (out.size >= max) break; out += e }
         return out.toList()
+    }
+
+    /** [SuggestRules.allowed] for any name of entry [e]. */
+    private fun offerable(input: String, e: Int): Boolean {
+        val en = entries[e]
+        return SuggestRules.allowed(input, en.name, people) || en.aliases.any { SuggestRules.allowed(input, it, people) }
     }
 
     /** Words of every name and alias, and their initials (built on the first miss that needs them). */
@@ -179,6 +189,8 @@ class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Bo
                 if (lv < (best[e] ?: 9)) best[e] = lv
             }
         }
+        // never a longer name from one or two words, never a name without the typed words (see SuggestRules)
+        best.keys.retainAll { offerable(input, it) }
         if (best.isEmpty()) return emptyList()
         if (best.size > VAGUE) return best.keys.sorted().take(VAGUE_SHOWN)
         return best.entries.sortedWith(compareBy({ it.value }, { it.key })).map { it.key }
@@ -234,12 +246,65 @@ class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Bo
         /** Words too common to suggest from on their own. */
         private val fillers = setOf("the", "and", "of", "for", "with", "from", "les", "los", "las", "der", "die", "das",
             "des", "del", "della", "von", "van", "une", "una", "uno")
-        /** Allowed typos by input length (compact form). */
+        /** Allowed typos by input length (compact form): none up to 4 letters, 1 up to 7, then 2. */
         fun toleranceFor(len: Int): Int = when {
-            len <= 3 -> 0
-            len <= 5 -> 1
+            len <= 4 -> 0
+            len <= 7 -> 1
             else -> 2
         }
+    }
+}
+
+/**
+ * Which names may be offered as "did you mean" for a typed answer:
+ *  - the name must hold every typed word, in order: the same word, a typo of it (words of 5+ letters), or for the last
+ *    typed word its start (4+ letters) — "long" never brings up a name without "long";
+ *  - a name with more words than were typed only from 3 typed words on: "robin" never brings up "The Batman and Robin
+ *    Adventures", "batman and robin" may;
+ *  - or the whole name is the typed text with a typo or two ("beatls" → "The Beatles", "spidermn" → "Spider-Man"),
+ *  - or the typed text is the name's initials, 3+ letters ("lotr"),
+ *  - people: one typed word only when it is exactly the surname.
+ */
+object SuggestRules {
+    /** Typos allowed when comparing a whole name (compact length): none up to 4 letters, then 1, 2 from 8, 3 from 12. */
+    fun typos(len: Int): Int = when {
+        len <= 4 -> 0
+        len <= 7 -> 1
+        len <= 11 -> 2
+        else -> 3
+    }
+
+    fun words(s: String): List<String> = Norm.key(s).split(' ').filter { it.isNotEmpty() }
+
+    private fun wordOk(typed: String, word: String, last: Boolean): Boolean = when {
+        typed == word -> true
+        typed.length >= 5 && Edits.osa(typed, word, 1) <= 1 -> true
+        typed.length >= 9 && Edits.osa(typed, word, 2) <= 2 -> true
+        last && typed.length >= 4 && word.length > typed.length && word.startsWith(typed) -> true
+        else -> false
+    }
+
+    fun allowed(typed: String, name: String, people: Boolean = false): Boolean {
+        val t = words(typed)
+        val o = words(name)
+        if (t.isEmpty() || o.isEmpty()) return false
+        val tc = t.joinToString("")
+        val oc = o.joinToString("")
+        // the whole name, misspelt
+        val tol = typos(tc.length)
+        if (tol > 0 && Edits.osa(tc, oc, tol) <= tol) return true
+        // initials ("lotr", "gta5")
+        if (t.size == 1 && tc.length >= 3 && o.size >= 3 && tc in Lenient.initials(name)) return true
+        if (people && t.size == 1) return o.size >= 2 && o.last() == t[0]
+        // longer names only from three typed words on
+        if (o.size > t.size && t.size < 3) return false
+        var j = 0
+        for ((i, w) in t.withIndex()) {
+            while (j < o.size && !wordOk(w, o[j], i == t.size - 1)) j++
+            if (j >= o.size) return false
+            j++
+        }
+        return true
     }
 }
 

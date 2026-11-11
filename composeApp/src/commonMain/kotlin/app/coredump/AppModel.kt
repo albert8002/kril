@@ -84,6 +84,13 @@ class AppModel(val scope: CoroutineScope) {
     var confirmLeaveMelt by mutableStateOf(false)
     private var partyWatch: Job? = null
 
+    /** Invites waiting for an answer (each shown as a pop-up with accept / decline). */
+    val invites = androidx.compose.runtime.mutableStateListOf<app.coredump.game.Invite>()
+    /** The invite I am sending right now (status shown on the friends list). */
+    var inviting by mutableStateOf<app.coredump.game.Inviter?>(null)
+        private set
+    private val inbox = app.coredump.game.Inbox(scope, { myRoom() }, { settings.roomBroker }) { inv -> onInvite(inv) }
+
     init {
         History.load()
         app.coredump.ui.Th.set(app.coredump.ui.Style.byName(settings.theme), settings.palette)
@@ -93,6 +100,70 @@ class AppModel(val scope: CoroutineScope) {
         app.coredump.ui.Sfx.configure(settings.sound, settings.volume)
         app.coredump.ui.Music.configure(settings.music, settings.musicVolume,
             app.coredump.ui.Style.byName(if (settings.song == "MATCH") settings.theme else settings.song))
+        // listen for invites while the app is open
+        scope.launch { kotlinx.coroutines.delay(1_500); inbox.start() }
+    }
+
+    // ------------------------------------------------------------------ invites
+
+    private fun onInvite(inv: app.coredump.game.Invite) {
+        // one pop-up per person and game: a newer invite replaces an older one
+        invites.removeAll { it.code == inv.code && it.mode == inv.mode }
+        invites += inv
+        app.coredump.ui.Sfx.play(app.coredump.ui.Cue.RANK)
+        scope.launch {
+            kotlinx.coroutines.delay(90_000)
+            invites.remove(inv)
+        }
+    }
+
+    /** Invites [f] to my 1v1 room ("duel", opens my host screen) or my MELTDOWN party ("party"). */
+    fun inviteFriend(f: app.coredump.data.Friend, mode: String) {
+        if (f.code.length != app.coredump.net.JoinTicket.ROOM_LEN) { toast = "no code for ${f.name} yet"; return }
+        inviting?.cancel()
+        if (mode == "party") openPartyHost() else openHost(LinkMode.RELAY)
+        val inv = app.coredump.game.Inviter(scope, f.name, f.code, settings.handle.ifBlank { "A FRIEND" }, myRoom(), settings.roomBroker, mode)
+        inviting = inv
+        inv.send()
+        scope.launch {
+            inv.status.collect { st ->
+                if (inviting !== inv) return@collect
+                when (st) {
+                    app.coredump.game.Inviter.Status.ACCEPTED -> { toast = "${f.name} accepted: joining you…" }
+                    app.coredump.game.Inviter.Status.DECLINED -> { toast = "${f.name} declined" }
+                    app.coredump.game.Inviter.Status.NO_ANSWER -> { toast = "no answer from ${f.name} (is the app open?)" }
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    fun acceptInvite(inv: app.coredump.game.Invite) {
+        invites.removeAll { it.mode == inv.mode || it == inv }
+        inbox.answer(inv, true)
+        // leave whatever is running
+        when (val cur = screen) {
+            is Screen.Play -> { confirmQuit = false; cur.session.quit() }
+            is Screen.Melt -> { confirmLeaveMelt = false; cur.session.leave() }
+            else -> {}
+        }
+        closeParty()
+        closeLobbies()
+        stack.clear()
+        screen = Screen.Menu
+        if (inv.mode == "party") {
+            go(Screen.Meltdown)
+            joinParty(app.coredump.net.JoinTicket("", 0, "", inv.from, inv.code, inv.broker).toUri(), inv.from)
+        } else {
+            app.coredump.ui.screens.LobbyProbe.tab = 1
+            go(Screen.Lobby)
+            openGuest().connect(app.coredump.net.JoinTicket("", 0, "", inv.from, inv.code, inv.broker)) { s -> joined(s) }
+        }
+    }
+
+    fun declineInvite(inv: app.coredump.game.Invite) {
+        invites.remove(inv)
+        inbox.answer(inv, false)
     }
 
     fun go(s: Screen, push: Boolean = true) {

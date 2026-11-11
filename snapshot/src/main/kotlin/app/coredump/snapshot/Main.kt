@@ -84,6 +84,28 @@ fun main(args: Array<String>) {
             WikidataTemplates.parse(t, get("${WikiNet.WDQS}?format=json&query=${enc(WikidataTemplates.query(t))}",
                 "application/sparql-results+json"))
         }.onFailure { log("SEARCH list $id failed: ${it.message?.take(100)}") }.getOrNull()
+        // the measurements the app takes for a found answer (FameCheck), and the tier they give (FameScore)
+        fun fame(p: Prompt, input: String, label: String, qid: String, links: Int, shared: Int): String {
+            val fc = app.coredump.data.FameCheck
+            fun url(u: String): String? = runCatching { get(u) }.getOrNull()
+            val kind = app.coredump.core.FameScore.extraKind(p.topic, p.text, p.people)
+            val title = api(WikiNet.WD_API, fc.titleParams(qid))?.let { fc.parseTitle(it, qid) }
+            val views = if (title == null) 0 else url(fc.pageviewsUrl(title, System.currentTimeMillis()))?.let { fc.parsePageviews(it) } ?: -1
+            val mentions = api(WikiNet.WP_API, fc.hitsParams(label, true))?.let { fc.parseHits(it) } ?: -1
+            val word = app.coredump.core.Norm.key(input)
+            val wordHits = if (' ' in word) -1 else api(WikiNet.WP_API, fc.hitsParams(word, false))?.let { fc.parseHits(it) } ?: -1
+            val extra = when (kind) {
+                "fans" -> url(fc.deezerArtistUrl(label))?.let { fc.parseDeezerFans(it, label) }
+                "rank" -> url(fc.deezerTrackUrl(label))?.let { fc.parseDeezerRank(it, label) }
+                "readers" -> url(fc.openLibraryUrl(label))?.let { fc.parseReaders(it, label) }
+                "weight" -> url(fc.tvmazeUrl(label))?.let { fc.parseTvWeight(it, label) }
+                else -> null
+            } ?: -1
+            val f = app.coredump.core.Fame(links, views, mentions, extra, kind, shared, wordHits)
+            val t = app.coredump.core.FameScore.tier(f, p.topic)
+            log("FAME ${p.topic.padEnd(12)} ${label.take(28).padEnd(28)} -> ${t.name.padEnd(11)} ${app.coredump.core.FameScore.note(f, p.topic)}")
+            return " ${t.name} (+${t.points})"
+        }
         fun outcome(p: Prompt, input: String): String {
             val term = input.trim().take(80)
             val es = api(WikiNet.WD_API, app.coredump.data.AnswerCheck.entityParams(term))
@@ -101,7 +123,7 @@ fun main(args: Array<String>) {
             val cands = app.coredump.data.AnswerCheck.candidates(term, p.people, es, tl, sr, words) +
                 cls?.matches.orEmpty().map { app.coredump.data.AnswerCheck.Candidate(it.names, it.qid) }
             app.coredump.data.AnswerCheck.listed(p, cands)?.let { return "LISTED(${it.name})" }
-            cls?.matches?.firstOrNull()?.let { return "FOUND(${it.label}, ${it.links} links, class search)" }
+            cls?.matches?.firstOrNull()?.let { return "FOUND(${it.label}, ${it.links} links, class search)" + fame(p, term, it.label, it.qid, it.links, cls.matches.size) }
             val near = cls?.near.orEmpty().let { if (it.isEmpty()) "" else " near=$it" }
             val where = p.check ?: return "MISSING(no class)"
             val qids = app.coredump.data.AnswerCheck.qids(cands)
@@ -110,8 +132,9 @@ fun main(args: Array<String>) {
             val body = runCatching {
                 postForm(WikiNet.WDQS, mapOf("query" to app.coredump.data.AnswerCheck.memberQuery(where, qids), "format" to "json"))
             }.getOrElse { return "UNREACHABLE(member ${it.message?.take(60)})" }
-            val m = app.coredump.data.AnswerCheck.parseMember(body) ?: return "MISSING(${qids.size} checked: $seen$near)"
-            return "FOUND(${m.label ?: m.qid}, ${m.links} links)"
+            val ms = app.coredump.data.AnswerCheck.parseMembers(body)
+            val m = ms.firstOrNull() ?: return "MISSING(${qids.size} checked: $seen$near)"
+            return "FOUND(${m.label ?: m.qid}, ${m.links} links)" + fame(p, term, m.label ?: term, m.qid, m.links, ms.size)
         }
         // small lists (limit) so that well-known answers can also be missing from the list and need the class check
         val cases = listOf(
@@ -138,6 +161,15 @@ fun main(args: Array<String>) {
                 listOf("Jordan", "Shaq", "Lebron"), listOf("LISTED", "LISTED", "LISTED")),
             Triple(prompt("t.frcity", "Name a city in France", "?item wdt:P31 wd:Q484170 ; wdt:P17 wd:Q142 .", 30),
                 listOf("Marseilles", "Pezenas", "Paris Hilton", "Carcassonne"), listOf("ANY", "ANY", "MISSING", "ANY")),
+            // found answers are scored by measured fame (FAME lines): famous ones low, niche ones high, guesses lowered
+            Triple(prompt("t.singer", "Name a famous singer", "?item wdt:P31 wd:Q5 ; wdt:P106 wd:Q177220 .", 40, 80),
+                listOf("Smith", "Chappell Roan", "Phoebe Bridgers", "Jorja Smith", "Smiht"), listOf("ANY", "ANY", "ANY", "ANY", "MISSING")),
+            Triple(prompt("t.band", "Name a band", "?item wdt:P31 wd:Q215380 .", 40, 60),
+                listOf("Khruangbin", "Black Country, New Road", "Arctic Monkeys"), listOf("ANY", "ANY", "ANY")),
+            Triple(prompt("t.novel", "Name a novel", "?item wdt:P31 wd:Q7725634 .", 40, 40),
+                listOf("Piranesi", "The Secret History", "Dune"), listOf("ANY", "ANY", "ANY")),
+            Triple(prompt("t.song", "Name a song", "?item wdt:P31 wd:Q7366 .", 40, 40),
+                listOf("Espresso", "Wonderwall", "Bohemian Rhapsody"), listOf("ANY", "ANY", "ANY")),
         )
         var pass = 0
         var fail = 0

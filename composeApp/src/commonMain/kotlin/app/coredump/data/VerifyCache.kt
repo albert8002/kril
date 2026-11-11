@@ -18,8 +18,9 @@ import kotlinx.serialization.json.longOrNull
  * key: "<prompt id>|<normalised answer>". (v2 file: results of the older, weaker search are dropped.)
  */
 object VerifyCache {
-    private const val FILE = "verify_cache_v3.json"
-    private val OLD_FILES = listOf("verify_cache.json", "verify_cache_v2.json")
+    private const val FILE = "verify_cache_v4.json"
+    // v4: found answers carry their measured fame (older ones all scored as rare), near names follow the new rules
+    private val OLD_FILES = listOf("verify_cache.json", "verify_cache_v2.json", "verify_cache_v3.json")
     private const val MAX = 3000
     private const val SEP = "\u001F"
     private const val FOUND_MS = 60L * 24 * 3600 * 1000
@@ -27,7 +28,7 @@ object VerifyCache {
 
     /** kind: L = list entry under another name, F = unlisted member, M = not found, N = not found but near names
      *  (label: names joined by [SEP]). at: epoch ms of the search. */
-    private class Entry(val kind: Char, val label: String?, val links: Int, val at: Long)
+    private class Entry(val kind: Char, val label: String?, val links: Int, val at: Long, val fame: String? = null)
 
     private var map: LinkedHashMap<String, Entry>? = null
 
@@ -42,7 +43,8 @@ object VerifyCache {
                 val k = a.getOrNull(0)?.jsonPrimitive?.contentOrNull ?: continue
                 val kind = a.getOrNull(4)?.jsonPrimitive?.contentOrNull?.firstOrNull() ?: continue
                 m[k] = Entry(kind, a.getOrNull(1)?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotEmpty() },
-                    a.getOrNull(2)?.jsonPrimitive?.intOrNull ?: 0, a.getOrNull(3)?.jsonPrimitive?.longOrNull ?: 0L)
+                    a.getOrNull(2)?.jsonPrimitive?.intOrNull ?: 0, a.getOrNull(3)?.jsonPrimitive?.longOrNull ?: 0L,
+                    a.getOrNull(5)?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotEmpty() })
             }
         }
         map = m
@@ -55,7 +57,7 @@ object VerifyCache {
         if (age > (if (e.kind == 'M' || e.kind == 'N') MISSING_MS else FOUND_MS)) return null
         return when (e.kind) {
             'L' -> e.label?.let { AnswerCheck.Outcome.Listed(it) }
-            'F' -> e.label?.let { AnswerCheck.Outcome.Found(it, e.links) }
+            'F' -> e.label?.let { AnswerCheck.Outcome.Found(it, e.links, app.coredump.core.Fame.decode(e.fame)) }
             'N' -> e.label?.split(SEP)?.filter { it.isNotBlank() }?.takeIf { it.isNotEmpty() }?.let { AnswerCheck.Outcome.Near(it) }
                 ?: AnswerCheck.Outcome.Missing
             else -> AnswerCheck.Outcome.Missing
@@ -65,7 +67,7 @@ object VerifyCache {
     fun put(key: String, v: AnswerCheck.Outcome) {
         val e = when (v) {
             is AnswerCheck.Outcome.Listed -> Entry('L', v.name, 0, Platform.epochMillis())
-            is AnswerCheck.Outcome.Found -> Entry('F', v.label, v.links, Platform.epochMillis())
+            is AnswerCheck.Outcome.Found -> Entry('F', v.label, v.links, Platform.epochMillis(), v.fame?.encode())
             AnswerCheck.Outcome.Missing -> Entry('M', null, 0, Platform.epochMillis())
             is AnswerCheck.Outcome.Near -> Entry('N', v.names.joinToString(SEP), 0, Platform.epochMillis())
             AnswerCheck.Outcome.Unreachable -> return
@@ -89,7 +91,7 @@ object VerifyCache {
             val o = buildJsonObject {
                 put("e", JsonArray(m.map { (k, e) ->
                     JsonArray(listOf(JsonPrimitive(k), JsonPrimitive(e.label ?: ""), JsonPrimitive(e.links), JsonPrimitive(e.at),
-                        JsonPrimitive(e.kind.toString())))
+                        JsonPrimitive(e.kind.toString()), JsonPrimitive(e.fame ?: "")))
                 }))
             }
             Platform.writeText(FILE, o.toString())

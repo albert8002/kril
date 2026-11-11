@@ -5,6 +5,7 @@ import app.coredump.core.Edits
 import app.coredump.core.Judge
 import app.coredump.core.Lenient
 import app.coredump.core.Prompt
+import app.coredump.core.SuggestRules
 import app.coredump.core.Norm
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -34,8 +35,11 @@ object AnswerCheck {
     sealed interface Outcome {
         /** The answer is the list entry [name] under another name (redirect, alias, other spelling). */
         class Listed(val name: String) : Outcome
-        /** Not in the list but a member of the list's class. links: Wikipedia editions with an article (count). */
-        class Found(val label: String, val links: Int) : Outcome
+        /**
+         * Not in the list but a member of the list's class. links: Wikipedia editions with an article (count).
+         * fame: the measurements that score it (null = from an older cache, scored by [links] alone).
+         */
+        class Found(val label: String, val links: Int, val fame: app.coredump.core.Fame? = null) : Outcome
         data object Missing : Outcome
         /** Not found as typed, but members of the class have names containing the typed words (best known first). */
         class Near(val names: List<String>) : Outcome
@@ -63,12 +67,12 @@ object AnswerCheck {
         return Edits.osa(q, k, tol) <= tol
     }
 
-    /** People lists: one typed word may be just the surname ("Jordan" → "Michael Jordan"). */
+    /** People lists: one typed word may be just the surname, spelt exactly ("Jordan" → "Michael Jordan", not "Jordon"). */
     fun surname(input: String, name: String): Boolean {
         val t = input.trim()
         if (t.contains(' ') || key(t).length < 3) return false
         val last = bare(name).split(' ').lastOrNull { it.isNotBlank() } ?: return false
-        return same(t, last)
+        return key(t) == key(last)
     }
 
     private val notClass = setOf("name", "famous", "type", "kind", "from", "any", "the", "and", "with", "that", "other",
@@ -296,7 +300,7 @@ object AnswerCheck {
         val matches = items.filter { it.names.any { n -> spells(input, n, people, words) } }
         // near names: never a list to pick the rarest from
         val near = items.filter { it !in matches }
-            .filter { it.names.any { n -> val ws = Norm.key(n).split(' '); typed.all { t -> ws.any { w -> w == t || (t.length >= 4 && w.startsWith(t)) } } } }
+            .filter { it.names.any { n -> SuggestRules.allowed(input, n, people) } }
             .map { it.label }.distinct().let { if (it.size > 3) it.take(2) else it }
         return ClassResult(matches, near)
     }
@@ -336,15 +340,18 @@ object AnswerCheck {
     class Member(val qid: String, val label: String?, val links: Int)
 
     /** The best-known member in a [memberQuery] reply (most Wikipedia editions), or null. */
-    fun parseMember(body: String): Member? = runCatching {
-        val rows = json.parseToJsonElement(body).jsonObject["results"]?.jsonObject?.get("bindings")?.jsonArray ?: return null
+    fun parseMember(body: String): Member? = parseMembers(body).firstOrNull()
+
+    /** Every member in a [memberQuery] reply, best known first. */
+    fun parseMembers(body: String): List<Member> = runCatching {
+        val rows = json.parseToJsonElement(body).jsonObject["results"]?.jsonObject?.get("bindings")?.jsonArray ?: return emptyList()
         rows.mapNotNull { el ->
             val o = el.jsonObject
             val uri = o["item"]?.jsonObject?.str("value") ?: return@mapNotNull null
             val label = o["itemLabel"]?.jsonObject?.str("value")?.takeIf { !qidRe.matches(it) }
             Member(uri.substringAfterLast('/'), label, o["links"]?.jsonObject?.str("value")?.toIntOrNull() ?: 0)
-        }.maxByOrNull { it.links }
-    }.getOrNull()
+        }.distinctBy { it.qid }.sortedByDescending { it.links }
+    }.getOrElse { emptyList() }
 
     /** True when a JSON reply reports an API error (e.g. bad request), so it should not count as "checked". */
     fun isApiError(body: String): Boolean = runCatching {

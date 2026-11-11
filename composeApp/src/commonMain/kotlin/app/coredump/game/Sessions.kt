@@ -153,7 +153,7 @@ class Arbiter(private val bank: QuestionBank?, private val maxEdit: Int, private
                 val j = Judge.judge(p, r.name, 0)
                 if (j.tier.isValid) Remote.Found(Judgement(text, j.entry, j.tier, 0)) else Remote.Missing
             }
-            is AnswerCheck.Outcome.Found -> Remote.Found(Judge.verified(text, r.label, r.links, p))
+            is AnswerCheck.Outcome.Found -> Remote.Found(Judge.verified(text, r.label, r.links, p, r.fame))
             AnswerCheck.Outcome.Missing -> Remote.Missing
             is AnswerCheck.Outcome.Near -> Remote.Near(r.names)
             AnswerCheck.Outcome.Unreachable -> Remote.Unreachable

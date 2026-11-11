@@ -14,6 +14,7 @@ val shared = tasks.register<Sync>("syncSharedSources") {
         include("app/coredump/data/WikidataPool.kt")
         include("app/coredump/data/ExtraSources.kt")
         include("app/coredump/data/AnswerCheck.kt")
+        include("app/coredump/data/FameCheck.kt")
         include("app/coredump/net/Mqtt.kt")
         include("app/coredump/net/Protocol.kt")
     }

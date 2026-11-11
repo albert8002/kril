@@ -2,6 +2,9 @@ package app.coredump.data
 
 import app.coredump.core.IndexCache
 import app.coredump.core.PackCodec
+import app.coredump.core.Fame
+import app.coredump.core.FameScore
+import app.coredump.core.Norm
 import app.coredump.core.Prompt
 import app.coredump.core.SourceKind
 import app.coredump.platform.CrashLog
@@ -829,7 +832,9 @@ class QuestionBank(private val scope: CoroutineScope) {
         // 1. a list entry under another name (also its name in another language)
         AnswerCheck.listed(prompt, cands)?.let { return@coroutineScope it to true }
         // 2. an unlisted member of the list's class: found by the class search (no SPARQL needed) …
-        clR?.matches?.firstOrNull()?.let { return@coroutineScope AnswerCheck.Outcome.Found(it.label, it.links) to true }
+        clR?.matches?.firstOrNull()?.let {
+            return@coroutineScope AnswerCheck.Outcome.Found(it.label, it.links, measure(prompt, term, it.label, it.qid, it.links, clR.matches.size)) to true
+        }
         val near = clR?.near.orEmpty()
         fun missing() = (if (near.isNotEmpty()) AnswerCheck.Outcome.Near(near) else AnswerCheck.Outcome.Missing) to complete
         // … or checked with SPARQL
@@ -847,9 +852,50 @@ class QuestionBank(private val scope: CoroutineScope) {
                 }.let { if (it.status.isSuccess()) it.bodyAsText() else null }
             } catch (e: CancellationException) { throw e } catch (e: Throwable) { null }
         } ?: return@coroutineScope AnswerCheck.Outcome.Unreachable to false
-        val m = AnswerCheck.parseMember(body) ?: return@coroutineScope missing()
+        val members = AnswerCheck.parseMembers(body)
+        val m = members.firstOrNull() ?: return@coroutineScope missing()
         val label = m.label ?: cands.firstOrNull { it.qid == m.qid }?.names?.firstOrNull() ?: input.trim()
-        AnswerCheck.Outcome.Found(label, m.links) to true
+        AnswerCheck.Outcome.Found(label, m.links, measure(prompt, term, label, m.qid, m.links, members.size)) to true
+    }
+
+    /**
+     * How famous a found answer is ([Fame]): page views, mentions, the genre's own measure and how guessable the typed
+     * text is, all fetched side by side (about a second). A measure that does not answer is left out.
+     */
+    private suspend fun measure(prompt: Prompt, input: String, label: String, qid: String, links: Int, shared: Int): Fame = coroutineScope {
+        val kind = FameScore.extraKind(prompt.topic, prompt.text, prompt.people)
+        val views = async {
+            val t = quick(WikiNet.WD_API, 4_000, FameCheck.titleParams(qid))?.let { FameCheck.parseTitle(it, qid) }
+            if (t == null) 0 else quickUrl(FameCheck.pageviewsUrl(t, Platform.epochMillis()), 4_000)?.let { FameCheck.parsePageviews(it) } ?: -1
+        }
+        val mentions = async { quick(WikiNet.WP_API, 4_000, FameCheck.hitsParams(label, exact = true))?.let { FameCheck.parseHits(it) } ?: -1 }
+        val word = Norm.key(input)
+        val wordHits = async {
+            if (' ' in word || word.isEmpty()) -1
+            else quick(WikiNet.WP_API, 4_000, FameCheck.hitsParams(word, exact = false))?.let { FameCheck.parseHits(it) } ?: -1
+        }
+        val extra = async {
+            when (kind) {
+                "fans" -> quickUrl(FameCheck.deezerArtistUrl(label), 4_000)?.let { FameCheck.parseDeezerFans(it, label) }
+                "rank" -> quickUrl(FameCheck.deezerTrackUrl(label), 4_000)?.let { FameCheck.parseDeezerRank(it, label) }
+                "readers" -> quickUrl(FameCheck.openLibraryUrl(label), 5_000)?.let { FameCheck.parseReaders(it, label) }
+                "weight" -> quickUrl(FameCheck.tvmazeUrl(label), 4_000)?.let { FameCheck.parseTvWeight(it, label) }
+                else -> null
+            } ?: -1
+        }
+        Fame(links, views.await(), mentions.await(), extra.await(), if (kind.isNotEmpty()) kind else "", shared, wordHits.await())
+    }
+
+    /** GET of a full address (no parameters), or null on any failure. */
+    private suspend fun quickUrl(url: String, ms: Long): String? = withTimeoutOrNull(ms) {
+        try {
+            val res = http.get(url) {
+                header("User-Agent", WikiNet.USER_AGENT)
+                header("Api-User-Agent", WikiNet.USER_AGENT)
+                header("Accept", "application/json")
+            }
+            if (!res.status.isSuccess()) null else res.bodyAsText()
+        } catch (e: CancellationException) { throw e } catch (e: Throwable) { null }
     }
 
     companion object {

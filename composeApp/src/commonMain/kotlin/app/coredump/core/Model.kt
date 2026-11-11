@@ -156,6 +156,8 @@ class Judgement(
     val entry: AnswerEntry?,
     val tier: Tier,
     val distance: Int,
+    /** Found online: what was measured ("not on the list · found online · 34 Wikipedias · …"). */
+    val note: String? = null,
 ) {
     val points: Int get() = tier.points
 }
@@ -169,10 +171,14 @@ object Judge {
         return Judgement(input, e, e.tier, hit.distance)
     }
 
-    /** Judgement for an answer verified online (not in the list). */
-    fun verified(input: String, label: String, links: Int, prompt: Prompt): Judgement {
-        val tier = Rarity.tierForLinks(links, prompt.cuts)
-        return Judgement(input, AnswerEntry(label, emptyList(), tier, -1), tier, 0)
+    /**
+     * Judgement for an answer verified online (not in the list): scored by its measured [fame] ([FameScore]); an
+     * older cached result without measurements by its Wikipedia editions alone.
+     */
+    fun verified(input: String, label: String, links: Int, prompt: Prompt, fame: Fame? = null): Judgement {
+        val tier = if (fame != null) FameScore.tier(fame, prompt.topic) else Rarity.tierForLinks(links, prompt.cuts)
+        val note = if (fame != null) FameScore.note(fame, prompt.topic) else "not on the list · found online · $links Wikipedias"
+        return Judgement(input, AnswerEntry(label, emptyList(), tier, -1), tier, 0, note)
     }
 
     /**

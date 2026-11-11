@@ -12,6 +12,8 @@ class PlayView(
     val tier: Tier,
     val elapsedMs: Long,
     val penalty: Int = 0,
+    /** Found online: what was measured (see [Judgement.note]). */
+    val note: String? = null,
 ) {
     val points: Int get() = tier.points - penalty
 }
@@ -76,7 +78,7 @@ object Views {
     }
 
     fun play(player: String, j: Judgement, elapsedMs: Long, spam: Int = 0) =
-        PlayView(player, j.input, j.entry?.name, j.tier, elapsedMs, spam.coerceAtMost(Spam.MAX_PER_ROUND) * Spam.PENALTY)
+        PlayView(player, j.input, j.entry?.name, j.tier, elapsedMs, spam.coerceAtMost(Spam.MAX_PER_ROUND) * Spam.PENALTY, j.note)
 
     fun totalPoints(rounds: List<RoundView>, mine: Boolean = true): Int =
         rounds.sumOf { if (mine) it.me.points else (it.opp?.points ?: 0) }

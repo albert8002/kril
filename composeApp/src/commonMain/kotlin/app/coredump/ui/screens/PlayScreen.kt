@@ -13,6 +13,8 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -456,6 +458,22 @@ fun tierLine(t: Tier): String = when (Th.style) {
     Style.TERMINAL -> t.blurb
 }
 
+/** A found-online answer's measurements, for a few seconds at the top of the reveal (tap to close). */
+@Composable
+private fun FoundNote(text: String, key: Int, modifier: Modifier) {
+    var shown by remember(key) { mutableStateOf(true) }
+    LaunchedEffect(key) { delay(7000); shown = false }
+    if (!shown) return
+    Box(
+        modifier.padding(top = 58.dp, start = 16.dp, end = 16.dp).widthIn(max = 440.dp)
+            .box(Th.style, C.line, C.panel.compositeOver(C.bg.copy(alpha = 1f)))
+            .clickable { shown = false }
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+    ) {
+        TText(text, size = 11.sp, color = C.amber, maxLines = 3)
+    }
+}
+
 /** Answer shown on a reveal. */
 fun headline(v: app.coredump.core.PlayView): String = when (v.tier) {
     Tier.TIMEOUT -> Th.say("PROCESS KILLED", "Time's up")
@@ -553,6 +571,8 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
                 // after a run the points were already counted on screen: the burst brings only its pieces
                 val ran = runs && v.me.tier.isValid && v.me.points > 0
                 if (landed == v.index) RewardBurst(v.me.tier, if (ran) 0 else v.me.points.coerceAtLeast(0), v.index)
+                // found online: what was measured, and so why it scored what it did
+                if (landed == v.index) v.me.note?.let { FoundNote(it, v.index, Modifier.align(Alignment.TopCenter)) }
             }
         }
         if (st.paused && !model.confirmQuit) PauseOverlay({ session.resume() }, { model.confirmQuit = true })

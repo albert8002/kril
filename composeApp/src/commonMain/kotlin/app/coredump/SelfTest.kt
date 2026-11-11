@@ -305,6 +305,23 @@ object SelfTest {
 
             meltdownChecks(model)
 
+            // invites over the real relay: one to my own inbox from a made-up code; pop-up, decline, the sender hears it
+            model.setTheme(Style.PAPER, plan.first { it.first == Style.PAPER }.second)
+            model.home(); delay(500)
+            val inviter = app.coredump.game.Inviter(model.scope, "ME", model.myRoom(), "TESTBOT", app.coredump.net.JoinTicket.newRoom(),
+                model.settings.roomBroker, "duel")
+            inviter.send()
+            var iw = 0
+            while (model.invites.isEmpty() && iw < 30_000) { delay(250); iw += 250 }
+            log("INVITE popup=${model.invites.size} status=${inviter.status.value} after ${iw}ms")
+            delay(900)
+            shot("invite_popup_paper")
+            model.invites.firstOrNull()?.let { model.declineInvite(it) }
+            iw = 0
+            while (inviter.status.value != app.coredump.game.Inviter.Status.DECLINED && iw < 12_000) { delay(250); iw += 250 }
+            log("INVITE answer status=${inviter.status.value} after ${iw}ms")
+            inviter.cancel()
+
             // stress: lookups across many lists (index cache must keep memory flat)
             val all = model.bank.all()
             if (all.isNotEmpty()) {
@@ -328,7 +345,8 @@ object SelfTest {
                 val local = Judge.judge(p, input, 2)
                 val out = if (local.tier.isValid) "LOCAL(${local.entry?.name})" else when (val r = model.bank.verify(p, input)) {
                     is app.coredump.data.AnswerCheck.Outcome.Listed -> "LISTED(${r.name})"
-                    is app.coredump.data.AnswerCheck.Outcome.Found -> "FOUND(${r.label}, ${r.links})"
+                    is app.coredump.data.AnswerCheck.Outcome.Found -> "FOUND(${r.label}, ${r.links}) " +
+                        (r.fame?.let { f -> "${app.coredump.core.FameScore.tier(f, p.topic)} · ${app.coredump.core.FameScore.note(f, p.topic)}" } ?: "no fame")
                     app.coredump.data.AnswerCheck.Outcome.Missing -> "MISSING"
                     is app.coredump.data.AnswerCheck.Outcome.Near -> "NEAR(${r.names})"
                     app.coredump.data.AnswerCheck.Outcome.Unreachable -> "UNREACHABLE"

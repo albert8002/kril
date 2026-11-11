@@ -168,6 +168,8 @@ fun App() {
                             size = 13.sp, color = C.blood,
                         )
                     }
+                    // game invites: one pop-up each, over every screen
+                    if (model.invites.isNotEmpty() && model.screen != Screen.Boot) app.coredump.ui.screens.InviteLayer(model)
                 }
             }
         }

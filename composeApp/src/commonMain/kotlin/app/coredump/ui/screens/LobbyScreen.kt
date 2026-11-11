@@ -54,12 +54,32 @@ import app.coredump.ui.Th
 
 private enum class Tab(val label: String) { HOST("HOST"), JOIN("JOIN"), FRIENDS("FRIENDS") }
 
+/** Status of the invite being sent ([mode] "duel" or "party"), if any. */
+@Composable
+internal fun InviteStatus(model: AppModel, mode: String) {
+    val inv = model.inviting ?: return
+    if (inv.mode != mode) return
+    val st by inv.status.collectAsState()
+    val (text, color) = when (st) {
+        app.coredump.game.Inviter.Status.SENDING -> "inviting ${inv.friendName}…" to C.amber
+        app.coredump.game.Inviter.Status.SEEN -> "${inv.friendName} got your invite · waiting for an answer" to C.hot
+        app.coredump.game.Inviter.Status.ACCEPTED -> "${inv.friendName} accepted · joining you" to C.hot
+        app.coredump.game.Inviter.Status.DECLINED -> "${inv.friendName} declined" to C.blood
+        app.coredump.game.Inviter.Status.NO_ANSWER -> "no answer from ${inv.friendName}: is their app open?" to C.blood
+    }
+    TText(text, Modifier.padding(top = 6.dp), size = 12.sp, color = color, weight = FontWeight.Bold)
+}
+
 /** Self-test only: the tab the 1v1 screen opens on. */
-internal object LobbyProbe { var tab = 0 }
+internal object LobbyProbe {
+    var tab = 0
+    /** The tab to open on (once; back to HOST afterwards). */
+    fun take(): Int = tab.also { tab = 0 }
+}
 
 @Composable
 fun LobbyScreen(model: AppModel) {
-    var tab by remember { mutableStateOf(Tab.entries[LobbyProbe.tab.coerceIn(0, Tab.entries.size - 1)]) }
+    var tab by remember { mutableStateOf(Tab.entries[LobbyProbe.take().coerceIn(0, Tab.entries.size - 1)]) }
     Frame(model, Th.say("./run --peer", "1v1")) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
             Choice(Tab.entries, tab, { it.label }) { tab = it }
@@ -227,11 +247,15 @@ private fun FriendsPane(model: AppModel, goTab: (Tab) -> Unit) {
                         if (games.isEmpty()) "no games yet" else "you $w – $l them" + if (d > 0) " · $d draw${if (d > 1) "s" else ""}" else "",
                         size = 11.sp, color = C.dim)
                 }
+                TLink("invite", { model.inviteFriend(f, "duel"); goTab(Tab.HOST) }, color = C.hot)
+                Spacer(Modifier.width(12.dp))
                 TLink("join", { goTab(Tab.JOIN); model.joinFriend(f) }, color = C.hot)
                 Spacer(Modifier.width(12.dp))
                 TLink("remove", { model.removeFriend(f) })
             }
         }
+        InviteStatus(model, "duel")
+        if (s.friends.isNotEmpty()) TText("invite: they get a pop-up in the app (it must be open) and join you with one tap.", size = 10.sp, color = C.dim)
     }
     Spacer(Modifier.height(14.dp))
     Panel(Th.say("1V1 HISTORY", "1v1 history") + " (${duels.size})") {
