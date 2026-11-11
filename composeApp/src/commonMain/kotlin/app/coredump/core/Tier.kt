@@ -63,6 +63,17 @@ enum class Tier(
     val label: String get() = (if (isValid) Names.own(Custom.keyOf(this)) else null) ?: defaultLabel
     val isValid: Boolean get() = points > 0
 
+    /** .reversed(): the most common answer scores most (the points ladder mirrored); misses still score 0. */
+    val reversedPoints: Int get() = when (this) {
+        HELLO_WORLD -> 100
+        COPYPASTA -> 85
+        LEGACY -> 60
+        MEMORY_LEAK -> 30
+        HEISENBUG -> 15
+        ZERO_DAY -> 10
+        else -> 0
+    }
+
     companion object {
         /** Valid tiers, rarest first. */
         val validDescending: List<Tier> = entries.filter { it.isValid }.sortedByDescending { it.points }

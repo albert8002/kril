@@ -4,6 +4,9 @@ package app.coredump.data
  * Extra everyday lists that are NOT bundled: the device collects a few every day (and on request).
  * Only general categories (no "works by <person>" style lists). Lists that come back with fewer than
  * [WikidataFamilies.MIN_ANSWERS] answers, or with too few widely known answers, are skipped for weeks.
+ *
+ * Also holds the qualifier lists ([SpecificTemplates]) and a trimmed set of "famous <nationality> <job>" lists
+ * ([picks]); the rest of that grid is [retired]. People lists are collected sparingly (see QuestionBank.collectNow).
  */
 object WikidataPool {
 
@@ -327,12 +330,62 @@ object WikidataPool {
         Triple("eg", "Q79", "Egyptian"), Triple("za", "Q258", "South African"),
     )
 
-    val all: List<WikidataTemplate> by lazy {
+    /**
+     * Nationalities worth asking per job (country codes of [nations]): the combos people actually know a few names of
+     * ("a famous Italian chef", "a famous Belgian cyclist"). The other combos of the old 20 × 30 grid are [retired]:
+     * no longer collected, but lists already on a device stay playable.
+     */
+    private val picks: Map<String, Set<String>> = mapOf(
+        "actor" to setOf("us", "uk", "fr", "de", "it", "es", "jp", "in", "kr", "mx", "au", "ie"),
+        "filmdirector" to setOf("us", "uk", "fr", "it", "jp", "de", "se", "kr"),
+        "singer" to setOf("us", "uk", "fr", "it", "es", "jp", "kr", "br", "mx"),
+        "rapper" to setOf("us", "uk", "fr", "de", "ca", "ng"),
+        "chef" to setOf("fr", "it", "uk", "us"),
+        "tennisplayer" to setOf("us", "uk", "fr", "de", "es", "ch", "au", "ru"),
+        "basketballplayer" to setOf("us", "es", "fr", "gr"),
+        "cyclist" to setOf("fr", "be", "it", "es", "nl"),
+        "swimmer" to setOf("us", "au", "uk"),
+        "racingdriver" to setOf("uk", "de", "fr", "it", "br", "us"),
+        "boxer" to setOf("us", "uk", "mx", "ru"),
+        "chessplayer" to setOf("ru", "us", "in"),
+        "poet" to setOf("uk", "us", "fr", "de", "ru", "ie"),
+        "philosopher" to setOf("gr", "de", "fr", "uk"),
+        "architect" to setOf("us", "it", "ch"),
+        "physicist" to setOf("us", "de", "uk", "fr"),
+        "mathematician" to setOf("fr", "de", "uk", "in"),
+        "comedian" to setOf("us", "uk", "ca"),
+        "model" to setOf("us", "br", "uk"),
+        "fashiondesigner" to setOf("fr", "it", "jp"),
+    )
+
+    /** Every "Name a famous <nationality> <job>" combo; [picks] says which ones are still collected. */
+    private val nationalityLists: List<WikidataTemplate> by lazy {
         buildList {
             for ((g, q, job) in byJob) for ((cc, nq, adj) in nations) {
+                // famous musicians, actors and athletes stay in their own category; other jobs are filed under people
+                val topic = when (g) { "mv" -> "MOVIES"; "mu" -> "MUSIC"; "sp" -> "SPORT"; else -> "PEOPLE" }
                 add(WikidataTemplate("wx.$g.by.${job.filter { it.isLetter() }}.$cc", "Name a famous $adj $job",
-                    if (g == "sp") "SPORT" else "PEOPLE", "?item wdt:P31 wd:Q5 ; wdt:P106 wd:$q ; wdt:P27 wd:$nq .", 6, 600, 3))
+                    topic, "?item wdt:P31 wd:Q5 ; wdt:P106 wd:$q ; wdt:P27 wd:$nq .", 6, 600, 3))
             }
+        }
+    }
+
+    private fun picked(t: WikidataTemplate): Boolean {
+        val p = t.id.split('.')
+        return p.size == 5 && p[3] in picks && p[4] in picks.getValue(p[3])
+    }
+
+    /** Nationality combos no longer collected; known so that lists already collected are kept and can be shared. */
+    val retired: List<WikidataTemplate> by lazy { nationalityLists.filter { !picked(it) } }
+
+    /** Everything this version knows: the collected pool plus [retired] lists (for loading and sharing, not collecting). */
+    val known: List<WikidataTemplate> by lazy { all + retired }
+
+    val all: List<WikidataTemplate> by lazy {
+        buildList {
+            for (t in nationalityLists) if (picked(t)) add(t)
+            // qualifier lists ("a town in Europe with more than 50,000 people"), see SpecificTemplates
+            addAll(SpecificTemplates.all)
             for ((id, prompt, taxa) in animals) add(t("an.$id", prompt, "NATURE", species(*taxa), 10))
             for ((q, job) in jobs) add(t("job.${job.filter { it.isLetter() }}", "Name a famous $job",
                 if (job.endsWith("player") || job.endsWith("skier") || job.endsWith("athlete") || job.endsWith("skater") ||

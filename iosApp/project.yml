@@ -27,7 +27,7 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         NSCameraUsageDescription: "Scan a host's QR sigil to join a 1v1 match."
         NSLocalNetworkUsageDescription: "Connect to another player on your Wi-Fi for 1v1 matches."
-        CADisableMinimumFrameDurationOnPhone: true
+        CADisableMinimumFrameDurationOnPhone: false
         ITSAppUsesNonExemptEncryption: false
     settings:
       base:

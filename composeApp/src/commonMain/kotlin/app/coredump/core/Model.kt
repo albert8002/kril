@@ -148,6 +148,16 @@ data class GameConfig(
     val topics: Set<String>,
     /** Include hyper-specific lists. */
     val niche: Boolean = false,
+    /** .reversed(): the most common answer scores most ([Tier.reversedPoints]). */
+    val reversed: Boolean = false,
+    /** 1v1: once one player has answered, the other loses [SpeedTax.PER_SECOND] points per second until they answer. */
+    val speedPenalty: Boolean = false,
+    /** People lists: in the mix at all; 0 = best-known only … 1 = niche too; at most this percent of the prompts. */
+    val peopleLists: Boolean = true,
+    val peopleNiche: Float = 0.25f,
+    val peopleMax: Int = 20,
+    /** A rated match with fixed rules (ranked). */
+    val ranked: Boolean = false,
 )
 
 /** Result of judging one answer. */
@@ -197,9 +207,35 @@ object Judge {
 
 object PromptPicker {
     /**
+     * Most people prompts allowed in one game: [GameConfig.peopleMax] percent of the rounds, rounded half up
+     * (7 rounds at 20 % → 1; 10 rounds at 25 % → 3). 0 when people lists are off.
+     */
+    fun peopleCap(cfg: GameConfig): Int =
+        if (!cfg.peopleLists) 0 else ((cfg.rounds.coerceAtLeast(0) * cfg.peopleMax.coerceIn(0, 100) + 50) / 100)
+
+    /**
+     * Chance (0..1) that a people list of specificity [level] ([Topics.peopleLevel]) is in the running for a game at
+     * the "common ↔ niche" setting [slider] (0..1): best-known lists (level 0) always; more specific ones only once the
+     * slider has reached their level, then more often the further it goes (a quarter at their level, always at 1).
+     */
+    fun peopleChance(level: Float, slider: Float): Float {
+        val s = slider.coerceIn(0f, 1f)
+        return when {
+            level <= 0f -> 1f
+            level > s + 0.0001f -> 0f
+            else -> 0.25f + 0.75f * ((s - level) / (1f - level).coerceAtLeast(0.01f)).coerceIn(0f, 1f)
+        }
+    }
+
+    /**
      * Picks [GameConfig.rounds] distinct prompts.
      * Order of preference: not shown in the last [cooldownMs] (per [seen]), general (not niche), matching the
      * difficulty's list size; then the same without the size rule; then niche lists; then prompts shown least recently.
+     *
+     * People lists (answers are people) follow their own settings instead of the niche switch: none when
+     * [GameConfig.peopleLists] is off; only those let in by [peopleChance] (drawn once per game); and at most
+     * [peopleCap] of them. The cap is a ceiling, not a quota: only when nothing else is left (e.g. "Famous people" is
+     * the only category) may a game hold more of them.
      */
     fun pick(
         all: Collection<Prompt>,
@@ -212,25 +248,46 @@ object PromptPicker {
     ): List<Prompt> {
         val usable = all.filter { it.size >= 3 }
         val inTopic = usable.filter { cfg.topics.isEmpty() || it.topic in cfg.topics }
-        val general = inTopic.filter { cfg.niche || !it.niche }
+        // people lists in the running this game (the draw happens once, so a later pass can't let more in)
+        val admitted = HashSet<String>()
+        if (cfg.peopleLists) for (p in inTopic) {
+            if (!p.people) continue
+            val chance = peopleChance(Topics.peopleLevel(p.id, p.text), cfg.peopleNiche)
+            if (chance >= 1f || (chance > 0f && rnd.nextFloat() < chance)) admitted += p.id
+        }
+        val pool = inTopic.filter { !it.people || it.id in admitted }
+        // the niche switch is for things; how specific people lists get is the people slider's job
+        val general = pool.filter { cfg.niche || !it.niche || it.people }
         fun fresh(p: Prompt) = cooldownMs <= 0L || now - (seen[p.id] ?: Long.MIN_VALUE / 2) >= cooldownMs
         fun sized(p: Prompt) = p.size in cfg.difficulty.minBreadth..cfg.difficulty.maxBreadth
 
+        val cap = peopleCap(cfg)
+        var people = 0
         val out = LinkedHashMap<String, Prompt>()   // keyed by prompt text: no duplicates across sources
-        fun fill(list: List<Prompt>, shuffle: Boolean = true) {
+        fun fill(list: List<Prompt>, shuffle: Boolean = true, capped: Boolean = true) {
             val ordered = if (shuffle) list.shuffled(rnd).sortedBy { if (it.id in recent) 1 else 0 } else list
             for (p in ordered) {
                 if (out.size >= cfg.rounds) return
+                if (p.people && capped && people >= cap) continue
                 val k = Norm.key(p.text)
-                if (!out.containsKey(k)) out[k] = p
+                if (!out.containsKey(k)) {
+                    out[k] = p
+                    if (p.people) people++
+                }
             }
         }
         fill(general.filter { fresh(it) && sized(it) })
         fill(general.filter { fresh(it) })
-        fill(inTopic.filter { fresh(it) })
+        fill(pool.filter { fresh(it) })
         fill(general.sortedBy { seen[it.id] ?: 0L }, shuffle = false)
-        fill(inTopic.sortedBy { seen[it.id] ?: 0L }, shuffle = false)
-        if (out.isEmpty()) fill(usable)
+        fill(pool.sortedBy { seen[it.id] ?: 0L }, shuffle = false)
+        // not enough other prompts in the chosen categories: people lists may go over the cap
+        if (out.size < cfg.rounds) {
+            fill(pool.filter { fresh(it) }, capped = false)
+            fill(pool.sortedBy { seen[it.id] ?: 0L }, shuffle = false, capped = false)
+        }
+        if (out.isEmpty()) fill(usable.filter { cfg.peopleLists || !it.people }, capped = false)
+        if (out.isEmpty()) fill(usable, capped = false)
         return out.values.toList()
     }
 }

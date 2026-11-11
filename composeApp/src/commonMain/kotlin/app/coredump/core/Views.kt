@@ -14,8 +14,13 @@ class PlayView(
     val penalty: Int = 0,
     /** Found online: what was measured (see [Judgement.note]). */
     val note: String? = null,
+    /** Scored .reversed() (the most common answer scores most). */
+    val reversed: Boolean = false,
 ) {
-    val points: Int get() = tier.points - penalty
+    val points: Int get() = (if (reversed) tier.reversedPoints else tier.points) - penalty
+
+    /** The same play with [extra] more points lost (the 1v1 speed tax). */
+    fun taxed(extra: Int): PlayView = if (extra <= 0) this else PlayView(player, input, canonical, tier, elapsedMs, penalty + extra, note, reversed)
 }
 
 /** Everything the result + summary screens need for one round (solo or 1v1). */
@@ -77,8 +82,8 @@ object Views {
         return Tier.validDescending.reversed().mapNotNull { t -> m[t]?.let { TierGroup(t, it) } }
     }
 
-    fun play(player: String, j: Judgement, elapsedMs: Long, spam: Int = 0) =
-        PlayView(player, j.input, j.entry?.name, j.tier, elapsedMs, spam.coerceAtMost(Spam.MAX_PER_ROUND) * Spam.PENALTY, j.note)
+    fun play(player: String, j: Judgement, elapsedMs: Long, spam: Int = 0, reversed: Boolean = false) =
+        PlayView(player, j.input, j.entry?.name, j.tier, elapsedMs, spam.coerceAtMost(Spam.MAX_PER_ROUND) * Spam.PENALTY, j.note, reversed)
 
     fun totalPoints(rounds: List<RoundView>, mine: Boolean = true): Int =
         rounds.sumOf { if (mine) it.me.points else (it.opp?.points ?: 0) }

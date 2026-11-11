@@ -89,14 +89,17 @@ data class JoinTicket(
 /** Wire messages: one JSON object per line. */
 sealed class Msg {
     /** [me]: the sender's own room code (friends list, 1v1 history); older versions send none. */
-    data class Hello(val name: String, val pin: String, val version: Int = PROTOCOL_VERSION, val me: String = "") : Msg()
-    data class Welcome(val hostName: String, val me: String = "") : Msg()
+    data class Hello(val name: String, val pin: String, val version: Int = PROTOCOL_VERSION, val me: String = "", val elo: Int = 0, val streak: Int = 0) : Msg()
+    data class Welcome(val hostName: String, val me: String = "", val elo: Int = 0, val streak: Int = 0) : Msg()
     data class Reject(val reason: String) : Msg()
-    data class Start(val rounds: Int, val seconds: Int, val difficulty: String) : Msg()
+    /** [speedPenalty]: once one player answers, the other loses points per second ([SpeedTax]); [ranked]: a rated match. */
+    data class Start(val rounds: Int, val seconds: Int, val difficulty: String, val speedPenalty: Boolean = false, val ranked: Boolean = false,
+                     val reversed: Boolean = false) : Msg()
     data class Round(val i: Int, val text: String, val topic: String, val size: Int, val seconds: Int) : Msg()
     /** Guest → host: no answer this round (time ran out, or [skip] = gave up). */
     data class Answer(val i: Int, val text: String?, val elapsedMs: Long, val skip: Boolean = false) : Msg()
-    data class Locked(val i: Int) : Msg()
+    /** The host locked prompt [i]; [answered] = with an answer (not a skip / timeout), which starts the speed tax. */
+    data class Locked(val i: Int, val answered: Boolean = false) : Msg()
     data class Result(val i: Int, val host: PlayView, val guest: PlayView, val ladder: List<TierGroup>) : Msg()
     data class Ready(val i: Int) : Msg()
     /** Guest → host: one typed attempt (host judges; free retries until accepted or timeout). */
@@ -125,13 +128,13 @@ sealed class Msg {
     fun encode(): String = toJson().toString()
 
     private fun toJson(): JsonObject = when (this) {
-        is Hello -> obj("hello") { put("name", name); put("pin", pin); put("v", version); if (me.isNotEmpty()) put("me", me) }
-        is Welcome -> obj("welcome") { put("name", hostName); if (me.isNotEmpty()) put("me", me) }
+        is Hello -> obj("hello") { put("name", name); put("pin", pin); put("v", version); if (me.isNotEmpty()) put("me", me); if (elo != 0) put("elo", elo); if (streak != 0) put("st", streak) }
+        is Welcome -> obj("welcome") { put("name", hostName); if (me.isNotEmpty()) put("me", me); if (elo != 0) put("elo", elo); if (streak != 0) put("st", streak) }
         is Reject -> obj("reject") { put("reason", reason) }
-        is Start -> obj("start") { put("rounds", rounds); put("sec", seconds); put("diff", difficulty) }
+        is Start -> obj("start") { put("rounds", rounds); put("sec", seconds); put("diff", difficulty); if (speedPenalty) put("sp", true); if (ranked) put("rk", true); if (reversed) put("rv", true) }
         is Round -> obj("round") { put("i", i); put("q", text); put("t", topic); put("n", size); put("sec", seconds) }
         is Answer -> obj("answer") { put("i", i); put("a", text?.let { JsonPrimitive(it) } ?: JsonNull); put("ms", elapsedMs); if (skip) put("skip", true) }
-        is Locked -> obj("locked") { put("i", i) }
+        is Locked -> obj("locked") { put("i", i); if (answered) put("ok", true) }
         is Result -> obj("result") {
             put("i", i); put("host", play(host)); put("guest", play(guest))
             put("ladder", buildJsonArray {
@@ -174,14 +177,15 @@ sealed class Msg {
             fun s(k: String) = o[k]?.jsonPrimitive?.contentOrNull.orEmpty()
             fun i(k: String) = o[k]?.jsonPrimitive?.intOrNull ?: 0
             when (s("k")) {
-                "hello" -> Hello(s("name"), s("pin"), i("v"), s("me").take(12))
-                "welcome" -> Welcome(s("name"), s("me").take(12))
+                "hello" -> Hello(s("name"), s("pin"), i("v"), s("me").take(12), i("elo"), i("st"))
+                "welcome" -> Welcome(s("name"), s("me").take(12), i("elo"), i("st"))
                 "reject" -> Reject(s("reason"))
-                "start" -> Start(i("rounds"), i("sec"), s("diff"))
+                "start" -> Start(i("rounds"), i("sec"), s("diff"), o["sp"]?.jsonPrimitive?.booleanOrNull ?: false, o["rk"]?.jsonPrimitive?.booleanOrNull ?: false,
+                    o["rv"]?.jsonPrimitive?.booleanOrNull ?: false)
                 "round" -> Round(i("i"), s("q"), s("t"), i("n"), i("sec"))
                 "answer" -> Answer(i("i"), o["a"]?.jsonPrimitive?.contentOrNull, o["ms"]?.jsonPrimitive?.long ?: 0L,
                     o["skip"]?.jsonPrimitive?.booleanOrNull ?: false)
-                "locked" -> Locked(i("i"))
+                "locked" -> Locked(i("i"), o["ok"]?.jsonPrimitive?.booleanOrNull ?: false)
                 "result" -> Result(
                     i("i"),
                     unplay(o["host"]!!.jsonObject),
@@ -221,6 +225,7 @@ sealed class Msg {
             put("t", p.tier.name); put("ms", p.elapsedMs)
             if (p.penalty != 0) put("pen", p.penalty)
             p.note?.let { put("n", it) }
+            if (p.reversed) put("rv", true)
         }
 
         private fun unplay(o: JsonObject): PlayView = PlayView(
@@ -231,6 +236,7 @@ sealed class Msg {
             elapsedMs = o["ms"]?.jsonPrimitive?.long ?: 0L,
             penalty = o["pen"]?.jsonPrimitive?.intOrNull ?: 0,
             note = o["n"]?.jsonPrimitive?.contentOrNull,
+            reversed = o["rv"]?.jsonPrimitive?.booleanOrNull ?: false,
         )
     }
 }

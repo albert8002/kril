@@ -51,6 +51,7 @@ fun ManualScreen(model: AppModel) {
                     "not in the list? it's checked online (Wikidata) and scored by measured fame: Wikipedia editions, page views, mentions, plus fans (Deezer) for music, readers (Open Library) for books, popularity (TVmaze) for TV. famous → 30, known → 60, niche → 85.",
                     "guesses cost: a surname many people share, or a very common word, scores one step lower. results are cached.",
                     "rarer answers score more. obvious ones barely count.",
+                    ".reversed() (setup): the other way round, the most common answer scores most (\"name an animal\": dog).",
                     "stuck? skip the prompt (0 points).",
                     "key-mashing (\"asdfg\", \"jjjj\") costs ${Spam.PENALTY} points each, up to ${Spam.PENALTY * Spam.MAX_PER_ROUND} per prompt.",
                     "typos are forgiven by difficulty: 2 / 2 / 1 / 0 edits, and by length: none up to 4 letters, 1 up to 7, 2 from 8.",
@@ -100,7 +101,9 @@ fun ManualScreen(model: AppModel) {
                     "ONLINE RELAY works on any network (Android ↔ iPhone, LiveContainer).",
                     "DIRECT WI-FI needs both on one network that allows device-to-device traffic.",
                     "your room code never changes: send it, leave the app, come back. the host screen reconnects with the same code.",
-                    "FRIENDS tab: add people by code, see your record and every 1v1, join a friend in one tap.",
+                    "FRIENDS tab: add people by code alone (they get a friend request), see your record, streak and every 1v1, invite or join in one tap.",
+                    "speed penalty (host setting): once one player answers, the other loses ${app.coredump.core.SpeedTax.PER_SECOND} points a second (at most ${app.coredump.core.SpeedTax.MAX}) until they answer or skip.",
+                    "RANKED tab: a random online opponent near your rating, fixed rules (5 prompts, 25 s, speed penalty on). wins raise your rating (Elo); friendly 1v1s count half.",
                 )) TText("· $l", size = 12.sp, color = C.amber)
             }
             Spacer(Modifier.height(12.dp))
@@ -108,8 +111,9 @@ fun ManualScreen(model: AppModel) {
                 for (l in listOf(
                     "battle royale for 2–8 players: bots offline, or friends online (HOST PARTY / JOIN PARTY, same code as 1v1).",
                     "one player holds the core. name an answer nobody said yet this round: the core passes on.",
-                    "a wrong or repeated answer does not pass it. keep trying.",
-                    "the fuse is hidden (16–30 s) and keeps burning between turns. hold the core when it blows: −1 heart, new category.",
+                    "a wrong or repeated answer does not pass it. keep trying: a miss shows \"did you mean\"; answers not on the list are checked online by the host.",
+                    "every turn has a countdown shown on the core (the host sets 5–20 s and the topics). still holding it at 0: it blows, −1 heart, new category.",
+                    "type ahead while you wait: enter queues it, it goes out the moment the core reaches you. × clears it.",
                     "rarer answers fill your meter faster (common +1 … legendary +6). full meter (10): +1 heart, 3 at most.",
                     "everyone starts with 2 hearts. 0 hearts: out. the last one standing wins.",
                 )) TText("· $l", size = 12.sp, color = C.amber)

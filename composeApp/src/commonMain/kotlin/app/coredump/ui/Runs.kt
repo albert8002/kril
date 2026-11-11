@@ -3,6 +3,7 @@ package app.coredump.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,18 +15,25 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
@@ -39,11 +47,12 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.coredump.core.Tier
+import app.coredump.data.History
+import app.coredump.ui.screens.Exp
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
-import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.random.Random
@@ -59,10 +68,13 @@ object RunProbe {
 private const val HOLD = 800f
 private const val FADE = 320f
 
-/** Everything one frame of a run needs. value: points now (fractional while moving). */
+/**
+ * Everything one frame of a run needs. value: points now (fractional while moving).
+ * [life]: QUEST only, EXP of every earlier game (the look's level counts lifetime EXP, one per point).
+ */
 private class Frame(
     val e: Float, val travel: Float, val u: Float, val v: Float, val value: Float,
-    val from: Int, val gain: Int, val max: Int, val arrive: Float, val sec: Float,
+    val from: Int, val gain: Int, val max: Int, val arrive: Float, val sec: Float, val life: Int,
 )
 
 /** Colours and fonts of the active look, read once per composition. */
@@ -71,7 +83,11 @@ private class Ink(
     val tier: Color, val font: FontFamily, val display: FontFamily, val hyper: Hyper,
 )
 
-/** Words of each look's run: what is happening, the counter, the marks passed, where you end up. */
+/**
+ * Words of each look's run: what is happening, the counter, the marks passed, where you end up.
+ * Every unit a run counts is one per point (85 points = 85 m deep, 85 EXP, 85 copies …), the same as the look's
+ * own screens.
+ */
 private object Words {
     private val layers = listOf("user space", "shell", "libc", "syscalls", "vfs", "drivers", "scheduler", "ring 0", "kernel core")
     private val booms = listOf("POW!", "ZAP!", "WHAM!", "BOOM!", "KRAK!", "ZOOM!", "BAM!", "WHOOSH!", "SPLAT!", "KAPOW!")
@@ -111,53 +127,67 @@ private object Words {
     fun counter(s: Style, v: Float): String {
         val n = v.toInt()
         return when (s) {
-            Style.ABYSS -> "${group(n * 2)} m"
+            Style.ABYSS -> "${group(n)} m"
             Style.NEON -> n.toString().padStart(6, '0')
-            Style.PIXEL -> "XP $n"
+            Style.PIXEL -> "EXP $n"
             Style.TERMINAL, Style.PAPER, Style.METRO, Style.DESKTOP -> "${group(n)} pts"
             else -> group(n)
         }
     }
 
     fun gain(s: Style, g: Int): String = when (s) {
-        Style.ABYSS -> "+${g * 2} m deeper"
+        Style.ABYSS -> "+$g m deeper"
         Style.NEON -> "+$g BONUS"
-        Style.PIXEL -> "+$g XP"
+        Style.PIXEL -> "+$g EXP"
         Style.JACKPOT -> "PAYOUT +$g"
         Style.TERMINAL -> "↓ +$g"
         else -> "+$g"
     }
 
+    /** Label of mark [k] (it sits at k × [every] points). */
     fun mark(s: Style, k: Int, max: Int): String = when (s) {
-        Style.TERMINAL -> "0x" + ((k * 10f / max.coerceAtLeast(1)).coerceIn(0f, 1f) * 0xFFFFFFFFL).toLong().toString(16).uppercase().padStart(8, '0')
-        Style.ABYSS -> "${k * 50} m"
+        Style.TERMINAL -> "0x" + ((k * every(s).toFloat() / max.coerceAtLeast(1)).coerceIn(0f, 1f) * 0xFFFFFFFFL).toLong().toString(16).uppercase().padStart(8, '0')
+        Style.ABYSS -> "${group(k * every(s))} m"
         Style.PAPER -> "EDITION No. ${k + 1}"
-        Style.NEON -> "${k * 10}"
-        Style.CLEAN -> "${k * 2}"
+        Style.NEON, Style.CLEAN -> "${k * every(s)}"
         Style.COMIC -> booms[k % booms.size]
         Style.METRO -> stations[k % stations.size]
         Style.ORACLE -> arcana[k % arcana.size]
         else -> ""
     }
 
-    /** Where the run ends: kernel layer, ocean zone, station, level … */
-    fun place(s: Style, v: Float, max: Int): String {
+    /** Where the run ends ([v] points this game): kernel layer, ocean zone, station, level … */
+    fun place(s: Style, v: Float, f: Frame): String {
         val n = v.toInt()
-        val frac = (v / max.coerceAtLeast(1)).coerceIn(0f, 1f)
+        val frac = (v / f.max.coerceAtLeast(1)).coerceIn(0f, 1f)
         return when (s) {
             Style.TERMINAL -> "reached: " + layers[(frac * (layers.size - 1)).toInt().coerceIn(0, layers.size - 1)]
-            Style.ABYSS -> when { n * 2 < 200 -> "SUNLIGHT ZONE"; n * 2 < 1000 -> "TWILIGHT ZONE"; n * 2 < 4000 -> "MIDNIGHT ZONE"; else -> "ABYSSAL ZONE" }
-            Style.PAPER -> "${group(n * 1000)} copies sold"
-            Style.NEON -> "STAGE ${n / 100 + 1}"
+            Style.ABYSS -> zone(n)
+            Style.PAPER -> if (n == 1) "1 copy sold" else "${group(n)} copies sold"
+            // the arcade's stages are its prompts: arriving = this one cleared
+            Style.NEON -> "STAGE CLEAR"
             Style.CLEAN -> "Locked in!"
-            Style.PIXEL -> "LV ${n / 100 + 1}"
+            Style.PIXEL -> {
+                // the QUEST level: lifetime EXP (earlier games + this one), as on the status window
+                val before = Exp.of(f.life + f.from).first
+                val now = Exp.of(f.life + n).first
+                (if (now > before) "LEVEL UP!  " else "") + "LV " + now.toString().padStart(2, '0')
+            }
             Style.COMIC -> "KA-CHING!"
-            Style.METRO -> "Arriving: " + stations[(n / 10) % stations.size]
+            Style.METRO -> "Arriving: " + stations[(n / every(s)) % stations.size]
             Style.JACKPOT -> "WINNER"
             Style.CHAT -> "Delivered · Read"
             Style.DESKTOP -> "Copy complete"
             Style.ORACLE -> Sky.index(v).let { k -> Sky.name(k) + if (v >= Sky.complete(k)) " · charted" else "" }
         }
+    }
+
+    /** Ocean zone at [m] metres (one metre per point). */
+    fun zone(m: Int): String = when {
+        m < 200 -> "SUNLIGHT ZONE"
+        m < 1000 -> "TWILIGHT ZONE"
+        m < 4000 -> "MIDNIGHT ZONE"
+        else -> "ABYSSAL ZONE"
     }
 
     fun layer(v: Float, max: Int): String {
@@ -166,11 +196,19 @@ private object Words {
     }
 }
 
+/** QUEST: how far into its level a lifetime total of [total] EXP is (0..1), on the same curve as [Exp]. */
+private fun expBar(total: Float): Float {
+    var level = 1
+    var left = total.coerceAtLeast(0f)
+    while (left >= Exp.need(level)) { left -= Exp.need(level); level++ }
+    return left / Exp.need(level)
+}
+
 /**
  * The score run: when points are scored, the screen travels — speeds up, counts the points, slows down and stops at
  * the new total — in the look's own world: the terminal descends through memory toward the kernel, the deep sea
  * dives (metres), the gazette runs its presses, the arcade boosts down a neon road, the quiz show climbs its ladder,
- * the quest hero runs for XP, the comic zooms past sound effects, the metro passes stations, the jackpot spins its
+ * the quest hero runs for EXP, the comic zooms past sound effects, the metro passes stations, the jackpot spins its
  * reels, the chat flies up the thread, the desktop copies files, the oracle rushes through the stars.
  * Tap to skip. [onArrive] fires once when it stops (or is skipped). Shows once per [key].
  */
@@ -205,6 +243,8 @@ fun ScoreRun(from: Int, gain: Int, max: Int, tier: Tier, key: Any, onArrive: () 
     val tm = rememberTextMeasurer(cacheSize = 64)
     val ink = Ink(C.bg, C.panel, C.amber, C.hot, C.line, C.dim, C.white, tierColor(tier), LocalMono.current, LocalDisplay.current, LocalHyper.current)
     val seeds = remember(style) { val r = Random(style.ordinal * 31 + 11); List(90) { floatArrayOf(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()) } }
+    // QUEST: EXP of the earlier games (this one is recorded when it ends), read once per run
+    val life = remember(key, style) { if (style == Style.PIXEL) History.runs.sumOf { it.points } else 0 }
     val tierName = tier.label
     Box(
         modifier.fillMaxSize()
@@ -214,17 +254,21 @@ fun ScoreRun(from: Int, gain: Int, max: Int, tier: Tier, key: Any, onArrive: () 
                 alpha = min((e / 160f).coerceIn(0f, 1f), 1f - ((e - travel - HOLD) / FADE).coerceIn(0f, 1f))
             },
     ) {
-        Canvas(Modifier.fillMaxSize()) {
-            val e = clock.floatValue
-            val tt = (e / travel).coerceIn(0f, 1f)
-            val u = Travel.pos(tt)
-            val base = from + RunProbe.bias
-            val f = Frame(e, travel, u, Travel.speed(tt), base + gain * u, base, gain, max.coerceAtLeast(100),
-                ((e - travel) / 300f).coerceIn(0f, 1f), e / 1000f)
-            drawRect(ink.bg)
-            world(style, f, ink, seeds, tm)
-            overlay(style, f, ink, tm, tierName)
-        }
+        // brushes, paths and text styles are made once per size (the cache), the clock is read only while drawing
+        Spacer(Modifier.fillMaxSize().drawWithCache {
+            val kit = RunKit(size.width, size.height, 1.dp.toPx(), ink)
+            onDrawBehind {
+                val e = clock.floatValue
+                val tt = (e / travel).coerceIn(0f, 1f)
+                val u = Travel.pos(tt)
+                val base = from + RunProbe.bias
+                val f = Frame(e, travel, u, Travel.speed(tt), base + gain * u, base, gain, max.coerceAtLeast(100),
+                    ((e - travel) / 300f).coerceIn(0f, 1f), e / 1000f, life)
+                drawRect(ink.bg)
+                world(style, f, ink, seeds, tm, kit)
+                overlay(style, f, ink, tm, tierName, kit)
+            }
+        })
     }
 }
 
@@ -234,29 +278,181 @@ private fun st(ink: Ink, size: TextUnit, color: Color, bold: Boolean = true, dis
     TextStyle(color = color, fontSize = size, fontFamily = if (display) ink.display else ink.font,
         fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal, letterSpacing = spacing)
 
-/** Text centred (by [ax], [ay]) on (x, y). */
-private fun DrawScope.say(tm: TextMeasurer, s: String, x: Float, y: Float, style: TextStyle, alpha: Float = 1f, ax: Float = 0.5f, ay: Float = 0.5f) {
+/**
+ * What a run draws with every frame, made once (per size and look) instead of every frame: brushes, paths,
+ * the comic halftone, text styles. Brushes whose colour drifts (deep water, the oracle's sky) are kept until the
+ * colour has moved by a visible step.
+ */
+private class RunKit(val w: Float, val h: Float, val dp: Float, private val ink: Ink) {
+    /** Text styles, slot by slot (see [ts]). */
+    val styles = arrayOfNulls<TextStyle>(24)
+
+    /** The text style in slot [i], made by [make] the first time it is needed. */
+    inline fun ts(i: Int, make: () -> TextStyle): TextStyle = styles[i] ?: make().also { styles[i] = it }
+
+    // TERMINAL: dashed address lines
+    val dash: PathEffect by lazy(LazyThreadSafetyMode.NONE) { PathEffect.dashPathEffect(floatArrayOf(6 * dp, 4 * dp)) }
+
+    // ABYSS: glowing creatures (radius [glowR] round 0,0: drawn translated), water darkening with depth
+    val glowR = 26 * dp
+    val abyssGlow: Brush by lazy(LazyThreadSafetyMode.NONE) {
+        Brush.radialGradient(listOf(ink.hot.copy(alpha = 0.35f), Color.Transparent), Offset.Zero, glowR)
+    }
+    private var waterKey = -1
+    private var water: Brush? = null
+    fun water(deep: Float): Brush {
+        val k = (deep.coerceIn(0f, 1f) * 255f).toInt()
+        val old = water
+        if (old != null && k == waterKey) return old
+        val d = k / 255f
+        return Brush.verticalGradient(listOf(lerp(Color(0xFF0E4A6B), Color(0xFF02060C), d), lerp(Color(0xFF052238), Color.Black, d)))
+            .also { water = it; waterKey = k }
+    }
+
+    // NEON: dusk sky and the sun
+    val horizon = h * 0.36f
+    val sunR = w * 0.22f
+    val sky: Brush by lazy(LazyThreadSafetyMode.NONE) { Brush.verticalGradient(listOf(ink.bg, lerp(ink.bg, ink.hot, 0.35f)), 0f, horizon) }
+    val sun: Brush by lazy(LazyThreadSafetyMode.NONE) { Brush.verticalGradient(listOf(ink.amber, ink.hot), horizon - sunR, horizon) }
+
+    // CLEAN: the two spotlight beams (before their swing) and their light
+    val beams: List<Path> by lazy(LazyThreadSafetyMode.NONE) {
+        List(2) { b ->
+            Path().apply {
+                moveTo(if (b == 0) 0f else w, h)
+                lineTo(w / 2f - w * 0.25f, -h * 0.1f)
+                lineTo(w / 2f + w * 0.25f, -h * 0.1f)
+                close()
+            }
+        }
+    }
+    val beamLight: Brush by lazy(LazyThreadSafetyMode.NONE) { Brush.verticalGradient(listOf(ink.hot.copy(alpha = 0.10f), Color.Transparent), h, 0f) }
+
+    // COMIC: the halftone (x, y pairs, drawn as round points in one call), starbursts by mark round 0,0
+    val halftone: FloatArray by lazy(LazyThreadSafetyMode.NONE) {
+        val dot = 14 * dp
+        var n = 0
+        var yy = 0f
+        while (yy < h) { var xx = if ((yy / dot).toInt() % 2 == 0) 0f else dot / 2; while (xx < w) { n++; xx += dot }; yy += dot }
+        val a = FloatArray(n * 2)
+        var i = 0
+        yy = 0f
+        while (yy < h) { var xx = if ((yy / dot).toInt() % 2 == 0) 0f else dot / 2; while (xx < w) { a[i++] = xx; a[i++] = yy; xx += dot }; yy += dot }
+        a
+    }
+    val halftoneInk: Paint by lazy(LazyThreadSafetyMode.NONE) {
+        Paint().apply {
+            color = ink.line.copy(alpha = 0.08f)
+            style = PaintingStyle.Stroke
+            strokeWidth = 4 * dp
+            strokeCap = StrokeCap.Round
+            isAntiAlias = true
+        }
+    }
+    private val bursts = HashMap<Int, Path>()
+    fun burst(seed: Int, r: Float): Path {
+        bursts[seed]?.let { return it }
+        if (bursts.size > 48) bursts.clear()
+        val rnd = Random(seed)
+        val path = Path()
+        val n = 14
+        for (i in 0 until n * 2) {
+            val rr = if (i % 2 == 0) r * (1f + 0.15f * rnd.nextFloat()) else r * 0.62f
+            val ang = i * PI.toFloat() / n
+            val x = cos(ang) * rr * 1.5f
+            val y = sin(ang) * rr
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        bursts[seed] = path
+        return path
+    }
+
+    // CHAT: a heart of size 1 round 0,0 (drawn translated and scaled)
+    val heart: Path by lazy(LazyThreadSafetyMode.NONE) {
+        Path().apply {
+            moveTo(0f, 0.9f)
+            cubicTo(-1.4f, -0.1f, -0.6f, -1.1f, 0f, -0.35f)
+            cubicTo(0.6f, -1.1f, 1.4f, -0.1f, 0f, 0.9f)
+            close()
+        }
+    }
+
+    // JACKPOT: the reels' face
+    val reel: Brush by lazy(LazyThreadSafetyMode.NONE) {
+        val rh = w * 0.17f * 1.5f
+        val cy = h * 0.42f
+        Brush.verticalGradient(listOf(Color(0xFFDDDDDD), Color.White, Color(0xFFDDDDDD)), cy - rh / 2f, cy + rh / 2f)
+    }
+
+    // DESKTOP: the copy dialog's title bar
+    val titleBar: Brush by lazy(LazyThreadSafetyMode.NONE) {
+        val left = w * 0.08f
+        Brush.horizontalGradient(listOf(ink.hot, lerp(ink.hot, Color.White, 0.42f)), left, left + w * 0.84f)
+    }
+
+    // ORACLE: glows of radius 1 round 0,0 (see [glow]), the sky, scratch arrays for one constellation
+    val goldGlow: Brush by lazy(LazyThreadSafetyMode.NONE) { Brush.radialGradient(listOf(GOLD, Color.Transparent), Offset.Zero, 1f) }
+    val starGlow: Brush by lazy(LazyThreadSafetyMode.NONE) { Brush.radialGradient(listOf(ink.white, Color.Transparent), Offset.Zero, 1f) }
+    val headGlow: Brush by lazy(LazyThreadSafetyMode.NONE) { Brush.radialGradient(listOf(Color.White, Color.Transparent), Offset.Zero, 1f) }
+    private val nebulae = HashMap<Int, Brush>()
+    /** Glow of nebula [key] in colour [col] (kept unless ADHD-fy keeps changing its colour). */
+    fun nebula(key: Int, col: Color, keep: Boolean): Brush {
+        if (keep) nebulae[key]?.let { return it }
+        val b = Brush.radialGradient(listOf(col, Color.Transparent), Offset.Zero, 1f)
+        if (keep) { if (nebulae.size > 32) nebulae.clear(); nebulae[key] = b }
+        return b
+    }
+    private var skyKey = -1
+    private var skyBrush: Brush? = null
+    fun night(k: Int, travel: Float): Brush {
+        val key = k * 256 + (travel.coerceIn(0f, 1f) * 255f).toInt()
+        val old = skyBrush
+        if (old != null && key == skyKey) return old
+        val night = Color(0xFF05040C)
+        return Brush.verticalGradient(listOf(night, lerp(Sky.tint(k), Sky.tint(k + 1), (key % 256) / 255f), night))
+            .also { skyBrush = it; skyKey = key }
+    }
+    val xs = FloatArray(32)
+    val ys = FloatArray(32)
+    val dzs = FloatArray(32)
+    val lit = BooleanArray(32)
+}
+
+private val GOLD = Color(0xFFE9C46A)
+
+/** Text centred (by [ax], [ay]) on (x, y); [color] (if given) instead of the style's own. */
+private fun DrawScope.say(tm: TextMeasurer, s: String, x: Float, y: Float, style: TextStyle, alpha: Float = 1f, ax: Float = 0.5f, ay: Float = 0.5f,
+                          color: Color = Color.Unspecified) {
     if (alpha <= 0.01f || s.isEmpty()) return
     val r = tm.measure(s, style)
-    drawText(r, topLeft = Offset(x - r.size.width * ax, y - r.size.height * ay), alpha = alpha.coerceIn(0f, 1f))
+    drawText(r, color = color, topLeft = Offset(x - r.size.width * ax, y - r.size.height * ay), alpha = alpha.coerceIn(0f, 1f))
+}
+
+/** A soft glow of radius [r] round [p]: [unit] is a radial brush of radius 1 round 0,0 (made once, never per frame). */
+private fun DrawScope.glow(p: Offset, r: Float, unit: Brush, alpha: Float) {
+    if (r <= 0f || alpha <= 0.004f) return
+    withTransform({ translate(p.x, p.y); scale(r, r, Offset.Zero) }) {
+        drawCircle(unit, radius = 1f, center = Offset.Zero, alpha = alpha.coerceIn(0f, 1f))
+    }
 }
 
 /** Streak colour: the look's colour, or a running rainbow in ADHD-fy. */
 private fun tint(ink: Ink, base: Color, i: Int, a: Float): Color =
     if (ink.hyper.on) hue(i * 37f + ink.hyper.t * 160f, 0.8f, 1f, a) else base.copy(alpha = a.coerceIn(0f, 1f))
 
-/** Marks of the track near the current value: (mark index, offset in points from the current value). */
-private fun marks(s: Style, f: Frame, span: Float): List<Pair<Int, Float>> {
+/** Each mark of the track near the current value: [body] (mark index, offset in points from the current value). */
+private inline fun eachMark(s: Style, f: Frame, span: Float, body: (k: Int, d: Float) -> Unit) {
     val every = Words.every(s)
-    if (every <= 0) return emptyList()
+    if (every <= 0) return
     val lo = floor((f.value - span) / every).toInt().coerceAtLeast(0)
     val hi = floor((f.value + span) / every).toInt() + 1
-    return (lo..hi).map { it to (it * every - f.value) }
+    for (k in lo..hi) body(k, k * every - f.value)
 }
 
 // ================================================================== the worlds
 
-private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray>, tm: TextMeasurer) {
+private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray>, tm: TextMeasurer, kit: RunKit) {
     val w = size.width
     val h = size.height
     val ppp = h * 0.055f                       // px per point of travel
@@ -266,30 +462,33 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
         Style.TERMINAL -> {
             // memory streaming past: columns of bits rushing up as we go down; address lines at each mark
             val cols = 22
+            val sw = 2.dp.toPx()
             for (c in 0 until cols) {
                 val sd = seeds[c]
                 val x = w * (c + 0.5f) / cols
                 val gap = (40f + 50f * sd[0]).dp.toPx()
                 val len = (4f + 70f * f.v * (0.5f + sd[1])).dp.toPx()
+                val col = tint(ink, ink.amber, c, 0.18f + 0.3f * sd[1])
                 var y = -((scroll * (0.6f + sd[2]) + sd[3] * gap) % gap)
                 while (y < h) {
-                    drawLine(tint(ink, ink.amber, c, 0.18f + 0.3f * sd[1]), Offset(x, y), Offset(x, y + len), strokeWidth = 2.dp.toPx())
+                    drawLine(col, Offset(x, y), Offset(x, y + len), strokeWidth = sw)
                     y += gap
                 }
             }
-            for ((k, d) in marks(s, f, h / ppp)) {
+            val label = kit.ts(0) { st(ink, 11.sp, ink.dim, bold = false) }
+            eachMark(s, f, h / ppp) { k, d ->
                 val y = h * 0.42f + d * ppp
-                drawLine(ink.amber.copy(alpha = 0.5f), Offset(0f, y), Offset(w, y), strokeWidth = 1.dp.toPx(),
-                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx())))
-                say(tm, Words.mark(s, k, f.max), 14.dp.toPx(), y - 10.dp.toPx(), st(ink, 11.sp, ink.dim, bold = false), 0.9f, ax = 0f)
+                drawLine(ink.amber.copy(alpha = 0.5f), Offset(0f, y), Offset(w, y), strokeWidth = 1.dp.toPx(), pathEffect = kit.dash)
+                say(tm, Words.mark(s, k, f.max), 14.dp.toPx(), y - 10.dp.toPx(), label, 0.9f, ax = 0f)
             }
             // the layer we are in, at the edge
-            say(tm, "[ ${Words.layer(f.value, f.max)} ]", w - 14.dp.toPx(), h * 0.74f, st(ink, 12.sp, ink.hot), 0.9f, ax = 1f)
+            say(tm, "[ ${Words.layer(f.value, f.max)} ]", w - 14.dp.toPx(), h * 0.74f, kit.ts(1) { st(ink, 12.sp, ink.hot) }, 0.9f, ax = 1f)
         }
         Style.ABYSS -> {
-            // light fades with depth; marine snow rising past; depth lines
-            val deep = (f.value * 2f / 1400f).coerceIn(0f, 1f)
-            drawRect(Brush.verticalGradient(listOf(lerp(Color(0xFF0E4A6B), Color(0xFF02060C), deep), lerp(Color(0xFF052238), Color.Black, deep))))
+            // light fades with depth (one metre per point: black where the midnight zone starts, 1,000 m);
+            // marine snow rising past; depth lines
+            val deep = (f.value / 1000f).coerceIn(0f, 1f)
+            drawRect(kit.water(deep))
             for (i in 0 until 50 * more) {
                 val sd = seeds[i % seeds.size]
                 val x = w * ((sd[0] + i * 0.013f) % 1f)
@@ -301,26 +500,31 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
                 val sd = seeds[60 + i]
                 val y = h - ((sd[1] * h + scroll * 0.35f) % h)
                 val x = w * sd[0] + sin(f.sec * 1.5f + i) * 12.dp.toPx()
-                drawCircle(Brush.radialGradient(listOf(ink.hot.copy(alpha = 0.35f), Color.Transparent), Offset(x, y), 26.dp.toPx()), 26.dp.toPx(), Offset(x, y))
+                translate(x, y) { drawCircle(kit.abyssGlow, kit.glowR, Offset.Zero) }
             }
-            for ((k, d) in marks(s, f, h / ppp)) {
+            val label = kit.ts(0) { st(ink, 11.sp, Color.White.copy(alpha = 0.6f), bold = false) }
+            eachMark(s, f, h / ppp) { k, d ->
                 val y = h * 0.42f + d * ppp
                 drawLine(Color.White.copy(alpha = 0.22f), Offset(w * 0.08f, y), Offset(w * 0.2f, y), strokeWidth = 1.dp.toPx())
-                say(tm, Words.mark(s, k, f.max), w * 0.22f, y, st(ink, 11.sp, Color.White.copy(alpha = 0.6f), bold = false), 0.9f, ax = 0f)
+                say(tm, Words.mark(s, k, f.max), w * 0.22f, y, label, 0.9f, ax = 0f)
             }
         }
         Style.PAPER -> {
             // the press: three columns of type running up, rollers top and bottom, an edition banner at each mark
             val colW = w * 0.26f
+            val type = ink.amber.copy(alpha = 0.18f)
+            val blur = ink.amber.copy(alpha = 0.06f * f.v)
+            val gap = 9.dp.toPx()
+            val lineH = 3.dp.toPx()
+            val blurH = (3f + 20f * f.v).dp.toPx()
             for (c in 0 until 3) {
                 val x0 = w * 0.08f + c * (colW + w * 0.04f)
-                val gap = 9.dp.toPx()
                 var y = -((scroll * 1.2f) % gap)
                 var n = c * 7
                 while (y < h) {
                     val lw = colW * (0.6f + 0.4f * seeds[n % seeds.size][0])
-                    drawRect(ink.amber.copy(alpha = 0.18f), Offset(x0, y), Size(lw, 3.dp.toPx()))
-                    if (f.v > 0.2f) drawRect(ink.amber.copy(alpha = 0.06f * f.v), Offset(x0, y), Size(lw, (3f + 20f * f.v).dp.toPx()))
+                    drawRect(type, Offset(x0, y), Size(lw, lineH))
+                    if (f.v > 0.2f) drawRect(blur, Offset(x0, y), Size(lw, blurH))
                     y += gap; n++
                 }
             }
@@ -332,18 +536,19 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
                     drawLine(ink.bg.copy(alpha = 0.6f), Offset(x, cy - 14.dp.toPx()), Offset(x, cy + 14.dp.toPx()), strokeWidth = 2.dp.toPx())
                 }
             }
-            for ((k, d) in marks(s, f, h / ppp)) {
+            val label = kit.ts(0) { st(ink, 13.sp, ink.bg, spacing = 3.sp) }
+            eachMark(s, f, h / ppp) { k, d ->
                 val y = h * 0.42f + d * ppp * 1.2f
                 drawRect(ink.amber, Offset(0f, y - 13.dp.toPx()), Size(w, 26.dp.toPx()))
-                say(tm, Words.mark(s, k, f.max), w / 2f, y, st(ink, 13.sp, ink.bg, spacing = 3.sp), 1f)
+                say(tm, Words.mark(s, k, f.max), w / 2f, y, label, 1f)
             }
         }
         Style.NEON -> {
             // night drive: sun on the horizon, a grid floor rushing at you, posts flying by
-            val hz = h * 0.36f
-            drawRect(Brush.verticalGradient(listOf(ink.bg, lerp(ink.bg, ink.hot, 0.35f)), 0f, hz), size = Size(w, hz))
-            val sunR = w * 0.22f
-            drawCircle(Brush.verticalGradient(listOf(ink.amber, ink.hot), hz - sunR, hz), sunR, Offset(w / 2f, hz))
+            val hz = kit.horizon
+            drawRect(kit.sky, size = Size(w, hz))
+            val sunR = kit.sunR
+            drawCircle(kit.sun, sunR, Offset(w / 2f, hz))
             for (i in 0 until 5) {
                 val y = hz - sunR * (0.12f + i * 0.17f)
                 drawRect(ink.bg, Offset(w / 2f - sunR, y), Size(sunR * 2f, (2f + i).dp.toPx()))
@@ -358,41 +563,37 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
             for (i in -7..7) {
                 drawLine(tint(ink, ink.amber, i + 7, 0.45f), Offset(w / 2f + i * w * 0.02f, hz), Offset(w / 2f + i * w * 0.32f, h), strokeWidth = 1.5.dp.toPx())
             }
-            for ((k, d) in marks(s, f, 30f)) {
-                if (d < -1f) continue
+            eachMark(s, f, 30f) { k, d ->
+                if (d < -1f) return@eachMark
                 val z = (1f - d / 30f).coerceIn(0f, 1f)
                 val y = hz + (h - hz) * z * z
                 val x = w / 2f + w * 0.42f * z * z * (if (k % 2 == 0) 1f else -1f)
                 drawLine(ink.amber.copy(alpha = z), Offset(x, y), Offset(x, y - 60.dp.toPx() * z * z), strokeWidth = (2f + 4f * z).dp.toPx())
             }
-            say(tm, "${(f.v * 299).toInt()} KM/H", w / 2f, h * 0.9f, st(ink, 14.sp, ink.amber, spacing = 2.sp), 0.9f)
+            say(tm, "${(f.v * 299).toInt()} KM/H", w / 2f, h * 0.9f, kit.ts(0) { st(ink, 14.sp, ink.amber, spacing = 2.sp) }, 0.9f)
         }
         Style.CLEAN -> {
             // the prize ladder sliding down as we climb; spotlights swing faster with speed
             for (b in 0 until 2) {
                 val ang = (if (b == 0) -1f else 1f) * (20f + 25f * sin(f.sec * (1.2f + 3f * f.v) + b * 2f))
                 rotate(ang, Offset(if (b == 0) 0f else w, h)) {
-                    val path = Path().apply {
-                        moveTo(if (b == 0) 0f else w, h)
-                        lineTo(w / 2f - w * 0.25f, -h * 0.1f)
-                        lineTo(w / 2f + w * 0.25f, -h * 0.1f)
-                        close()
-                    }
-                    drawPath(path, Brush.verticalGradient(listOf(ink.hot.copy(alpha = 0.10f), Color.Transparent), h, 0f))
+                    drawPath(kit.beams[b], kit.beamLight)
                 }
             }
-            for ((k, d) in marks(s, f, h / ppp)) {
-                if (k == 0) continue
+            val label = kit.ts(0) { st(ink, 15.sp, ink.dim) }
+            val onHot = onColor(ink.hot)
+            eachMark(s, f, h / ppp) { k, d ->
+                if (k == 0) return@eachMark
                 val y = h * 0.42f - d * ppp
                 val near = (1f - abs(d) / 2f).coerceIn(0f, 1f)
                 val pw = w * (0.5f + 0.08f * near)
                 val ph = 40.dp.toPx()
                 drawRoundRect(lerp(ink.panel, ink.hot, near * 0.8f), Offset(w / 2f - pw / 2f, y - ph / 2f), Size(pw, ph), CornerRadius(ph / 2f))
-                say(tm, Words.mark(s, k, f.max), w / 2f, y, st(ink, 15.sp, if (near > 0.5f) onColor(ink.hot) else ink.dim), 0.35f + 0.65f * near)
+                say(tm, Words.mark(s, k, f.max), w / 2f, y, label, 0.35f + 0.65f * near, color = if (near > 0.5f) onHot else ink.dim)
             }
         }
         Style.PIXEL -> {
-            // side-scroller: clouds, a running hero, ground and coins, an XP bar that levels up
+            // side-scroller: clouds, a running hero, ground and coins, the EXP bar of the QUEST level
             val g = 4.dp.toPx()
             fun snap(x: Float) = (x / g).toInt() * g
             for (i in 0 until 4) {
@@ -406,9 +607,9 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
             val tile = 24.dp.toPx()
             var x = -snap(scroll % tile)
             while (x < w) { drawRect(ink.amber.copy(alpha = 0.25f), Offset(x, ground + g * 2), Size(g * 2, g * 2)); x += tile }
-            for ((_, d) in marks(s, f, w / ppp)) {
+            val bob = if (((f.sec * 4f).toInt() % 2) == 0) 0f else g
+            eachMark(s, f, w / ppp) { _, d ->
                 val cx = snap(w * 0.3f + d * ppp)
-                val bob = if (((f.sec * 4f).toInt() % 2) == 0) 0f else g
                 drawRect(tint(ink, ink.hot, 3, 1f), Offset(cx - g, ground - g * 8 - bob), Size(g * 2, g * 3))
             }
             // hero (blocky, 2× pixels): legs swap with distance, dust behind when fast
@@ -422,16 +623,14 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
             drawRect(c, Offset(hx - b * (if (step) 2 else 1), ground - b * 3), Size(b, b * 3))
             drawRect(c, Offset(hx + b * (if (step) 1 else 0), ground - b * 3), Size(b, b * 3))
             if (f.v > 0.4f) for (i in 1..3) drawRect(c.copy(alpha = 0.3f), Offset(hx - b * (3 + i * 2), ground - b * (1 + i)), Size(b, b))
-            // XP bar
-            val frac = (f.value % 100f) / 100f
+            // EXP bar: how far into the level (lifetime EXP, one per point, as on the QUEST status window)
+            val frac = expBar(f.life + f.value)
             drawRect(ink.amber, Offset(w * 0.1f, h * 0.08f), Size(w * 0.8f, g * 4), style = Stroke(g / 2))
             drawRect(tint(ink, ink.hot, 1, 1f), Offset(w * 0.1f + g, h * 0.08f + g), Size(snap((w * 0.8f - g * 2) * frac), g * 2))
         }
         Style.COMIC -> {
             // halftone, radial speed lines, sound effects whooshing past
-            val dot = 14.dp.toPx()
-            var yy = 0f
-            while (yy < h) { var xx = if ((yy / dot).toInt() % 2 == 0) 0f else dot / 2; while (xx < w) { drawCircle(ink.line.copy(alpha = 0.08f), 2.dp.toPx(), Offset(xx, yy)); xx += dot }; yy += dot }
+            drawContext.canvas.drawRawPoints(PointMode.Points, kit.halftone, kit.halftoneInk)
             val o = Offset(w / 2f, h * 0.42f)
             for (i in 0 until 40 * more) {
                 val sd = seeds[i % seeds.size]
@@ -441,11 +640,18 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
                 drawLine(tint(ink, ink.line, i, 0.5f + 0.4f * f.v), Offset(o.x + cos(ang) * r0, o.y + sin(ang) * r0), Offset(o.x + cos(ang) * r1, o.y + sin(ang) * r1),
                     strokeWidth = (2f + 3f * sd[3]).dp.toPx())
             }
-            for ((k, d) in marks(s, f, w / ppp)) {
+            val label = kit.ts(0) { st(ink, 18.sp, Color.Black, display = true) }
+            val outline = Stroke(2.dp.toPx())
+            eachMark(s, f, w / ppp) { k, d ->
                 val x = w / 2f + d * ppp * 1.4f
                 val y = h * (if (k % 2 == 0) 0.72f else 0.18f)
-                burst(Offset(x, y), 44.dp.toPx(), if (k % 2 == 0) ink.hot else ink.amber, k)
-                say(tm, Words.mark(s, k, f.max), x, y, st(ink, 18.sp, onColor(if (k % 2 == 0) ink.hot else ink.amber), display = true), 1f)
+                val fill = if (k % 2 == 0) ink.hot else ink.amber
+                val path = kit.burst(k, 44.dp.toPx())
+                translate(x, y) {
+                    drawPath(path, fill)
+                    drawPath(path, Color.Black, style = outline)
+                }
+                say(tm, Words.mark(s, k, f.max), x, y, label, 1f, color = onColor(fill))
             }
         }
         Style.METRO -> {
@@ -459,43 +665,51 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
                 val y = h * (0.61f + 0.025f * (i % 3))
                 drawLine(tint(ink, ink.amber, i, 0.6f), Offset(x, y), Offset(x + len, y), strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round)
             }
-            for ((k, d) in marks(s, f, w / ppp)) {
+            val label = kit.ts(0) { st(ink, 13.sp, onColor(ink.hot)) }
+            eachMark(s, f, w / ppp) { k, d ->
                 val x = w / 2f + d * ppp * 1.6f
                 val sw = 170.dp.toPx()
                 drawRoundRect(ink.hot, Offset(x - sw / 2f, h * 0.245f), Size(sw, 34.dp.toPx()), CornerRadius(4.dp.toPx()))
-                say(tm, Words.mark(s, k, f.max), x, h * 0.245f + 17.dp.toPx(), st(ink, 13.sp, onColor(ink.hot)), 1f)
+                say(tm, Words.mark(s, k, f.max), x, h * 0.245f + 17.dp.toPx(), label, 1f)
             }
             val ry = h * 0.68f
             drawLine(ink.line, Offset(0f, ry), Offset(w, ry), strokeWidth = 3.dp.toPx())
+            val sleeper = ink.line.copy(alpha = 0.6f)
             var sx = -((scroll * 2f) % (22.dp.toPx()))
-            while (sx < w) { drawLine(ink.line.copy(alpha = 0.6f), Offset(sx, ry + 4.dp.toPx()), Offset(sx - 8.dp.toPx(), ry + 14.dp.toPx()), strokeWidth = 3.dp.toPx()); sx += 22.dp.toPx() }
-            // route: stations as dots, the train moving along
+            while (sx < w) { drawLine(sleeper, Offset(sx, ry + 4.dp.toPx()), Offset(sx - 8.dp.toPx(), ry + 14.dp.toPx()), strokeWidth = 3.dp.toPx()); sx += 22.dp.toPx() }
+            // route: a station every 10 points as dots, the train moving along
             val y0 = h * 0.08f
             drawLine(ink.hot, Offset(w * 0.08f, y0), Offset(w * 0.92f, y0), strokeWidth = 5.dp.toPx(), cap = StrokeCap.Round)
-            val first = (f.from / 10)
+            val every = Words.every(s).toFloat()
+            val first = (f.from / Words.every(s))
+            val ring = Stroke(2.dp.toPx())
             for (i in 0..5) {
                 val dot = Offset(w * (0.08f + 0.168f * i), y0)
                 drawCircle(ink.bg, 6.dp.toPx(), dot)
-                drawCircle(ink.hot, 6.dp.toPx(), dot, style = Stroke(2.dp.toPx()))
+                drawCircle(ink.hot, 6.dp.toPx(), dot, style = ring)
             }
-            val tx = w * (0.08f + 0.168f * ((f.value / 10f - first).coerceIn(0f, 5f)))
+            val tx = w * (0.08f + 0.168f * ((f.value / every - first).coerceIn(0f, 5f)))
             drawCircle(ink.amber, 9.dp.toPx(), Offset(tx, y0))
         }
         Style.JACKPOT -> {
             // chasing bulbs round the screen, faster with speed
             val n = 36
             val lit = (scroll / 30.dp.toPx()).toInt()
+            val off = ink.amber.copy(alpha = 0.18f)
             for (i in 0 until n) {
                 val p = i / n.toFloat()
                 val pt = perimeter(p, w * 0.06f, h * 0.06f, w * 0.88f, h * 0.88f)
                 val on = (i + lit) % 3 == 0
-                drawCircle(if (on) tint(ink, ink.amber, i, 1f) else ink.amber.copy(alpha = 0.18f), (if (on) 6f else 4f).dp.toPx(), pt)
+                drawCircle(if (on) tint(ink, ink.amber, i, 1f) else off, (if (on) 6f else 4f).dp.toPx(), pt)
             }
-            reels(f, ink, tm)
+            reels(f, ink, tm, kit)
         }
         Style.CHAT -> {
             // the thread flying up: bubbles left and right, hearts floating
             val gap = 64.dp.toPx()
+            val mineFill = ink.hot.copy(alpha = 0.35f)
+            val theirFill = ink.line.copy(alpha = 0.45f)
+            val bubble = CornerRadius(18.dp.toPx())
             var y = h - ((scroll * 1.1f) % gap) - gap
             var i = 0
             while (y > -gap) {
@@ -503,28 +717,28 @@ private fun DrawScope.world(s: Style, f: Frame, ink: Ink, seeds: List<FloatArray
                 val bw = w * (0.3f + 0.35f * sd[0])
                 val mine = (i + (scroll * 1.1f / gap).toInt()) % 2 == 0
                 val x = if (mine) w - 16.dp.toPx() - bw else 16.dp.toPx()
-                drawRoundRect(if (mine) ink.hot.copy(alpha = 0.35f) else ink.line.copy(alpha = 0.45f), Offset(x, y), Size(bw, 40.dp.toPx()), CornerRadius(18.dp.toPx()))
+                drawRoundRect(if (mine) mineFill else theirFill, Offset(x, y), Size(bw, 40.dp.toPx()), bubble)
                 y -= gap; i++
             }
             for (k in 0 until 8 * more) {
                 val sd = seeds[30 + k]
                 val hy = h - ((sd[1] * h + scroll * (0.4f + sd[2] * 0.6f)) % h)
-                heart(Offset(w * sd[0], hy), (6f + 6f * sd[3]).dp.toPx(), tint(ink, ink.hot, k, 0.5f + 0.4f * f.v))
+                heart(kit, Offset(w * sd[0], hy), (6f + 6f * sd[3]).dp.toPx(), tint(ink, ink.hot, k, 0.5f + 0.4f * f.v))
             }
         }
-        Style.DESKTOP -> desktopCopy(f, ink, tm)
-        Style.ORACLE -> constellations(f, ink, tm, seeds)
+        Style.DESKTOP -> desktopCopy(f, ink, tm, kit)
+        Style.ORACLE -> constellations(f, ink, tm, seeds, kit)
     }
 }
 
 /** Counter, words and the arrival on top of the world. */
-private fun DrawScope.overlay(s: Style, f: Frame, ink: Ink, tm: TextMeasurer, tierName: String) {
+private fun DrawScope.overlay(s: Style, f: Frame, ink: Ink, tm: TextMeasurer, tierName: String, kit: RunKit) {
     val w = size.width
     val h = size.height
     val cy = if (s == Style.DESKTOP) h * 0.24f else h * 0.42f
     val hy = ink.hyper
     // what is happening
-    say(tm, Words.going(s), w / 2f, h * 0.15f, st(ink, 13.sp, ink.dim, spacing = 3.sp), 1f - f.arrive * 0.6f)
+    say(tm, Words.going(s), w / 2f, h * 0.15f, kit.ts(10) { st(ink, 13.sp, ink.dim, spacing = 3.sp) }, 1f - f.arrive * 0.6f)
     if (s != Style.JACKPOT) {
         // a soft band behind the number, then the number (pops on arrival, wobbles in ADHD-fy)
         // the band holds the number and the gain; on arrival it grows to hold the place and the tier too
@@ -532,18 +746,19 @@ private fun DrawScope.overlay(s: Style, f: Frame, ink: Ink, tm: TextMeasurer, ti
         drawRoundRect(ink.bg.copy(alpha = 0.8f), Offset(w * 0.08f, cy - 44.dp.toPx()), Size(w * 0.84f, bandH), CornerRadius(16.dp.toPx()))
         val pop = 1f + 0.22f * sin(f.arrive * PI.toFloat()) + (if (hy.on) 0.04f * sin(f.sec * 9f) else 0f)
         val color = if (hy.on) hue(hy.t * 150f, 0.75f, 1f) else lerp(ink.amber, ink.tier, f.u)
+        val number = kit.ts(11) { st(ink, if (s == Style.NEON) 44.sp else 52.sp, ink.amber, display = true) }
         rotate(if (hy.on) 4f * sin(f.sec * 5f) else 0f, Offset(w / 2f, cy)) {
             scale(pop, Offset(w / 2f, cy)) {
-                say(tm, Words.counter(s, f.value), w / 2f, cy, st(ink, if (s == Style.NEON) 44.sp else 52.sp, color, display = true), 1f)
+                say(tm, Words.counter(s, f.value), w / 2f, cy, number, 1f, color = color)
             }
         }
     }
     // the gain, then where we are and the tier on arrival
-    say(tm, Words.gain(s, f.gain), w / 2f, cy + 58.dp.toPx(), st(ink, 18.sp, if (s == Style.PIXEL) ink.amber else ink.tier), (f.e / 300f).coerceIn(0f, 1f))
+    say(tm, Words.gain(s, f.gain), w / 2f, cy + 58.dp.toPx(), kit.ts(12) { st(ink, 18.sp, if (s == Style.PIXEL) ink.amber else ink.tier) }, (f.e / 300f).coerceIn(0f, 1f))
     if (f.arrive > 0f) {
         val a = f.arrive
-        say(tm, Words.place(s, f.from + f.gain.toFloat(), f.max), w / 2f, cy + 96.dp.toPx() + 10.dp.toPx() * (1f - a), st(ink, 16.sp, ink.white), a)
-        say(tm, tierName, w / 2f, cy + 128.dp.toPx() + 10.dp.toPx() * (1f - a), st(ink, 14.sp, ink.tier, spacing = 2.sp), a)
+        say(tm, Words.place(s, f.from + f.gain.toFloat(), f), w / 2f, cy + 96.dp.toPx() + 10.dp.toPx() * (1f - a), kit.ts(13) { st(ink, 16.sp, ink.white) }, a)
+        say(tm, tierName, w / 2f, cy + 128.dp.toPx() + 10.dp.toPx() * (1f - a), kit.ts(14) { st(ink, 14.sp, ink.tier, spacing = 2.sp) }, a)
         // a ring going out from the number
         drawCircle(tint(ink, ink.tier, 0, (1f - a) * 0.8f), 40.dp.toPx() + w * 0.5f * a, Offset(w / 2f, cy), style = Stroke((4f * (1f - a) + 0.5f).dp.toPx()))
         if (hy.on) for (i in 0 until 12) {
@@ -552,37 +767,15 @@ private fun DrawScope.overlay(s: Style, f: Frame, ink: Ink, tm: TextMeasurer, ti
             sparkle(Offset(w / 2f + cos(ang) * d, cy + sin(ang) * d), 9.dp.toPx() * (1f - a * 0.5f), hue(i * 30f + hy.t * 200f, 0.8f, 1f, 1f - a), a * 360f)
         }
     } else {
-        say(tm, "tap to skip", w / 2f, h * 0.95f, st(ink, 11.sp, ink.dim, bold = false), 0.6f)
+        say(tm, "tap to skip", w / 2f, h * 0.95f, kit.ts(15) { st(ink, 11.sp, ink.dim, bold = false) }, 0.6f)
     }
 }
 
 // ================================================================== pieces
 
-/** Comic starburst behind a sound effect. */
-private fun DrawScope.burst(c: Offset, r: Float, color: Color, seed: Int) {
-    val rnd = Random(seed)
-    val path = Path()
-    val n = 14
-    for (i in 0 until n * 2) {
-        val rr = if (i % 2 == 0) r * (1f + 0.15f * rnd.nextFloat()) else r * 0.62f
-        val ang = i * PI.toFloat() / n
-        val x = c.x + cos(ang) * rr * 1.5f
-        val y = c.y + sin(ang) * rr
-        if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-    }
-    path.close()
-    drawPath(path, color)
-    drawPath(path, Color.Black, style = Stroke(2.dp.toPx()))
-}
-
-private fun DrawScope.heart(c: Offset, s: Float, color: Color) {
-    val p = Path().apply {
-        moveTo(c.x, c.y + s * 0.9f)
-        cubicTo(c.x - s * 1.4f, c.y - s * 0.1f, c.x - s * 0.6f, c.y - s * 1.1f, c.x, c.y - s * 0.35f)
-        cubicTo(c.x + s * 0.6f, c.y - s * 1.1f, c.x + s * 1.4f, c.y - s * 0.1f, c.x, c.y + s * 0.9f)
-        close()
-    }
-    drawPath(p, color)
+/** CHAT heart of size [s] round [c] (the kit's unit heart, moved and scaled: no new path per frame). */
+private fun DrawScope.heart(kit: RunKit, c: Offset, s: Float, color: Color) {
+    withTransform({ translate(c.x, c.y); scale(s, s, Offset.Zero) }) { drawPath(kit.heart, color) }
 }
 
 /** Point at fraction [p] (0..1) round the rectangle (x, y, w, h), clockwise from the top left. */
@@ -599,7 +792,7 @@ private fun perimeter(p: Float, x: Float, y: Float, w: Float, h: Float): Offset 
 }
 
 /** JACKPOT: the total as slot reels — every digit rolls like an odometer and blurs with speed. */
-private fun DrawScope.reels(f: Frame, ink: Ink, tm: TextMeasurer) {
+private fun DrawScope.reels(f: Frame, ink: Ink, tm: TextMeasurer, kit: RunKit) {
     val w = size.width
     val h = size.height
     val digits = 4
@@ -608,6 +801,9 @@ private fun DrawScope.reels(f: Frame, ink: Ink, tm: TextMeasurer) {
     val x0 = w / 2f - rw * digits / 2f - 4.dp.toPx() * (digits - 1) / 2f
     val cy = h * 0.42f
     val popScale = 1f + 0.12f * sin(f.arrive * PI.toFloat())
+    val style = kit.ts(0) { st(ink, 40.sp, Color(0xFF1A1A1A), display = true) }
+    val corner = CornerRadius(8.dp.toPx())
+    val rim = Stroke(3.dp.toPx())
     scale(popScale, Offset(w / 2f, cy)) {
         for (i in 0 until digits) {
             val place = digits - 1 - i
@@ -615,28 +811,28 @@ private fun DrawScope.reels(f: Frame, ink: Ink, tm: TextMeasurer) {
             repeat(place) { div *= 10f }
             val roll = (f.value / div) % 10f          // this reel's position, 0..10
             val x = x0 + i * (rw + 4.dp.toPx())
-            drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFDDDDDD), Color.White, Color(0xFFDDDDDD)), cy - rh / 2f, cy + rh / 2f),
-                Offset(x, cy - rh / 2f), Size(rw, rh), CornerRadius(8.dp.toPx()))
+            drawRoundRect(kit.reel, Offset(x, cy - rh / 2f), Size(rw, rh), corner)
             val d0 = floor(roll).toInt()
             val frac = roll - d0
-            val style = st(ink, 40.sp, Color(0xFF1A1A1A), display = true)
             val blur = (f.v * (if (place == 0) 1f else 0.5f)).coerceIn(0f, 1f)
             clipRect(x, cy - rh / 2f, x + rw, cy + rh / 2f) {
                 for (k in -1..1) {
-                    val digit = ((d0 + k) % 10 + 10) % 10
+                    val digit = DIGIT[((d0 + k) % 10 + 10) % 10]
                     val y = cy + (k - frac) * rh * 0.8f
-                    say(tm, digit.toString(), x + rw / 2f, y, style, 1f - blur * 0.5f)
-                    if (blur > 0.15f) say(tm, digit.toString(), x + rw / 2f, y - rh * 0.12f * blur, style, blur * 0.35f)
+                    say(tm, digit, x + rw / 2f, y, style, 1f - blur * 0.5f)
+                    if (blur > 0.15f) say(tm, digit, x + rw / 2f, y - rh * 0.12f * blur, style, blur * 0.35f)
                 }
             }
-            drawRoundRect(ink.amber, Offset(x, cy - rh / 2f), Size(rw, rh), CornerRadius(8.dp.toPx()), style = Stroke(3.dp.toPx()))
+            drawRoundRect(ink.amber, Offset(x, cy - rh / 2f), Size(rw, rh), corner, style = rim)
         }
         drawLine(ink.hot.copy(alpha = 0.7f), Offset(x0 - 10.dp.toPx(), cy), Offset(x0 + digits * (rw + 4.dp.toPx()) + 6.dp.toPx(), cy), strokeWidth = 2.dp.toPx())
     }
 }
 
+private val DIGIT = Array(10) { it.toString() }
+
 /** DESKTOP: a copy dialog — documents flying folder to folder, a segmented progress bar, a transfer rate. */
-private fun DrawScope.desktopCopy(f: Frame, ink: Ink, tm: TextMeasurer) {
+private fun DrawScope.desktopCopy(f: Frame, ink: Ink, tm: TextMeasurer, kit: RunKit) {
     val w = size.width
     val h = size.height
     val left = w * 0.08f
@@ -646,23 +842,25 @@ private fun DrawScope.desktopCopy(f: Frame, ink: Ink, tm: TextMeasurer) {
     drawRect(ink.panel, Offset(left, top), Size(ww, wh))
     drawRect(Color.White, Offset(left, top), Size(ww, 2.dp.toPx()))
     drawRect(Color.Black.copy(alpha = 0.6f), Offset(left, top + wh - 2.dp.toPx()), Size(ww, 2.dp.toPx()))
-    drawRect(Brush.horizontalGradient(listOf(ink.hot, lerp(ink.hot, Color.White, 0.42f)), left, left + ww), Offset(left + 3.dp.toPx(), top + 3.dp.toPx()), Size(ww - 6.dp.toPx(), 24.dp.toPx()))
-    say(tm, "Copying…", left + 10.dp.toPx(), top + 15.dp.toPx(), st(ink, 13.sp, onColor(ink.hot)), 1f, ax = 0f)
+    drawRect(kit.titleBar, Offset(left + 3.dp.toPx(), top + 3.dp.toPx()), Size(ww - 6.dp.toPx(), 24.dp.toPx()))
+    say(tm, "Copying…", left + 10.dp.toPx(), top + 15.dp.toPx(), kit.ts(0) { st(ink, 13.sp, onColor(ink.hot)) }, 1f, ax = 0f)
     // folders and flying pages
     val fy = top + wh * 0.38f
     val fa = Offset(left + ww * 0.15f, fy)
     val fb = Offset(left + ww * 0.85f, fy)
-    for (p in listOf(fa, fb)) {
+    for (j in 0 until 2) {
+        val p = if (j == 0) fa else fb
         drawRect(Color(0xFFE8C547), Offset(p.x - 22.dp.toPx(), p.y - 12.dp.toPx()), Size(44.dp.toPx(), 30.dp.toPx()))
         drawRect(Color(0xFFD4A82A), Offset(p.x - 22.dp.toPx(), p.y - 18.dp.toPx()), Size(18.dp.toPx(), 8.dp.toPx()))
     }
     val pages = if (f.v > 0.05f) 1 + (f.v * 4).toInt() else 0
+    val edge = Stroke(1.dp.toPx())
     for (i in 0 until pages) {
         val q = ((f.sec * (0.8f + 1.6f * f.v) + i / pages.toFloat()) % 1f)
         val x = fa.x + (fb.x - fa.x) * q
         val y = fy - sin(q * PI.toFloat()) * wh * 0.3f
         drawRect(tint(ink, Color.White, i, 1f), Offset(x - 8.dp.toPx(), y - 10.dp.toPx()), Size(16.dp.toPx(), 20.dp.toPx()))
-        drawRect(Color.Black, Offset(x - 8.dp.toPx(), y - 10.dp.toPx()), Size(16.dp.toPx(), 20.dp.toPx()), style = Stroke(1.dp.toPx()))
+        drawRect(Color.Black, Offset(x - 8.dp.toPx(), y - 10.dp.toPx()), Size(16.dp.toPx(), 20.dp.toPx()), style = edge)
     }
     // progress bar in blocks
     val by = top + wh * 0.66f
@@ -672,7 +870,7 @@ private fun DrawScope.desktopCopy(f: Frame, ink: Ink, tm: TextMeasurer) {
     for (i in 0 until blocks) drawRect(tint(ink, ink.hot, i, 1f), Offset(left + 14.dp.toPx() + i * (bw - 4.dp.toPx()) / 24f, by + 2.dp.toPx()), Size((bw - 4.dp.toPx()) / 24f - 2.dp.toPx(), 16.dp.toPx()))
     val rate = (f.v * 9999).toInt()
     val left2 = ((1f - f.u) * f.travel / 1000f)
-    say(tm, "$rate KB/s · ${((left2 * 10).toInt() / 10f)} s left", left + 12.dp.toPx(), by + 36.dp.toPx(), st(ink, 12.sp, ink.amber, bold = false), 1f, ax = 0f)
+    say(tm, "$rate KB/s · ${((left2 * 10).toInt() / 10f)} s left", left + 12.dp.toPx(), by + 36.dp.toPx(), kit.ts(1) { st(ink, 12.sp, ink.amber, bold = false) }, 1f, ax = 0f)
 }
 
 /**
@@ -843,21 +1041,21 @@ private fun ageOf(f: Frame, vx: Float): Float {
     return f.e - Travel.timeAt((vx - f.from) / f.gain) * f.travel
 }
 
+
 /** ORACLE world of the score run: flying through the night sky, joining stars, on to the next constellation. */
-private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds: List<FloatArray>) {
+private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds: List<FloatArray>, kit: RunKit) {
     val w = size.width
     val h = size.height
     val o = Offset(w / 2f, h * 0.70f)
     val rad = min(w * 0.40f, h * 0.18f)
     val cam = Sky.cam(f.value)
     val k = Sky.index(f.value)
-    val gold = Color(0xFFE9C46A)
+    val gold = GOLD
     val hy = ink.hyper
     val more = if (hy.on) 2 else 1
-    val night = Color(0xFF05040C)
 
     // the sky's colour shifts on the way to the next constellation
-    drawRect(Brush.verticalGradient(listOf(night, lerp(Sky.tint(k), Sky.tint(k + 1), cam.travel), night)))
+    drawRect(kit.night(k, cam.travel))
 
     // nebulae far behind each constellation
     for (c in k..k + 1) for (j in 0 until 2) {
@@ -871,7 +1069,7 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
         val rr = rad * 2.2f / dz
         val col = if (hy.on) hue(hy.t * 40f + c * 90f + j * 140f, 0.6f, 1f) else hue(250f + c * 47f + j * 80f, 0.55f, 0.9f)
         val a = 0.22f * Sky.seen(dz).coerceAtLeast(0.35f)
-        drawCircle(Brush.radialGradient(listOf(col.copy(alpha = a), Color.Transparent), q, rr), rr, q)
+        glow(q, rr, kit.nebula(c * 2 + j, col, keep = !hy.on), a)
     }
 
     // the star field: points while drifting, streaks while flying (longer the faster)
@@ -898,10 +1096,14 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
         val zc = Sky.depth(c)
         // the next one is only a faint hint until we set off toward it
         val far = if (c > k) 0.45f + 0.55f * cam.travel else 1f
-        val xs = FloatArray(n)
-        val ys = FloatArray(n)
-        val dzs = FloatArray(n)
+        // scratch arrays of the kit (a constellation has 6–9 stars), so nothing is allocated per frame
+        val big = n > kit.xs.size
+        val xs = if (big) FloatArray(n) else kit.xs
+        val ys = if (big) FloatArray(n) else kit.ys
+        val dzs = if (big) FloatArray(n) else kit.dzs
+        val lit = if (big) BooleanArray(n) else kit.lit
         for (i in 0 until n) {
+            lit[i] = false
             dzs[i] = zc + con.depth[i] - cam.z
             if (dzs[i] > 0.06f) {
                 val q = Sky.project(base + con.stars[i], dzs[i], cam, o, rad)
@@ -913,7 +1115,6 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
         // completed during this run: its lines flare up for a moment
         val doneAge = ageOf(f, Sky.complete(c))
         val flare = if (doneAge in 0f..1600f) 1f - doneAge / 1600f else 0f
-        val lit = BooleanArray(n)
         for ((i, e) in con.edges.withIndex()) {
             val part = (drawn - i).coerceIn(0f, 1f)
             if (part <= 0f) continue
@@ -933,8 +1134,7 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
             drawLine(col.copy(alpha = 0.95f * vis), a, end, strokeWidth = (1.8f * sc).dp.toPx(), cap = StrokeCap.Round)
             if (part < 1f) {
                 // the line being drawn has a bright head
-                val hr = (9f * sc).dp.toPx()
-                drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.9f * vis), Color.Transparent), end, hr), hr, end)
+                glow(end, (9f * sc).dp.toPx(), kit.headGlow, 0.9f * vis)
             }
         }
         for (i in 0 until n) {
@@ -948,7 +1148,7 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
             val r = ((if (lit[i]) 3.4f else 2.4f) * sc * tw).dp.toPx()
             // joined stars glow gold; the ones still to join glow faintly, so the shape to come stands out from the field
             val g = r * (if (lit[i]) 4f + 3f * flare else 3f)
-            drawCircle(Brush.radialGradient(listOf((if (lit[i]) gold else ink.white).copy(alpha = (if (lit[i]) 0.55f else 0.22f) * vis), Color.Transparent), p, g), g, p)
+            glow(p, g, if (lit[i]) kit.goldGlow else kit.starGlow, (if (lit[i]) 0.55f else 0.22f) * vis)
             drawCircle((if (lit[i]) Color.White else ink.white).copy(alpha = (if (lit[i]) 1f else 0.8f) * vis), r, p)
         }
         // a star just joined: a ring and a sparkle on it
@@ -978,6 +1178,8 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
         val ir = 11.dp.toPx()
         val y = h * 0.255f
         val x0 = w / 2f - (last - first) * step / 2f
+        val lineW = 1.2.dp.toPx()
+        val dot = 1.1.dp.toPx()
         for (c in first..last) {
             val con = Sky.con(c)
             val cx = x0 + (c - first) * step
@@ -985,15 +1187,16 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
             val full = dr >= con.edges.size
             val a = if (c > k) 0.35f + 0.4f * cam.travel else 1f
             if (c == k) drawCircle(gold.copy(alpha = 0.12f), ir * 1.5f, Offset(cx, y))
+            val lineCol = (if (full) gold else ink.white).copy(alpha = 0.9f * a)
             for ((i, e) in con.edges.withIndex()) {
                 val part = (dr - i).coerceIn(0f, 1f)
                 if (part <= 0f) continue
                 val p0 = Offset(cx + con.stars[e.first].x * ir, y + con.stars[e.first].y * ir)
                 val p1 = Offset(cx + con.stars[e.second].x * ir, y + con.stars[e.second].y * ir)
-                drawLine((if (full) gold else ink.white).copy(alpha = 0.9f * a), p0, Offset(p0.x + (p1.x - p0.x) * part, p0.y + (p1.y - p0.y) * part),
-                    strokeWidth = 1.2.dp.toPx(), cap = StrokeCap.Round)
+                drawLine(lineCol, p0, Offset(p0.x + (p1.x - p0.x) * part, p0.y + (p1.y - p0.y) * part), strokeWidth = lineW, cap = StrokeCap.Round)
             }
-            for (sp in con.stars) drawCircle(ink.white.copy(alpha = 0.7f * a), 1.1.dp.toPx(), Offset(cx + sp.x * ir, y + sp.y * ir))
+            val starCol = ink.white.copy(alpha = 0.7f * a)
+            for (sp in con.stars) drawCircle(starCol, dot, Offset(cx + sp.x * ir, y + sp.y * ir))
         }
     }
 
@@ -1003,14 +1206,15 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
     val doneAge = ageOf(f, Sky.complete(k))
     val pop = if (doneAge in 0f..900f) 1f + 0.3f * sin(doneAge / 900f * PI.toFloat()) else 1f
     scale(pop, Offset(w / 2f, h * 0.885f)) {
-        say(tm, "✦  " + Sky.name(shown).uppercase() + "  ✦", w / 2f, h * 0.885f, st(ink, 13.sp, if (shown == k && f.value >= Sky.complete(k)) gold else ink.hot, spacing = 3.sp), 0.9f * nameA)
+        say(tm, "✦  " + Sky.name(shown).uppercase() + "  ✦", w / 2f, h * 0.885f, kit.ts(0) { st(ink, 13.sp, ink.hot, spacing = 3.sp) }, 0.9f * nameA,
+            color = if (shown == k && f.value >= Sky.complete(k)) gold else ink.hot)
     }
     val sub = when {
         shown > k -> "next constellation"
         f.value >= Sky.complete(k) -> "charted" + if (k > 0) " · ${k + 1} so far" else ""
         else -> "${Sky.drawn(k, f.value).toInt()} of ${Sky.con(k).edges.size} lines"
     }
-    say(tm, sub, w / 2f, h * 0.918f, st(ink, 11.sp, ink.dim, bold = false, spacing = 1.sp), 0.8f * nameA)
+    say(tm, sub, w / 2f, h * 0.918f, kit.ts(1) { st(ink, 11.sp, ink.dim, bold = false, spacing = 1.sp) }, 0.8f * nameA)
 }
 
 /**
@@ -1021,11 +1225,12 @@ private fun DrawScope.constellations(f: Frame, ink: Ink, tm: TextMeasurer, seeds
 fun ConstellationStrip(total: Int, modifier: Modifier = Modifier) {
     val v by androidx.compose.animation.core.animateFloatAsState(total.toFloat(),
         androidx.compose.animation.core.tween(2600, easing = androidx.compose.animation.core.FastOutSlowInEasing))
-    val gold = Color(0xFFE9C46A)
+    val gold = GOLD
     val dim = C.dim
     val hot = C.hot
     val tm = rememberTextMeasurer(cacheSize = 8)
     val font = LocalMono.current
+    val labelStyle = remember(hot, font) { TextStyle(color = hot, fontSize = 9.sp, fontFamily = font, letterSpacing = 2.sp) }
     Canvas(modifier) {
         val w = size.width
         val h = size.height
@@ -1041,12 +1246,13 @@ fun ConstellationStrip(total: Int, modifier: Modifier = Modifier) {
                 val far = if (c > k) 0.4f + 0.6f * cam.travel else 1f
                 val drawn = when { c < k -> con.edges.size.toFloat(); c > k -> 0f; else -> Sky.drawn(c, v) }
                 val n = con.stars.size
-                val lit = BooleanArray(n)
+                // lit stars as bits (a constellation has at most 9 stars): no array per frame
+                var lit = 0L
                 for ((i, e) in con.edges.withIndex()) {
                     val part = (drawn - i).coerceIn(0f, 1f)
                     if (part <= 0f) continue
-                    lit[e.first] = true
-                    if (part >= 1f) lit[e.second] = true
+                    lit = lit or (1L shl e.first)
+                    if (part >= 1f) lit = lit or (1L shl e.second)
                     val dzA = zc + con.depth[e.first] - cam.z
                     val dzB = zc + con.depth[e.second] - cam.z
                     if (dzA <= 0.06f || dzB <= 0.06f) continue
@@ -1059,15 +1265,16 @@ fun ConstellationStrip(total: Int, modifier: Modifier = Modifier) {
                 for (i in 0 until n) {
                     val dz = zc + con.depth[i] - cam.z
                     if (dz <= 0.06f) continue
+                    val on = i < 64 && ((lit ushr i) and 1L) == 1L
                     val vis = Sky.seen(dz) * far
                     val p = Sky.project(base + con.stars[i], dz, cam, o, rad)
-                    drawCircle((if (lit[i]) Color.White else dim).copy(alpha = (if (lit[i]) 1f else 0.5f) * vis),
-                        ((if (lit[i]) 2.4f else 1.5f) / dz.coerceAtLeast(0.5f)).dp.toPx(), p)
+                    drawCircle((if (on) Color.White else dim).copy(alpha = (if (on) 1f else 0.5f) * vis),
+                        ((if (on) 2.4f else 1.5f) / dz.coerceAtLeast(0.5f)).dp.toPx(), p)
                 }
             }
         }
         val shown = if (cam.travel > 0.5f) k + 1 else k
-        val label = tm.measure(Sky.name(shown).uppercase(), TextStyle(color = hot, fontSize = 9.sp, fontFamily = font, letterSpacing = 2.sp))
+        val label = tm.measure(Sky.name(shown).uppercase(), labelStyle)
         drawText(label, topLeft = Offset(w - label.size.width - 4.dp.toPx(), h - label.size.height), alpha = 0.8f * (1f - cam.warp))
     }
 }

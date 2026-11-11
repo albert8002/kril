@@ -8,6 +8,7 @@ import kotlin.math.exp
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.random.Random
+import kotlinx.coroutines.launch
 
 /** Moments that make a sound. */
 enum class Cue {
@@ -38,7 +39,34 @@ object Sfx {
     private var lastTap = 0L
     private var turn = 0
 
-    fun configure(enabled: Boolean, vol: Float) { on = enabled; volume = vol.coerceIn(0f, 1f) }
+    fun configure(enabled: Boolean, vol: Float) { on = enabled; volume = vol.coerceIn(0f, 1f); prewarm() }
+
+    private val warm = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
+    private var warmed = ""
+
+    /**
+     * Renders the sounds of typing and tapping for the current look in the background, so the first key press of a
+     * look does not stop the screen while its sound is made.
+     */
+    fun prewarm() {
+        if (!on) return
+        val style = Th.style
+        val song = Music.song ?: style
+        val tag = "${style.name}|${song.name}"
+        if (tag == warmed) return
+        warmed = tag
+        warm.launch {
+            val made = ArrayList<Pair<String, ShortArray>>()
+            for (cue in listOf(Cue.KEY, Cue.TAP, Cue.NAV)) for (v in 0 until 3) {
+                val k = "${style.name}|${song.name}|${cue.name}|0|$v"
+                made += k to runCatching { Synth.render(style, song, cue, 0, v) }.getOrElse { ShortArray(0) }
+            }
+            for (cue in listOf(Cue.SUBMIT, Cue.MISS, Cue.CHECK, Cue.TICK, Cue.CONFIRM)) {
+                made += "${style.name}|${song.name}|${cue.name}|0|0" to runCatching { Synth.render(style, song, cue, 0, 0) }.getOrElse { ShortArray(0) }
+            }
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { for ((k, v) in made) if (k !in cache) cache[k] = v }
+        }
+    }
 
     /** Play [cue] in the active look's voice. [level]: tier heat (HIT) or rank (RANK), 0..6. */
     fun play(cue: Cue, level: Int = 0) {

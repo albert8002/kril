@@ -143,9 +143,10 @@ private fun MeltRules(model: AppModel) {
         val w = coreWord()
         for (line in listOf(
             "2–8 players sit round $w. whoever holds it names an answer nobody said yet this round, and it passes on.",
-            "the fuse is hidden (16–30 s). hold $w when it blows: lose a heart.",
-            "rare answers fill your meter. full meter: +1 heart (3 at most).",
-            "no hearts left: out. the last one standing wins.",
+            "every turn has a countdown (the host sets the seconds). still holding $w at 0: it blows, you lose a heart.",
+            "type ahead while you wait: press enter and it goes out the moment it's your turn.",
+            "not on the list? the host checks it online. a miss shows \"did you mean\".",
+            "rare answers fill your meter. full meter: +1 heart (3 at most). no hearts left: out. last one standing wins.",
         )) {
             Row(Modifier.padding(vertical = 2.dp)) {
                 TText("•", Modifier.width(14.dp), size = 12.sp, color = C.hot)
@@ -160,21 +161,55 @@ private fun MeltRules(model: AppModel) {
     }
 }
 
+/** Seconds per turn, topics and bot skill (for bots games and the party host). */
+@Composable
+private fun MeltRulesSetup(model: AppModel, bots: Boolean) {
+    val c = model.meltConfig
+    TText("seconds per turn", size = 12.sp, color = C.dim)
+    Spacer(Modifier.height(6.dp))
+    Choice(Meltdown.TURN_CHOICES, c.turnSec, { "${it}s" }) { model.meltConfig = c.copy(turnSec = it) }
+    Spacer(Modifier.height(12.dp))
+    TText("topics" + if (c.topics.isEmpty()) " · all" else " · ${c.topics.size} chosen", size = 12.sp, color = C.dim)
+    Spacer(Modifier.height(6.dp))
+    val keys = app.coredump.core.Topics.all.map { it.key }
+    for (row in keys.chunked(3)) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+            for (k in row) {
+                val on = k in c.topics
+                app.coredump.ui.ChipBox(app.coredump.core.Topics.label(k), on, Modifier.weight(1f).padding(horizontal = 3.dp), size = 11.sp) {
+                    model.meltConfig = c.copy(topics = if (on) c.topics - k else c.topics + k)
+                }
+            }
+            repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+        }
+    }
+    if (c.topics.isNotEmpty()) TLink("all topics", { model.meltConfig = c.copy(topics = emptySet()) })
+    if (bots) {
+        Spacer(Modifier.height(12.dp))
+        TText("bot skill", size = 12.sp, color = C.dim)
+        Spacer(Modifier.height(6.dp))
+        Choice(listOf(0, 1, 2), c.botLevel, { skill[it] }) { model.meltConfig = c.copy(botLevel = it) }
+    }
+}
+
 @Composable
 private fun BotsPane(model: AppModel) {
     var bots by remember { mutableIntStateOf(model.lastMelt.first) }
-    var level by remember { mutableIntStateOf(model.lastMelt.second) }
     TText("rivals", size = 12.sp, color = C.dim)
     Spacer(Modifier.height(6.dp))
     Choice((1..Meltdown.MAX_PLAYERS - 1).toList(), bots, { "$it" }) { bots = it }
     Spacer(Modifier.height(12.dp))
-    TText("bot skill", size = 12.sp, color = C.dim)
-    Spacer(Modifier.height(6.dp))
-    Choice(listOf(0, 1, 2), level, { skill[it] }) { level = it }
+    MeltRulesSetup(model, bots = true)
     Spacer(Modifier.height(18.dp))
-    TButton(Th.say("IGNITE", "Start"), { model.startMeltBots(bots, level) }, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
+    TButton(Th.say("IGNITE", "Start"), { model.startMeltBots(bots) }, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
     Spacer(Modifier.height(6.dp))
-    TText("offline: works without internet. categories are the big lists (60+ answers).", size = 10.sp, color = C.line)
+    TText("works offline. answers not on a list are checked online when there is internet.", size = 10.sp, color = C.line)
+}
+
+/** A player's rating and streak, short ("1034 · 3★"), or "" when unknown. */
+internal fun ratingLine(elo: Int, streak: Int): String = buildString {
+    if (elo > 0) append(elo)
+    if (streak > 1) { if (isNotEmpty()) append(" · "); append("$streak★") }
 }
 
 @Composable
@@ -182,8 +217,9 @@ private fun PartyHostPane(model: AppModel) {
     val host = remember { model.openPartyHost() }
     val lobby by host.lobby.collectAsState()
     var bots by remember { mutableIntStateOf(0) }
-    var level by remember { mutableIntStateOf(1) }
     val s = model.settings
+    // guests see the rules while they wait
+    LaunchedEffect(model.meltConfig) { host.setConfig(model.meltConfig) }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (!lobby.open) { Spinner(C.hot); TText("  ", size = 12.sp) }
@@ -210,7 +246,11 @@ private fun PartyHostPane(model: AppModel) {
         lobby.players.forEachIndexed { i, p ->
             Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                 TText("${i + 1}.", Modifier.width(24.dp), size = 12.sp, color = C.dim)
-                TText(p.name, Modifier.weight(1f), size = 14.sp, weight = FontWeight.Bold)
+                Column(Modifier.weight(1f)) {
+                    TText(p.name, size = 14.sp, weight = FontWeight.Bold)
+                    val r = ratingLine(p.elo, p.streak) + if (p.wins > 0) " · ${p.wins} meltdown wins" else ""
+                    if (r.isNotEmpty()) TText(r, size = 10.sp, color = C.dim)
+                }
                 TText(if (i == 0) "host (you)" else "joined", size = 11.sp, color = if (i == 0) C.hot else C.dim)
             }
         }
@@ -232,17 +272,15 @@ private fun PartyHostPane(model: AppModel) {
         }
     }
     Spacer(Modifier.height(12.dp))
+    MeltRulesSetup(model, bots = bots > 0)
+    Spacer(Modifier.height(12.dp))
     val maxBots = (Meltdown.MAX_PLAYERS - lobby.players.size).coerceAtLeast(0)
     TText("add bots", size = 12.sp, color = C.dim)
     Spacer(Modifier.height(6.dp))
     Choice((0..maxBots).toList(), bots.coerceAtMost(maxBots), { "$it" }) { bots = it }
-    if (bots > 0) {
-        Spacer(Modifier.height(10.dp))
-        Choice(listOf(0, 1, 2), level, { skill[it] }) { level = it }
-    }
     Spacer(Modifier.height(16.dp))
     val total = lobby.players.size + bots.coerceAtMost(maxBots)
-    TButton(Th.say("IGNITE", "Start Meltdown") + " · $total players", { model.startParty(bots.coerceAtMost(maxBots), level) },
+    TButton(Th.say("IGNITE", "Start Meltdown") + " · $total players", { model.startParty(bots.coerceAtMost(maxBots)) },
         Modifier.fillMaxWidth(), primary = true, enabled = total >= 2, textSize = 16.sp)
 }
 
@@ -261,6 +299,7 @@ private fun PartyJoinPane(model: AppModel) {
     val g = model.partyGuest
     if (g != null) {
         val lb by g.lobby.collectAsState()
+        val gs by g.state.collectAsState()
         Spacer(Modifier.height(14.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (!lb.open && lb.error == null) { Spinner(C.hot); TText("  ", size = 12.sp) }
@@ -271,10 +310,14 @@ private fun PartyJoinPane(model: AppModel) {
             Spacer(Modifier.height(10.dp))
             Panel(Th.say("SEATED", "At the table") + " (${lb.players.size})") {
                 for (p in lb.players) {
-                    TText(p.name + if (p.id == g.myId) "  (you)" else "", size = 13.sp,
+                    val r = ratingLine(p.elo, p.streak)
+                    TText(p.name + (if (p.id == g.myId) "  (you)" else "") + (if (r.isNotEmpty()) "  ·  $r" else ""), size = 13.sp,
                         weight = if (p.id == g.myId) FontWeight.Bold else FontWeight.Normal, color = if (p.id == g.myId) C.hot else C.amber)
                 }
                 Spacer(Modifier.height(4.dp))
+                TText("rules: ${gs.turnMs / 1000}s per turn · " +
+                    (if (gs.topics.isEmpty()) "all topics" else gs.topics.joinToString(" ") { "#" + app.coredump.core.Topics.label(it) }),
+                    size = 11.sp, color = C.amber)
                 TText("the game starts when the host presses start.", size = 11.sp, color = C.dim)
             }
         }
@@ -301,33 +344,45 @@ fun MeltScreen(model: AppModel, session: MeltSession) {
     val st by session.state.collectAsState()
     val myId = session.myId
     val me = st.player(myId)
-    val myTurn = st.phase == MeltPhase.TURN && st.holder == myId && me != null && !me.out
+    val alive = me != null && !me.out
+    val myTurn = st.phase == MeltPhase.TURN && st.holder == myId && alive
     val haptic = rememberHaptic()
     val fx = model.fx
     var input by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+    /** Typed ahead and sent with enter while waiting: goes out when my turn starts. */
+    var queued by remember { mutableStateOf("") }
+    var suggestions by remember { mutableStateOf(emptyList<String>()) }
     val nudge = remember { Animatable(0f) }
     val focus = remember { FocusRequester() }
 
-    // my own attempts: clear on a hit, say why on a miss
+    // my own attempts: clear on a hit, say why on a miss (with "did you mean")
     LaunchedEffect(session) {
-        session.verdicts.collect { (text, kind) ->
-            when (kind) {
-                "ok" -> { input = ""; note = "" }
-                "miss" -> { note = "“$text” is not on the list"; nudge.snapTo(1f); nudge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 900f)) }
-                "dup" -> { note = "already said this round"; nudge.snapTo(1f); nudge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 900f)) }
-                else -> { note = "wait: you don't hold ${coreWord()}" }
+        session.verdicts.collect { v ->
+            when (v.kind) {
+                "ok" -> { input = ""; note = ""; suggestions = emptyList() }
+                "check" -> { note = "checking “${v.text}” online…"; suggestions = emptyList() }
+                "miss" -> {
+                    note = "“${v.text}” is not on the list" + if (v.suggestions.isNotEmpty()) " · did you mean:" else ""
+                    suggestions = v.suggestions
+                    nudge.snapTo(1f); nudge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 900f))
+                }
+                "dup" -> { note = "already said this round"; suggestions = emptyList(); nudge.snapTo(1f); nudge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 900f)) }
+                else -> { note = "not your turn yet" }
             }
             Unit
         }
     }
+    // my turn: a nudge, and whatever I typed ahead goes out at once
     LaunchedEffect(myTurn) {
         if (myTurn) {
             haptic(true)
             Sfx.play(Cue.CONFIRM)
+            val q = queued.trim()
+            if (q.isNotEmpty()) { queued = ""; Sfx.play(Cue.SUBMIT); session.submit(q) }
         } else {
-            input = ""
             note = ""
+            suggestions = emptyList()
         }
         Unit
     }
@@ -353,23 +408,27 @@ fun MeltScreen(model: AppModel, session: MeltSession) {
         }
         Unit
     }
-    // the fuse ticks faster as the core heats up
-    val burning = st.phase == MeltPhase.TURN
-    LaunchedEffect(burning, st.round) {
-        if (!burning) return@LaunchedEffect
-        while (true) {
-            val h = session.state.value.heat
-            Sfx.play(Cue.TICK)
-            delay((950f - 760f * h).toLong().coerceAtLeast(170L))
-        }
+    // a tick each second of the countdown; the last three louder (and a buzz when it's mine)
+    val secs = st.secondsLeft
+    LaunchedEffect(secs, st.holder, st.phase) {
+        if (st.phase != MeltPhase.TURN) return@LaunchedEffect
+        Sfx.play(Cue.TICK, if (secs <= 3) 2 else 0)
+        if (secs <= 3 && myTurn) haptic(false)
     }
     LaunchedEffect(st.phase, st.countdown) { if (st.phase == MeltPhase.COUNTDOWN) Sfx.play(Cue.KEY) }
 
-    fun submit() {
-        val t = input.trim()
+    fun send(text: String) {
+        val t = text.trim()
         if (t.isEmpty()) return
-        Sfx.play(Cue.SUBMIT)
-        session.submit(t)
+        if (myTurn) {
+            Sfx.play(Cue.SUBMIT)
+            session.submit(t)
+        } else if (alive && st.phase != MeltPhase.OVER) {
+            // typed ahead: it goes out the moment the core reaches me
+            queued = t
+            input = ""
+            Sfx.play(Cue.KEY)
+        }
     }
 
     val lost = (session as? PartyGuest)?.lobby?.collectAsState()?.value?.error
@@ -377,21 +436,32 @@ fun MeltScreen(model: AppModel, session: MeltSession) {
     Box(Modifier.fillMaxSize()) {
         Frame(model, Th.say("meltdown --round ${st.round}", if (st.round > 0) "Meltdown · round ${st.round}" else "Meltdown")) {
             Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
-                if (st.prompt.isNotEmpty() && st.phase != MeltPhase.OVER) {
-                    TText("#${st.topic}", size = 11.sp, color = C.dim)
-                    TText(st.prompt, size = 19.sp, weight = FontWeight.Bold, color = C.amber, maxLines = 3)
-                    TText("${st.size} answers on the list · ${st.used.size} said", size = 11.sp, color = C.dim)
-                }
                 Box(Modifier.fillMaxWidth().weight(1f)) {
                     if (st.phase == MeltPhase.OVER) MeltResults(st, myId, Modifier.fillMaxSize())
                     else CoreRing(st, myId, Modifier.fillMaxSize())
                     if (st.phase == MeltPhase.COUNTDOWN) Countdown(st.countdown, Modifier.align(Alignment.Center))
+                    // seconds left, on the core
+                    if (st.phase == MeltPhase.TURN) {
+                        TText("$secs", Modifier.align(Alignment.Center), size = 34.sp, weight = FontWeight.Bold,
+                            color = if (secs <= 3) C.white else C.bg, align = TextAlign.Center)
+                    }
                 }
                 if (st.phase != MeltPhase.OVER) {
                     EventLine(st)
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(4.dp))
                     UsedRow(st)
                     Spacer(Modifier.height(8.dp))
+                    // the category, right above where the answer is typed
+                    if (st.prompt.isNotEmpty()) {
+                        Column(Modifier.fillMaxWidth().box(Th.style, if (myTurn) C.hot else C.line, C.panel).padding(horizontal = 12.dp, vertical = 8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                TText("#${app.coredump.core.Topics.label(st.topic)}", Modifier.weight(1f), size = 10.sp, color = C.dim)
+                                TText("${st.size} on the list · ${st.used.size} said", size = 10.sp, color = C.dim)
+                            }
+                            TText(st.prompt, size = 18.sp, weight = FontWeight.Bold, color = C.amber, maxLines = 3)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
                 }
                 when {
                     lost != null && st.phase != MeltPhase.OVER -> {
@@ -408,28 +478,48 @@ fun MeltScreen(model: AppModel, session: MeltSession) {
                             TButton(Th.say("EXIT", "Done"), { model.leaveMelt(session) }, Modifier.weight(1f), primary = session.online)
                         }
                     }
-                    myTurn -> {
-                        LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
-                        Row(Modifier.fillMaxWidth().graphicsLayer { translationX = nudge.value * 18f * sin(nudge.value * 20f) },
-                            verticalAlignment = Alignment.CenterVertically) {
-                            TermInput(input, { input = it.take(80) }, Modifier.weight(1f), prompt = "›", placeholder = "name one, fast",
-                                size = 17.sp, onSubmit = { submit() }, fieldModifier = Modifier.focusRequester(focus))
-                            Spacer(Modifier.width(8.dp))
-                            TButton(Th.say("PASS", "Go"), { submit() }, enabled = input.isNotBlank(), primary = true)
-                        }
-                        TText(note.ifEmpty { "you hold ${coreWord()}! answer to pass it on." }, size = 11.sp,
-                            color = if (note.isEmpty()) C.hot else C.blood)
-                    }
                     me != null && me.out -> {
                         TText("you're out${if (me.place > 0) " · place ${me.place}" else ""}. watching the rest…", size = 13.sp, color = C.dim)
                     }
-                    st.phase == MeltPhase.TURN -> {
-                        val h = st.player(st.holder)
+                    else -> {
+                        // the answer field is always there: type ahead while you wait
+                        if (myTurn) LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+                        Row(Modifier.fillMaxWidth().graphicsLayer { translationX = nudge.value * 18f * sin(nudge.value * 20f) },
+                            verticalAlignment = Alignment.CenterVertically) {
+                            TermInput(input, { input = it.take(80) }, Modifier.weight(1f), prompt = "›",
+                                placeholder = if (myTurn) "name one, fast" else "type ahead…",
+                                size = 17.sp, onSubmit = { send(input) }, fieldModifier = Modifier.focusRequester(focus))
+                            if (input.isNotEmpty() || queued.isNotEmpty()) {
+                                Spacer(Modifier.width(6.dp))
+                                // one tap clears what was typed (and what was queued)
+                                TButton("×", { input = ""; queued = ""; suggestions = emptyList() }, color = C.dim)
+                            }
+                            Spacer(Modifier.width(6.dp))
+                            TButton(if (myTurn) Th.say("PASS", "Go") else Th.say("QUEUE", "Ready"), { send(input) },
+                                enabled = input.isNotBlank(), primary = myTurn)
+                        }
+                        if (suggestions.isNotEmpty() && myTurn) {
+                            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 4.dp)) {
+                                for (sg in suggestions) {
+                                    app.coredump.ui.ChipBox(sg, false, Modifier.padding(end = 6.dp), size = 12.sp) { suggestions = emptyList(); send(sg) }
+                                }
+                            }
+                        }
+                        val holder = st.player(st.holder)
                         val next = nextAlive(st, st.holder)
-                        TText("${h?.name ?: "?"} holds ${coreWord()}" + if (next == myId) " · you're next" else "", size = 13.sp,
-                            color = if (next == myId) C.hot else C.amber, weight = FontWeight.Bold)
+                        TText(
+                            when {
+                                note.isNotEmpty() -> note
+                                myTurn -> "you hold ${coreWord()}! ${secs}s — answer to pass it on."
+                                queued.isNotEmpty() -> "ready: “$queued” goes out when it's your turn"
+                                st.phase == MeltPhase.TURN -> "${holder?.name ?: "?"} holds ${coreWord()}" + if (next == myId) " · you're next" else ""
+                                else -> " "
+                            },
+                            size = 12.sp,
+                            color = when { note.isNotEmpty() && !note.startsWith("checking") -> C.blood; myTurn || next == myId || queued.isNotEmpty() -> C.hot; else -> C.amber },
+                            weight = FontWeight.Bold, maxLines = 2,
+                        )
                     }
-                    else -> { TText(" ", size = 13.sp) }
                 }
                 Spacer(Modifier.height(10.dp))
             }
@@ -669,6 +759,8 @@ private fun PlayerChip(p: MeltPlayer, holder: Boolean, me: Boolean, winner: Bool
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TText(p.name, size = 11.sp, weight = FontWeight.Bold, color = if (me) C.hot else C.amber, maxLines = 1, align = TextAlign.Center)
+        val rating = ratingLine(p.elo, p.streak)
+        if (rating.isNotEmpty()) TText(rating, size = 8.sp, color = C.dim, maxLines = 1)
         val full = p.hearts.coerceAtLeast(0)
         TText("♥".repeat(full) + "♡".repeat((Meltdown.START_HEARTS - full).coerceAtLeast(0)), size = 11.sp,
             color = if (p.out) C.dim else C.blood, maxLines = 1)

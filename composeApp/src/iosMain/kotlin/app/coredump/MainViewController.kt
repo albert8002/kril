@@ -14,5 +14,8 @@ fun MainViewController(onDark: (Boolean) -> Unit): UIViewController {
     // Save a report for any uncaught Kotlin exception; the runtime still terminates afterwards.
     setUnhandledExceptionHook { e -> runCatching { CrashLog.record("ios", e) } }
     SelfTest.enabled = NSProcessInfo.processInfo.arguments.any { it == "-selftest" || it == "--selftest" }
+    // back on screen: reconnect network links at once (a socket left over from the background may be dead)
+    platform.Foundation.NSNotificationCenter.defaultCenter.addObserverForName(platform.UIKit.UIApplicationDidBecomeActiveNotification, null,
+        platform.Foundation.NSOperationQueue.mainQueue) { _ -> app.coredump.platform.AppLife.foreground() }
     return ComposeUIViewController { App() }
 }

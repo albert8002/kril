@@ -322,6 +322,43 @@ object SelfTest {
             log("INVITE answer status=${inviter.status.value} after ${iw}ms")
             inviter.cancel()
 
+            // friend request by code only: pop-up, accept, the sender gets my name back
+            model.setTheme(Style.CHAT, plan.first { it.first == Style.CHAT }.second)
+            model.home(); delay(400)
+            val fakeCode = app.coredump.net.JoinTicket.newRoom()
+            val req = app.coredump.game.Inviter(model.scope, "ME", model.myRoom(), "TESTFRIEND", fakeCode, model.settings.roomBroker,
+                "friend", kind = "friend", myElo = 1111, myStreak = 3)
+            req.send()
+            iw = 0
+            while (model.friendPops.isEmpty() && iw < 30_000) { delay(250); iw += 250 }
+            log("FRIEND popup=${model.friendPops.size} requests=${model.settings.requests.size} after ${iw}ms")
+            delay(900)
+            shot("friend_request_chat")
+            model.acceptFriend(fakeCode)
+            iw = 0
+            while (req.status.value != app.coredump.game.Inviter.Status.ACCEPTED && iw < 12_000) { delay(250); iw += 250 }
+            log("FRIEND answer status=${req.status.value} name='${req.replyName}' friends=${model.settings.friends.map { it.name + ":" + it.elo }}")
+            req.cancel()
+            app.coredump.ui.screens.LobbyProbe.tab = 2
+            model.go(Screen.Lobby); delay(1500)
+            shot("friends_chat")
+            model.back(); delay(500)
+
+            // ranked: two searchers on the real relay find each other (one hosts, one joins)
+            var m1: app.coredump.game.RankedMatch? = null
+            var m2: app.coredump.game.RankedMatch? = null
+            val mmA = app.coredump.game.Matchmaker(model.scope, "TEST-A", app.coredump.net.JoinTicket.newRoom(), 0, 1000) { m1 = it }
+            val mmB = app.coredump.game.Matchmaker(model.scope, "TEST-B", app.coredump.net.JoinTicket.newRoom(), 0, 1040) { m2 = it }
+            mmA.start(); mmB.start()
+            iw = 0
+            while ((m1 == null || m2 == null) && iw < 40_000) { delay(500); iw += 500 }
+            log("RANKED a=${m1?.let { "${if (it.host) "host" else "guest"} vs ${it.oppName}" }} b=${m2?.let { "${if (it.host) "host" else "guest"} vs ${it.oppName}" }} after ${iw}ms")
+            mmA.cancel(); mmB.cancel()
+            app.coredump.ui.screens.LobbyProbe.tab = 3
+            model.go(Screen.Lobby); delay(1500)
+            shot("ranked_chat")
+            model.back(); delay(500)
+
             // stress: lookups across many lists (index cache must keep memory flat)
             val all = model.bank.all()
             if (all.isNotEmpty()) {

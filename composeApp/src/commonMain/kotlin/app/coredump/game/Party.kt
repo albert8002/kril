@@ -60,6 +60,9 @@ class PartyHost(
     var game: MeltdownGame? = null
         private set
     private val gameJobs = ArrayList<Job>()
+    /** Rules shown to guests while they wait (seconds per turn, topics). */
+    var config = MeltConfig()
+        private set
     /** Last message time per guest id (a guest silent for 20 s is dropped). */
     private val seen = HashMap<String, Long>()
     private var watch: Job? = null
@@ -109,8 +112,17 @@ class PartyHost(
     private suspend fun send(m: Msg) { link?.send(m) }
 
     private suspend fun sendLobby() {
-        val s = MeltState(phase = MeltPhase.LOBBY, players = _lobby.value.players)
+        val c = config
+        val s = MeltState(phase = MeltPhase.LOBBY, players = _lobby.value.players, turnMs = c.turnSec * 1000, leftMs = c.turnSec * 1000,
+            topics = c.topics.sorted())
         send(body("state") { put("s", Meltdown.encode(s)) })
+    }
+
+    /** New rules from the host's screen: guests see them at once. */
+    fun setConfig(c: MeltConfig) {
+        if (c == config) return
+        config = c
+        if (game == null) scope.launch { sendLobby() }
     }
 
     private suspend fun handle(o: Map<String, String>) {
@@ -122,7 +134,9 @@ class PartyHost(
                 if (g == null) {
                     if (_lobby.value.players.none { it.id == id } && _lobby.value.players.size < Meltdown.MAX_PLAYERS && id.isNotBlank()) {
                         val name = o["n"].orEmpty().ifBlank { "GUEST" }.take(16)
-                        _lobby.update { it.copy(players = it.players + MeltPlayer(id, name, bot = false)) }
+                        val p = MeltPlayer(id, name, bot = false, elo = o["e"]?.toIntOrNull() ?: 0, streak = o["s"]?.toIntOrNull() ?: 0,
+                            wins = o["wn"]?.toIntOrNull() ?: 0)
+                        _lobby.update { it.copy(players = it.players + p) }
                     }
                     sendLobby()
                 } else send(body("state") { put("s", Meltdown.encode(g.state.value)) })
@@ -137,12 +151,13 @@ class PartyHost(
     }
 
     /** Starts the game with everyone seated plus [bots] bots; the state goes to every guest as it changes. */
-    fun start(bots: Int, level: Int, pick: () -> Prompt?): MeltdownGame {
+    fun start(bots: Int, cfg: MeltConfig, pick: () -> Prompt?, check: (suspend (Prompt, String) -> MeltOnline?)?): MeltdownGame {
+        config = cfg
         val seated = _lobby.value.players
         val used = seated.map { it.name }.toMutableSet()
         val extra = Meltdown.botNames.filter { it !in used }.shuffled().take(bots.coerceIn(0, Meltdown.MAX_PLAYERS - seated.size))
-            .map { MeltPlayer("bot-" + it.lowercase(), it, bot = true) }
-        val g = MeltdownGame(scope, (seated + extra).shuffled(), pick, level)
+            .map { MeltPlayer("bot-" + it.lowercase(), it, bot = true, elo = Meltdown.botElo(cfg.botLevel)) }
+        val g = MeltdownGame(scope, (seated + extra).shuffled(), pick, cfg, check)
         game = g
         gameJobs += scope.launch {
             var lastSent = -1
@@ -153,7 +168,9 @@ class PartyHost(
             }
         }
         gameJobs += scope.launch {
-            g.verdicts.collect { (id, a, k) -> if (id != me.id) send(body("verdict") { put("id", id); put("a", a); put("k", k) }) }
+            g.verdicts.collect { (id, v) ->
+                if (id != me.id) send(body("verdict") { put("id", id); put("a", v.text); put("k", v.kind); put("sg", v.suggestions.joinToString("\n")) })
+            }
         }
         g.start()
         return g
@@ -176,13 +193,14 @@ class PartyHost(
  * Party guest: finds the host's room (any relay), takes a seat, mirrors the host's game and sends my answers.
  * [lobby] shows the seating until the host starts.
  */
-class PartyGuest(private val scope: CoroutineScope, private val myName: String, val room: String, private val broker: Int = 0) : MeltSession {
+class PartyGuest(private val scope: CoroutineScope, private val myName: String, val room: String, private val broker: Int = 0,
+                 private val me: MeltPlayer? = null) : MeltSession {
     override val myId: String = Meltdown.newId()
     override val online: Boolean = true
     private val _state = MutableStateFlow(MeltState())
     override val state: StateFlow<MeltState> = _state.asStateFlow()
-    private val _v = MutableSharedFlow<Pair<String, String>>(extraBufferCapacity = 16)
-    override val verdicts: SharedFlow<Pair<String, String>> = _v.asSharedFlow()
+    private val _v = MutableSharedFlow<MeltVerdict>(extraBufferCapacity = 16)
+    override val verdicts: SharedFlow<MeltVerdict> = _v.asSharedFlow()
     private val _lobby = MutableStateFlow(PartyLobby("dialing…"))
     val lobby: StateFlow<PartyLobby> = _lobby.asStateFlow()
     private var link: RelayLink? = null
@@ -214,7 +232,8 @@ class PartyGuest(private val scope: CoroutineScope, private val myName: String, 
                             _state.value = s
                             if (s.phase == MeltPhase.LOBBY) _lobby.update { it.copy(players = s.players) }
                         }
-                        "verdict" -> if (o["id"] == myId) _v.tryEmit(o["a"].orEmpty() to o["k"].orEmpty())
+                        "verdict" -> if (o["id"] == myId) _v.tryEmit(MeltVerdict(o["a"].orEmpty(), o["k"].orEmpty(),
+                            o["sg"].orEmpty().split('\n').filter { it.isNotBlank() }))
                         "bye" -> { bye = true; break }
                     }
                 }
@@ -247,7 +266,10 @@ class PartyGuest(private val scope: CoroutineScope, private val myName: String, 
             link = l
             // ask for a seat until the host's seating lists me (the host may subscribe late)
             for (attempt in 0 until (if (n == 0) 10 else 6)) {
-                l.send(body("join") { put("id", myId); put("n", myName) })
+                l.send(body("join") {
+                    put("id", myId); put("n", myName)
+                    me?.let { m -> put("e", m.elo.toString()); put("s", m.streak.toString()); put("wn", m.wins.toString()) }
+                })
                 val relay = if (order.size > 1) " · relay ${n + 1}/${order.size}" else ""
                 _lobby.update { it.copy(status = (if (firstTime) "waiting for host… (" else "rejoining… (") + "${attempt + 1}$relay)") }
                 val got = withTimeoutOrNull(1_500) {

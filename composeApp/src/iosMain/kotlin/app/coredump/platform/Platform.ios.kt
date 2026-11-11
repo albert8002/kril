@@ -123,32 +123,52 @@ actual fun setSystemBarsDark(dark: Boolean) {
     runCatching { IosBridge.onDark?.invoke(dark) }
 }
 
-/** Each sound is a short in-memory WAV played by its own AVAudioPlayer (ambient: mixes with music, obeys the silent switch). */
+/**
+ * Each sound is a short in-memory WAV played by an AVAudioPlayer (ambient: mixes with music, obeys the silent
+ * switch). Players are made once per sound and reused (making one per tap/keystroke stalled the main thread):
+ * up to [PER_SOUND] of the same sound can overlap; the [MAX_SOUNDS] most recent sounds keep their players.
+ */
 @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
 actual object SoundOut {
-    private val players = ArrayList<platform.AVFAudio.AVAudioPlayer>()
+    private const val PER_SOUND = 3
+    private const val MAX_SOUNDS = 48
+    private val pool = LinkedHashMap<ShortArray, ArrayList<platform.AVFAudio.AVAudioPlayer>>()
     private var ready = false
+
+    private fun session() {
+        if (ready) return
+        ready = true
+        // ambient: mixes with other audio and follows the silent switch (the player activates the session)
+        runCatching<Unit> {
+            platform.AVFAudio.AVAudioSession.sharedInstance().setCategory(platform.AVFAudio.AVAudioSessionCategoryAmbient, null)
+        }
+    }
+
+    private fun player(pcm: ShortArray): platform.AVFAudio.AVAudioPlayer? {
+        val wav = app.coredump.ui.Wav.encode(pcm, app.coredump.ui.Sfx.RATE)
+        val data: platform.Foundation.NSData = wav.usePinned { pinned ->
+            platform.Foundation.NSData.create(bytes = pinned.addressOf(0), length = wav.size.convert())
+        }
+        return platform.AVFAudio.AVAudioPlayer(data = data, error = null).also { it.prepareToPlay() }
+    }
 
     actual fun play(pcm: ShortArray, gain: Float) {
         runCatching {
-            if (!ready) {
-                ready = true
-                // ambient: mixes with other audio and follows the silent switch (the player activates the session)
-                runCatching<Unit> {
-                    platform.AVFAudio.AVAudioSession.sharedInstance().setCategory(platform.AVFAudio.AVAudioSessionCategoryAmbient, null)
-                }
+            session()
+            // most recently used last (so the oldest sound is dropped first)
+            val list = pool.remove(pcm) ?: ArrayList()
+            pool[pcm] = list
+            while (pool.size > MAX_SOUNDS) {
+                val oldest = pool.keys.first()
+                pool.remove(oldest)?.forEach { it.stop() }
             }
-            val wav = app.coredump.ui.Wav.encode(pcm, app.coredump.ui.Sfx.RATE)
-            val data: platform.Foundation.NSData = wav.usePinned { pinned ->
-                platform.Foundation.NSData.create(bytes = pinned.addressOf(0), length = wav.size.convert())
-            }
-            val p = platform.AVFAudio.AVAudioPlayer(data = data, error = null)
+            val p = list.firstOrNull { !it.playing }
+                ?: (if (list.size < PER_SOUND) player(pcm)?.also { list += it } else list.first())
+                ?: return
+            p.stop()
+            p.currentTime = 0.0
             p.volume = gain.coerceIn(0f, 1f)
-            p.prepareToPlay()
             p.play()
-            players.removeAll { !it.playing }
-            players += p
-            while (players.size > 12) players.removeAt(0)
         }
     }
 

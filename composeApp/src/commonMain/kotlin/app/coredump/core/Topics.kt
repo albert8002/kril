@@ -159,6 +159,8 @@ object Topics {
     /** Category of a list. [raw] is the category the source gave it (old names are mapped). */
     fun classify(id: String, text: String, raw: String): String {
         byId[id]?.let { return it }
+        // lists of people by job stay with people (or their own field: music, film, sport), never in food, science…
+        if (isJobList(id)) return jobTopic(text)
         if (id.startsWith("wx.")) poolGroup[id.split('.').getOrElse(1) { "" }]?.let { return it }
         if (id.startsWith("wf.film.")) return "MOVIES"
         if (id.startsWith("wf.gamegenre")) return "GAMING"
@@ -195,6 +197,9 @@ object Topics {
 
     /** Hyper-specific list (needs specialist knowledge). */
     fun isNiche(id: String, text: String): Boolean {
+        // qualifier lists are hand-picked for a general audience ("a mountain in Europe higher than 4,000 m" is not
+        // niche although it names a place); only a few need specialist knowledge
+        if (isSpecific(id)) return id in nicheSpecific
         if (id in nicheIds) return true
         if (id in broadJobs) return false
         if (nichePrefixes.any { id.startsWith(it) }) return true
@@ -223,9 +228,82 @@ object Topics {
     /** Answers are real people (surname-only answers allowed). */
     fun isPeople(id: String, text: String, check: String?): Boolean {
         if (check != null && (check.contains("wd:Q5 ") || check.contains("wd:Q5;"))) return true
+        // qualifier lists say exactly what they hold ("a Stephen King book" is not about kings)
+        if (isSpecific(id)) return false
         if (id.startsWith("wf.oscar.q102427")) return false
         val w = words(text.substringBefore("("))
         if (notPeople.any { has(w, it) } && !has(w, "film director") && !has(w, "film actor") && !has(w, "film producer")) return false
         return peopleWords.any { has(w, it) } || has(w, "winner of the nobel prize")
+    }
+
+    // ---------------- qualifier lists ("wx.<group>.s.<name>", see data/SpecificTemplates)
+
+    /** A qualifier list: a category with one condition ("a river longer than 1,000 km"). */
+    fun isSpecific(id: String): Boolean = id.startsWith("wx.") && id.split('.').getOrNull(2) == "s"
+
+    private val nicheSpecific = setOf("wx.an2.s.spider", "wx.an2.s.butterfly", "wx.na.s.trees", "wx.hi.s.pyramid", "wx.sc.s.comet")
+
+    // ---------------- people lists by job (the "Name a famous <nationality> <job>" kind)
+
+    /** Ids of the generated "famous <job>" lists (with or without a nationality). */
+    private val jobListIds = setOf(
+        "wg.actor", "wg.writer", "wg.politician", "wg.model", "wg.youtuber", "wg.dancer", "wg.cricketer", "wg.swimmer",
+        "wg.cyclist", "wg.hockey", "wg.baseball", "wg.nfl", "wg.wrestler", "wg.presenter", "wg.dj", "wx.tc.programmer",
+    )
+    private val jobListPrefixes = listOf("wx.job.", "wx.nx.", "wf.occ.", "wf.foot.", "wf.paint.", "wf.writer.", "wf.comp.")
+
+    /** A generated list of people by occupation (the kind that used to show up in every category). */
+    fun isJobList(id: String): Boolean =
+        id in jobListIds || jobListPrefixes.any { id.startsWith(it) } || (id.startsWith("wx.") && id.split('.').getOrNull(2) == "by")
+
+    private val sportJobs = listOf("player", "footballer", "athlete", "swimmer", "cyclist", "boxer", "wrestler", "cricketer",
+        "skier", "skater", "gymnast", "jockey", "racing driver", "formula one", "sprinter", "fencer", "mountaineer", "golfer")
+    private val musicJobs = listOf("singer", "rapper", "musician", "composer", "guitarist", "pianist", "violinist", "drummer",
+        "bassist", "conductor", "songwriter", "dj", "opera singer", "singer-songwriter")
+    private val filmJobs = listOf("actor", "actress", "film director", "film producer", "screenwriter", "voice actor",
+        "stage actor", "television actor")
+
+    /** Category of a people-by-job list: sport, music or film people stay there; everyone else is "Famous people". */
+    fun jobTopic(text: String): String {
+        val w = words(text.substringBefore("("))
+        return when {
+            sportJobs.any { has(w, it) } -> "SPORT"
+            musicJobs.any { has(w, it) } -> "MUSIC"
+            filmJobs.any { has(w, it) } -> "MOVIES"
+            else -> "PEOPLE"
+        }
+    }
+
+    /** Countries most players know plenty of names from (country codes of the nationality lists). */
+    private val bigCountries = setOf("us", "uk", "fr", "de", "it", "es", "jp")
+    /** Jobs whose famous members are known well beyond their field. */
+    private val wideJobs = setOf("actor", "singer", "filmdirector", "tennisplayer", "racingdriver", "rapper")
+    /** Jobs that make a nationality list a deep cut ("a famous Swiss architect"). */
+    private val narrowJobs = setOf("chef", "model", "fashiondesigner", "architect", "chessplayer", "mathematician", "philosopher")
+    private val fromPlace = Regex("""\bfrom (the )?[A-Z]""")
+
+    /**
+     * How specific a people list is, 0..1: 0 = best-known, global ("Name a famous actor or actress"); 0.2 = global but
+     * a narrower job ("a famous drummer"); 0.5 = by nationality, a big country and a broad job ("a famous French
+     * actor"); 0.75 = other nationality lists; 0.9 = nationality and a narrow job ("a famous Swiss architect").
+     * Compared with the player's "common ↔ niche" setting ([GameConfig.peopleNiche]) when prompts are picked.
+     */
+    fun peopleLevel(id: String, text: String): Float {
+        val p = id.split('.')
+        if (p.size == 5 && p[0] == "wx" && p[2] == "by") {
+            val job = p[3]
+            val cc = p[4]
+            return when {
+                job in narrowJobs -> 0.9f
+                cc in bigCountries && job in wideJobs -> 0.5f
+                else -> 0.75f
+            }
+        }
+        if (id.startsWith("wf.foot.") || id.startsWith("wf.paint.") || id.startsWith("wf.writer.") || id.startsWith("wf.comp.")) return 0.5f
+        if (id.startsWith("wx.job.") || id.startsWith("wx.nx.") || id == "wx.tc.programmer") return 0.2f
+        if (id.startsWith("wf.occ.") && isNiche(id, text)) return 0.2f
+        // other sources: "Name a footballer from Brazil"
+        if (fromPlace.containsMatchIn(text.substringAfter("Name "))) return 0.5f
+        return 0f
     }
 }

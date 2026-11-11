@@ -41,6 +41,15 @@ import app.coredump.Screen
 import app.coredump.platform.CrashLog
 import app.coredump.platform.shareText
 
+/** "2026-11-11 · 5 h ago" for an epoch-ms time, "never" for 0. */
+private fun rescoredLabel(at: Long, now: Long): String {
+    if (at <= 0L) return "never"
+    val d = app.coredump.data.FameCheck.ymd(at / 86_400_000L)
+    val date = d.substring(0, 4) + "-" + d.substring(4, 6) + "-" + d.substring(6, 8)
+    val h = ((now - at) / 3_600_000L).coerceAtLeast(0L)
+    return if (h < 48) "$date · $h h ago" else "$date · ${h / 24} days ago"
+}
+
 @Composable
 fun ConfigScreen(model: AppModel) {
     val s = model.settings
@@ -74,6 +83,11 @@ fun ConfigScreen(model: AppModel) {
                 TText("difficulty", size = 13.sp, color = C.dim)
                 Spacer(Modifier.height(6.dp))
                 Choice(Difficulty.entries, s.difficulty, { it.label }) { v -> model.update { it.copy(difficulty = v) } }
+                Spacer(Modifier.height(6.dp))
+                Toggle(Th.say(".reversed()", "Reversed mode · .reversed()"), s.reversed, { v -> model.update { it.copy(reversed = v) } },
+                    "the most common answer scores most, the rarest least")
+                Spacer(Modifier.height(8.dp))
+                PeopleControls(model)
             }
             Spacer(Modifier.height(14.dp))
             Panel(Th.say("LIBRARY", "Collected lists")) {
@@ -87,6 +101,18 @@ fun ConfigScreen(model: AppModel) {
                 TText("about ${app.coredump.data.QuestionBank.DAILY_BATCH} new lists are added automatically once a day while the app is used.", size = 10.sp, color = C.dim)
                 Spacer(Modifier.height(8.dp))
                 KV("answers checked online (cached)", "${app.coredump.data.VerifyCache.size()}")
+                Spacer(Modifier.height(12.dp))
+                // rescoring: answers re-ranked by how much they are read on Wikipedia (twice a week, in the background)
+                val rescoring = model.rescoring
+                KV(Th.say("last rescore", "Last re-ranked"), rescoredLabel(s.rescoredAt, Platform.epochMillis()))
+                if (rescoring != null) {
+                    TText(Th.say("rescoring: ", "Re-ranking: ") + rescoring, size = 11.sp, color = C.hot)
+                }
+                TText("twice a week the answers of the Wikidata and Wikipedia lists are re-ranked by how much they are read on Wikipedia, " +
+                    "so an answer everybody knows doesn't score as a rare one.", size = 10.sp, color = C.dim)
+                Spacer(Modifier.height(6.dp))
+                TButton(if (rescoring != null) "rescoring… $rescoring" else Th.say("RESCORE LISTS NOW", "Rescore lists now"),
+                    { model.rescoreNow() }, Modifier.fillMaxWidth(), enabled = rescoring == null, textSize = 12.sp)
             }
             Spacer(Modifier.height(14.dp))
             Panel(Th.say("DISCARDED", "Discarded questions")) {

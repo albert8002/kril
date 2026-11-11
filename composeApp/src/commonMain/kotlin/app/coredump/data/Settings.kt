@@ -6,6 +6,7 @@ import app.coredump.core.Tier
 import app.coredump.platform.Platform
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
@@ -77,8 +78,30 @@ data class Settings(
     /** MELTDOWN games finished / won. */
     val meltGames: Int = 0,
     val meltWins: Int = 0,
+    /** People lists ("Name a famous French actor") in the mix at all. */
+    val peopleLists: Boolean = true,
+    /** People lists: 0 = only the best-known (global) ones … 1 = niche ones too (by country, by sub-job). */
+    val peopleNiche: Float = 0.25f,
+    /** People lists: at most this share of the prompts in a game (percent, 0–100). */
+    val peopleMax: Int = 20,
+    /** When the lists were last rescored (epoch ms; see the rescoring in the question bank). */
+    val rescoredAt: Long = 0L,
+    /** .reversed(): the most common answer scores most. */
+    val reversed: Boolean = false,
+    /** 1v1: once one player has answered, the other loses points for every second they still take. */
+    val speedPenalty: Boolean = false,
+    /** My rating for ranked and friend 1v1 (Elo, starts at 1000). */
+    val elo: Int = 1000,
+    /** Ranked games played / won, current and best win streak (ranked and 1v1). */
+    val rankedGames: Int = 0,
+    val rankedWins: Int = 0,
+    val streak: Int = 0,
+    val bestStreak: Int = 0,
+    /** Friend requests waiting for my answer: code → name. */
+    val requests: List<Friend> = emptyList(),
 ) {
-    fun gameConfig() = GameConfig(rounds, seconds, difficulty, topics, niche)
+    fun gameConfig() = GameConfig(rounds, seconds, difficulty, topics, niche, reversed = reversed, speedPenalty = speedPenalty,
+        peopleLists = peopleLists, peopleNiche = peopleNiche, peopleMax = peopleMax)
 }
 
 object SettingsStore {
@@ -129,11 +152,27 @@ object SettingsStore {
             roomBroker = o["roomBroker"]?.jsonPrimitive?.intOrNull ?: d.roomBroker,
             meltGames = o["meltGames"]?.jsonPrimitive?.intOrNull ?: d.meltGames,
             meltWins = o["meltWins"]?.jsonPrimitive?.intOrNull ?: d.meltWins,
+            peopleLists = o["peopleLists"]?.jsonPrimitive?.booleanOrNull ?: d.peopleLists,
+            peopleNiche = o["peopleNiche"]?.jsonPrimitive?.floatOrNull ?: d.peopleNiche,
+            peopleMax = o["peopleMax"]?.jsonPrimitive?.intOrNull ?: d.peopleMax,
+            rescoredAt = o["rescoredAt"]?.jsonPrimitive?.longOrNull ?: d.rescoredAt,
+            reversed = o["reversed"]?.jsonPrimitive?.booleanOrNull ?: d.reversed,
+            speedPenalty = o["speedPenalty"]?.jsonPrimitive?.booleanOrNull ?: d.speedPenalty,
+            elo = o["elo"]?.jsonPrimitive?.intOrNull ?: d.elo,
+            rankedGames = o["rankedGames"]?.jsonPrimitive?.intOrNull ?: d.rankedGames,
+            rankedWins = o["rankedWins"]?.jsonPrimitive?.intOrNull ?: d.rankedWins,
+            streak = o["streak"]?.jsonPrimitive?.intOrNull ?: d.streak,
+            bestStreak = o["bestStreak"]?.jsonPrimitive?.intOrNull ?: d.bestStreak,
+            requests = (o["requests"] as? JsonArray)?.mapNotNull { e ->
+                val f = e as? JsonObject ?: return@mapNotNull null
+                val c = f["c"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                Friend(f["n"]?.jsonPrimitive?.contentOrNull ?: "", c, f["at"]?.jsonPrimitive?.longOrNull ?: 0L)
+            } ?: d.requests,
             friends = o["friends"]?.jsonArray?.mapNotNull { el ->
                 runCatching {
                     val f = el.jsonObject
                     Friend(f["n"]?.jsonPrimitive?.contentOrNull.orEmpty().take(24), f["c"]?.jsonPrimitive?.contentOrNull.orEmpty(),
-                        f["at"]?.jsonPrimitive?.longOrNull ?: 0L)
+                        f["at"]?.jsonPrimitive?.longOrNull ?: 0L, f["e"]?.jsonPrimitive?.intOrNull ?: 0, f["s"]?.jsonPrimitive?.intOrNull ?: 0)
                 }.getOrNull()?.takeIf { it.name.isNotBlank() }
             } ?: d.friends,
             scoreRuns = b("scoreRuns") ?: d.scoreRuns,
@@ -186,7 +225,19 @@ object SettingsStore {
             put("roomBroker", s.roomBroker)
             put("meltGames", s.meltGames)
             put("meltWins", s.meltWins)
-            put("friends", JsonArray(s.friends.map { f -> buildJsonObject { put("n", f.name); put("c", f.code); put("at", f.at) } }))
+            put("peopleLists", s.peopleLists)
+            put("peopleNiche", s.peopleNiche)
+            put("peopleMax", s.peopleMax)
+            put("rescoredAt", s.rescoredAt)
+            put("reversed", s.reversed)
+            put("speedPenalty", s.speedPenalty)
+            put("elo", s.elo)
+            put("rankedGames", s.rankedGames)
+            put("rankedWins", s.rankedWins)
+            put("streak", s.streak)
+            put("bestStreak", s.bestStreak)
+            put("requests", JsonArray(s.requests.map { f -> buildJsonObject { put("n", f.name); put("c", f.code); put("at", f.at) } }))
+            put("friends", JsonArray(s.friends.map { f -> buildJsonObject { put("n", f.name); put("c", f.code); put("at", f.at); put("e", f.elo); put("s", f.streak) } }))
             put("scoreRuns", s.scoreRuns)
             put("custom", buildJsonObject {
                 for ((k, c) in s.custom) if (!c.isDefault) put(k, buildJsonObject {
@@ -216,7 +267,8 @@ data class RunRecord(
 )
 
 /** A friend: shown name, their room code (blank if unknown: added before codes were exchanged), when added. */
-data class Friend(val name: String, val code: String, val at: Long)
+/** A friend by room code; [elo] / [streak]: their rating and win streak as last seen (0 = unknown). */
+data class Friend(val name: String, val code: String, val at: Long, val elo: Int = 0, val streak: Int = 0)
 
 /** Run history (for stats), recently played prompt ids (to avoid repeats), best score. */
 object History {

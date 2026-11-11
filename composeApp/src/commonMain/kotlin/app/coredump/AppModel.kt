@@ -20,6 +20,7 @@ import app.coredump.game.SoloSession
 import app.coredump.ui.Fx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
@@ -77,9 +78,11 @@ class AppModel(val scope: CoroutineScope) {
         private set
     var partyGuest by mutableStateOf<app.coredump.game.PartyGuest?>(null)
         private set
-    /** Bots and bot level of the last offline MELTDOWN game (for "again"). */
+    /** Bots of the last offline MELTDOWN game (for "again"). */
     var lastMelt = 3 to 1
         private set
+    /** MELTDOWN rules being set up (seconds per turn, topics, bot skill); the host's go to the guests. */
+    var meltConfig by mutableStateOf(app.coredump.game.MeltConfig())
     /** Back pressed during a MELTDOWN game: ask before leaving. */
     var confirmLeaveMelt by mutableStateOf(false)
     private var partyWatch: Job? = null
@@ -89,7 +92,7 @@ class AppModel(val scope: CoroutineScope) {
     /** The invite I am sending right now (status shown on the friends list). */
     var inviting by mutableStateOf<app.coredump.game.Inviter?>(null)
         private set
-    private val inbox = app.coredump.game.Inbox(scope, { myRoom() }, { settings.roomBroker }) { inv -> onInvite(inv) }
+    private val inbox = app.coredump.game.Inbox(scope, { myRoom() }, { settings.roomBroker }, { inv -> onInvite(inv) }, { inv -> onFriendRequest(inv) })
 
     init {
         History.load()
@@ -102,6 +105,34 @@ class AppModel(val scope: CoroutineScope) {
             app.coredump.ui.Style.byName(if (settings.song == "MATCH") settings.theme else settings.song))
         // listen for invites while the app is open
         scope.launch { kotlinx.coroutines.delay(1_500); inbox.start() }
+        app.coredump.platform.AppLife.onForeground { inbox.refresh() }
+        app.coredump.game.PeerBook.mine = { settings.elo to settings.streak }
+        // twice a week the stored lists are re-ranked in the background (page views), so obvious answers aren't rare
+        scope.launch {
+            kotlinx.coroutines.delay(20_000)
+            if (!SelfTest.enabled && bank.rescoreDue(settings.rescoredAt, app.coredump.platform.Platform.epochMillis())) rescoreNow(quiet = true)
+        }
+        app.coredump.game.PeerBook.onDuelEnd = { mine, theirs, opp, ranked -> onDuelEnd(mine, theirs, opp, ranked) }
+    }
+
+    // ------------------------------------------------------------------ rescoring
+
+    /** Status of a rescoring under way ("12 / 80 lists"), null when none. */
+    var rescoring by mutableStateOf<String?>(null)
+        private set
+
+    /** Re-ranks the answers of the stored lists by current interest (Wikipedia page views); [quiet] = no toasts. */
+    fun rescoreNow(quiet: Boolean = false) {
+        if (rescoring != null) return
+        rescoring = "starting…"
+        scope.launch {
+            val n = runCatching {
+                bank.rescore(force = !quiet) { done, total -> rescoring = "$done / $total lists" }
+            }.getOrElse { -1 }
+            rescoring = null
+            if (n >= 0) update { it.copy(rescoredAt = app.coredump.platform.Platform.epochMillis()) }
+            if (!quiet) toast = if (n >= 0) "rescored $n lists" else "rescoring failed (offline?)"
+        }
     }
 
     // ------------------------------------------------------------------ invites
@@ -122,7 +153,8 @@ class AppModel(val scope: CoroutineScope) {
         if (f.code.length != app.coredump.net.JoinTicket.ROOM_LEN) { toast = "no code for ${f.name} yet"; return }
         inviting?.cancel()
         if (mode == "party") openPartyHost() else openHost(LinkMode.RELAY)
-        val inv = app.coredump.game.Inviter(scope, f.name, f.code, settings.handle.ifBlank { "A FRIEND" }, myRoom(), settings.roomBroker, mode)
+        val inv = app.coredump.game.Inviter(scope, f.name, f.code, settings.handle.ifBlank { "A FRIEND" }, myRoom(), settings.roomBroker, mode,
+            myElo = settings.elo, myStreak = settings.streak)
         inviting = inv
         inv.send()
         scope.launch {
@@ -343,15 +375,144 @@ class AppModel(val scope: CoroutineScope) {
         go(Screen.Play(s), push = false)
     }
 
-    /** Adds (or renames) a friend by room code. Returns false when the code is not a room code. */
+    /**
+     * Adds a friend by room code (the name is optional: they send theirs back when they accept) and sends them a
+     * friend request (a pop-up if their app is open). Returns false when the code is not a room code.
+     */
     fun addFriend(name: String, code: String): Boolean {
         val c = code.uppercase().filter { it in app.coredump.net.JoinTicket.ROOM_ALPHABET }
         if (c.length != app.coredump.net.JoinTicket.ROOM_LEN) { toast = "a friend code has 8 letters/digits (e.g. K7Q2-M9XA)"; return false }
         if (c == settings.room) { toast = "that is your own code"; return false }
-        val n = name.trim().ifBlank { "FRIEND" }.take(24)
-        update { s -> s.copy(friends = s.friends.filter { it.code != c } + app.coredump.data.Friend(n, c, app.coredump.platform.Platform.epochMillis())) }
-        toast = "$n added to friends"
+        val old = settings.friends.firstOrNull { it.code == c }
+        val n = name.trim().take(24).ifBlank { old?.name ?: ("FRIEND " + c.take(4)) }
+        update { s -> s.copy(friends = s.friends.filter { it.code != c } +
+            app.coredump.data.Friend(n, c, app.coredump.platform.Platform.epochMillis(), old?.elo ?: 0, old?.streak ?: 0)) }
+        sendFriendRequest(c, n)
+        toast = "friend request sent to ${app.coredump.net.JoinTicket.pretty(c)}"
         return true
+    }
+
+    /** A friend request to [code]; when they accept, their name and rating replace what I had. */
+    private fun sendFriendRequest(code: String, shownAs: String) {
+        val req = app.coredump.game.Inviter(scope, shownAs, code, settings.handle.ifBlank { "A FRIEND" }, myRoom(), settings.roomBroker,
+            "friend", kind = "friend", myElo = settings.elo, myStreak = settings.streak)
+        req.send()
+        scope.launch {
+            req.status.collect { st ->
+                if (st == app.coredump.game.Inviter.Status.ACCEPTED) {
+                    update { s -> s.copy(friends = s.friends.map { f ->
+                        if (f.code != code) f else f.copy(name = req.replyName.ifBlank { f.name }, elo = req.replyElo.takeIf { it > 0 } ?: f.elo,
+                            streak = req.replyStreak)
+                    }) }
+                    toast = "${req.replyName.ifBlank { shownAs }} accepted your friend request"
+                }
+            }
+        }
+    }
+
+    /** Friend requests to show as pop-ups (also kept in settings until answered). */
+    val friendPops = androidx.compose.runtime.mutableStateListOf<app.coredump.game.Invite>()
+
+    private fun onFriendRequest(inv: app.coredump.game.Invite) {
+        val known = settings.friends.firstOrNull { it.code == inv.code }
+        if (known != null) {
+            // already friends (they re-added me, or answered my request): just take their current name and rating
+            inbox.answer(inv, true, settings.handle, settings.elo, settings.streak)
+            update { s -> s.copy(friends = s.friends.map { f -> if (f.code != inv.code) f else f.copy(name = inv.from, elo = inv.elo.takeIf { it > 0 } ?: f.elo, streak = inv.streak) }) }
+            return
+        }
+        if (settings.requests.none { it.code == inv.code }) {
+            update { s -> s.copy(requests = s.requests + app.coredump.data.Friend(inv.from, inv.code, inv.at, inv.elo, inv.streak)) }
+        }
+        friendPops.removeAll { it.code == inv.code }
+        friendPops += inv
+        app.coredump.ui.Sfx.play(app.coredump.ui.Cue.RANK)
+    }
+
+    /** Accepts a friend request (from a pop-up or the friends list). */
+    fun acceptFriend(code: String) {
+        val r = settings.requests.firstOrNull { it.code == code } ?: friendPops.firstOrNull { it.code == code }?.let {
+            app.coredump.data.Friend(it.from, it.code, it.at, it.elo, it.streak) } ?: return
+        update { s -> s.copy(requests = s.requests.filter { it.code != code },
+            friends = s.friends.filter { it.code != code } + r.copy(at = app.coredump.platform.Platform.epochMillis())) }
+        friendPops.filter { it.code == code }.forEach { inbox.answer(it, true, settings.handle, settings.elo, settings.streak) }
+        friendPops.removeAll { it.code == code }
+        // and tell them (they may have closed the app since): my request to them is accepted on their side at once
+        sendFriendRequest(code, r.name)
+        toast = "${r.name} is now a friend"
+    }
+
+    fun declineFriend(code: String) {
+        friendPops.filter { it.code == code }.forEach { inbox.answer(it, false) }
+        friendPops.removeAll { it.code == code }
+        update { s -> s.copy(requests = s.requests.filter { it.code != code }) }
+    }
+
+    // ------------------------------------------------------------------ rating, ranked
+
+    /** A 1v1 ended: rating (Elo) and win streak move; friends' cards get the other player's numbers. */
+    private fun onDuelEnd(mine: Int, theirs: Int, opp: String, ranked: Boolean) {
+        val score = when { mine > theirs -> 1.0; mine < theirs -> 0.0; else -> 0.5 }
+        val oppElo = app.coredump.game.PeerBook.eloOf(opp) ?: 1000
+        val k = if (ranked) app.coredump.game.Ranked.K_RANKED else app.coredump.game.Ranked.K_FRIENDLY
+        val before = settings.elo
+        val after = app.coredump.game.Ranked.elo(before, oppElo, score, k)
+        val code = app.coredump.game.PeerBook.codeOf(opp)
+        update { s ->
+            val streak = if (score == 1.0) s.streak + 1 else 0
+            s.copy(elo = after, streak = streak, bestStreak = maxOf(s.bestStreak, streak),
+                rankedGames = s.rankedGames + if (ranked) 1 else 0, rankedWins = s.rankedWins + if (ranked && score == 1.0) 1 else 0,
+                friends = s.friends.map { f -> if (code != null && f.code == code) f.copy(elo = oppElo, streak = app.coredump.game.PeerBook.streakOf(opp) ?: f.streak) else f })
+        }
+        val d = after - before
+        toast = (if (ranked) "ranked · " else "") + "rating $after (${if (d >= 0) "+" else ""}$d)"
+    }
+
+    var matchmaker by mutableStateOf<app.coredump.game.Matchmaker?>(null)
+        private set
+
+    /** Looks for a random online opponent near my rating (fixed ranked rules). */
+    fun findRanked() {
+        closeLobbies()
+        closeParty()
+        matchmaker?.cancel()
+        val mm = app.coredump.game.Matchmaker(scope, settings.handle.ifBlank { "ANON" }.take(16), myRoom(), settings.roomBroker, settings.elo) { m ->
+            onRankedMatch(m)
+        }
+        matchmaker = mm
+        mm.start()
+    }
+
+    fun cancelRanked() {
+        matchmaker?.cancel()
+        matchmaker = null
+    }
+
+    private fun onRankedMatch(m: app.coredump.game.RankedMatch) {
+        app.coredump.game.PeerBook.noteStats(m.oppName, m.oppElo, 0)
+        app.coredump.ui.Sfx.play(app.coredump.ui.Cue.RANK)
+        if (m.host) {
+            val l = openHost(LinkMode.RELAY)
+            l.open()
+            scope.launch {
+                val linked = kotlinx.coroutines.withTimeoutOrNull(45_000) { l.state.first { it.peer != null } }
+                if (linked == null || hostLobby !== l) {
+                    if (hostLobby === l) { toast = "${m.oppName} didn't arrive. searching again…"; closeLobbies(); findRanked() }
+                    return@launch
+                }
+                matchmaker = null
+                val cfg = app.coredump.game.Ranked.CONFIG
+                val prompts = pick(cfg)
+                val s = l.begin(prompts, cfg, arbiter(cfg)) ?: return@launch
+                hostLobby = null
+                go(Screen.Play(s), push = false)
+            }
+        } else {
+            openGuest().connect(app.coredump.net.JoinTicket("", 0, "", m.oppName, m.oppCode, m.broker)) { s ->
+                matchmaker = null
+                joined(s)
+            }
+        }
     }
 
     fun removeFriend(f: app.coredump.data.Friend) {
@@ -376,9 +537,11 @@ class AppModel(val scope: CoroutineScope) {
 
     private val meltSeen = HashSet<String>()
 
-    /** Next MELTDOWN category: a big list (60+ answers) nobody saw in this game; never a niche one. */
+    /** Next MELTDOWN category: a big list (60+ answers) in the chosen topics nobody saw in this game; never a niche one. */
     fun meltPrompt(): Prompt? {
-        val all = bank.all().filter { !it.niche && it.id !in discarded }
+        val topics = meltConfig.topics
+        val all = bank.all().filter { !it.niche && it.id !in discarded && (topics.isEmpty() || it.topic in topics) }
+            .ifEmpty { bank.all().filter { !it.niche && it.id !in discarded } }
         val big = all.filter { it.size >= 60 }.ifEmpty { all.filter { it.size >= 30 } }
         val fresh = big.filter { it.id !in meltSeen }.ifEmpty { meltSeen.clear(); big }
         val p = fresh.randomOrNull() ?: return null
@@ -386,18 +549,34 @@ class AppModel(val scope: CoroutineScope) {
         return p
     }
 
-    private fun me() = app.coredump.game.MeltPlayer(app.coredump.game.Meltdown.newId(), settings.handle.ifBlank { "YOU" }.take(16), bot = false)
+    private fun me() = app.coredump.game.MeltPlayer(app.coredump.game.Meltdown.newId(), settings.handle.ifBlank { "YOU" }.take(16), bot = false,
+        elo = settings.elo, streak = settings.streak, wins = settings.meltWins)
 
-    /** Offline game against [bots] bots (level 0 easy … 2 hard). */
-    fun startMeltBots(bots: Int, level: Int) {
+    /** The host checks an answer that is not on the list online (cached, as in solo): its name and tier, or null. */
+    private suspend fun meltCheck(p: Prompt, text: String): app.coredump.game.MeltOnline? =
+        when (val r = bank.verify(p, text)) {
+            is app.coredump.data.AnswerCheck.Outcome.Listed -> {
+                val i = p.entries.indexOfFirst { it.name == r.name }
+                if (i >= 0) app.coredump.game.MeltOnline(p.entries[i].name, p.entries[i].tier, i) else null
+            }
+            is app.coredump.data.AnswerCheck.Outcome.Found -> {
+                val j = app.coredump.core.Judge.verified(text, r.label, r.links, p, r.fame)
+                app.coredump.game.MeltOnline(r.label, j.tier)
+            }
+            else -> null
+        }
+
+    /** Offline game against [bots] bots (skill from [meltConfig]). */
+    fun startMeltBots(bots: Int, level: Int = meltConfig.botLevel) {
         closeParty()
         lastMelt = bots to level
         meltSeen.clear()
         val me = me()
         val used = mutableSetOf(me.name)
         val rivals = app.coredump.game.Meltdown.botNames.filter { it !in used }.shuffled().take(bots.coerceIn(1, app.coredump.game.Meltdown.MAX_PLAYERS - 1))
-            .map { app.coredump.game.MeltPlayer("bot-" + it.lowercase(), it, bot = true) }
-        val game = app.coredump.game.MeltdownGame(scope, (listOf(me) + rivals).shuffled(), ::meltPrompt, level)
+            .map { app.coredump.game.MeltPlayer("bot-" + it.lowercase(), it, bot = true, elo = app.coredump.game.Meltdown.botElo(level)) }
+        val game = app.coredump.game.MeltdownGame(scope, (listOf(me) + rivals).shuffled(), ::meltPrompt,
+            meltConfig.copy(botLevel = level), ::meltCheck)
         val s = app.coredump.game.LocalMelt(scope, me.id, game)
         game.start()
         go(Screen.Melt(s))
@@ -412,12 +591,12 @@ class AppModel(val scope: CoroutineScope) {
             onBroker = { b -> if (b != settings.roomBroker) update { it.copy(roomBroker = b) } }).also { partyHost = it; it.open() }
     }
 
-    fun startParty(bots: Int, level: Int) {
+    fun startParty(bots: Int, level: Int = meltConfig.botLevel) {
         val h = partyHost ?: return
         if (h.lobby.value.players.size + bots < 2) { toast = "need at least 2 players: wait for a friend or add bots"; return }
         meltSeen.clear()
         val myId = h.lobby.value.players.first().id
-        val game = h.start(bots, level, ::meltPrompt)
+        val game = h.start(bots, meltConfig.copy(botLevel = level), ::meltPrompt, ::meltCheck)
         val s = app.coredump.game.LocalMelt(scope, myId, game, online = true, onLeave = { h.close(); if (partyHost === h) partyHost = null })
         go(Screen.Melt(s))
     }
@@ -431,7 +610,7 @@ class AppModel(val scope: CoroutineScope) {
         partyHost?.close(); partyHost = null
         closeLobbies()
         partyGuest?.leave()
-        val g = app.coredump.game.PartyGuest(scope, settings.handle.ifBlank { "GUEST" }.take(16), room, t.broker)
+        val g = app.coredump.game.PartyGuest(scope, settings.handle.ifBlank { "GUEST" }.take(16), room, t.broker, me())
         partyGuest = g
         g.connect()
         partyWatch?.cancel()

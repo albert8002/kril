@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         app.coredump.platform.SoundOut.foreground(true)
+        app.coredump.platform.AppLife.foreground()
     }
 
     override fun onStop() {

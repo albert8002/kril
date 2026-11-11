@@ -37,8 +37,19 @@ data class LobbyState(
 /** Who I last played (name → room code), so the 1v1 record and "add friend" know their code. */
 object PeerBook {
     private val codes = HashMap<String, String>()
+    private val stats = HashMap<String, Pair<Int, Int>>()
     fun note(name: String?, code: String?) { if (!name.isNullOrBlank() && !code.isNullOrBlank()) codes[name] = code }
     fun codeOf(name: String?): String? = name?.let { codes[it] }
+
+    /** The other player's rating and win streak, as they sent them. */
+    fun noteStats(name: String?, elo: Int, streak: Int) { if (!name.isNullOrBlank() && elo > 0) stats[name] = elo to streak }
+    fun eloOf(name: String?): Int? = name?.let { stats[it]?.first }
+    fun streakOf(name: String?): Int? = name?.let { stats[it]?.second }
+
+    /** My rating and streak, sent in Hello / Welcome (set by the app). */
+    var mine: () -> Pair<Int, Int> = { 0 to 0 }
+    /** A 1v1 ended: (my points, their points, their name, ranked). The app moves rating and streak. */
+    var onDuelEnd: ((Int, Int, String, Boolean) -> Unit)? = null
 }
 
 /**
@@ -86,9 +97,11 @@ class HostLobby(private val scope: CoroutineScope, private val myName: String, v
             _s.value = LobbyState(status = "listening", ticket = JoinTicket("", 0, "", myName, room, b), busy = true, via = l.via)
             for (m in l.incoming) {
                 if (m is Msg.Hello && m.pin == room) {
-                    l.send(Msg.Welcome(myName, room))
+                    val (elo, streak) = PeerBook.mine()
+                    l.send(Msg.Welcome(myName, room, elo, streak))
                     link = wrap(l)
                     PeerBook.note(m.name.ifBlank { "PEER" }, m.me)
+                    PeerBook.noteStats(m.name.ifBlank { "PEER" }, m.elo, m.streak)
                     _s.update { it.copy(status = "peer connected", peer = m.name.ifBlank { "PEER" }, busy = false, peerCode = m.me.ifBlank { null }) }
                     return
                 }
@@ -121,9 +134,11 @@ class HostLobby(private val scope: CoroutineScope, private val myName: String, v
             val hello = withTimeoutOrNull(10_000) { l.incoming.receiveCatching().getOrNull() }
             if (hello !is Msg.Hello) { l.close(); continue }
             if (hello.pin != pin) { l.send(Msg.Reject("bad pin")); l.close(); continue }
-            l.send(Msg.Welcome(myName, room))
+            val (elo, streak) = PeerBook.mine()
+            l.send(Msg.Welcome(myName, room, elo, streak))
             link = wrap(l)
             PeerBook.note(hello.name.ifBlank { "PEER" }, hello.me)
+            PeerBook.noteStats(hello.name.ifBlank { "PEER" }, hello.elo, hello.streak)
             _s.update { it.copy(status = "peer connected", peer = hello.name.ifBlank { "PEER" }, busy = false, peerCode = hello.me.ifBlank { null }) }
             return
         }
@@ -177,7 +192,7 @@ class GuestJoin(private val scope: CoroutineScope, private val myName: String, p
                 // QoS-0 relay: repeat the hello until the host answers (it may subscribe late)
                 val tries = if (n == 0) 10 else 6
                 for (attempt in 0 until tries) {
-                    l.send(Msg.Hello(myName, pin, me = myCode))
+                    l.send(Msg.Hello(myName, pin, me = myCode, elo = PeerBook.mine().first, streak = PeerBook.mine().second))
                     reply = withTimeoutOrNull(1_500) {
                         var m = l.incoming.receiveCatching().getOrNull()
                         while (m != null && m !is Msg.Welcome && m !is Msg.Reject) m = l.incoming.receiveCatching().getOrNull()
@@ -198,6 +213,7 @@ class GuestJoin(private val scope: CoroutineScope, private val myName: String, p
             when (reply) {
                 is Msg.Welcome -> {
                     PeerBook.note(reply.hostName, reply.me.ifBlank { t.room })
+                    PeerBook.noteStats(reply.hostName, reply.elo, reply.streak)
                     _s.value = LobbyState(status = "linked", ticket = t, peer = reply.hostName, via = link.via, peerCode = reply.me.ifBlank { t.room })
                     val session = GuestSession(wrap(link), myName, reply.hostName, scope)
                     session.start()

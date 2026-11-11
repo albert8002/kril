@@ -203,10 +203,14 @@ fun main(args: Array<String>) {
     if (args.firstOrNull() == "--pool-check") {
         runCatching { searchSelfTest() }.onFailure { log("SEARCH crashed: ${it::class.simpleName}: ${it.message?.take(120)}") }
         val only = args.getOrNull(1)?.split(',')?.filter { it.isNotBlank() }
-        val list = app.coredump.data.WikidataPool.all.filter { only == null || only.any { o -> it.id.startsWith(o) } }
-        log("POOL checking ${list.size} templates")
+        // the qualifier lists (SpecificTemplates) are always checked, first, whatever the filter
+        val spec = app.coredump.data.SpecificTemplates.all
+        val specIds = app.coredump.data.SpecificTemplates.ids
+        val list = spec + app.coredump.data.WikidataPool.all.filter { it.id !in specIds && (only == null || only.any { o -> it.id.startsWith(o) }) }
+        log("POOL checking ${list.size} templates (${spec.size} qualifier lists first)")
         val ok = java.util.concurrent.atomic.AtomicInteger()
         val bad = java.util.concurrent.atomic.AtomicInteger()
+        val kept = java.util.concurrent.ConcurrentHashMap<String, Prompt>()
         val ex = Executors.newFixedThreadPool(2)
         for (t in list) ex.submit {
             if (overBudget()) { log("POOL ${t.id.padEnd(30)} SKIP budget"); return@submit }
@@ -217,6 +221,7 @@ fun main(args: Array<String>) {
                 val fam = WikidataTemplates.famousCount(body)
                 val keep = p.size >= WikidataTemplates.minAnswers(t) && fam >= t.famousMin
                 (if (keep) ok else bad).incrementAndGet()
+                if (keep) kept[t.id] = p
                 log("POOL ${t.id.padEnd(30)} ${if (keep) "OK     " else if (p.size >= WikidataTemplates.minAnswers(t)) "OBSCURE" else "SMALL  "} ${p.size.toString().padStart(5)} fam=${fam.toString().padStart(4)} ${(System.currentTimeMillis() - t0).toString().padStart(6)}ms [${p.topic}${if (p.niche) " niche" else ""}${if (p.people) " people" else ""}] ${t.prompt} :: ${p.entries.take(8).joinToString(" | ") { it.name }}")
             } catch (e: Exception) {
                 bad.incrementAndGet()
@@ -227,6 +232,49 @@ fun main(args: Array<String>) {
         ex.shutdown()
         ex.awaitTermination(budgetMs + 120_000, TimeUnit.MILLISECONDS)
         log("POOL SUMMARY ok=${ok.get()} bad=${bad.get()} of ${list.size}")
+        // rescoring sample: English Wikipedia page views of the best-known answers of a few lists and the order they
+        // give (the exact requests and maths the app's background rescoring uses, see Rescore)
+        run {
+            val rs = app.coredump.data.Rescore
+            val sample = (listOf("wx.an2.s.australia", "wx.ge.s.eutown50k", "wx.mv.s.1980s").mapNotNull { kept[it] } +
+                kept.values.filter { it.id in specIds }.sortedBy { it.id }).distinctBy { it.id }.take(5)
+            for (p in sample) {
+                if (overBudget()) { log("POOL RESCORE ${p.id.padEnd(26)} SKIP budget"); continue }
+                val t0 = System.currentTimeMillis()
+                try {
+                    val h = minOf(120, p.size)
+                    val titles = (0 until h).map { rs.title(p.entries[it].name) }
+                    val views = LongArray(h) { rs.UNKNOWN }
+                    for (chunk in (0 until h).filter { titles[it] != null }.chunked(rs.BATCH)) {
+                        val names = chunk.map { titles[it]!! }
+                        val replies = ArrayList<app.coredump.data.Rescore.Reply>()
+                        var cont = emptyMap<String, String>()
+                        var rounds = 0
+                        do {
+                            val body = get(WikiNet.WP_API + "?" + rs.params(names, cont).joinToString("&") { "${enc(it.first)}=${enc(it.second)}" })
+                            val r = rs.parse(body) ?: error("unexpected reply ${body.take(120)}")
+                            replies += r
+                            cont = r.cont
+                            rounds++
+                            Thread.sleep(300)
+                        } while (cont.isNotEmpty() && rounds < 4)
+                        val v = rs.viewsFor(names, replies)
+                        for ((i, k) in chunk.withIndex()) views[k] = v[i]
+                    }
+                    val perm = rs.order(IntArray(h) { it }, views)
+                    val after = rs.rebuild(p, p.entries, perm)
+                    val up = perm.withIndex().map { (pos, o) -> o - pos to o }.filter { it.first > 0 }.sortedByDescending { it.first }.take(4)
+                        .joinToString(", ") { (d, o) -> "${p.entries[o].name} +$d" }
+                    val down = perm.withIndex().map { (pos, o) -> pos - o to o }.filter { it.first > 0 }.sortedByDescending { it.first }.take(3)
+                        .joinToString(", ") { (d, o) -> "${p.entries[o].name} -$d" }
+                    log("POOL RESCORE ${p.id.padEnd(26)} measured ${views.count { it >= 0 }}/$h missing ${views.count { it == rs.MISSING }} " +
+                        "${System.currentTimeMillis() - t0}ms  top: ${p.entries.take(4).joinToString(" | ") { it.name }} -> " +
+                        "${after.entries.take(4).joinToString(" | ") { it.name }}  up: $up  down: $down  gem: ${p.zeroDay?.name} -> ${after.zeroDay?.name}")
+                } catch (e: Exception) {
+                    log("POOL RESCORE ${p.id.padEnd(26)} FAIL ${e::class.simpleName}: ${e.message?.take(140)}")
+                }
+            }
+        }
         // the other free sources: a few lists of each kind
         run {
             val sample = app.coredump.data.ExtraSources.all.groupBy { it.kind }.values.flatMap { g -> listOf(g.first(), g[g.size / 2], g.last()).distinct() }

@@ -58,7 +58,7 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
     val style = Th.style
     val motion = !look.reduceMotion
     // ADHD-fy: one clock for every rainbow / bob / sparkle, ticking only while it is on
-    val hyperClock = rememberClock(look.hyper)
+    val hyperClock = rememberClock(look.hyper, fps = 30)
     val hyper = remember(look.hyper) { Hyper(look.hyper, hyperClock) }
     val taps = rememberTaps()
 
@@ -81,11 +81,12 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
         }
     }
 
-    val loop = rememberInfiniteTransition()
-    val beam by loop.animateFloat(-0.2f, 1.2f, infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Restart))
-    val gridT by loop.animateFloat(0f, 1f, infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart))
-    // one slow 60 s cycle for drifting backdrops (all motion in it uses whole-number frequencies, so it loops seamlessly)
-    val drift by loop.animateFloat(0f, 1f, infiniteRepeatable(tween(60_000, easing = LinearEasing), RepeatMode.Restart))
+    // one slow ambient clock, ~24 frames a second and read only while drawing (never recomposes the screen), for the
+    // CRT beam, the neon grid and the 60 s drift cycle (whole-number frequencies, so it loops seamlessly)
+    val ambient = rememberClock(motion && (style == Style.TERMINAL || style == Style.NEON || style == Style.ABYSS || style == Style.ORACLE), fps = 24)
+    val beam = { ((ambient.value / 9f) % 1f) * 1.4f - 0.2f }
+    val gridT = { (ambient.value / 2.6f) % 1f }
+    val drift = { (ambient.value / 60f) % 1f }
 
     var glitchSeed by remember { mutableIntStateOf(0) }
     var glitchOn by remember { mutableFloatStateOf(0f) }
@@ -127,13 +128,13 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
     Box(Modifier.fillMaxSize().background(bg).watchTaps(look.hyper, { hyperClock.value }, taps)) {
         // ---- backdrop
         when (style) {
-            Style.NEON -> NeonBackdrop(if (motion) gridT else 0f)
+            Style.NEON -> NeonBackdrop(if (motion) gridT else ({ 0f }))
             Style.PAPER -> PaperBackdrop()
             Style.COMIC -> ComicBackdrop()
-            Style.ABYSS -> AbyssBackdrop(if (motion) drift else 0f)
+            Style.ABYSS -> AbyssBackdrop(if (motion) drift else ({ 0f }))
             Style.METRO -> MetroBackdrop()
             Style.JACKPOT -> FeltBackdrop()
-            Style.ORACLE -> StarBackdrop(if (motion) drift else 0f)
+            Style.ORACLE -> StarBackdrop(if (motion) drift else ({ 0f }))
             Style.TERMINAL, Style.CLEAN, Style.PIXEL, Style.CHAT, Style.DESKTOP -> Unit
         }
         IdleAmbience(style, motion)
@@ -201,7 +202,7 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
 }
 
 @Composable
-private fun CrtGlass(scanlines: Boolean, motion: Boolean, beam: Float) {
+private fun CrtGlass(scanlines: Boolean, motion: Boolean, beamAt: () -> Float) {
     val amber = C.amber
     Spacer(
         Modifier.fillMaxSize().drawWithCache {
@@ -229,6 +230,7 @@ private fun CrtGlass(scanlines: Boolean, motion: Boolean, beam: Float) {
     )
     if (motion) {
         Spacer(Modifier.fillMaxSize().drawBehind {
+            val beam = beamAt()
             val bh = size.height * 0.16f
             val top = beam * size.height - bh / 2f
             drawRect(
@@ -272,12 +274,13 @@ private fun PaperBackdrop() {
 
 /** Synthwave dusk: vertical gradient, horizon glow, perspective grid scrolling toward the viewer. */
 @Composable
-private fun NeonBackdrop(t: Float) {
+private fun NeonBackdrop(tp: () -> Float) {
     val bg = C.bg
     val line = C.line
     val hot = C.hot
     val accent = C.amber
     Spacer(Modifier.fillMaxSize().drawBehind {
+        val t = tp()
         val h = size.height
         val w = size.width
         val horizon = h * 0.68f
@@ -360,12 +363,13 @@ private fun ComicBackdrop() {
  * and twinkle. [t] 0..1 over 60 s.
  */
 @Composable
-private fun AbyssBackdrop(t: Float) {
+private fun AbyssBackdrop(tp: () -> Float) {
     val bg = C.bg
     val glow = C.hot
     val line = C.line
     val motes = remember { List(64) { floatArrayOf(Random.nextFloat(), Random.nextFloat(), (1 + Random.nextInt(3)).toFloat(), Random.nextFloat()) } }
     Spacer(Modifier.fillMaxSize().drawBehind {
+        val t = tp()
         val w = size.width
         val h = size.height
         val tau = 2f * PI.toFloat()
@@ -436,11 +440,12 @@ private fun FeltBackdrop() {
 
 /** Night sky: fixed stars (a few twinkle), a pale ring of moonlight in the top-right corner. */
 @Composable
-private fun StarBackdrop(t: Float) {
+private fun StarBackdrop(tp: () -> Float) {
     val star = C.amber
     val gold = C.hot
     val stars = remember { val r = Random(29); List(90) { floatArrayOf(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()) } }
     Spacer(Modifier.fillMaxSize().drawBehind {
+        val t = tp()
         val w = size.width
         val h = size.height
         val tau = 2f * PI.toFloat()

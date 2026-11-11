@@ -26,10 +26,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -103,6 +105,19 @@ class QuestionBank(private val scope: CoroutineScope) {
     private var syncJob: Job? = null
     private val collectLock = Mutex()
 
+    // ---- rescoring state (see [rescore]); all three are used with [lock] held
+    /** Stored new orders by list id ([RESCORE_FILE]). */
+    private var rescored = HashMap<String, Rescore.Stored>()
+    /** Lists shown in a stored order: the prompt object in the bank and the order applied to it. */
+    private val applied = HashMap<String, Pair<Prompt, IntArray>>()
+    /**
+     * Answer-index keys ([Prompt.cacheKey]) of every prompt put in the bank since start. A rescored list is swapped in
+     * at once only when its key is new: two lists under one key would share one answer index (wrong answers matched
+     * in a game still using the old order). Otherwise the new order waits for the next start.
+     */
+    private val shownKeys = HashSet<String>()
+    private val rescoreLock = Mutex()
+
     private val http = HttpClient {
         install(HttpTimeout) {
             requestTimeoutMillis = 70_000
@@ -122,8 +137,28 @@ class QuestionBank(private val scope: CoroutineScope) {
 
     private suspend fun putAll(list: List<Prompt>) = lock.withLock {
         val gone = Discards.ids
-        for (p in list) if (p.id !in gone) byId[p.id] = p
+        for (p0 in list) if (p0.id !in gone) {
+            val p = withStoredOrder(p0)
+            byId[p.id] = p
+            shownKeys += p.cacheKey
+        }
         publish()
+    }
+
+    /**
+     * [p] in its rescored order when one is stored for exactly this list (call with [lock] held). A list that is
+     * not in its original order (already rescored, or changed since) is returned as it is.
+     */
+    private fun withStoredOrder(p: Prompt): Prompt {
+        val s = rescored[p.id]
+        if (s == null || !Rescore.eligible(p) || !Rescore.valid(p.size, s.perm) || Rescore.signature(p.entries) != s.sig) {
+            // a fresh copy in original order replaces an earlier rescored one
+            if (applied[p.id]?.first !== p) applied.remove(p.id)
+            return p
+        }
+        val r = Rescore.rebuild(p, p.entries, s.perm)
+        applied[p.id] = r to s.perm
+        return r
     }
 
     private suspend fun removeAll(ids: Collection<String>) = lock.withLock {
@@ -153,6 +188,12 @@ class QuestionBank(private val scope: CoroutineScope) {
     suspend fun boot(settings: Settings, log: (String) -> Unit) {
         withContext(Dispatchers.Default) {
             Discards.load()
+            // rescored orders first: every list loaded below is shown in its stored order
+            guarded("rescore store", Unit) {
+                val st = Rescore.decode(Platform.readText(RESCORE_FILE))
+                lock.withLock { rescored = st }
+                if (st.isNotEmpty()) log("[ OK ] /var/rank: ${st.size} lists re-ranked by interest")
+            }
             val bundled = guarded("bundled packs", 0) { loadBundled(log) }
             status(SourceKind.BUNDLED) { it.copy(state = SyncState.OK, detail = "$bundled prompts") }
 
@@ -251,6 +292,7 @@ class QuestionBank(private val scope: CoroutineScope) {
         for (f in meta.files) Platform.delete(f)
         Platform.delete(META)
         Platform.delete(SHARED)
+        Platform.delete(RESCORE_FILE)
         IndexCache.clear()
     }
 
@@ -335,7 +377,8 @@ class QuestionBank(private val scope: CoroutineScope) {
 
     private suspend fun loadLibrary(): Int {
         val meta = readMeta()
-        val pool = WikidataPool.all.mapTo(HashSet()) { it.id }.apply { addAll(ExtraSources.byId.keys) }
+        // retired lists (no longer collected) that are already on the device stay playable
+        val pool = WikidataPool.known.mapTo(HashSet()) { it.id }.apply { addAll(ExtraSources.byId.keys) }
         var n = 0
         val keptFiles = ArrayList<String>()
         for (f in meta.files) {
@@ -418,6 +461,14 @@ class QuestionBank(private val scope: CoroutineScope) {
             val pool = collectOrder
             val now = Platform.epochMillis()
             val have = snapshot.mapTo(HashSet()) { it.id }.apply { addAll(Discards.ids) }
+            // people lists: a few per batch (one in ten), none when switched off, unless "Famous people" was asked for
+            val peopleOn = runCatching { SettingsStore.load().peopleLists }.getOrDefault(true)
+            val peopleMax = when {
+                "PEOPLE" in topics -> n
+                !peopleOn -> 0
+                else -> maxOf(1, n / PEOPLE_PER_BATCH)
+            }
+            var peoplePicked = 0
             val picked = ArrayList<Any>()
             var cursor = meta.cursor
             var scanned = 0
@@ -427,6 +478,10 @@ class QuestionBank(private val scope: CoroutineScope) {
                 val id = idOf(t)
                 if (id in have || (meta.skip[id] ?: 0L) > now) continue
                 if (topics.isNotEmpty() && pickTopic(t) !in topics) continue
+                if (t is WikidataTemplate && isPeopleTemplate(t)) {
+                    if (peoplePicked >= peopleMax) continue
+                    peoplePicked++
+                }
                 picked += t
             }
             // a category request does not move the daily cursor
@@ -519,26 +574,48 @@ class QuestionBank(private val scope: CoroutineScope) {
 
     // ---------------- lists received from the other player in 1v1 ----------------
 
-    private val poolById by lazy { WikidataPool.all.associateBy { it.id } }
+    private val poolById by lazy { WikidataPool.known.associateBy { it.id } }
+
+    /** A pool list whose answers are people ("Name a famous French actor"): the same rule the finished prompt gets. */
+    private fun isPeopleTemplate(t: WikidataTemplate): Boolean = app.coredump.core.Topics.isPeople(t.id, t.prompt, t.where)
 
     /**
-     * Order in which the device works through everything it can collect: Wikidata pool lists and lists from the
-     * other free sources ([ExtraSources]), mixed (two Wikidata lists, then one other) so every batch is varied.
+     * Order in which the device works through everything it can collect, a weighted mix so every batch is varied:
+     * qualifier lists ([SpecificTemplates]) 4 : other Wikidata pool lists 3 : lists from the other free sources
+     * ([ExtraSources]) 2 : people lists 1. Within each stream the families take turns (one per group).
+     * Each batch also takes only a few people lists (see [collectNow]).
      */
     private val collectOrder: List<Any> by lazy {
-        val wd = WikidataPool.order
-        val ex = ExtraSources.all.groupBy { it.kind }.values.map { it.toMutableList() }.let { groups ->
-            val out = ArrayList<ExtraSources.Item>()
+        fun <T> turns(items: List<T>, key: (T) -> String): List<T> {
+            val groups = items.groupBy(key).values.toList()
+            val out = ArrayList<T>(items.size)
             var i = 0
-            while (out.size < ExtraSources.all.size) { for (g in groups) if (i < g.size) out += g[i]; i++ }
-            out
+            while (out.size < items.size) { for (g in groups) if (i < g.size) out += g[i]; i++ }
+            return out
         }
-        val out = ArrayList<Any>(wd.size + ex.size)
-        var a = 0
-        var b = 0
-        while (a < wd.size || b < ex.size) {
-            repeat(2) { if (a < wd.size) out += wd[a++] }
-            if (b < ex.size) out += ex[b++]
+        val specIds = SpecificTemplates.ids
+        val spec = turns(SpecificTemplates.all) { it.id.split('.').getOrElse(1) { "" } }
+        val rest = WikidataPool.all.filter { it.id !in specIds }
+        val people = turns(rest.filter { isPeopleTemplate(it) }) { t ->
+            val p = t.id.split('.')
+            if (p.getOrNull(2) == "by") p.getOrElse(3) { "" } else p.getOrElse(1) { "" }
+        }
+        val other = turns(rest.filter { !isPeopleTemplate(it) }) { it.id.split('.').getOrElse(1) { "" } }
+        val extra = turns(ExtraSources.all) { it.kind.name }
+        val streams: List<Pair<List<Any>, Int>> = listOf(spec to 4, other to 3, extra to 2, people to 1)
+        val taken = IntArray(streams.size)
+        val out = ArrayList<Any>(streams.sumOf { it.first.size })
+        while (true) {
+            // the stream furthest behind its share goes next
+            var best = -1
+            var bestScore = Double.MAX_VALUE
+            for ((i, s) in streams.withIndex()) {
+                if (taken[i] >= s.first.size) continue
+                val score = (taken[i] + 1).toDouble() / s.second
+                if (score < bestScore) { bestScore = score; best = i }
+            }
+            if (best < 0) break
+            out += streams[best].first[taken[best]++]
         }
         out
     }
@@ -759,6 +836,126 @@ class QuestionBank(private val scope: CoroutineScope) {
         return fresh + readCache(kind).filter { it.id !in ids }
     }
 
+    // ---------------- rescoring: answers re-ranked by page views ----------------
+
+    /** True when the lists are due for rescoring: [Rescore.EVERY_MS] (3.5 days) since [lastAt] (epoch ms; 0 = never). */
+    fun rescoreDue(lastAt: Long, nowMs: Long): Boolean = Rescore.due(lastAt, nowMs)
+
+    /**
+     * Re-ranks the Wikidata / Wikipedia lists in the bank by English Wikipedia page views combined with their own
+     * order ([Rescore]), so an answer everybody knows is no longer scored as a rare gem.
+     *
+     * Polite and cheap: one list after the other, [Rescore.BATCH] answers per request, a pause after every request,
+     * the [Rescore.HEAD] best-known answers per list; lists rescored least recently go first, lists rescored within
+     * [Rescore.EVERY_MS] ([force]: within [Rescore.FORCE_AGE_MS]) are skipped. Every new order is kept in
+     * [RESCORE_FILE] (written every few lists and when the run ends or is cancelled), so an interrupted run loses
+     * little and the next one carries on where it stopped. A rescored list is shown at once when that is safe (see
+     * [shownKeys]), otherwise from the next start.
+     *
+     * Returns the number of lists rescored. Stops at the first failed request; if that happens before any list was
+     * done (offline, service down) it throws, so the caller can try again later. [onProgress]: lists handled / due.
+     */
+    suspend fun rescore(force: Boolean, onProgress: (done: Int, total: Int) -> Unit = { _, _ -> }): Int = withContext(Dispatchers.Default) {
+        if (!rescoreLock.tryLock()) return@withContext 0
+        var done = 0
+        var unsaved = 0
+        try {
+            withTimeoutOrNull(120_000) { state.first { it.ready } } ?: throw Fail("rescore: lists not loaded yet")
+            val now = Platform.epochMillis()
+            val minAge = if (force) Rescore.FORCE_AGE_MS else Rescore.EVERY_MS
+            val stamps = lock.withLock { rescored.mapValues { it.value.at } }
+            val todo = snapshot.asSequence()
+                .filter { Rescore.eligible(it) && now - (stamps[it.id] ?: 0L) >= minAge }
+                .sortedBy { stamps[it.id] ?: 0L }
+                .map { it.id }
+                .toList()
+            var handled = 0
+            onProgress(0, todo.size)
+            for (id in todo) {
+                val cur = get(id)
+                if (cur != null) {
+                    val m = try {
+                        measure(cur)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Throwable) {
+                        CrashLog.note("bank/rescore", e)
+                        if (done == 0) throw e
+                        null
+                    } ?: break
+                    lock.withLock {
+                        rescored[id] = Rescore.Stored(Platform.epochMillis(), m.sig, m.perm)
+                        // swap it in now if the bank still holds the list that was measured and its index key is new
+                        if (byId[id] === cur && m.changed && m.prompt.cacheKey !in shownKeys) {
+                            byId[id] = m.prompt
+                            shownKeys += m.prompt.cacheKey
+                            applied[id] = m.prompt to m.perm
+                            publish()
+                        }
+                    }
+                    done++
+                    unsaved++
+                    if (unsaved >= RESCORE_SAVE_EVERY) { saveRescored(); unsaved = 0 }
+                }
+                handled++
+                onProgress(handled, todo.size)
+            }
+            done
+        } finally {
+            if (unsaved > 0) withContext(NonCancellable) { runCatching { saveRescored() } }
+            rescoreLock.unlock()
+        }
+    }
+
+    /** One measured list: the rescored prompt, its head order (original positions), the original's signature. */
+    private class Measured(val prompt: Prompt, val perm: IntArray, val sig: Int, val changed: Boolean)
+
+    /** Page views of the best-known answers of [p] and the order they give. Throws when a request fails. */
+    private suspend fun measure(p: Prompt): Measured {
+        val appliedPerm = lock.withLock { applied[p.id]?.takeIf { it.first === p }?.second }
+        val original = Rescore.originalEntries(p.entries, appliedPerm)
+        // shown position k holds original answer pos[k]
+        val pos = if (appliedPerm != null && Rescore.valid(p.size, appliedPerm)) Rescore.arrangement(p.size, appliedPerm) else IntArray(p.size) { it }
+        val h = minOf(Rescore.HEAD, p.size)
+        val titles = (0 until h).map { k -> Rescore.title(p.entries[k].name) }
+        val views = LongArray(h) { Rescore.UNKNOWN }
+        for (chunk in (0 until h).filter { titles[it] != null }.chunked(Rescore.BATCH)) {
+            val names = chunk.map { titles[it]!! }
+            val replies = ArrayList<Rescore.Reply>()
+            var cont = emptyMap<String, String>()
+            var rounds = 0
+            do {
+                val params = Rescore.params(names, cont)
+                val body = call {
+                    http.get(WikiNet.WP_API) {
+                        for ((k, v) in params) parameter(k, v)
+                        header("User-Agent", WikiNet.USER_AGENT)
+                        header("Api-User-Agent", WikiNet.USER_AGENT)
+                    }
+                }
+                val r = Rescore.parse(body) ?: throw Fail("rescore: ${body.replace(Regex("\\s+"), " ").take(80)}")
+                replies += r
+                cont = r.cont
+                rounds++
+                delay(RESCORE_GAP_MS)
+            } while (cont.isNotEmpty() && rounds < 4)
+            val v = Rescore.viewsFor(names, replies)
+            for ((i, k) in chunk.withIndex()) views[k] = v[i]
+        }
+        val perm = Rescore.order(IntArray(h) { pos[it] }, views)
+        val changed = (0 until h).any { perm[it] != pos[it] }
+        return Measured(Rescore.rebuild(p, original, perm), perm, Rescore.signature(original), changed)
+    }
+
+    /** Writes the stored orders (only for lists still in the bank). */
+    private suspend fun saveRescored() {
+        val text = lock.withLock {
+            rescored.keys.retainAll { it in byId }
+            Rescore.encode(rescored)
+        }
+        Platform.writeText(RESCORE_FILE, text)
+    }
+
     // ---------------- online search for answers that are not in the list ----------------
 
     private val verifyLock = Mutex()
@@ -910,5 +1107,13 @@ class QuestionBank(private val scope: CoroutineScope) {
         const val AUTO_EVERY = 20L * 3600 * 1000
         private const val META = "lib_meta.json"
         private const val SHARED = "shared_lists.json"
+        /** People lists in a collected batch: at most one in this many (see [collectNow]). */
+        const val PEOPLE_PER_BATCH = 10
+        /** Stored rescored orders ([Rescore.Stored] by list id). */
+        private const val RESCORE_FILE = "rescore.json"
+        /** Pause after every rescoring request (ms). */
+        private const val RESCORE_GAP_MS = 350L
+        /** Rescored lists between two saves of [RESCORE_FILE]. */
+        private const val RESCORE_SAVE_EVERY = 8
     }
 }

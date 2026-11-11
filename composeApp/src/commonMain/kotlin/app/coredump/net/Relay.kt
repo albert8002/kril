@@ -135,11 +135,14 @@ class RelayLink private constructor(
     override val incoming = Channel<Msg>(Channel.UNLIMITED)
     private val jobs = ArrayList<Job>()
     private var lastPeer = 0L
+    /** Last packet of any kind from the broker (a half-open connection after the app was in the background sends none). */
+    private var lastBroker = Platform.epochMillis()
     private var closed = false
 
     private fun start() {
         jobs += scope.launch(Dispatchers.Default) {
             for (p in transport.packets) {
+                lastBroker = Platform.epochMillis()
                 if (p is Mqtt.Packet.Publish && p.topic == subTopic) {
                     val m = Msg.decode(p.payload.decodeToString()) ?: continue
                     lastPeer = Platform.epochMillis()
@@ -154,7 +157,9 @@ class RelayLink private constructor(
                 delay(4_000)
                 tick++
                 if (!send(Msg.Ping)) break
-                if (tick % 4 == 0) runCatching { transport.send(Mqtt.pingReq()) }
+                // the broker answers each PINGREQ: 30 s without any packet from it = a dead connection (reopen)
+                if (tick % 3 == 0) runCatching { transport.send(Mqtt.pingReq()) }
+                if (Platform.epochMillis() - lastBroker > 30_000) break
                 if (lastPeer > 0 && Platform.epochMillis() - lastPeer > 25_000) break
             }
             close()
@@ -193,6 +198,33 @@ class RelayLink private constructor(
                     try {
                         handshake(t, Brokers.topic(room, fromHost = !asHost))
                         val link = RelayLink(t, scope, Brokers.topic(room, fromHost = asHost), Brokers.topic(room, fromHost = !asHost))
+                        link.start()
+                        return link to bi
+                    } catch (e: Throwable) {
+                        last = e
+                        t.close()
+                    }
+                }
+            }
+            throw IllegalStateException("no relay reachable (${last?.message ?: "offline"})")
+        }
+
+        /**
+         * A shared channel: everyone publishes to and hears [topic] (own messages come back too; filter them). Used by
+         * the ranked queue. Returns the link and the broker index used.
+         */
+        suspend fun openShared(scope: CoroutineScope, topic: String, brokerIndex: Int?): Pair<RelayLink, Int> {
+            val order = if (brokerIndex != null) listOf(brokerIndex.coerceIn(0, Brokers.all.lastIndex)) else Brokers.all.indices.toList()
+            var last: Throwable? = null
+            for (bi in order) {
+                val b = Brokers.all[bi]
+                for (useWss in listOf(true, false)) {
+                    val t: MqttTransport = try {
+                        if (useWss) WssTransport.open(scope, b) else TcpTransport.open(scope, b)
+                    } catch (e: Throwable) { last = e; continue }
+                    try {
+                        handshake(t, topic)
+                        val link = RelayLink(t, scope, topic, topic)
                         link.start()
                         return link to bi
                     } catch (e: Throwable) {

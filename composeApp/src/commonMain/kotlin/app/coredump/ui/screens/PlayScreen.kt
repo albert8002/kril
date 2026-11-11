@@ -458,6 +458,31 @@ fun tierLine(t: Tier): String = when (Th.style) {
     Style.TERMINAL -> t.blurb
 }
 
+/** RANKED / .reversed() badges and the speed tax counting up once the opponent answered ([taxFrom] > 0). */
+@Composable
+private fun MatchBadges(ranked: Boolean, reversed: Boolean, taxFrom: Long, modifier: Modifier) {
+    var now by remember { mutableStateOf(app.coredump.platform.Platform.epochMillis()) }
+    LaunchedEffect(taxFrom) {
+        if (taxFrom <= 0L) return@LaunchedEffect
+        while (true) { now = app.coredump.platform.Platform.epochMillis(); delay(250) }
+    }
+    Column(modifier.padding(top = 58.dp, end = 12.dp), horizontalAlignment = Alignment.End) {
+        if (ranked) {
+            TText("RANKED", Modifier.box(Th.style, C.hot, C.panel.compositeOver(C.bg.copy(alpha = 1f))).padding(horizontal = 8.dp, vertical = 3.dp),
+                size = 10.sp, color = C.hot, weight = FontWeight.Bold)
+        }
+        if (reversed) {
+            TText(".reversed()", Modifier.padding(top = 4.dp).box(Th.style, C.line, C.panel.compositeOver(C.bg.copy(alpha = 1f)))
+                .padding(horizontal = 8.dp, vertical = 3.dp), size = 10.sp, color = C.amber)
+        }
+        if (taxFrom > 0L) {
+            val tax = app.coredump.core.SpeedTax.of(now - taxFrom)
+            TText("opponent answered · −$tax", Modifier.padding(top = 4.dp).box(Th.style, C.blood, C.panel.compositeOver(C.bg.copy(alpha = 1f)))
+                .padding(horizontal = 8.dp, vertical = 3.dp), size = 11.sp, color = C.blood, weight = FontWeight.Bold)
+        }
+    }
+}
+
 /** A found-online answer's measurements, for a few seconds at the top of the reveal (tap to close). */
 @Composable
 private fun FoundNote(text: String, key: Int, modifier: Modifier) {
@@ -574,6 +599,10 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
                 // found online: what was measured, and so why it scored what it did
                 if (landed == v.index) v.me.note?.let { FoundNote(it, v.index, Modifier.align(Alignment.TopCenter)) }
             }
+        }
+        // ranked / .reversed() / speed tax: small badges at the top while typing
+        if (st.phase == Phase.TYPING && (st.ranked || st.reversed || (st.speedPenalty && st.taxFrom > 0))) {
+            MatchBadges(st.ranked, st.reversed, if (st.speedPenalty) st.taxFrom else 0L, Modifier.align(Alignment.TopEnd))
         }
         if (st.paused && !model.confirmQuit) PauseOverlay({ session.resume() }, { model.confirmQuit = true })
         if (model.confirmQuit) ConfirmQuit(session.isMulti,

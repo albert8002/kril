@@ -169,7 +169,7 @@ fun App() {
                         )
                     }
                     // game invites: one pop-up each, over every screen
-                    if (model.invites.isNotEmpty() && model.screen != Screen.Boot) app.coredump.ui.screens.InviteLayer(model)
+                    if ((model.invites.isNotEmpty() || model.friendPops.isNotEmpty()) && model.screen != Screen.Boot) app.coredump.ui.screens.InviteLayer(model)
                 }
             }
         }

@@ -7,6 +7,7 @@ import app.coredump.core.Norm
 import app.coredump.core.Prompt
 import app.coredump.core.RoundView
 import app.coredump.core.Spam
+import app.coredump.core.SpeedTax
 import app.coredump.core.Tier
 import app.coredump.core.Views
 import app.coredump.data.History
@@ -77,6 +78,13 @@ data class MatchState(
     val confirm: Confirm? = null,
     /** Key-mashed answers in this prompt (count; each costs [Spam.PENALTY] points, up to [Spam.MAX_PER_ROUND]). */
     val spam: Int = 0,
+    /** 1v1 speed penalty on; [taxFrom]: when the other player answered (epoch ms; 0 = my clock is not taxed yet). */
+    val speedPenalty: Boolean = false,
+    val taxFrom: Long = 0L,
+    /** A rated (ranked) match. */
+    val ranked: Boolean = false,
+    /** .reversed(): the most common answer scores most. */
+    val reversed: Boolean = false,
 ) {
     val myTotal: Int get() = rounds.sumOf { it.me.points }
     val oppTotal: Int get() = rounds.sumOf { it.opp?.points ?: 0 }
@@ -197,7 +205,7 @@ class SoloSession(
     private val arbiter: Arbiter,
     daily: Int? = null,
 ) : MatchSession {
-    private val _s = MutableStateFlow(MatchState(myName = name, total = prompts.size, canPause = true, daily = daily))
+    private val _s = MutableStateFlow(MatchState(myName = name, total = prompts.size, canPause = true, daily = daily, reversed = cfg.reversed && daily == null))
     override val state: StateFlow<MatchState> = _s.asStateFlow()
     override val isMulti = false
     private var timer: Job? = null
@@ -306,7 +314,7 @@ class SoloSession(
         val s = _s.value
         val p = prompts[s.round]
         val elapsed = (Platform.epochMillis() - s.startedAt).coerceAtMost(if (s.seconds > 0) s.seconds * 1000L else Long.MAX_VALUE)
-        val view = RoundView(s.round, p.id, p.text, p.topic, p.size, Views.play(name, j, elapsed, spam), null, Views.ladder(p), Views.all(p))
+        val view = RoundView(s.round, p.id, p.text, p.topic, p.size, Views.play(name, j, elapsed, spam, _s.value.reversed), null, Views.ladder(p), Views.all(p))
         close = null
         _s.update { it.copy(phase = Phase.REVEAL, reveal = view, rounds = it.rounds + view, confirm = null) }
     }
@@ -387,8 +395,9 @@ class HostSession(
             }
             if (_s.value.phase != Phase.OVER) fail("link lost. peer disconnected.")
         }
+        _s.update { it.copy(speedPenalty = cfg.speedPenalty, ranked = cfg.ranked, reversed = cfg.reversed && !cfg.ranked) }
         scope.launch {
-            link.send(Msg.Start(prompts.size, cfg.secondsPerRound, cfg.difficulty.name))
+            link.send(Msg.Start(prompts.size, cfg.secondsPerRound, cfg.difficulty.name, cfg.speedPenalty, cfg.ranked, cfg.reversed && !cfg.ranked))
             begin(0)
         }
     }
@@ -408,7 +417,7 @@ class HostSession(
         _s.update {
             it.copy(phase = Phase.TYPING, round = i, prompt = p.text, topic = p.topic, listSize = p.size,
                 seconds = cfg.secondsPerRound, startedAt = Platform.epochMillis(), reveal = null, oppLocked = false,
-                attempts = emptyList(), confirm = null, spam = 0)
+                attempts = emptyList(), confirm = null, spam = 0, taxFrom = 0L)
         }
         link.send(Msg.Round(i, p.text, p.topic, p.size, cfg.secondsPerRound))
         if (cfg.secondsPerRound > 0) {
@@ -433,7 +442,8 @@ class HostSession(
         myMs = Platform.epochMillis() - _s.value.startedAt
         val r = _s.value.round
         _s.update { it.copy(phase = Phase.LOCKED) }
-        scope.launch { link.send(Msg.Locked(r)) }
+        val answered = j.tier.isValid
+        scope.launch { link.send(Msg.Locked(r, answered)) }
         maybeResolve()
     }
 
@@ -520,7 +530,9 @@ class HostSession(
         if (oppJ != null) return
         oppJ = j
         oppMs = m.elapsedMs
-        _s.update { it.copy(oppLocked = true) }
+        // speed penalty: my clock is taxed from now on
+        val tax = cfg.speedPenalty && myJ == null && j.tier.isValid
+        _s.update { it.copy(oppLocked = true, taxFrom = if (tax) Platform.epochMillis() else it.taxFrom) }
         scope.launch { link.send(Msg.Verdict(m.i, m.text, "ok", null)) }
         maybeResolve()
     }
@@ -535,9 +547,17 @@ class HostSession(
         timers.forEach { it.cancel() }
         val p = prompts[s.round]
         val full = s.seconds * 1000L
-        val me = Views.play(name, myJ ?: myClose ?: timeoutJudgement(s.attempts), if (myJ != null) myMs else full, mySpam)
-        val opp = Views.play(s.oppName ?: "PEER", oppJ ?: Judgement(oppAttempts.lastOrNull().orEmpty(), null, Tier.TIMEOUT, -1),
-            if (oppJ != null) oppMs else full, oppSpam)
+        val rv = s.reversed
+        var me = Views.play(name, myJ ?: myClose ?: timeoutJudgement(s.attempts), if (myJ != null) myMs else full, mySpam, rv)
+        var opp = Views.play(s.oppName ?: "PEER", oppJ ?: Judgement(oppAttempts.lastOrNull().orEmpty(), null, Tier.TIMEOUT, -1),
+            if (oppJ != null) oppMs else full, oppSpam, rv)
+        if (cfg.speedPenalty) {
+            // the one who answered first (with a real answer) taxes the other for every second they took after
+            val myT = if (myJ != null) myMs else full
+            val oppT = if (oppJ != null) oppMs else full
+            if (myJ?.tier?.isValid == true && myT < oppT) opp = opp.taxed(SpeedTax.of(oppT - myT))
+            else if (oppJ?.tier?.isValid == true && oppT < myT) me = me.taxed(SpeedTax.of(myT - oppT))
+        }
         myClose = null
         val ladder = Views.ladder(p)
         val all = Views.all(p)
@@ -559,6 +579,7 @@ class HostSession(
             History.recordRun(prompts.map { it.id }, st.rounds.map { it.me.tier }, mode = "1v1", daily = null,
                 topics = prompts.map { it.topic }, opponent = st.oppName, oppPoints = st.oppTotal, points = st.myTotal,
                 oppCode = PeerBook.codeOf(st.oppName))
+            PeerBook.onDuelEnd?.invoke(st.myTotal, st.oppTotal, st.oppName ?: "PEER", cfg.ranked)
             scope.launch { link.send(Msg.Over) }
         } else scope.launch { begin(s.round + 1) }
     }
@@ -594,9 +615,13 @@ class GuestSession(
     override fun start() {
         listener = scope.launch {
             for (m in link.incoming) when (m) {
-                is Msg.Start -> _s.update { it.copy(total = m.rounds, message = null) }
+                is Msg.Start -> _s.update { it.copy(total = m.rounds, message = null, speedPenalty = m.speedPenalty, ranked = m.ranked, reversed = m.reversed) }
                 is Msg.Round -> if (m.i >= _s.value.round || _s.value.phase == Phase.WAITING) begin(m)
-                is Msg.Locked -> if (m.i == _s.value.round) _s.update { it.copy(oppLocked = true) }
+                is Msg.Locked -> if (m.i == _s.value.round) _s.update {
+                    // speed penalty: the host answered first, my clock is taxed from now on
+                    val tax = it.speedPenalty && m.answered && it.phase == Phase.TYPING
+                    it.copy(oppLocked = true, taxFrom = if (tax) Platform.epochMillis() else it.taxFrom)
+                }
                 is Msg.Verdict -> onVerdict(m)
                 is Msg.Result -> if (m.i == _s.value.round) reveal(m)
                 is Msg.Answers -> onAnswers(m)
@@ -606,6 +631,7 @@ class GuestSession(
                     History.recordRun(emptyList(), st.rounds.map { it.me.tier }, mode = "1v1", daily = null,
                         topics = st.rounds.map { it.topic }, opponent = st.oppName, oppPoints = st.oppTotal, points = st.myTotal,
                         oppCode = PeerBook.codeOf(st.oppName))
+                    PeerBook.onDuelEnd?.invoke(st.myTotal, st.oppTotal, st.oppName ?: "HOST", st.ranked)
                 }
                 is Msg.Bye -> fail("host left: ${m.reason}")
                 else -> Unit
@@ -626,7 +652,7 @@ class GuestSession(
         _s.update {
             it.copy(phase = Phase.TYPING, round = m.i, total = maxOf(it.total, m.i + 1), prompt = m.text,
                 topic = m.topic, listSize = m.size, seconds = m.seconds, startedAt = Platform.epochMillis(),
-                reveal = null, oppLocked = false, message = null, attempts = emptyList(), confirm = null, spam = 0)
+                reveal = null, oppLocked = false, message = null, attempts = emptyList(), confirm = null, spam = 0, taxFrom = 0L)
         }
         if (m.seconds > 0) timer = scope.launch {
             delay(m.seconds * 1000L)

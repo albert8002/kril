@@ -66,15 +66,25 @@ class Hyper(val on: Boolean, private val clock: State<Float>) {
 
 val LocalHyper = staticCompositionLocalOf { Hyper(false, mutableFloatStateOf(0f)) }
 
-/** Seconds since [running] turned on, ticking every frame while it is on (frozen otherwise). */
+/**
+ * Seconds since [running] turned on, ticking while it is on (frozen otherwise): every frame, or [fps] times a second
+ * for ambient motion (between ticks no frames are asked for, so a phone at 60/120 Hz is not kept redrawing).
+ * Read it inside draw / graphicsLayer blocks, so a tick only redraws.
+ */
 @Composable
-fun rememberClock(running: Boolean): State<Float> {
+fun rememberClock(running: Boolean, fps: Int = 0): State<Float> {
     val s = remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(running) {
+    LaunchedEffect(running, fps) {
         if (!running) return@LaunchedEffect
         val start = withFrameMillis { it }
-        while (true) {
-            withFrameMillis { s.floatValue = (it - start) / 1000f }
+        if (fps <= 0) {
+            while (true) withFrameMillis { s.floatValue = (it - start) / 1000f }
+        } else {
+            val step = (1000L / fps).coerceAtLeast(8L)
+            while (true) {
+                kotlinx.coroutines.delay(step)
+                withFrameMillis { s.floatValue = (it - start) / 1000f }
+            }
         }
     }
     return s
@@ -261,7 +271,7 @@ internal fun DrawScope.rotateRect(c: Offset, s: Float, color: Color, deg: Float)
 fun IdleAmbience(style: Style, motion: Boolean, modifier: Modifier = Modifier) {
     if (!motion) return
     if (style != Style.TERMINAL && style != Style.CLEAN && style != Style.PIXEL && style != Style.CHAT && style != Style.DESKTOP) return
-    val clock = rememberClock(true)
+    val clock = rememberClock(true, fps = 20)
     val amber = C.amber
     val hot = C.hot
     val seeds = remember(style) { val r = Random(style.ordinal * 7 + 3); List(28) { floatArrayOf(r.nextFloat(), r.nextFloat(), r.nextFloat(), r.nextFloat()) } }
