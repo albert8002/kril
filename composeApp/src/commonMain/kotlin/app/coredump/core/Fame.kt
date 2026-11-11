@@ -52,13 +52,16 @@ data class Fame(
  *     reach across languages counts most for places and things, current interest most for people and screen,
  *     the genre's own measure a lot for music, books and TV;
  *  3. fame → tier: ≥ [SOLID] SOLID (30), ≥ [UNCOMMON] UNCOMMON (60), below that RARE (85);
- *  4. guessing costs: a typed text that could mean [SHARED]+ members of the class (a common surname), or one word
- *     found in [COMMON_WORD]+ articles (a common word or first name), each lowers the tier one step, never below
- *     SOLID. Found answers are never thrown out, only balanced.
+ *  4. guessing costs: a typed text that could mean [SHARED]+ members of the class (a common surname), one word
+ *     found in [COMMON_WORD]+ articles (a common word or first name), or a match that is a minor namesake of a much
+ *     written-about name ([namesake]), each lowers the tier one step, never below SOLID. Found answers are never
+ *     thrown out, only balanced.
  */
 object FameScore {
-    const val SOLID = 0.62f
-    const val UNCOMMON = 0.42f
+    // set from measured answers (CI pool check, Nov 2026): Tom Holland 85 %, Dune 86 %, Arctic Monkeys 81 % → SOLID;
+    // Stardew Valley 64 %, Eiger 66 %, Khruangbin 55 %, Pézenas 55 % → UNCOMMON; Walensee 48 %, Kai Ken 45 % → RARE
+    const val SOLID = 0.68f
+    const val UNCOMMON = 0.52f
     const val SHARED = 3
     const val COMMON_WORD = 50_000
 
@@ -98,8 +101,12 @@ object FameScore {
         return if (wsum <= 0f) 0f else sum / wsum
     }
 
+    /** The item found is a minor namesake of something widely written about (a famous name, an obscure match). */
+    fun namesake(f: Fame): Boolean = f.links in 0..2 && f.mentions >= 500
+
     /** Steps the tier goes down for guessing (0–2). */
-    fun guessSteps(f: Fame): Int = (if (f.shared >= SHARED) 1 else 0) + (if (f.wordHits >= COMMON_WORD) 1 else 0)
+    fun guessSteps(f: Fame): Int =
+        ((if (f.shared >= SHARED) 1 else 0) + (if (f.wordHits >= COMMON_WORD) 1 else 0) + (if (namesake(f)) 1 else 0)).coerceAtMost(2)
 
     fun tier(f: Fame, topic: String): Tier {
         val x = fame(f, topic)
@@ -138,6 +145,7 @@ object FameScore {
         add("fame ${(fame(f, topic) * 100).roundToInt()}%")
         if (f.shared >= SHARED) add("name shared by ${f.shared}")
         if (f.wordHits >= COMMON_WORD) add("common word")
+        if (namesake(f)) add("namesake of a famous name")
     }.joinToString(" · ")
 
     /** The genre measure worth fetching for a list, or "" (prompt text and category decide). */
