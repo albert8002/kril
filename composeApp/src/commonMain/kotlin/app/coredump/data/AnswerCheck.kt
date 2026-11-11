@@ -300,7 +300,7 @@ object AnswerCheck {
         val matches = items.filter { it.names.any { n -> spells(input, n, people, words) } }
         // near names: never a list to pick the rarest from
         val near = items.filter { it !in matches }
-            .filter { it.names.any { n -> SuggestRules.allowed(input, n, people) } }
+            .filter { SuggestRules.allowed(input, it.label, people) }
             .map { it.label }.distinct().let { if (it.size > 3) it.take(2) else it }
         return ClassResult(matches, near)
     }

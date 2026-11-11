@@ -127,11 +127,8 @@ class AnswerIndex(private val entries: List<AnswerEntry>, private val people: Bo
         return out.toList()
     }
 
-    /** [SuggestRules.allowed] for any name of entry [e]. */
-    private fun offerable(input: String, e: Int): Boolean {
-        val en = entries[e]
-        return SuggestRules.allowed(input, en.name, people) || en.aliases.any { SuggestRules.allowed(input, it, people) }
-    }
+    /** [SuggestRules.allowed] for the name that would be shown (an alias may be short, the name shown is not). */
+    private fun offerable(input: String, e: Int): Boolean = SuggestRules.allowed(input, entries[e].name, people)
 
     /** Words of every name and alias, and their initials (built on the first miss that needs them). */
     private class Words(val tokens: Array<List<List<String>>>, val byWord: HashMap<String, IntBag>, val byInitials: HashMap<String, IntBag>)
