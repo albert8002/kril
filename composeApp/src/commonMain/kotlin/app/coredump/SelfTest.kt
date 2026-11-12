@@ -55,6 +55,96 @@ object SelfTest {
         return p.entries.firstOrNull { it.name !in said && it.name.length >= 4 }?.name
     }
 
+    /**
+     * Sigils: every look (both palette sets) draws a code; its pixels are read back and decoded as they are, and again
+     * through a simulated phone camera (turned, tilted, shrunk, blurred, noisy, uneven light). Shots of the first set.
+     */
+    private suspend fun sigilChecks(model: AppModel) {
+        model.home(); delay(400)
+        val probe = app.coredump.ui.SigilProbe
+        probe.armed = true
+        val rnd = Random(5)
+        var clean = 0; var cam = 0; var n = 0
+        for ((i, look) in (plan + extra).withIndex()) {
+            model.setTheme(look.first, look.second)
+            val want = app.coredump.net.ShortCode.Decoded(app.coredump.net.JoinTicket.newRoom(rnd), rnd.nextInt(4), i % 2 == 1)
+            probe.show = want
+            delay(1100)
+            val bmp = runCatching { probe.layer?.toImageBitmap() }.getOrNull()
+            if (bmp == null || bmp.width < 50) { log("SIGIL ${look.first}/${look.second} no capture"); continue }
+            val w = bmp.width; val h = bmp.height
+            val px = IntArray(w * h)
+            bmp.readPixels(px)
+            val lum = ByteArray(w * h) { k ->
+                val c = px[k]
+                val a = (c ushr 24) and 0xFF
+                val l = ((c shr 16 and 0xFF) * 299 + (c shr 8 and 0xFF) * 587 + (c and 0xFF) * 114) / 1000
+                ((l * a + 128 * (255 - a)) / 255).toByte()
+            }
+            n++
+            val reader = app.coredump.net.SigilReader()
+            val got = reader.read(lum, w, h)
+            val ok1 = got == want
+            if (ok1) clean++
+            val (cl, cw, ch) = cameraView(lum, w, h, i)
+            val reader2 = app.coredump.net.SigilReader()
+            val got2 = reader2.read(cl, cw, ch)
+            val ok2 = got2 == want
+            if (ok2) cam++
+            log("SIGIL ${look.first}/${look.second} ${w}x$h clean=${if (ok1) "ok" else "FAIL(${reader.trace})"} " +
+                "camera=${if (ok2) "ok" else "FAIL(${reader2.trace})"}")
+            if (i < plan.size) shot("sigil_${look.first.name.lowercase()}")
+        }
+        probe.show = null
+        probe.armed = false
+        log("SIGIL SUMMARY clean=$clean/$n camera=$cam/$n")
+        model.setTheme(Style.TERMINAL, "amber")
+        model.home(); delay(400)
+    }
+
+    /** What a phone camera might make of [src]: 480×360, turned, tilted, ~60 % of the height, blurred, noisy, glare. */
+    private fun cameraView(src: ByteArray, w: Int, h: Int, seed: Int): Triple<ByteArray, Int, Int> {
+        val r = Random(seed * 7 + 1)
+        val ow = 480; val oh = 360
+        val scale = 0.62 * oh / kotlin.math.min(w, h)
+        val rot = r.nextDouble() * 2 * kotlin.math.PI
+        val sx = 0.82 + 0.15 * r.nextDouble()
+        val cr = kotlin.math.cos(rot); val sr = kotlin.math.sin(rot)
+        val img = FloatArray(ow * oh)
+        for (y in 0 until oh) for (x in 0 until ow) {
+            val dx = x - ow / 2.0; val dy = y - oh / 2.0
+            val rx = (cr * dx + sr * dy) / (scale * sx); val ry = (-sr * dx + cr * dy) / scale
+            val fx = w / 2.0 + rx; val fy = h / 2.0 + ry
+            img[y * ow + x] = if (fx < 0 || fy < 0 || fx >= w - 1 || fy >= h - 1) 128f else {
+                val x0 = fx.toInt(); val y0 = fy.toInt(); val ax = (fx - x0).toFloat(); val ay = (fy - y0).toFloat()
+                fun p(xx: Int, yy: Int) = (src[yy * w + xx].toInt() and 0xFF).toFloat()
+                (p(x0, y0) * (1 - ax) + p(x0 + 1, y0) * ax) * (1 - ay) + (p(x0, y0 + 1) * (1 - ax) + p(x0 + 1, y0 + 1) * ax) * ay
+            }
+        }
+        var cur = img
+        repeat(2) {
+            val tmp = FloatArray(ow * oh); val out = FloatArray(ow * oh)
+            for (y in 0 until oh) for (x in 0 until ow) {
+                var sum = 0f; var c = 0
+                for (d in -1..1) { val xx = x + d; if (xx in 0 until ow) { sum += cur[y * ow + xx]; c++ } }
+                tmp[y * ow + x] = sum / c
+            }
+            for (y in 0 until oh) for (x in 0 until ow) {
+                var sum = 0f; var c = 0
+                for (d in -1..1) { val yy = y + d; if (yy in 0 until oh) { sum += tmp[yy * ow + x]; c++ } }
+                out[y * ow + x] = sum / c
+            }
+            cur = out
+        }
+        val glare = if (r.nextBoolean()) 25f else -25f
+        val out = ByteArray(ow * oh) { k ->
+            val x = k % ow
+            val v = 128 + (cur[k] - 128) * 0.75f + glare * x / ow + (r.nextFloat() * 2 - 1) * 10f
+            v.toInt().coerceIn(0, 255).toByte()
+        }
+        return Triple(out, ow, oh)
+    }
+
     /** MELTDOWN: the setup, a game against bots (with shots in a few looks), then a party over the real relay. */
     private suspend fun meltdownChecks(model: AppModel) {
         for (style in listOf(Style.TERMINAL, Style.ABYSS, Style.COMIC, Style.ORACLE)) {
@@ -304,6 +394,7 @@ object SelfTest {
             model.back(); delay(600)
 
             meltdownChecks(model)
+            sigilChecks(model)
 
             // invites over the real relay: one to my own inbox from a made-up code; pop-up, decline, the sender hears it
             model.setTheme(Style.PAPER, plan.first { it.first == Style.PAPER }.second)

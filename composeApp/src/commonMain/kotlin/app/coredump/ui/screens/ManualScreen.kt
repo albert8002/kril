@@ -95,8 +95,9 @@ fun ManualScreen(model: AppModel) {
             Spacer(Modifier.height(12.dp))
             Panel("1v1") {
                 for (l in listOf(
-                    "host: LINK 1v1 → HOST. a QR sigil + room code appear.",
+                    "host: LINK 1v1 → HOST. a sigil + room code appear.",
                     "peer: LINK 1v1 → JOIN → SCAN SIGIL or type the room code.",
+                    "every look draws its own sigil (bars, bubbles, pixels, bulbs, star dust …); any phone reads any look. direct Wi-Fi games show a QR code instead.",
                     "same prompts, same clock. the rarer answer takes the round.",
                     "ONLINE RELAY works on any network (Android ↔ iPhone, LiveContainer).",
                     "DIRECT WI-FI needs both on one network that allows device-to-device traffic.",

@@ -42,6 +42,7 @@ import app.coredump.game.LobbyState
 import app.coredump.net.JoinTicket
 import app.coredump.platform.rememberQrScanLauncher
 import app.coredump.qr.QrEncoder
+import app.coredump.ui.ThemedSigil
 import app.coredump.ui.C
 import app.coredump.ui.Choice
 import app.coredump.ui.Panel
@@ -174,7 +175,10 @@ private fun HostPane(model: AppModel) {
         TText(Th.say("let the peer scan this sigil:", "Let your friend scan this code:"), size = 12.sp, color = C.dim)
         Spacer(Modifier.height(10.dp))
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            QrSigil(t.toUri(), Modifier.widthIn(max = 280.dp).fillMaxWidth())
+            // relay: the look's own sigil (any look reads it); direct Wi-Fi keeps the QR (address, port and pin
+            // do not fit a sigil)
+            if (t.isRelay) ThemedSigil(t.room!!, t.broker, false, Modifier.widthIn(max = 280.dp).fillMaxWidth())
+            else QrSigil(t.toUri(), Modifier.widthIn(max = 280.dp).fillMaxWidth())
         }
         Spacer(Modifier.height(10.dp))
         if (t.isRelay) {
@@ -208,6 +212,10 @@ private fun JoinPane(model: AppModel) {
     val st by join.state.collectAsState()
     var manual by remember { mutableStateOf("") }
     fun dial(raw: String?) {
+        if (raw != null && app.coredump.net.ShortCode.decode(raw)?.party == true) {
+            // a MELTDOWN party sigil scanned here: go to the party screen and join it
+            model.go(Screen.Meltdown); model.joinParty(raw); return
+        }
         if (raw != null && raw.trim().startsWith("coredump://party?")) {
             // a MELTDOWN party code scanned here: go to the party screen and join it
             model.go(Screen.Meltdown); model.joinParty(raw); return

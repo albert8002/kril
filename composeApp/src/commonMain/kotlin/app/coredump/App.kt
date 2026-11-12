@@ -14,12 +14,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -170,6 +172,13 @@ fun App() {
                     }
                     // game invites: one pop-up each, over every screen
                     if ((model.invites.isNotEmpty() || model.friendPops.isNotEmpty()) && model.screen != Screen.Boot) app.coredump.ui.screens.InviteLayer(model)
+                    // self-test: one sigil over everything, in the active look (its pixels are read back and decoded)
+                    val probe = app.coredump.ui.SigilProbe.show
+                    if (probe != null) {
+                        Box(Modifier.fillMaxSize().background(C.bg), contentAlignment = Alignment.Center) {
+                            app.coredump.ui.ThemedSigil(probe.room, probe.broker, probe.party, Modifier.width(280.dp))
+                        }
+                    }
                 }
             }
         }

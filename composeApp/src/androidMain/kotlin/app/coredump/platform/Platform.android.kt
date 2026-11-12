@@ -74,6 +74,7 @@ actual fun rememberQrScanLauncher(onResult: (String?) -> Unit): () -> Unit {
         {
             launcher.launch(
                 ScanOptions()
+                    .setCaptureActivity(SigilScanActivity::class.java)
                     .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
                     .setPrompt("> align the host's sigil")
                     .setBeepEnabled(false)

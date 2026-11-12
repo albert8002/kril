@@ -54,6 +54,8 @@ data class JoinTicket(
 
         fun parse(raw: String): JoinTicket? {
             val s = raw.trim()
+            // a scanned sigil (or a typed short code): "CD1:K7Q2M9XA0J"
+            ShortCode.decode(s)?.let { return JoinTicket("", 0, "", "HOST", it.room, it.broker) }
             if (s.startsWith("coredump://join?")) {
                 val q = s.substringAfter('?').split('&').mapNotNull {
                     val i = it.indexOf('=')

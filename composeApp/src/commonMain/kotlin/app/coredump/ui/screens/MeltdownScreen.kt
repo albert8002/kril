@@ -65,6 +65,7 @@ import app.coredump.game.Meltdown
 import app.coredump.game.PartyGuest
 import app.coredump.net.JoinTicket
 import app.coredump.platform.rememberQrScanLauncher
+import app.coredump.ui.ThemedSigil
 import app.coredump.ui.C
 import app.coredump.ui.Choice
 import app.coredump.ui.Cue
@@ -231,7 +232,7 @@ private fun PartyHostPane(model: AppModel) {
     TText(Th.say("let them scan this sigil:", "Friends scan this code to join:"), size = 12.sp, color = C.dim)
     Spacer(Modifier.height(8.dp))
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        QrSigil(uri, Modifier.widthIn(max = 230.dp).fillMaxWidth())
+        ThemedSigil(host.room, s.roomBroker, true, Modifier.widthIn(max = 250.dp).fillMaxWidth())
     }
     Spacer(Modifier.height(8.dp))
     TText("or type your code:", size = 11.sp, color = C.dim)
@@ -287,7 +288,13 @@ private fun PartyHostPane(model: AppModel) {
 @Composable
 private fun PartyJoinPane(model: AppModel) {
     var manual by remember { mutableStateOf("") }
-    val scan = rememberQrScanLauncher { raw -> if (raw != null) model.joinParty(raw) }
+    val scan = rememberQrScanLauncher { raw ->
+        when {
+            raw == null -> {}
+            app.coredump.net.ShortCode.decode(raw)?.party == false -> model.toast = "that is a 1v1 code: open 1v1 → JOIN to scan it"
+            else -> model.joinParty(raw)
+        }
+    }
     TButton(Th.say("SCAN SIGIL", "Scan QR code"), { scan() }, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
     Spacer(Modifier.height(14.dp))
     TText("or type the host's code:", size = 12.sp, color = C.dim)
