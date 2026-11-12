@@ -1,0 +1,77 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+> Task :snapshot:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :snapshot:syncSharedSources
+> Task :snapshot:compileKotlin FROM-CACHE
+> Task :snapshot:compileJava NO-SOURCE
+> Task :snapshot:processResources NO-SOURCE
+> Task :snapshot:classes UP-TO-DATE
+
+> Task :snapshot:run
+UA: CoreDumpTrivia/1.1 (https://github.com/albert8002/kril)  templates: 281 wikidata, 8 wikipedia
+SNAP relay broker.hivemq.com tcp -> OK ({"k":"ping"})
+SNAP relay broker.hivemq.com wss -> ConnAck(returnCode=0)
+SNAP relay broker.emqx.io tcp -> OK ({"k":"ping"})
+SNAP relay broker.emqx.io wss -> ConnAck(returnCode=0)
+SNAP relay test.mosquitto.org tcp -> OK ({"k":"ping"})
+SNAP relay test.mosquitto.org wss -> ConnAck(returnCode=0)
+SNAP restored 247 wikidata + 6 wikipedia prompts, 417 state rows
+SNAP verify wd.dog 'Kai Ken' -> Kai Ken (27 sitelinks)
+SNAP verify wd.dog 'Shikoku Ken' -> Shikoku Ken (30 sitelinks)
+SNAP verify wd.dog 'banana' -> rejected
+SNAP verify wd.cheese 'Tête de Moine' -> Tête de Moine (26 sitelinks)
+SNAP verify wd.cheese 'toaster' -> rejected
+SNAP wikidata todo 4/281
+SNAP wikidata  wg.raptor                      FAIL0 65004ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.rodent                      FAIL0 65004ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.parrot                      FAIL0 65004ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.shark                       FAIL0 65004ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.rodent                      FAIL1 65003ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.raptor                      FAIL1 126097ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.parrot                      FAIL1 65003ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.shark                       FAIL1 65004ms HttpTimeoutException: request timed out
+SNAP pool  wx.bk.opera                          282 fam= 35  976ms  top: Carmen, The Magic Flute, Madama Butterfly, Aida, The Marriage of Figaro
+SNAP pool  wx.ge.europe                         588 fam=584  5654ms  top: Rome, Moscow, Helsinki, Istanbul, Athens
+SNAP pool  wx.job.novelist                      785 fam=800  43320ms  top: Donald Trump, William Shakespeare, Albert Einstein, Confucius, Karl Marx
+SNAP pool  wx.th.radio                           28 fam= 10  718ms  top: Radio Studio 54 Network, Voice of America, Korean Broadcasting System, Radio Free Europe/Radio Liberty, NHK
+SNAP pool  wx.mv.s.pre1960                      573 fam=171  9104ms  top: Casablanca, Citizen Kane, The Great Dictator, Some Like It Hot, Saludos Amigos
+SNAP pool  wx.mu.hiphop                         164 fam=118  1259ms  top: Eminem, Agnez Mo, Miley Cyrus, Jennifer Lopez, Will Smith
+SNAP pool  wx.sp.by.racingdriver.fr              66 fam=  1  1140ms  top: Isack Hadjar, Louis Renault, Didier Pironi, Jean-Pierre Jabouille, Philippe Alliot
+SNAP pool  wx.bk.novel                          209 fam=212  7780ms  top: Odyssey, Don Quixote, Nineteen Eighty-Four, Epic of Gilgamesh, Alice's Adventures in Wonderland
+SNAP pool  wx.ge.namerica                       380 fam=368  1984ms  top: New York City, Washington, D.C., Chicago, Mexico City, San Francisco
+SNAP pool  wx.job.stageactor                    784 fam=800  12750ms  top: William Shakespeare, Charlie Chaplin, Molière, Corbin Bleu, Marlene Dietrich
+SNAP pool  wx.th.emoji                           91 fam= 14  474ms  top: Polandball, 69, Labubu, brainrot, Godwin's law
+SNAP pool  wx.mv.s.1980s                        258 fam=169  19860ms  top: Blade Runner, Scarface, The Last Emperor, First Blood, Tootsie
+SNAP pool  wx.mu.pop                            559 fam=603  3043ms  top: Michael Jackson, Corbin Bleu, Basshunter, Elvis Presley, Madonna
+SNAP pool  wx.sp.by.racingdriver.de              54 fam=  2  756ms  top: Michael Fassbender, Mick Schumacher, Kurt Ahrens, Sabine Schmitz, Hans Stuck
+SNAP pool  wx.bk.childrens                       36 fam=  2  340ms  top: The Tales of Beedle the Bard, The Cat in the Hat, Go, Dog. Go!, Struwwelpeter, The Tale of Peter Rabbit
+SNAP pool  wx.ge.archipelago                    144 fam= 91  557ms  top: Bahrain, Caribbean, Balearic Islands, Pitcairn Islands, Svalbard
+SNAP pool  wx.job.televisionactor               768 fam=800  3271ms  top: Ronald Reagan, Corbin Bleu, Gabriel García Márquez, Marlene Dietrich, Bruce Lee
+SNAP pool  wx.mv.s.1990s                        367 fam=268  29224ms  top: The Silence of the Lambs, Star Wars: Episode I – The Phantom Menace, Life Is Beautiful, The Green Mile, Léon: The Professional
+SNAP pool  wx.mu.electronic                      84 fam= 41  649ms  top: Madonna, David Bowie, Björk, Yoko Ono, Robbie Williams
+SNAP pool  wx.sp.by.racingdriver.it              79 fam=  0  1456ms  top: Franco Colapinto, Michele Alboreto, Giovanna Amati, Felipe Drugovich, Achille Varzi
+SNAP pool  wx.bk.fantasy                        242 fam= 47  4194ms  top: The Lord of the Rings, The Hobbit, Harry Potter and the Philosopher's Stone, Harry Potter and the Chamber of Secrets, The Alchemist
+SNAP pool  wx.ge.beach                           58 fam=  5  630ms  top: Copacabana, Coney Island, Ipanema District, Omaha Beach, Utah Beach
+SNAP pool  wx.job.theatredirector               215 fam=128  1132ms  top: Molière, Richard Wagner, Ingmar Bergman, Bertolt Brecht, Federico García Lorca
+SNAP pool  wx.mv.s.korean                       348 fam=  4  1019ms  top: Parasite, Oldboy, Train to Busan, Snowpiercer, Mickey 17
+SNAP pool  wx.mu.rnb                            202 fam= 93  914ms  top: Elvis Presley, Lana Del Rey, Anggun, Jennifer Lopez, Adele
+SNAP pool  wx.sp.by.racingdriver.br              40 fam=  0  420ms  top: Gabriel Bortoleto, Felipe Drugovich, Pedro Piquet, Pipo Derani, Daniel Serra
+SNAP pool  wx.bk.scifi                          318 fam= 33  814ms  top: Nineteen Eighty-Four, Frankenstein; or, The Modern Prometheus, Twenty Thousand Leagues Under the Sea, Dune, Brave New World
+SNAP pool  wx.ge.strait                          75 fam= 51  851ms  top: Strait of Hormuz, Bosporus Strait, English Channel, Strait of Gibraltar, Bering Strait
+SNAP pool  wx.job.sculptor                      330 fam=208  10425ms  top: Leonardo da Vinci, Pablo Picasso, Michelangelo, Salvador Dalí, Le Corbusier
+SNAP pool  wx.mv.character                      359 fam=127  14594ms  top: Mickey Mouse, Sherlock Holmes, Santa Claus, Spider-Man, Batman
+SNAP pool  wx.mu.soul                           244 fam=125  8456ms  top: Michael Jackson, Agnez Mo, Whitney Houston, Adele, David Bowie
+SNAP pool  wx.sp.by.boxer.us                    600 fam= 29  1063ms  top: Muhammad Ali, Mike Tyson, Dean Martin, Bob Hope, Joe Frazier
+SNAP pool  wx.job.entrepreneur                  650 fam=393  19512ms  top: Donald Trump, Thomas Edison, Bill Gates, Jimmy Wales, Steve Jobs
+SNAP pool  wx.mv.studio                          35 fam=  8  1007ms  top: Universal Pictures, 20th Century Studios, DreamWorks Animation, New Line Cinema, Mosfilm
+SNAP pool  wx.mu.folk                           251 fam= 78  2901ms  top: Madonna, Leonard Cohen, Dolly Parton, Bing Crosby, Cher
+SNAP pool  wx.sp.by.boxer.uk                    237 fam=  6  699ms  top: Bob Hope, Victor McLaglen, Tyson Fury, Anthony Joshua, Lennox Lewis
+SNAP pool  wx.job.CEO                            38 fam= 25  1718ms  top: Donald Trump, Mark Zuckerberg, Warren Buffett, Charlie Kirk, Tim Cook
+SNAP pool  wx.mv.festival                        75 fam= 10  1110ms  top: Berlin International Film Festival, Venice Film Festival, Toronto International Film Festival, Sundance Film Festival, Venice Biennale
+SNAP pool  wx.mu.girlgroup                      119 fam= 17  478ms  top: Blackpink, Twice, Spice Girls, Girls' Generation, Red Velvet
+SNAP pool  wx.sp.by.boxer.mx                    170 fam=  1  2569ms  top: Oscar De La Hoya, Canelo Álvarez, Julio César Chávez, Andy Ruiz Jr., Juan Manuel Márquez Méndez
+SNAP pool summary: 417 templates; sample ok=35 small=5 fail=0
+SNAP SUMMARY wikidata 247/281 prompts (124892 answers), wikipedia 6/8 prompts (1392 answers), 707s; index=[live_wikidata.json, live_wikipedia.json]
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1794478043061.json
+
+BUILD SUCCESSFUL in 12m 3s
+3 actionable tasks: 2 executed, 1 from cache

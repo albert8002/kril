@@ -1,0 +1,63 @@
+11:SNAP relay broker.hivemq.com tcp -> OK ({"k":"ping"})
+12:SNAP relay broker.hivemq.com wss -> ConnAck(returnCode=0)
+13:SNAP relay broker.emqx.io tcp -> OK ({"k":"ping"})
+14:SNAP relay broker.emqx.io wss -> ConnAck(returnCode=0)
+15:SNAP relay test.mosquitto.org tcp -> OK ({"k":"ping"})
+16:SNAP relay test.mosquitto.org wss -> ConnAck(returnCode=0)
+17:SNAP restored 247 wikidata + 6 wikipedia prompts, 417 state rows
+18:SNAP verify wd.dog 'Kai Ken' -> Kai Ken (27 sitelinks)
+19:SNAP verify wd.dog 'Shikoku Ken' -> Shikoku Ken (30 sitelinks)
+20:SNAP verify wd.dog 'banana' -> rejected
+21:SNAP verify wd.cheese 'Tête de Moine' -> Tête de Moine (26 sitelinks)
+22:SNAP verify wd.cheese 'toaster' -> rejected
+23:SNAP wikidata todo 4/281
+24:SNAP wikidata  wg.raptor                      FAIL0 65004ms HttpTimeoutException: request timed out
+25:SNAP wikidata  wg.rodent                      FAIL0 65004ms HttpTimeoutException: request timed out
+26:SNAP wikidata  wg.parrot                      FAIL0 65004ms HttpTimeoutException: request timed out
+27:SNAP wikidata  wg.shark                       FAIL0 65004ms HttpTimeoutException: request timed out
+28:SNAP wikidata  wg.rodent                      FAIL1 65003ms HttpTimeoutException: request timed out
+29:SNAP wikidata  wg.raptor                      FAIL1 126097ms HttpTimeoutException: request timed out
+30:SNAP wikidata  wg.parrot                      FAIL1 65003ms HttpTimeoutException: request timed out
+31:SNAP wikidata  wg.shark                       FAIL1 65004ms HttpTimeoutException: request timed out
+32:SNAP pool  wx.bk.opera                          282 fam= 35  976ms  top: Carmen, The Magic Flute, Madama Butterfly, Aida, The Marriage of Figaro
+33:SNAP pool  wx.ge.europe                         588 fam=584  5654ms  top: Rome, Moscow, Helsinki, Istanbul, Athens
+34:SNAP pool  wx.job.novelist                      785 fam=800  43320ms  top: Donald Trump, William Shakespeare, Albert Einstein, Confucius, Karl Marx
+35:SNAP pool  wx.th.radio                           28 fam= 10  718ms  top: Radio Studio 54 Network, Voice of America, Korean Broadcasting System, Radio Free Europe/Radio Liberty, NHK
+36:SNAP pool  wx.mv.s.pre1960                      573 fam=171  9104ms  top: Casablanca, Citizen Kane, The Great Dictator, Some Like It Hot, Saludos Amigos
+37:SNAP pool  wx.mu.hiphop                         164 fam=118  1259ms  top: Eminem, Agnez Mo, Miley Cyrus, Jennifer Lopez, Will Smith
+38:SNAP pool  wx.sp.by.racingdriver.fr              66 fam=  1  1140ms  top: Isack Hadjar, Louis Renault, Didier Pironi, Jean-Pierre Jabouille, Philippe Alliot
+39:SNAP pool  wx.bk.novel                          209 fam=212  7780ms  top: Odyssey, Don Quixote, Nineteen Eighty-Four, Epic of Gilgamesh, Alice's Adventures in Wonderland
+40:SNAP pool  wx.ge.namerica                       380 fam=368  1984ms  top: New York City, Washington, D.C., Chicago, Mexico City, San Francisco
+41:SNAP pool  wx.job.stageactor                    784 fam=800  12750ms  top: William Shakespeare, Charlie Chaplin, Molière, Corbin Bleu, Marlene Dietrich
+42:SNAP pool  wx.th.emoji                           91 fam= 14  474ms  top: Polandball, 69, Labubu, brainrot, Godwin's law
+43:SNAP pool  wx.mv.s.1980s                        258 fam=169  19860ms  top: Blade Runner, Scarface, The Last Emperor, First Blood, Tootsie
+44:SNAP pool  wx.mu.pop                            559 fam=603  3043ms  top: Michael Jackson, Corbin Bleu, Basshunter, Elvis Presley, Madonna
+45:SNAP pool  wx.sp.by.racingdriver.de              54 fam=  2  756ms  top: Michael Fassbender, Mick Schumacher, Kurt Ahrens, Sabine Schmitz, Hans Stuck
+46:SNAP pool  wx.bk.childrens                       36 fam=  2  340ms  top: The Tales of Beedle the Bard, The Cat in the Hat, Go, Dog. Go!, Struwwelpeter, The Tale of Peter Rabbit
+47:SNAP pool  wx.ge.archipelago                    144 fam= 91  557ms  top: Bahrain, Caribbean, Balearic Islands, Pitcairn Islands, Svalbard
+48:SNAP pool  wx.job.televisionactor               768 fam=800  3271ms  top: Ronald Reagan, Corbin Bleu, Gabriel García Márquez, Marlene Dietrich, Bruce Lee
+49:SNAP pool  wx.mv.s.1990s                        367 fam=268  29224ms  top: The Silence of the Lambs, Star Wars: Episode I – The Phantom Menace, Life Is Beautiful, The Green Mile, Léon: The Professional
+50:SNAP pool  wx.mu.electronic                      84 fam= 41  649ms  top: Madonna, David Bowie, Björk, Yoko Ono, Robbie Williams
+51:SNAP pool  wx.sp.by.racingdriver.it              79 fam=  0  1456ms  top: Franco Colapinto, Michele Alboreto, Giovanna Amati, Felipe Drugovich, Achille Varzi
+52:SNAP pool  wx.bk.fantasy                        242 fam= 47  4194ms  top: The Lord of the Rings, The Hobbit, Harry Potter and the Philosopher's Stone, Harry Potter and the Chamber of Secrets, The Alchemist
+53:SNAP pool  wx.ge.beach                           58 fam=  5  630ms  top: Copacabana, Coney Island, Ipanema District, Omaha Beach, Utah Beach
+54:SNAP pool  wx.job.theatredirector               215 fam=128  1132ms  top: Molière, Richard Wagner, Ingmar Bergman, Bertolt Brecht, Federico García Lorca
+55:SNAP pool  wx.mv.s.korean                       348 fam=  4  1019ms  top: Parasite, Oldboy, Train to Busan, Snowpiercer, Mickey 17
+56:SNAP pool  wx.mu.rnb                            202 fam= 93  914ms  top: Elvis Presley, Lana Del Rey, Anggun, Jennifer Lopez, Adele
+57:SNAP pool  wx.sp.by.racingdriver.br              40 fam=  0  420ms  top: Gabriel Bortoleto, Felipe Drugovich, Pedro Piquet, Pipo Derani, Daniel Serra
+58:SNAP pool  wx.bk.scifi                          318 fam= 33  814ms  top: Nineteen Eighty-Four, Frankenstein; or, The Modern Prometheus, Twenty Thousand Leagues Under the Sea, Dune, Brave New World
+59:SNAP pool  wx.ge.strait                          75 fam= 51  851ms  top: Strait of Hormuz, Bosporus Strait, English Channel, Strait of Gibraltar, Bering Strait
+60:SNAP pool  wx.job.sculptor                      330 fam=208  10425ms  top: Leonardo da Vinci, Pablo Picasso, Michelangelo, Salvador Dalí, Le Corbusier
+61:SNAP pool  wx.mv.character                      359 fam=127  14594ms  top: Mickey Mouse, Sherlock Holmes, Santa Claus, Spider-Man, Batman
+62:SNAP pool  wx.mu.soul                           244 fam=125  8456ms  top: Michael Jackson, Agnez Mo, Whitney Houston, Adele, David Bowie
+63:SNAP pool  wx.sp.by.boxer.us                    600 fam= 29  1063ms  top: Muhammad Ali, Mike Tyson, Dean Martin, Bob Hope, Joe Frazier
+64:SNAP pool  wx.job.entrepreneur                  650 fam=393  19512ms  top: Donald Trump, Thomas Edison, Bill Gates, Jimmy Wales, Steve Jobs
+65:SNAP pool  wx.mv.studio                          35 fam=  8  1007ms  top: Universal Pictures, 20th Century Studios, DreamWorks Animation, New Line Cinema, Mosfilm
+66:SNAP pool  wx.mu.folk                           251 fam= 78  2901ms  top: Madonna, Leonard Cohen, Dolly Parton, Bing Crosby, Cher
+67:SNAP pool  wx.sp.by.boxer.uk                    237 fam=  6  699ms  top: Bob Hope, Victor McLaglen, Tyson Fury, Anthony Joshua, Lennox Lewis
+68:SNAP pool  wx.job.CEO                            38 fam= 25  1718ms  top: Donald Trump, Mark Zuckerberg, Warren Buffett, Charlie Kirk, Tim Cook
+69:SNAP pool  wx.mv.festival                        75 fam= 10  1110ms  top: Berlin International Film Festival, Venice Film Festival, Toronto International Film Festival, Sundance Film Festival, Venice Biennale
+70:SNAP pool  wx.mu.girlgroup                      119 fam= 17  478ms  top: Blackpink, Twice, Spice Girls, Girls' Generation, Red Velvet
+71:SNAP pool  wx.sp.by.boxer.mx                    170 fam=  1  2569ms  top: Oscar De La Hoya, Canelo Álvarez, Julio César Chávez, Andy Ruiz Jr., Juan Manuel Márquez Méndez
+72:SNAP pool summary: 417 templates; sample ok=35 small=5 fail=0
+73:SNAP SUMMARY wikidata 247/281 prompts (124892 answers), wikipedia 6/8 prompts (1392 answers), 707s; index=[live_wikidata.json, live_wikipedia.json]
