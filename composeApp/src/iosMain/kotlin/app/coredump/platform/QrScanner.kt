@@ -108,7 +108,7 @@ class ScanViewController(
             if (session.canSetSessionPreset(AVCaptureSessionPreset1280x720)) session.sessionPreset = AVCaptureSessionPreset1280x720
             val video = AVCaptureVideoDataOutput()
             // kCVPixelBufferPixelFormatTypeKey = "PixelFormatType"; '420f' = 875704422
-            video.videoSettings = mapOf<Any?, Any?>("PixelFormatType" to NSNumber.numberWithUnsignedInt(875704422u))
+            video.videoSettings = mapOf<Any?, Any?>("PixelFormatType" to NSNumber(unsignedInt = 875704422u))
             video.alwaysDiscardsLateVideoFrames = true
             video.setSampleBufferDelegate(tap, dispatch_queue_create("app.coredump.sigil", null))
             if (session.canAddOutput(video)) session.addOutput(video)
