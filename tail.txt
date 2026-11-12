@@ -1,0 +1,97 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+> Task :composeApp:preBuild UP-TO-DATE
+> Task :composeApp:preReleaseBuild UP-TO-DATE
+> Task :composeApp:mergeReleaseJniLibFolders
+> Task :composeApp:mergeReleaseNativeLibs
+> Task :composeApp:checkReleaseDuplicateClasses
+
+> Task :composeApp:stripReleaseDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so. Run with --info option to learn more.
+
+> Task :composeApp:buildKotlinToolingMetadata
+> Task :composeApp:extractReleaseNativeSymbolTables FROM-CACHE
+> Task :composeApp:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :composeApp:kmpPartiallyResolvedDependenciesChecker
+> Task :composeApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :composeApp:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForCommonMain
+> Task :composeApp:prepareComposeResourcesTaskForCommonMain
+> Task :composeApp:generateResourceAccessorsForCommonMain
+> Task :composeApp:generateActualResourceCollectorsForAndroidMain
+> Task :composeApp:generateComposeResClass
+> Task :composeApp:generateExpectResourceCollectorsForCommonMain
+> Task :composeApp:convertXmlValueResourcesForAndroidRelease NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidRelease NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidRelease NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidRelease NO-SOURCE
+> Task :composeApp:generateReleaseResValues FROM-CACHE
+> Task :composeApp:checkReleaseAarMetadata
+> Task :composeApp:mapReleaseSourceSetPaths
+> Task :composeApp:generateReleaseResources FROM-CACHE
+> Task :composeApp:mergeReleaseResources FROM-CACHE
+> Task :composeApp:packageReleaseResources FROM-CACHE
+> Task :composeApp:parseReleaseLocalResources FROM-CACHE
+> Task :composeApp:createReleaseCompatibleScreenManifests
+> Task :composeApp:extractDeepLinksRelease FROM-CACHE
+> Task :composeApp:processReleaseMainManifest FROM-CACHE
+> Task :composeApp:processReleaseManifest FROM-CACHE
+> Task :composeApp:processReleaseManifestForPackage FROM-CACHE
+> Task :composeApp:processReleaseResources FROM-CACHE
+> Task :composeApp:javaPreCompileRelease FROM-CACHE
+> Task :composeApp:desugarReleaseFileDependencies FROM-CACHE
+> Task :composeApp:mergeReleaseStartupProfile
+> Task :composeApp:mergeExtDexRelease FROM-CACHE
+> Task :composeApp:mergeReleaseArtProfile
+> Task :composeApp:mergeReleaseShaders
+> Task :composeApp:compileReleaseShaders NO-SOURCE
+> Task :composeApp:copyReleaseComposeResourcesToAndroidAssets
+> Task :composeApp:generateReleaseAssets UP-TO-DATE
+> Task :composeApp:releaseAssetsCopyForAGP NO-SOURCE
+> Task :composeApp:mergeReleaseAssets
+> Task :composeApp:extractReleaseVersionControlInfo
+> Task :composeApp:extractProguardFiles
+> Task :composeApp:optimizeReleaseResources FROM-CACHE
+> Task :composeApp:collectReleaseDependencies
+> Task :composeApp:sdkReleaseDependencyData
+> Task :composeApp:compressReleaseAssets
+> Task :composeApp:validateSigningRelease
+> Task :composeApp:writeReleaseAppMetadata
+> Task :composeApp:writeReleaseSigningConfigVersions
+> Task :composeApp:compileReleaseKotlinAndroid
+w: Opt-in requirement marker kotlinx.cinterop.ExperimentalForeignApi is unresolved. Please make sure it's present in the module dependencies
+w: Opt-in requirement marker kotlinx.cinterop.BetaInteropApi is unresolved. Please make sure it's present in the module dependencies
+w: file:///home/runner/work/kril/kril/composeApp/src/androidMain/kotlin/app/coredump/platform/Platform.android.kt:30:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/runner/work/kril/kril/composeApp/src/androidMain/kotlin/app/coredump/platform/Platform.android.kt:163:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/runner/work/kril/kril/composeApp/src/commonMain/kotlin/app/coredump/platform/Platform.kt:6:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/runner/work/kril/kril/composeApp/src/commonMain/kotlin/app/coredump/platform/Platform.kt:38:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+
+> Task :composeApp:compileReleaseJavaWithJavac NO-SOURCE
+> Task :composeApp:dexBuilderRelease
+> Task :composeApp:mergeReleaseGlobalSynthetics FROM-CACHE
+> Task :composeApp:generateReleaseLintVitalReportModel
+> Task :composeApp:processReleaseJavaRes
+> Task :composeApp:mergeReleaseJavaResource
+> Task :composeApp:mergeDexRelease
+> Task :composeApp:compileReleaseArtProfile
+> Task :composeApp:lintVitalAnalyzeRelease
+> Task :composeApp:lintVitalReportRelease
+> Task :composeApp:lintVitalRelease
+> Task :composeApp:packageRelease
+> Task :composeApp:createReleaseApkListingFileRedirect
+> Task :composeApp:assembleRelease
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1794478807160.json
+
+[Incubating] Problems report is available at: file:///home/runner/work/kril/kril/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 1m 59s
+56 actionable tasks: 40 executed, 16 from cache
