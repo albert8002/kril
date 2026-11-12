@@ -1,0 +1,307 @@
+SELFTEST START
+SELFTEST READY prompts=449 answers=141663
+SELFTEST CUSTOM star=true ring=true label=BASIC rank=ROOKIE
+SELFTEST SHOT menu_terminal
+SELFTEST SUGGEST 'proof' -> null
+SELFTEST SHOT play_terminal
+SELFTEST SHOT touch_terminal
+SELFTEST SHOT confirm_terminal
+SELFTEST RUN TERMINAL points=7
+SELFTEST SHOT run_terminal
+SELFTEST SHOT reveal_terminal
+SELFTEST ANSWERS TERMINAL groups=5 names=74 list=74
+SELFTEST SHOT answers_terminal
+SELFTEST SHOT summary_terminal
+SELFTEST SHOT appearance_terminal
+SELFTEST SHOT config_terminal
+SELFTEST SHOT fetch_terminal
+SELFTEST SHOT looks_terminal
+SELFTEST SHOT menu_paper
+SELFTEST SUGGEST 'German' -> null
+SELFTEST SHOT play_paper
+SELFTEST SHOT touch_paper
+SELFTEST SHOT confirm_paper
+SELFTEST RUN PAPER points=7
+SELFTEST SHOT run_paper
+SELFTEST SHOT reveal_paper
+SELFTEST ANSWERS PAPER groups=5 names=928 list=928
+SELFTEST SHOT answers_paper
+SELFTEST SHOT summary_paper
+SELFTEST SHOT appearance_paper
+SELFTEST SHOT config_paper
+SELFTEST SHOT fetch_paper
+SELFTEST SHOT looks_paper
+SELFTEST SHOT menu_neon
+SELFTEST SUGGEST 'Burnt' -> null
+SELFTEST SHOT play_neon
+SELFTEST SHOT touch_neon
+SELFTEST SHOT confirm_neon
+SELFTEST RUN NEON points=27
+SELFTEST SHOT run_neon
+SELFTEST SHOT reveal_neon
+SELFTEST ANSWERS NEON groups=6 names=116 list=116
+SELFTEST SHOT answers_neon
+SELFTEST SHOT summary_neon
+SELFTEST SHOT appearance_neon
+SELFTEST SHOT config_neon
+SELFTEST SHOT fetch_neon
+SELFTEST SHOT looks_neon
+SELFTEST SHOT menu_clean
+SELFTEST SUGGEST 'Michael' -> null
+SELFTEST SHOT play_clean
+SELFTEST SHOT touch_clean
+SELFTEST SHOT confirm_clean
+SELFTEST RUN CLEAN points=7
+SELFTEST SHOT run_clean
+SELFTEST SHOT reveal_clean
+SELFTEST ANSWERS CLEAN groups=5 names=256 list=256
+SELFTEST SHOT answers_clean
+SELFTEST SHOT summary_clean
+SELFTEST SHOT appearance_clean
+SELFTEST SHOT config_clean
+SELFTEST SHOT fetch_clean
+SELFTEST SHOT looks_clean
+SELFTEST SHOT menu_pixel
+SELFTEST SUGGEST 'Optimus' -> null
+SELFTEST SHOT play_pixel
+SELFTEST SHOT touch_pixel
+SELFTEST SHOT confirm_pixel
+SELFTEST RUN PIXEL points=27
+SELFTEST SHOT run_pixel
+SELFTEST SHOT reveal_pixel
+SELFTEST ANSWERS PIXEL groups=5 names=47 list=47
+SELFTEST SHOT answers_pixel
+SELFTEST SHOT summary_pixel
+SELFTEST SHOT appearance_pixel
+SELFTEST SHOT config_pixel
+SELFTEST SHOT fetch_pixel
+SELFTEST SHOT looks_pixel
+SELFTEST SHOT menu_comic
+SELFTEST SUGGEST 'Leonardo' -> null
+SELFTEST SHOT play_comic
+SELFTEST SHOT touch_comic
+SELFTEST SHOT confirm_comic
+SELFTEST RUN COMIC points=7
+SELFTEST SHOT run_comic
+SELFTEST SHOT reveal_comic
+SELFTEST ANSWERS COMIC groups=5 names=1149 list=1149
+SELFTEST SHOT answers_comic
+SELFTEST SHOT summary_comic
+SELFTEST SHOT appearance_comic
+SELFTEST SHOT config_comic
+SELFTEST SHOT fetch_comic
+SELFTEST SHOT looks_comic
+SELFTEST SHOT menu_abyss
+SELFTEST SUGGEST 'Snow' -> null
+SELFTEST SHOT play_abyss
+SELFTEST SHOT touch_abyss
+SELFTEST SHOT confirm_abyss
+SELFTEST RUN ABYSS points=7
+SELFTEST SHOT run_abyss
+SELFTEST SHOT reveal_abyss
+SELFTEST ANSWERS ABYSS groups=5 names=51 list=51
+SELFTEST SHOT answers_abyss
+SELFTEST SHOT summary_abyss
+SELFTEST SHOT appearance_abyss
+SELFTEST SHOT config_abyss
+SELFTEST SHOT fetch_abyss
+SELFTEST SHOT looks_abyss
+SELFTEST SHOT menu_metro
+SELFTEST SUGGEST 'Bridalveil' -> null
+SELFTEST SHOT play_metro
+SELFTEST SHOT touch_metro
+SELFTEST SHOT confirm_metro
+SELFTEST RUN METRO points=7
+SELFTEST SHOT run_metro
+SELFTEST SHOT reveal_metro
+SELFTEST ANSWERS METRO groups=5 names=57 list=57
+SELFTEST SHOT answers_metro
+SELFTEST SHOT summary_metro
+SELFTEST SHOT appearance_metro
+SELFTEST SHOT config_metro
+SELFTEST SHOT fetch_metro
+SELFTEST SHOT looks_metro
+SELFTEST SHOT menu_jackpot
+SELFTEST SUGGEST 'Mona' -> null
+SELFTEST SHOT play_jackpot
+SELFTEST SHOT touch_jackpot
+SELFTEST SHOT confirm_jackpot
+SELFTEST RUN JACKPOT points=7
+SELFTEST SHOT run_jackpot
+SELFTEST SHOT reveal_jackpot
+SELFTEST ANSWERS JACKPOT groups=5 names=171 list=171
+SELFTEST SHOT answers_jackpot
+SELFTEST SHOT summary_jackpot
+SELFTEST SHOT appearance_jackpot
+SELFTEST SHOT config_jackpot
+SELFTEST SHOT fetch_jackpot
+SELFTEST SHOT looks_jackpot
+SELFTEST SHOT menu_chat
+SELFTEST SUGGEST 'Albert' -> null
+SELFTEST SHOT play_chat
+SELFTEST SHOT touch_chat
+SELFTEST RUN CHAT points=7
+SELFTEST SHOT run_chat
+SELFTEST SHOT reveal_chat
+SELFTEST ANSWERS CHAT groups=5 names=1101 list=1101
+SELFTEST SHOT answers_chat
+SELFTEST SHOT summary_chat
+SELFTEST SHOT appearance_chat
+SELFTEST SHOT config_chat
+SELFTEST SHOT fetch_chat
+SELFTEST SHOT looks_chat
+SELFTEST SHOT menu_desktop
+SELFTEST SUGGEST 'Spaghetti' -> null
+SELFTEST SHOT play_desktop
+SELFTEST SHOT touch_desktop
+SELFTEST SHOT confirm_desktop
+SELFTEST RUN DESKTOP points=7
+SELFTEST SHOT run_desktop
+SELFTEST SHOT reveal_desktop
+SELFTEST ANSWERS DESKTOP groups=5 names=57 list=57
+SELFTEST SHOT answers_desktop
+SELFTEST SHOT summary_desktop
+SELFTEST SHOT appearance_desktop
+SELFTEST SHOT config_desktop
+SELFTEST SHOT fetch_desktop
+SELFTEST SHOT looks_desktop
+SELFTEST SHOT menu_oracle
+SELFTEST SUGGEST 'Ferrero' -> null
+SELFTEST SHOT play_oracle
+SELFTEST SHOT touch_oracle
+SELFTEST SHOT confirm_oracle
+SELFTEST RUN ORACLE points=7
+SELFTEST SHOT run_oracle
+SELFTEST SHOT reveal_oracle
+SELFTEST ANSWERS ORACLE groups=5 names=93 list=93
+SELFTEST SHOT answers_oracle
+SELFTEST SHOT summary_oracle
+SELFTEST SHOT appearance_oracle
+SELFTEST SHOT config_oracle
+SELFTEST SHOT fetch_oracle
+SELFTEST SHOT looks_oracle
+SELFTEST SHOT menu_terminal_green
+SELFTEST SHOT menu_paper_night
+SELFTEST SHOT menu_neon_outrun
+SELFTEST SHOT menu_clean_dark
+SELFTEST SHOT menu_pixel_color
+SELFTEST SHOT menu_comic_pop
+SELFTEST SHOT menu_abyss_jelly
+SELFTEST SHOT menu_metro_platform
+SELFTEST SHOT menu_jackpot_velvet
+SELFTEST SHOT menu_chat_midnight
+SELFTEST SHOT menu_desktop_storm
+SELFTEST SHOT menu_oracle_parchment
+SELFTEST SHOT hyper_menu_terminal
+SELFTEST SHOT hyper_menu_paper
+SELFTEST SHOT hyper_menu_neon
+SELFTEST SHOT hyper_menu_clean
+SELFTEST SHOT hyper_menu_pixel
+SELFTEST SHOT hyper_menu_comic
+SELFTEST SHOT hyper_menu_abyss
+SELFTEST SHOT hyper_menu_metro
+SELFTEST SHOT hyper_menu_jackpot
+SELFTEST SHOT hyper_menu_chat
+SELFTEST SHOT hyper_menu_desktop
+SELFTEST SHOT hyper_menu_oracle
+SELFTEST RUN hyper points=85
+SELFTEST SHOT hyper_run_abyss
+SELFTEST RUN oracle flight from=114 points=100
+SELFTEST SHOT oracle_fly_1
+SELFTEST SHOT oracle_fly_2
+SELFTEST SHOT oracle_fly_3
+SELFTEST SHOT oracle_fly_4
+SELFTEST SHOT oracle_fly_5
+SELFTEST SHOT daily_terminal
+SELFTEST SHOT quit_paper
+SELFTEST SHOT quit_chat
+SELFTEST SHOT quit_desktop
+SELFTEST SHOT quit_metro
+SELFTEST SHOT friends_terminal
+SELFTEST SHOT meltdown_setup_terminal
+SELFTEST MELT TERMINAL phase=TURN players=6 prompt='Name a horror film from the 1980s'
+SELFTEST SHOT meltdown_terminal
+SELFTEST MELT event ok: SUDO: Blue Velvet
+SELFTEST SHOT meltdown_terminal_turns
+SELFTEST MELT event blast: MELTDOWN — MALLOC loses a heart
+SELFTEST MELT event ok: ANON: Enter
+SELFTEST MELT event ok: NULLPTR: Insert
+SELFTEST MELT played answered=1 blasts=1 heat=0.13190001 round=2
+SELFTEST SHOT meltdown_terminal_late
+SELFTEST MELT ABYSS phase=TURN players=6 prompt='Name a city in Italy'
+SELFTEST SHOT meltdown_abyss
+SELFTEST MELT COMIC phase=TURN players=6 prompt='Name a musical instrument'
+SELFTEST SHOT meltdown_comic
+SELFTEST MELT ORACLE phase=TURN players=6 prompt='Name a famous American football player'
+SELFTEST SHOT meltdown_oracle
+SELFTEST PARTY host open=true status=open · waiting for players
+SELFTEST PARTY seated=[ANON, GUESTBOT] guest=seated · waiting for the host to start
+SELFTEST PARTY host phase=TURN guest phase=TURN guest players=3 prompt='Name a skyscraper'
+SELFTEST SHOT party_metro
+SELFTEST PARTY after guestAnswers=2 hostSeq=96 guestSeq=96 used=7 event='ANON: Taipei 101'
+SELFTEST SIGIL TERMINAL/amber 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_terminal
+SELFTEST SIGIL PAPER/newsprint 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_paper
+SELFTEST SIGIL NEON/synthwave 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_neon
+SELFTEST SIGIL CLEAN/light 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_clean
+SELFTEST SIGIL PIXEL/dmg 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_pixel
+SELFTEST SIGIL COMIC/rebel 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_comic
+SELFTEST SIGIL ABYSS/trench 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_abyss
+SELFTEST SIGIL METRO/board 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_metro
+SELFTEST SIGIL JACKPOT/felt 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_jackpot
+SELFTEST SIGIL CHAT/daylight 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_chat
+SELFTEST SIGIL DESKTOP/classic 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_desktop
+SELFTEST SIGIL ORACLE/midnight 840x840 clean=ok camera=ok
+SELFTEST SHOT sigil_oracle
+SELFTEST SIGIL TERMINAL/green 840x840 clean=ok camera=ok
+SELFTEST SIGIL PAPER/night 840x840 clean=ok camera=ok
+SELFTEST SIGIL NEON/outrun 840x840 clean=ok camera=ok
+SELFTEST SIGIL CLEAN/dark 840x840 clean=ok camera=ok
+SELFTEST SIGIL PIXEL/color 840x840 clean=ok camera=ok
+SELFTEST SIGIL COMIC/pop 840x840 clean=ok camera=ok
+SELFTEST SIGIL ABYSS/jelly 840x840 clean=ok camera=ok
+SELFTEST SIGIL METRO/platform 840x840 clean=ok camera=ok
+SELFTEST SIGIL JACKPOT/velvet 840x840 clean=ok camera=ok
+SELFTEST SIGIL CHAT/midnight 840x840 clean=ok camera=ok
+SELFTEST SIGIL DESKTOP/storm 840x840 clean=ok camera=ok
+SELFTEST SIGIL ORACLE/parchment 840x840 clean=ok camera=ok
+SELFTEST SIGIL SUMMARY clean=24/24 camera=24/24
+SELFTEST INVITE popup=1 status=SEEN after 2000ms
+SELFTEST SHOT invite_popup_paper
+SELFTEST INVITE answer status=DECLINED after 250ms
+SELFTEST FRIEND popup=1 requests=1 after 1000ms
+SELFTEST SHOT friend_request_chat
+SELFTEST FRIEND answer status=ACCEPTED name='ANON' friends=[ALEX:0, TESTFRIEND:1111]
+SELFTEST SHOT friends_chat
+SELFTEST SHOT menu_friends_oracle
+SELFTEST RANKED a=guest vs TEST-B b=host vs TEST-A after 4000ms
+SELFTEST SHOT ranked_chat
+SELFTEST stress 0
+SELFTEST stress 100
+SELFTEST stress 200
+SELFTEST stress 300
+SELFTEST stress 400
+SELFTEST stress 500
+SELFTEST stress done
+SELFTEST VERIFY 'Name a dog breed' 'Labrador' -> LOCAL(Labrador Retriever) (5ms)
+SELFTEST VERIFY 'Name a dog breed' 'Kai Ken' -> FOUND(Kai Ken, 27) HEISENBUG · not on the list · found online · 27 Wikipedias · 96 views/day · 22 mentions · fame 45% (620ms)
+SELFTEST VERIFY 'Name a dog breed' 'banana' -> MISSING (471ms)
+SELFTEST VERIFY 'Name a cheese' 'Tete de Moine' -> LOCAL(Tête de Moine) (0ms)
+SELFTEST VERIFY 'Name a cheese' 'toaster' -> MISSING (455ms)
+SELFTEST SHOT fetch_running
+SELFTEST COLLECT added=4 library=34 failed=0 topics=[TV, GAMING] msg=+4 new lists
+SELFTEST SHOT fetch_done
+SELFTEST DISCARD geo.country gone=true back=true
+SELFTEST DISCARD wx.an.bat gone=true back=true
+SELFTEST SHOT menu_after_collect
+SELFTEST DONE ok
