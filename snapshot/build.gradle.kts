@@ -19,6 +19,7 @@ val shared = tasks.register<Sync>("syncSharedSources") {
         include("app/coredump/data/FameCheck.kt")
         include("app/coredump/net/Mqtt.kt")
         include("app/coredump/net/Protocol.kt")
+        include("app/coredump/net/ShortCode.kt")
     }
     into(layout.buildDirectory.dir("shared-src"))
 }

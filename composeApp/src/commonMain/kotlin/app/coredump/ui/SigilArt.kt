@@ -58,7 +58,7 @@ fun ThemedSigil(room: String, broker: Int, party: Boolean, modifier: Modifier = 
     val heights = remember(room, broker, party) { Sigil.encode(room, broker, party) }
     val style = Th.style
     val plate = C.panel
-    val inks = remember(plate, C.amber, C.hot, C.white, C.line) { SigilInks.of(plate, C.amber, C.hot, C.white, C.line) }
+    val inks = remember(plate, C.amber, C.hot, C.white, C.line) { SigilInks.of(plate, listOf(C.amber, C.hot, C.white, C.line)) }
     val motion = !LocalLook.current.reduceMotion
     val clock = rememberClock(motion, fps = 30)
     val layer = rememberGraphicsLayer()
@@ -88,7 +88,7 @@ internal class SigilInks(val main: Color, val alt: Color, val soft: Color) {
     companion object {
         private fun light(c: Color) = sqrt(c.luminance())
 
-        fun of(plate: Color, vararg cands: Color): SigilInks {
+        fun of(plate: Color, cands: List<Color>): SigilInks {
             val lp = light(plate)
             val far = Color(if (lp > 0.5f) 0xFF111111 else 0xFFF6F6F6)
             val good = cands.filter { abs(light(it) - lp) >= 0.38f }.sortedByDescending { abs(light(it) - lp) }
