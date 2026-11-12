@@ -1,0 +1,311 @@
+11-12 10:24:30.188 I/System.out( 3500): SELFTEST START
+11-12 10:24:49.224 I/System.out( 3500): SELFTEST READY prompts=448 answers=140864
+11-12 10:24:49.234 I/System.out( 3500): SELFTEST CUSTOM star=true ring=true label=BASIC rank=ROOKIE
+11-12 10:24:50.509 I/System.out( 3500): SELFTEST SHOT menu_terminal
+11-12 10:24:56.647 I/System.out( 3500): SELFTEST SUGGEST 'Trivial' -> null
+11-12 10:24:56.647 I/System.out( 3500): SELFTEST SHOT play_terminal
+11-12 10:24:58.840 I/System.out( 3500): SELFTEST SHOT touch_terminal
+11-12 10:25:02.948 I/System.out( 3500): SELFTEST SHOT confirm_terminal
+11-12 10:25:05.157 I/System.out( 3500): SELFTEST RUN TERMINAL points=7
+11-12 10:25:05.157 I/System.out( 3500): SELFTEST SHOT run_terminal
+11-12 10:25:11.920 I/System.out( 3500): SELFTEST SHOT reveal_terminal
+11-12 10:25:13.766 I/System.out( 3500): SELFTEST ANSWERS TERMINAL groups=6 names=99 list=99
+11-12 10:25:14.682 I/System.out( 3500): SELFTEST SHOT answers_terminal
+11-12 10:25:25.889 I/System.out( 3500): SELFTEST SHOT summary_terminal
+11-12 10:25:29.825 I/System.out( 3500): SELFTEST SHOT appearance_terminal
+11-12 10:25:33.822 I/System.out( 3500): SELFTEST SHOT config_terminal
+11-12 10:25:36.702 I/System.out( 3500): SELFTEST SHOT fetch_terminal
+11-12 10:25:39.912 I/System.out( 3500): SELFTEST SHOT looks_terminal
+11-12 10:25:43.092 I/System.out( 3500): SELFTEST SHOT menu_paper
+11-12 10:25:48.633 I/System.out( 3500): SELFTEST SUGGEST 'Buenos' -> null
+11-12 10:25:48.639 I/System.out( 3500): SELFTEST SHOT play_paper
+11-12 10:25:50.691 I/System.out( 3500): SELFTEST SHOT touch_paper
+11-12 10:25:54.967 I/System.out( 3500): SELFTEST RUN PAPER points=27
+11-12 10:25:54.967 I/System.out( 3500): SELFTEST SHOT run_paper
+11-12 10:26:01.669 I/System.out( 3500): SELFTEST SHOT reveal_paper
+11-12 10:26:03.469 I/System.out( 3500): SELFTEST ANSWERS PAPER groups=5 names=36 list=36
+11-12 10:26:04.370 I/System.out( 3500): SELFTEST SHOT answers_paper
+11-12 10:26:15.266 I/System.out( 3500): SELFTEST SHOT summary_paper
+11-12 10:26:18.286 I/System.out( 3500): SELFTEST SHOT appearance_paper
+11-12 10:26:22.088 I/System.out( 3500): SELFTEST SHOT config_paper
+11-12 10:26:24.889 I/System.out( 3500): SELFTEST SHOT fetch_paper
+11-12 10:26:27.890 I/System.out( 3500): SELFTEST SHOT looks_paper
+11-12 10:26:31.229 I/System.out( 3500): SELFTEST SHOT menu_neon
+11-12 10:26:36.829 I/System.out( 3500): SELFTEST SUGGEST 'Humpty' -> null
+11-12 10:26:36.829 I/System.out( 3500): SELFTEST SHOT play_neon
+11-12 10:26:38.890 I/System.out( 3500): SELFTEST SHOT touch_neon
+11-12 10:26:43.208 I/System.out( 3500): SELFTEST RUN NEON points=7
+11-12 10:26:43.208 I/System.out( 3500): SELFTEST SHOT run_neon
+11-12 10:26:50.011 I/System.out( 3500): SELFTEST SHOT reveal_neon
+11-12 10:26:51.892 I/System.out( 3500): SELFTEST ANSWERS NEON groups=5 names=61 list=61
+11-12 10:26:52.802 I/System.out( 3500): SELFTEST SHOT answers_neon
+11-12 10:27:03.997 I/System.out( 3500): SELFTEST SHOT summary_neon
+11-12 10:27:07.159 I/System.out( 3500): SELFTEST SHOT appearance_neon
+11-12 10:27:11.002 I/System.out( 3500): SELFTEST SHOT config_neon
+11-12 10:27:13.849 I/System.out( 3500): SELFTEST SHOT fetch_neon
+11-12 10:27:16.870 I/System.out( 3500): SELFTEST SHOT looks_neon
+11-12 10:27:19.967 I/System.out( 3500): SELFTEST SHOT menu_clean
+11-12 10:27:25.064 I/System.out( 3500): SELFTEST SHOT play_clean
+11-12 10:27:27.130 I/System.out( 3500): SELFTEST SHOT touch_clean
+11-12 10:27:31.024 I/System.out( 3500): SELFTEST SHOT confirm_clean
+11-12 10:27:33.370 I/System.out( 3500): SELFTEST RUN CLEAN points=7
+11-12 10:27:33.370 I/System.out( 3500): SELFTEST SHOT run_clean
+11-12 10:27:40.104 I/System.out( 3500): SELFTEST SHOT reveal_clean
+11-12 10:27:41.904 I/System.out( 3500): SELFTEST ANSWERS CLEAN groups=5 names=50 list=50
+11-12 10:27:42.804 I/System.out( 3500): SELFTEST SHOT answers_clean
+11-12 10:27:53.707 I/System.out( 3500): SELFTEST SHOT summary_clean
+11-12 10:27:56.711 I/System.out( 3500): SELFTEST SHOT appearance_clean
+11-12 10:28:00.516 I/System.out( 3500): SELFTEST SHOT config_clean
+11-12 10:28:03.319 I/System.out( 3500): SELFTEST SHOT fetch_clean
+11-12 10:28:06.321 I/System.out( 3500): SELFTEST SHOT looks_clean
+11-12 10:28:09.333 I/System.out( 3500): SELFTEST SHOT menu_pixel
+11-12 10:28:14.873 I/System.out( 3500): SELFTEST SUGGEST 'Ursa' -> null
+11-12 10:28:14.875 I/System.out( 3500): SELFTEST SHOT play_pixel
+11-12 10:28:16.942 I/System.out( 3500): SELFTEST SHOT touch_pixel
+11-12 10:28:20.803 I/System.out( 3500): SELFTEST SHOT confirm_pixel
+11-12 10:28:23.117 I/System.out( 3500): SELFTEST RUN PIXEL points=7
+11-12 10:28:23.118 I/System.out( 3500): SELFTEST SHOT run_pixel
+11-12 10:28:29.836 I/System.out( 3500): SELFTEST SHOT reveal_pixel
+11-12 10:28:31.641 I/System.out( 3500): SELFTEST ANSWERS PIXEL groups=5 names=88 list=88
+11-12 10:28:32.541 I/System.out( 3500): SELFTEST SHOT answers_pixel
+11-12 10:28:43.466 I/System.out( 3500): SELFTEST SHOT summary_pixel
+11-12 10:28:46.474 I/System.out( 3500): SELFTEST SHOT appearance_pixel
+11-12 10:28:50.276 I/System.out( 3500): SELFTEST SHOT config_pixel
+11-12 10:28:53.079 I/System.out( 3500): SELFTEST SHOT fetch_pixel
+11-12 10:28:56.082 I/System.out( 3500): SELFTEST SHOT looks_pixel
+11-12 10:28:59.085 I/System.out( 3500): SELFTEST SHOT menu_comic
+11-12 10:29:04.602 I/System.out( 3500): SELFTEST SUGGEST 'Gold' -> null
+11-12 10:29:04.602 I/System.out( 3500): SELFTEST SHOT play_comic
+11-12 10:29:06.693 I/System.out( 3500): SELFTEST SHOT touch_comic
+11-12 10:29:10.590 I/System.out( 3500): SELFTEST SHOT confirm_comic
+11-12 10:29:12.886 I/System.out( 3500): SELFTEST RUN COMIC points=7
+11-12 10:29:12.886 I/System.out( 3500): SELFTEST SHOT run_comic
+11-12 10:29:19.630 I/System.out( 3500): SELFTEST SHOT reveal_comic
+11-12 10:29:21.430 I/System.out( 3500): SELFTEST ANSWERS COMIC groups=5 names=53 list=53
+11-12 10:29:22.331 I/System.out( 3500): SELFTEST SHOT answers_comic
+11-12 10:29:33.359 I/System.out( 3500): SELFTEST SHOT summary_comic
+11-12 10:29:36.361 I/System.out( 3500): SELFTEST SHOT appearance_comic
+11-12 10:29:40.163 I/System.out( 3500): SELFTEST SHOT config_comic
+11-12 10:29:42.964 I/System.out( 3500): SELFTEST SHOT fetch_comic
+11-12 10:29:45.965 I/System.out( 3500): SELFTEST SHOT looks_comic
+11-12 10:29:49.029 I/System.out( 3500): SELFTEST SHOT menu_abyss
+11-12 10:29:54.728 I/System.out( 3500): SELFTEST SUGGEST 'Leonardo' -> null
+11-12 10:29:54.729 I/System.out( 3500): SELFTEST SHOT play_abyss
+11-12 10:29:56.909 I/System.out( 3500): SELFTEST SHOT touch_abyss
+11-12 10:30:01.195 I/System.out( 3500): SELFTEST RUN ABYSS points=57
+11-12 10:30:01.195 I/System.out( 3500): SELFTEST SHOT run_abyss
+11-12 10:30:08.025 I/System.out( 3500): SELFTEST SHOT reveal_abyss
+11-12 10:30:09.850 I/System.out( 3500): SELFTEST ANSWERS ABYSS groups=5 names=93 list=93
+11-12 10:30:10.760 I/System.out( 3500): SELFTEST SHOT answers_abyss
+11-12 10:30:21.770 I/System.out( 3500): SELFTEST SHOT summary_abyss
+11-12 10:30:24.835 I/System.out( 3500): SELFTEST SHOT appearance_abyss
+11-12 10:30:28.656 I/System.out( 3500): SELFTEST SHOT config_abyss
+11-12 10:30:31.520 I/System.out( 3500): SELFTEST SHOT fetch_abyss
+11-12 10:30:34.528 I/System.out( 3500): SELFTEST SHOT looks_abyss
+11-12 10:30:37.564 I/System.out( 3500): SELFTEST SHOT menu_metro
+11-12 10:30:43.117 I/System.out( 3500): SELFTEST SUGGEST 'Epic' -> null
+11-12 10:30:43.117 I/System.out( 3500): SELFTEST SHOT play_metro
+11-12 10:30:45.218 I/System.out( 3500): SELFTEST SHOT touch_metro
+11-12 10:30:49.145 I/System.out( 3500): SELFTEST SHOT confirm_metro
+11-12 10:30:51.422 I/System.out( 3500): SELFTEST RUN METRO points=7
+11-12 10:30:51.423 I/System.out( 3500): SELFTEST SHOT run_metro
+11-12 10:30:58.126 I/System.out( 3500): SELFTEST SHOT reveal_metro
+11-12 10:30:59.926 I/System.out( 3500): SELFTEST ANSWERS METRO groups=5 names=108 list=108
+11-12 10:31:00.827 I/System.out( 3500): SELFTEST SHOT answers_metro
+11-12 10:31:11.622 I/System.out( 3500): SELFTEST SHOT summary_metro
+11-12 10:31:14.625 I/System.out( 3500): SELFTEST SHOT appearance_metro
+11-12 10:31:18.427 I/System.out( 3500): SELFTEST SHOT config_metro
+11-12 10:31:21.229 I/System.out( 3500): SELFTEST SHOT fetch_metro
+11-12 10:31:24.230 I/System.out( 3500): SELFTEST SHOT looks_metro
+11-12 10:31:27.381 I/System.out( 3500): SELFTEST SHOT menu_jackpot
+11-12 10:31:32.984 I/System.out( 3500): SELFTEST SUGGEST 'Desperate' -> null
+11-12 10:31:32.984 I/System.out( 3500): SELFTEST SHOT play_jackpot
+11-12 10:31:35.034 I/System.out( 3500): SELFTEST SHOT touch_jackpot
+11-12 10:31:38.974 I/System.out( 3500): SELFTEST SHOT confirm_jackpot
+11-12 10:31:41.427 I/System.out( 3500): SELFTEST RUN JACKPOT points=7
+11-12 10:31:41.427 I/System.out( 3500): SELFTEST SHOT run_jackpot
+11-12 10:31:48.160 I/System.out( 3500): SELFTEST SHOT reveal_jackpot
+11-12 10:31:49.960 I/System.out( 3500): SELFTEST ANSWERS JACKPOT groups=5 names=62 list=62
+11-12 10:31:50.861 I/System.out( 3500): SELFTEST SHOT answers_jackpot
+11-12 10:32:01.577 I/System.out( 3500): SELFTEST SHOT summary_jackpot
+11-12 10:32:04.580 I/System.out( 3500): SELFTEST SHOT appearance_jackpot
+11-12 10:32:08.381 I/System.out( 3500): SELFTEST SHOT config_jackpot
+11-12 10:32:11.182 I/System.out( 3500): SELFTEST SHOT fetch_jackpot
+11-12 10:32:14.183 I/System.out( 3500): SELFTEST SHOT looks_jackpot
+11-12 10:32:17.219 I/System.out( 3500): SELFTEST SHOT menu_chat
+11-12 10:32:22.753 I/System.out( 3500): SELFTEST SUGGEST 'Bass' -> [Bassoon]
+11-12 10:32:22.753 I/System.out( 3500): SELFTEST SHOT play_chat
+11-12 10:32:24.771 I/System.out( 3500): SELFTEST SHOT touch_chat
+11-12 10:32:29.014 I/System.out( 3500): SELFTEST RUN CHAT points=57
+11-12 10:32:29.017 I/System.out( 3500): SELFTEST SHOT run_chat
+11-12 10:32:35.874 I/System.out( 3500): SELFTEST SHOT reveal_chat
+11-12 10:32:37.674 I/System.out( 3500): SELFTEST ANSWERS CHAT groups=6 names=120 list=120
+11-12 10:32:38.575 I/System.out( 3500): SELFTEST SHOT answers_chat
+11-12 10:32:49.562 I/System.out( 3500): SELFTEST SHOT summary_chat
+11-12 10:32:52.564 I/System.out( 3500): SELFTEST SHOT appearance_chat
+11-12 10:32:56.365 I/System.out( 3500): SELFTEST SHOT config_chat
+11-12 10:32:59.168 I/System.out( 3500): SELFTEST SHOT fetch_chat
+11-12 10:33:02.169 I/System.out( 3500): SELFTEST SHOT looks_chat
+11-12 10:33:05.171 I/System.out( 3500): SELFTEST SHOT menu_desktop
+11-12 10:33:10.612 I/System.out( 3500): SELFTEST SUGGEST 'Montreal' -> null
+11-12 10:33:10.618 I/System.out( 3500): SELFTEST SHOT play_desktop
+11-12 10:33:12.765 I/System.out( 3500): SELFTEST SHOT touch_desktop
+11-12 10:33:16.525 I/System.out( 3500): SELFTEST SHOT confirm_desktop
+11-12 10:33:18.794 I/System.out( 3500): SELFTEST RUN DESKTOP points=7
+11-12 10:33:18.795 I/System.out( 3500): SELFTEST SHOT run_desktop
+11-12 10:33:25.524 I/System.out( 3500): SELFTEST SHOT reveal_desktop
+11-12 10:33:27.325 I/System.out( 3500): SELFTEST ANSWERS DESKTOP groups=5 names=43 list=43
+11-12 10:33:28.225 I/System.out( 3500): SELFTEST SHOT answers_desktop
+11-12 10:33:39.024 I/System.out( 3500): SELFTEST SHOT summary_desktop
+11-12 10:33:42.027 I/System.out( 3500): SELFTEST SHOT appearance_desktop
+11-12 10:33:45.829 I/System.out( 3500): SELFTEST SHOT config_desktop
+11-12 10:33:48.630 I/System.out( 3500): SELFTEST SHOT fetch_desktop
+11-12 10:33:51.630 I/System.out( 3500): SELFTEST SHOT looks_desktop
+11-12 10:33:54.701 I/System.out( 3500): SELFTEST SHOT menu_oracle
+11-12 10:34:00.305 I/System.out( 3500): SELFTEST SUGGEST 'Cape' -> null
+11-12 10:34:00.305 I/System.out( 3500): SELFTEST SHOT play_oracle
+11-12 10:34:02.337 I/System.out( 3500): SELFTEST SHOT touch_oracle
+11-12 10:34:06.196 I/System.out( 3500): SELFTEST SHOT confirm_oracle
+11-12 10:34:08.483 I/System.out( 3500): SELFTEST RUN ORACLE points=7
+11-12 10:34:08.483 I/System.out( 3500): SELFTEST SHOT run_oracle
+11-12 10:34:15.278 I/System.out( 3500): SELFTEST SHOT reveal_oracle
+11-12 10:34:17.083 I/System.out( 3500): SELFTEST ANSWERS ORACLE groups=5 names=56 list=56
+11-12 10:34:18.001 I/System.out( 3500): SELFTEST SHOT answers_oracle
+11-12 10:34:28.904 I/System.out( 3500): SELFTEST SHOT summary_oracle
+11-12 10:34:31.939 I/System.out( 3500): SELFTEST SHOT appearance_oracle
+11-12 10:34:35.740 I/System.out( 3500): SELFTEST SHOT config_oracle
+11-12 10:34:38.541 I/System.out( 3500): SELFTEST SHOT fetch_oracle
+11-12 10:34:41.542 I/System.out( 3500): SELFTEST SHOT looks_oracle
+11-12 10:34:44.640 I/System.out( 3500): SELFTEST SHOT menu_terminal_green
+11-12 10:34:47.741 I/System.out( 3500): SELFTEST SHOT menu_paper_night
+11-12 10:34:50.749 I/System.out( 3500): SELFTEST SHOT menu_neon_outrun
+11-12 10:34:53.774 I/System.out( 3500): SELFTEST SHOT menu_clean_dark
+11-12 10:34:56.813 I/System.out( 3500): SELFTEST SHOT menu_pixel_color
+11-12 10:34:59.859 I/System.out( 3500): SELFTEST SHOT menu_comic_pop
+11-12 10:35:02.907 I/System.out( 3500): SELFTEST SHOT menu_abyss_jelly
+11-12 10:35:05.964 I/System.out( 3500): SELFTEST SHOT menu_metro_platform
+11-12 10:35:09.063 I/System.out( 3500): SELFTEST SHOT menu_jackpot_velvet
+11-12 10:35:12.123 I/System.out( 3500): SELFTEST SHOT menu_chat_midnight
+11-12 10:35:15.144 I/System.out( 3500): SELFTEST SHOT menu_desktop_storm
+11-12 10:35:18.174 I/System.out( 3500): SELFTEST SHOT menu_oracle_parchment
+11-12 10:35:21.571 I/System.out( 3500): SELFTEST SHOT hyper_menu_terminal
+11-12 10:35:25.054 I/System.out( 3500): SELFTEST SHOT hyper_menu_paper
+11-12 10:35:28.466 I/System.out( 3500): SELFTEST SHOT hyper_menu_neon
+11-12 10:35:31.844 I/System.out( 3500): SELFTEST SHOT hyper_menu_clean
+11-12 10:35:35.252 I/System.out( 3500): SELFTEST SHOT hyper_menu_pixel
+11-12 10:35:38.631 I/System.out( 3500): SELFTEST SHOT hyper_menu_comic
+11-12 10:35:41.964 I/System.out( 3500): SELFTEST SHOT hyper_menu_abyss
+11-12 10:35:45.333 I/System.out( 3500): SELFTEST SHOT hyper_menu_metro
+11-12 10:35:48.696 I/System.out( 3500): SELFTEST SHOT hyper_menu_jackpot
+11-12 10:35:52.091 I/System.out( 3500): SELFTEST SHOT hyper_menu_chat
+11-12 10:35:55.418 I/System.out( 3500): SELFTEST SHOT hyper_menu_desktop
+11-12 10:35:58.806 I/System.out( 3500): SELFTEST SHOT hyper_menu_oracle
+11-12 10:36:04.046 I/System.out( 3500): SELFTEST RUN hyper points=85
+11-12 10:36:04.048 I/System.out( 3500): SELFTEST SHOT hyper_run_abyss
+11-12 10:36:11.980 I/System.out( 3500): SELFTEST RUN oracle flight from=114 points=85
+11-12 10:36:14.272 I/System.out( 3500): SELFTEST SHOT oracle_fly_1
+11-12 10:36:15.781 I/System.out( 3500): SELFTEST SHOT oracle_fly_2
+11-12 10:36:16.943 I/System.out( 3500): SELFTEST SHOT oracle_fly_3
+11-12 10:36:18.279 I/System.out( 3500): SELFTEST SHOT oracle_fly_4
+11-12 10:36:20.561 I/System.out( 3500): SELFTEST SHOT oracle_fly_5
+11-12 10:36:26.819 I/System.out( 3500): SELFTEST SHOT daily_terminal
+11-12 10:36:31.679 I/System.out( 3500): SELFTEST SHOT quit_paper
+11-12 10:36:36.465 I/System.out( 3500): SELFTEST SHOT quit_chat
+11-12 10:36:41.201 I/System.out( 3500): SELFTEST SHOT quit_desktop
+11-12 10:36:45.985 I/System.out( 3500): SELFTEST SHOT quit_metro
+11-12 10:36:49.770 I/System.out( 3500): SELFTEST SHOT friends_terminal
+11-12 10:36:53.999 I/System.out( 3500): SELFTEST SHOT meltdown_setup_terminal
+11-12 10:37:00.427 I/System.out( 3500): SELFTEST MELT TERMINAL phase=TURN players=6 prompt='Name a city in Switzerland'
+11-12 10:37:00.427 I/System.out( 3500): SELFTEST SHOT meltdown_terminal
+11-12 10:37:03.758 I/System.out( 3500): SELFTEST MELT event ok: CRON: Rüti
+11-12 10:37:04.579 I/System.out( 3500): SELFTEST MELT event ok: ANON: Bern
+11-12 10:37:08.327 I/System.out( 3500): SELFTEST MELT event ok: FORK: Riehen
+11-12 10:37:09.847 I/System.out( 3500): SELFTEST SHOT meltdown_terminal_turns
+11-12 10:37:12.509 I/System.out( 3500): SELFTEST MELT event ok: NULLPTR: Cham
+11-12 10:37:18.577 I/System.out( 3500): SELFTEST MELT event ok: BYTE: Lugano
+11-12 10:37:23.158 I/System.out( 3500): SELFTEST MELT event ok: STACK: Muri bei Bern
+11-12 10:37:29.322 I/System.out( 3500): SELFTEST MELT event ok: CRON: Carouge
+11-12 10:37:30.187 I/System.out( 3500): SELFTEST MELT event ok: ANON: Geneva
+11-12 10:37:33.998 I/System.out( 3500): SELFTEST MELT event heart: FORK: Chêne-Bougeries  +1 ♥
+11-12 10:37:39.941 I/System.out( 3500): SELFTEST MELT event ok: NULLPTR: Thun
+11-12 10:37:44.466 I/System.out( 3500): SELFTEST MELT event ok: BYTE: St. Gallen
+11-12 10:37:47.570 I/System.out( 3500): SELFTEST MELT event ok: STACK: Nyon
+11-12 10:37:48.329 I/System.out( 3500): SELFTEST MELT played answered=2 blasts=0 heat=0.06830001 round=1
+11-12 10:37:48.330 I/System.out( 3500): SELFTEST SHOT meltdown_terminal_late
+11-12 10:37:57.066 I/System.out( 3500): SELFTEST MELT ABYSS phase=TURN players=6 prompt='Name a classic novel'
+11-12 10:37:57.066 I/System.out( 3500): SELFTEST SHOT meltdown_abyss
+11-12 10:38:05.684 I/System.out( 3500): SELFTEST MELT COMIC phase=TURN players=6 prompt='Name a famous American football player'
+11-12 10:38:05.684 I/System.out( 3500): SELFTEST SHOT meltdown_comic
+11-12 10:38:14.336 I/System.out( 3500): SELFTEST MELT ORACLE phase=TURN players=6 prompt='Name a mathematician'
+11-12 10:38:14.336 I/System.out( 3500): SELFTEST SHOT meltdown_oracle
+11-12 10:38:18.862 I/System.out( 3500): SELFTEST PARTY host open=true status=open · waiting for players
+11-12 10:38:21.115 I/System.out( 3500): SELFTEST PARTY seated=[ANON, GUESTBOT] guest=seated · waiting for the host to start
+11-12 10:38:26.135 I/System.out( 3500): SELFTEST PARTY host phase=TURN guest phase=TURN guest players=3 prompt='Name a mushroom or fungus'
+11-12 10:38:26.135 I/System.out( 3500): SELFTEST SHOT party_metro
+11-12 10:38:49.194 I/System.out( 3500): SELFTEST PARTY after guestAnswers=3 hostSeq=91 guestSeq=90 used=9 event='GUESTBOT: Morel'
+11-12 10:38:51.708 I/System.out( 3500): SELFTEST SIGIL TERMINAL/amber 735x735 clean=ok camera=ok
+11-12 10:38:51.708 I/System.out( 3500): SELFTEST SHOT sigil_terminal
+11-12 10:38:54.897 I/System.out( 3500): SELFTEST SIGIL PAPER/newsprint 735x735 clean=ok camera=ok
+11-12 10:38:54.898 I/System.out( 3500): SELFTEST SHOT sigil_paper
+11-12 10:38:58.010 I/System.out( 3500): SELFTEST SIGIL NEON/synthwave 735x735 clean=ok camera=ok
+11-12 10:38:58.011 I/System.out( 3500): SELFTEST SHOT sigil_neon
+11-12 10:39:01.157 I/System.out( 3500): SELFTEST SIGIL CLEAN/light 735x735 clean=ok camera=ok
+11-12 10:39:01.157 I/System.out( 3500): SELFTEST SHOT sigil_clean
+11-12 10:39:04.221 I/System.out( 3500): SELFTEST SIGIL PIXEL/dmg 735x735 clean=ok camera=ok
+11-12 10:39:04.221 I/System.out( 3500): SELFTEST SHOT sigil_pixel
+11-12 10:39:07.219 I/System.out( 3500): SELFTEST SIGIL COMIC/rebel 735x735 clean=ok camera=ok
+11-12 10:39:07.219 I/System.out( 3500): SELFTEST SHOT sigil_comic
+11-12 10:39:10.401 I/System.out( 3500): SELFTEST SIGIL ABYSS/trench 735x735 clean=ok camera=ok
+11-12 10:39:10.401 I/System.out( 3500): SELFTEST SHOT sigil_abyss
+11-12 10:39:13.484 I/System.out( 3500): SELFTEST SIGIL METRO/board 735x735 clean=ok camera=ok
+11-12 10:39:13.484 I/System.out( 3500): SELFTEST SHOT sigil_metro
+11-12 10:39:16.605 I/System.out( 3500): SELFTEST SIGIL JACKPOT/felt 735x735 clean=ok camera=ok
+11-12 10:39:16.605 I/System.out( 3500): SELFTEST SHOT sigil_jackpot
+11-12 10:39:19.644 I/System.out( 3500): SELFTEST SIGIL CHAT/daylight 735x735 clean=ok camera=ok
+11-12 10:39:19.644 I/System.out( 3500): SELFTEST SHOT sigil_chat
+11-12 10:39:22.736 I/System.out( 3500): SELFTEST SIGIL DESKTOP/classic 735x735 clean=ok camera=ok
+11-12 10:39:22.736 I/System.out( 3500): SELFTEST SHOT sigil_desktop
+11-12 10:39:25.841 I/System.out( 3500): SELFTEST SIGIL ORACLE/midnight 735x735 clean=ok camera=ok
+11-12 10:39:25.841 I/System.out( 3500): SELFTEST SHOT sigil_oracle
+11-12 10:39:29.011 I/System.out( 3500): SELFTEST SIGIL TERMINAL/green 735x735 clean=ok camera=ok
+11-12 10:39:30.208 I/System.out( 3500): SELFTEST SIGIL PAPER/night 735x735 clean=ok camera=ok
+11-12 10:39:31.558 I/System.out( 3500): SELFTEST SIGIL NEON/outrun 735x735 clean=ok camera=ok
+11-12 10:39:32.832 I/System.out( 3500): SELFTEST SIGIL CLEAN/dark 735x735 clean=ok camera=ok
+11-12 10:39:34.100 I/System.out( 3500): SELFTEST SIGIL PIXEL/color 735x735 clean=ok camera=ok
+11-12 10:39:35.289 I/System.out( 3500): SELFTEST SIGIL COMIC/pop 735x735 clean=ok camera=ok
+11-12 10:39:36.637 I/System.out( 3500): SELFTEST SIGIL ABYSS/jelly 735x735 clean=ok camera=ok
+11-12 10:39:37.864 I/System.out( 3500): SELFTEST SIGIL METRO/platform 735x735 clean=ok camera=ok
+11-12 10:39:39.210 I/System.out( 3500): SELFTEST SIGIL JACKPOT/velvet 735x735 clean=ok camera=ok
+11-12 10:39:40.535 I/System.out( 3500): SELFTEST SIGIL CHAT/midnight 735x735 clean=ok camera=ok
+11-12 10:39:41.768 I/System.out( 3500): SELFTEST SIGIL DESKTOP/storm 735x735 clean=ok camera=ok
+11-12 10:39:43.062 I/System.out( 3500): SELFTEST SIGIL ORACLE/parchment 735x735 clean=ok camera=ok
+11-12 10:39:43.062 I/System.out( 3500): SELFTEST SIGIL SUMMARY clean=24/24 camera=24/24
+11-12 10:39:46.036 I/System.out( 3500): SELFTEST INVITE popup=1 status=SENDING after 2000ms
+11-12 10:39:46.937 I/System.out( 3500): SELFTEST SHOT invite_popup_paper
+11-12 10:39:48.988 I/System.out( 3500): SELFTEST INVITE answer status=DECLINED after 250ms
+11-12 10:39:50.834 I/System.out( 3500): SELFTEST FRIEND popup=1 requests=1 after 1250ms
+11-12 10:39:51.736 I/System.out( 3500): SELFTEST SHOT friend_request_chat
+11-12 10:39:53.819 I/System.out( 3500): SELFTEST FRIEND answer status=ACCEPTED name='ANON' friends=[ALEX:0, TESTFRIEND:1111]
+11-12 10:39:55.321 I/System.out( 3500): SELFTEST SHOT friends_chat
+11-12 10:39:58.873 I/System.out( 3500): SELFTEST SHOT menu_friends_oracle
+11-12 10:40:04.826 I/System.out( 3500): SELFTEST RANKED a=guest vs TEST-B b=host vs TEST-A after 4000ms
+11-12 10:40:06.326 I/System.out( 3500): SELFTEST SHOT ranked_chat
+11-12 10:40:08.682 I/System.out( 3500): SELFTEST stress 0
+11-12 10:40:09.686 I/System.out( 3500): SELFTEST stress 100
+11-12 10:40:10.893 I/System.out( 3500): SELFTEST stress 200
+11-12 10:40:12.085 I/System.out( 3500): SELFTEST stress 300
+11-12 10:40:13.429 I/System.out( 3500): SELFTEST stress 400
+11-12 10:40:14.673 I/System.out( 3500): SELFTEST stress 500
+11-12 10:40:15.791 I/System.out( 3500): SELFTEST stress done
+11-12 10:40:15.796 I/System.out( 3500): SELFTEST VERIFY 'Name a dog breed' 'Labrador' -> LOCAL(Labrador Retriever) (3ms)
+11-12 10:40:16.474 I/System.out( 3500): SELFTEST VERIFY 'Name a dog breed' 'Kai Ken' -> FOUND(Kai Ken, 27) HEISENBUG · not on the list · found online · 27 Wikipedias · 96 views/day · 22 mentions · fame 45% (676ms)
+11-12 10:40:17.016 I/System.out( 3500): SELFTEST VERIFY 'Name a dog breed' 'banana' -> MISSING (542ms)
+11-12 10:40:17.017 I/System.out( 3500): SELFTEST VERIFY 'Name a cheese' 'Tete de Moine' -> LOCAL(Tête de Moine) (0ms)
+11-12 10:40:18.106 I/System.out( 3500): SELFTEST VERIFY 'Name a cheese' 'toaster' -> MISSING (1089ms)
+11-12 10:40:21.361 I/System.out( 3500): SELFTEST SHOT fetch_running
+11-12 10:40:27.401 I/System.out( 3500): SELFTEST COLLECT added=4 library=32 failed=0 topics=[TV, GAMING] msg=+4 new lists
+11-12 10:40:28.261 I/System.out( 3500): SELFTEST SHOT fetch_done
+11-12 10:40:33.187 I/System.out( 3500): SELFTEST DISCARD geo.country gone=true back=true
+11-12 10:40:36.210 I/System.out( 3500): SELFTEST DISCARD wx.an.bat gone=true back=true
+11-12 10:40:37.048 I/System.out( 3500): SELFTEST SHOT menu_after_collect
+11-12 10:40:38.925 I/System.out( 3500): SELFTEST DONE ok
