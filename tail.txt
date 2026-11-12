@@ -1,0 +1,252 @@
+SEARCH list t.actor failed: request timed out
+SEARCH list t.pres 'Name a US president' size=60 people=true check=true
+SEARCH PASS t.pres    JFK            -> LISTED(John F. Kennedy)  (want LISTED, 608ms)
+SEARCH PASS t.pres    Honest Abe     -> LISTED(Abraham Lincoln)  (want LISTED, 508ms)
+SEARCH PASS t.pres    Obama          -> LOCAL(Barack Obama)  (want LISTED, 0ms)
+SEARCH PASS t.pres    Paris Hilton   -> MISSING(2 checked: Q47899:Paris Hilton/Paris hilton; Q47899:Paris Hilton; Q10752136:Paris Hilton; Q47899:Paris Hilton)  (want MISSING, 499ms)
+SEARCH list t.dog 'Name a dog breed' size=40 people=false check=true
+FAME ANIMALS      Kai Ken                      -> HEISENBUG   not on the list · found online · 27 Wikipedias · 96 views/day · 22 mentions · fame 45%
+SEARCH PASS t.dog     Kai Ken        -> FOUND(Kai Ken, 27 links, class search) HEISENBUG (+85)  (want ANY, 669ms)
+SEARCH PASS t.dog     banana         -> MISSING(17 checked: Q503:Banana; Q503:banana; Q25114695:Banana; Q4853816:Banana)  (want MISSING, 399ms)
+SEARCH PASS t.dog     Labrador       -> LOCAL(Labrador Retriever)  (want ANY, 0ms)
+SEARCH PASS t.dog     Shiba Inu      -> LOCAL(Shiba Inu)  (want ANY, 0ms)
+FAME ANIMALS      Bernese Mountain Dog         -> MEMORY_LEAK not on the list · found online · 42 Wikipedias · 1.2k views/day · 79 mentions · fame 61%
+SEARCH PASS t.dog     Berner Sennenhund -> FOUND(Bernese Mountain Dog, 42 links, class search) MEMORY_LEAK (+60)  (want ANY, 644ms)
+SEARCH PASS t.dog     Deutscher Schäferhund -> LISTED(German Shepherd)  (want ANY, 471ms)
+SEARCH list t.cheese 'Name a cheese' size=40 people=false check=true
+FAME FOOD & DRINK Tête de Moine                -> HEISENBUG   not on the list · found online · 26 Wikipedias · 109 views/day · 16 mentions · fame 45%
+SEARCH PASS t.cheese  Tete de Moine  -> FOUND(Tête de Moine, 26 links) HEISENBUG (+85)  (want ANY, 1496ms)
+SEARCH PASS t.cheese  Raclette       -> MISSING(6 checked: Q20748:Raclette; Q20748:raclette; Q104713274:Raclette; Q121992544:Raclette)  (want ANYMISS, 1924ms)
+SEARCH PASS t.cheese  toaster        -> MISSING(16 checked: Q14890:Toaster; Q14890:toaster; Q25095425:Time Travelling Toaster/Toaster; Q64534480:Toaster)  (want MISSING, 2400ms)
+SEARCH PASS t.cheese  cheese         -> MISSING(9 checked: Q10943:Cheese/CHEESE; Q10943:cheese; Q2717350:Cheese; Q37475228:Cheese)  (want MISSING, 770ms)
+SEARCH list t.mount 'Name a mountain' size=27 people=false check=true
+SEARCH PASS t.mount   Everest        -> LOCAL(Mount Everest)  (want ANY, 2ms)
+SEARCH PASS t.mount   Matterhorn     -> LOCAL(Matterhorn)  (want ANY, 0ms)
+FAME GEOGRAPHY    Eiger                        -> MEMORY_LEAK not on the list · found online · 58 Wikipedias · 356 views/day · 936 mentions · fame 66%
+SEARCH PASS t.mount   Eiger          -> FOUND(Eiger, 58 links, class search) MEMORY_LEAK (+60)  (want ANY, 808ms)
+FAME GEOGRAPHY    Säntis                       -> HEISENBUG   not on the list · found online · 31 Wikipedias · 29 views/day · 286 mentions · fame 50%
+SEARCH PASS t.mount   Säntis         -> FOUND(Säntis, 31 links, class search) HEISENBUG (+85)  (want ANY, 895ms)
+SEARCH PASS t.mount   Mount Doom     -> MISSING(4 checked: Q202886:Mordor/Mount Doom; Q982944:Mount Doom; Q137380160:Mount Doom; Q119584653:Mount Doom*)  (want MISSING, 882ms)
+SEARCH list t.lake 'Name a lake' size=30 people=false check=true
+FAME GEOGRAPHY    Geneva Lake                  -> LEGACY      not on the list · found online · 12 Wikipedias · 43 views/day · 175 mentions · fame 42% · name shared by 8 · common word
+SEARCH PASS t.lake    Geneva         -> FOUND(Geneva Lake, 12 links, class search) LEGACY (+30)  (want ANY, 984ms)
+FAME GEOGRAPHY    Lake Zurich                  -> MEMORY_LEAK not on the list · found online · 63 Wikipedias · 85 views/day · 953 mentions · fame 62%
+SEARCH PASS t.lake    Lake Zurich    -> FOUND(Lake Zurich, 63 links, class search) MEMORY_LEAK (+60)  (want ANY, 823ms)
+SEARCH PASS t.lake    Loch Ness      -> LOCAL(Loch Ness)  (want ANY, 0ms)
+FAME GEOGRAPHY    Walensee                     -> HEISENBUG   not on the list · found online · 35 Wikipedias · 20 views/day · 134 mentions · fame 47%
+SEARCH PASS t.lake    Walensee       -> FOUND(Walensee, 35 links, class search) HEISENBUG (+85)  (want ANY, 826ms)
+SEARCH PASS t.lake    Lake Wobegon   -> MISSING(1 checked: Q636455:Lake Wobegon; Q636455:Lake Wobegon; Q636455:Lake Wobegon)  (want MISSING, 584ms)
+SEARCH list t.film 'Name a famous film' size=8 people=false check=true
+FAME MOVIES       Turning Red                  -> LEGACY      not on the list · found online · 63 Wikipedias · 1k views/day · 603 mentions · fame 69%
+SEARCH PASS t.film    Turning Red    -> FOUND(Turning Red, 63 links, class search) LEGACY (+30)  (want ANY, 704ms)
+FAME MOVIES       Oppenheimer                  -> LEGACY      not on the list · found online · 81 Wikipedias · 6.4k views/day · 7.6k mentions · fame 86%
+SEARCH PASS t.film    Oppenheimer    -> FOUND(Oppenheimer, 81 links, class search) LEGACY (+30)  (want ANY, 942ms)
+FAME MOVIES       Spirited Away                -> LEGACY      not on the list · found online · 109 Wikipedias · 2.7k views/day · 1.2k mentions · fame 78%
+SEARCH PASS t.film    Spirited Away  -> FOUND(Spirited Away, 109 links) LEGACY (+30)  (want ANY, 922ms)
+FAME MOVIES       Rocky IV                     -> MEMORY_LEAK not on the list · found online · 50 Wikipedias · 1.5k views/day · 267 mentions · fame 67%
+SEARCH PASS t.film    Rocky 4        -> FOUND(Rocky IV, 50 links, class search) MEMORY_LEAK (+60)  (want ANY, 698ms)
+FAME MOVIES       Inside Out 2                 -> LEGACY      not on the list · found online · 52 Wikipedias · 1.6k views/day · 475 mentions · fame 69%
+SEARCH PASS t.film    Inside Out 2   -> FOUND(Inside Out 2, 52 links, class search) LEGACY (+30)  (want ANY, 903ms)
+SEARCH PASS t.film    Fortnite       -> MISSING(3 checked: Q349375:Fortnite/FORTNITE; Q349375:Fortnite; Q66067819:Fortnite; Q107383140:fortnitepy)  (want MISSING, 608ms)
+SEARCH list t.game 'Name a video game' size=27 people=false check=true
+FAME GAMING       The Legend of Zelda: Breath  -> MEMORY_LEAK not on the list · found online · 52 Wikipedias · 1.4k views/day · 299 mentions · fame 67%
+SEARCH PASS t.game    Breath of the Wild -> FOUND(The Legend of Zelda: Breath of the Wild, 52 links, class search) MEMORY_LEAK (+60)  (want ANY, 819ms)
+FAME GAMING       Final Fantasy VII            -> LEGACY      not on the list · found online · 49 Wikipedias · 1.6k views/day · 1.1k mentions · fame 71%
+SEARCH PASS t.game    Final Fantasy 7 -> FOUND(Final Fantasy VII, 49 links, class search) LEGACY (+30)  (want ANY, 906ms)
+FAME GAMING       Hollow Knight                -> MEMORY_LEAK not on the list · found online · 38 Wikipedias · 1.2k views/day · 185 mentions · fame 64%
+SEARCH PASS t.game    Hollow Knight  -> FOUND(Hollow Knight, 38 links, class search) MEMORY_LEAK (+60)  (want ANY, 727ms)
+FAME GAMING       Stardew Valley               -> MEMORY_LEAK not on the list · found online · 46 Wikipedias · 1.1k views/day · 184 mentions · fame 64%
+SEARCH PASS t.game    Stardew Valley -> FOUND(Stardew Valley, 46 links, class search) MEMORY_LEAK (+60)  (want ANY, 855ms)
+FAME GAMING       Balatro                      -> MEMORY_LEAK not on the list · found online · 26 Wikipedias · 664 views/day · 149 mentions · fame 58%
+SEARCH PASS t.game    Balatro        -> FOUND(Balatro, 26 links, class search) MEMORY_LEAK (+60)  (want ANY, 825ms)
+SEARCH PASS t.game    Barack Obama   -> MISSING(4 checked: Q76:Barack Obama/Barack obama; Q76:Barack Obama; Q649593:Barack Obama Sr.; Q47513588:Barack Obama)  (want MISSING, 634ms)
+SEARCH list t.tv 'Name a TV series' size=40 people=false check=true
+FAME TV           Arcane                       -> LEGACY      not on the list · found online · 45 Wikipedias · 1.7k views/day · 3.2k mentions · TV 99/100 · fame 83%
+SEARCH PASS t.tv      Arcane         -> FOUND(Arcane, 45 links, class search) LEGACY (+30)  (want ANY, 1256ms)
+FAME TV           Severance                    -> LEGACY      not on the list · found online · 36 Wikipedias · 6.4k views/day · 5k mentions · TV 100/100 · fame 87%
+SEARCH PASS t.tv      Severance      -> FOUND(Severance, 36 links, class search) LEGACY (+30)  (want ANY, 797ms)
+FAME TV           Bluey                        -> LEGACY      not on the list · found online · 63 Wikipedias · 2.4k views/day · 1.3k mentions · TV 97/100 · fame 83%
+SEARCH PASS t.tv      Bluey          -> FOUND(Bluey, 63 links, class search) LEGACY (+30)  (want ANY, 838ms)
+SEARCH list t.bball 'Name a famous basketball player' size=236 people=true check=true
+SEARCH PASS t.bball   Jordan         -> LOCAL(DeAndre Jordan)  (want LISTED, 8ms)
+SEARCH PASS t.bball   Shaq           -> LISTED(Shaquille O'Neal)  (want LISTED, 479ms)
+SEARCH api failed: HTTP 429 You are making too many requests to the API. Please follow the best practices at https://ww
+SEARCH PASS t.bball   Lebron         -> LISTED(LeBron James)  (want LISTED, 10282ms)
+SEARCH list t.frcity 'Name a city in France' size=30 people=false check=true
+SEARCH PASS t.frcity  Marseilles     -> LOCAL(Marseille)  (want ANY, 1ms)
+SEARCH api failed: HTTP 429 You are making too many requests to the API. Please follow the best practices at https://ww
+FAME GEOGRAPHY    Pézenas                      -> MEMORY_LEAK not on the list · found online · 49 Wikipedias · 29 views/day · 518 mentions · fame 55%
+SEARCH PASS t.frcity  Pezenas        -> FOUND(Pézenas, 49 links, class search) MEMORY_LEAK (+60)  (want ANY, 16621ms)
+SEARCH PASS t.frcity  Paris Hilton   -> MISSING(2 checked: Q47899:Paris Hilton/Paris hilton; Q47899:Paris Hilton; Q10752136:Paris Hilton; Q47899:Paris Hilton)  (want MISSING, 909ms)
+FAME GEOGRAPHY    Carcassonne                  -> LEGACY      not on the list · found online · 108 Wikipedias · 587 views/day · 2.5k mentions · fame 76%
+SEARCH PASS t.frcity  Carcassonne    -> FOUND(Carcassonne, 108 links, class search) LEGACY (+30)  (want ANY, 727ms)
+SEARCH list t.singer 'Name a famous singer' size=35 people=true check=true
+FAME MUSIC        Will Smith                   -> LEGACY      not on the list · found online · 137 Wikipedias · 6.3k views/day · 3.6k mentions · 228k fans · fame 77% · name shared by 7 · common word
+SEARCH PASS t.singer  Smith          -> FOUND(Will Smith, 137 links, class search) LEGACY (+30)  (want ANY, 1743ms)
+FAME MUSIC        Chappell Roan                -> LEGACY      not on the list · found online · 52 Wikipedias · 4k views/day · 679 mentions · 322k fans · fame 71%
+SEARCH PASS t.singer  Chappell Roan  -> FOUND(Chappell Roan, 52 links, class search) LEGACY (+30)  (want ANY, 888ms)
+FAME MUSIC        Phoebe Bridgers              -> LEGACY      not on the list · found online · 42 Wikipedias · 8.6k views/day · 725 mentions · 210k fans · fame 71%
+SEARCH PASS t.singer  Phoebe Bridgers -> FOUND(Phoebe Bridgers, 42 links, class search) LEGACY (+30)  (want ANY, 843ms)
+FAME MUSIC        Jorja Smith                  -> LEGACY      not on the list · found online · 29 Wikipedias · 1.6k views/day · 440 mentions · 848k fans · fame 69%
+SEARCH PASS t.singer  Jorja Smith    -> FOUND(Jorja Smith, 29 links, class search) LEGACY (+30)  (want ANY, 894ms)
+SEARCH PASS t.singer  Smiht          -> MISSING(no candidates)  (want MISSING, 289ms)
+SEARCH list t.band 'Name a band' size=39 people=false check=true
+FAME MUSIC        Khruangbin                   -> MEMORY_LEAK not on the list · found online · 20 Wikipedias · 744 views/day · 186 mentions · 99k fans · fame 55%
+SEARCH PASS t.band    Khruangbin     -> FOUND(Khruangbin, 20 links, class search) MEMORY_LEAK (+60)  (want ANY, 872ms)
+FAME MUSIC        Black Country, New Road      -> HEISENBUG   not on the list · found online · 21 Wikipedias · 748 views/day · 155 mentions · 23k fans · fame 50%
+SEARCH PASS t.band    Black Country, New Road -> FOUND(Black Country, New Road, 21 links, class search) HEISENBUG (+85)  (want ANY, 973ms)
+FAME MUSIC        Arctic Monkeys               -> LEGACY      not on the list · found online · 70 Wikipedias · 1.9k views/day · 1.6k mentions · 4.9M fans · fame 81%
+SEARCH PASS t.band    Arctic Monkeys -> FOUND(Arctic Monkeys, 70 links, class search) LEGACY (+30)  (want ANY, 740ms)
+SEARCH list t.novel 'Name a novel' size=40 people=false check=true
+FAME BOOKS & ART  Piranesi                     -> MEMORY_LEAK not on the list · found online · 10 Wikipedias · 2.2k views/day · 474 mentions · 525 readers · fame 63%
+SEARCH PASS t.novel   Piranesi       -> FOUND(Piranesi, 10 links, class search) MEMORY_LEAK (+60)  (want ANY, 1062ms)
+FAME BOOKS & ART  The Secret History           -> LEGACY      not on the list · found online · 25 Wikipedias · 1.5k views/day · 4k mentions · 2k readers · fame 74%
+SEARCH PASS t.novel   The Secret History -> FOUND(The Secret History, 25 links, class search) LEGACY (+30)  (want ANY, 1374ms)
+FAME BOOKS & ART  Dune                         -> LEGACY      not on the list · found online · 77 Wikipedias · 3.3k views/day · 11k mentions · 4.5k readers · fame 86%
+SEARCH PASS t.novel   Dune           -> FOUND(Dune, 77 links, class search) LEGACY (+30)  (want ANY, 1581ms)
+SEARCH list t.song 'Name a hit single' size=1 people=false check=true
+FAME PEOPLE       Espresso                     -> MEMORY_LEAK not on the list · found online · 25 Wikipedias · 321 views/day · 2.5k mentions · fame 62%
+SEARCH PASS t.song    Espresso       -> FOUND(Espresso, 25 links, class search) MEMORY_LEAK (+60)  (want ANY, 739ms)
+FAME PEOPLE       Wonderwall                   -> LEGACY      not on the list · found online · 1 Wikipedia · 0 views/day · 766 mentions · fame 14% · name shared by 3 · namesake of a famous name
+SEARCH PASS t.song    Wonderwall     -> FOUND(Wonderwall, 1 links, class search) LEGACY (+30)  (want ANY, 731ms)
+FAME PEOPLE       Bohemian Rhapsody / I’m in L -> MEMORY_LEAK not on the list · found online · 0 Wikipedias · 0 views/day · 0 mentions · fame 0% · name shared by 5
+SEARCH PASS t.song    Bohemian Rhapsody -> FOUND(Bohemian Rhapsody / I’m in Love With My Car, 0 links, class search) MEMORY_LEAK (+60)  (want ANY, 606ms)
+SEARCH SUMMARY pass=60 fail=5
+POOL checking 112 templates (87 qualifier lists first)
+POOL wx.bk.s.shakespeare            OK        207 fam=  27    359ms [BOOKS & ART] Name a play or poem by Shakespeare :: Hamlet | Romeo and Juliet | Macbeth | King Lear | Othello | A Midsummer Night's Dream | Julius Caesar | The Tempest
+POOL wx.bk.s.oldnovel               OK        295 fam=  75   5515ms [BOOKS & ART] Name a novel published before 1900 :: Don Quixote | Alice's Adventures in Wonderland | Dream of the Red Chamber | Crime and Punishment | Anna Karenina | Pride and Prejudice | Robinson Crusoe | Les Misérables
+POOL wx.wo.s.biglanguage            OK        140 fam= 110   4100ms [WORDS] Name a language with more than 10 million speakers :: English | German | French | Spanish | Russian | Arabic | Italian | Japanese
+POOL wx.sc.s.comet                  OK        593 fam=  13   7624ms [SCIENCE niche] Name a comet :: Halley's Comet | Comet Hale-Bopp | 67P/Churyumov–Gerasimenko | Comet Shoemaker–Levy 9 | C/2020 F3 (NEOWISE) | 2060 Chiron | C/2012 S1 | Comet Hyakutake
+POOL wx.sc.s.moons                  OK        250 fam= 119   1101ms [SCIENCE] Name a moon of Jupiter or Saturn :: Titan | Europa | Io | Ganymede | Callisto | Enceladus | Mimas | Rhea
+POOL wx.sc.s.ium                    OK        135 fam=  82   3594ms [SCIENCE] Name a chemical element ending in -ium :: aluminium | helium | lithium | sodium | calcium | beryllium | magnesium | potassium
+POOL wx.bk.s.oldpainting            OK        527 fam=  15  33197ms [BOOKS & ART] Name a painting made before 1700 :: Mona Lisa | Girl with a Pearl Earring | The Night Watch | Las Meninas | The Birth of Venus | Salvator Mundi | Lady with an Ermine | The Garden of Earthly Delights
+POOL wx.tc.s.oldlang                OK         96 fam=  17   2183ms [TECH] Name a programming language created before 1980 :: C | SQL | Pascal | BASIC | Fortran | assembly language | Lisp | COBOL
+POOL wx.tc.s.oldsite                OK        259 fam=  48  15277ms [TECH] Name a website launched before 2005 :: Facebook | Skype | Wikinews | Forbes | Time | The Washington Post | PayPal | Myspace
+POOL wx.tc.s.microsoft              OK        327 fam=  71   4881ms [TECH] Name a Microsoft product :: Microsoft Windows | Minecraft | C# | Windows 7 | Windows 10 | Internet Explorer | Microsoft Excel | USB
+POOL wx.tc.s.google                 OK        255 fam=  48   2536ms [TECH] Name a Google product or service :: YouTube | Android | Google Search | Google Chrome | Google Translate | Google Maps | Google Play | Google Earth
+POOL wx.br.s.japanco                OK        167 fam=  35   2453ms [BRANDS] Name a Japanese company :: Toyota | Nintendo | Sony Group | Honda | Yamaha Motor Company | Nissan | Suzuki Motor Corporation | Mazda
+POOL wx.tc.s.apple                  OK        328 fam=  45   4330ms [TECH] Name an Apple product or app :: iPhone | macOS | Mac | USB | iPod | Safari | Mac operating system | Apple Watch
+POOL wx.br.s.euairline              OK        587 fam=  43    702ms [BRANDS] Name a European airline :: Lufthansa | Turkish Airlines | Air France | British Airways | KLM | Ryanair | Aeroflot | Norwegian Air Shuttle
+POOL wx.br.s.carit                  OK         97 fam=   7    213ms [BRANDS] Name an Italian car maker :: Ferrari | Fiat | Lamborghini | Alfa Romeo | Maserati | Lancia | Pagani Automobili | Abarth
+POOL wx.br.s.carde                  OK        141 fam=  11    496ms [BRANDS] Name a German car maker :: Volkswagen | BMW | Audi AG | Porsche | Opel | Hyundai Motor Company | Mercedes-Benz Group | Volkswagen Group
+POOL wx.hi.s.pyramid                OK         67 fam=   6    257ms [HISTORY niche] Name an Egyptian pyramid :: Great Pyramid of Giza | Pyramid of Djoser | Pyramid of Khafre | Pyramid of Menkaure | Red Pyramid | Bent Pyramid | Pyramid of Unas | Pyramid of Neferirkare
+POOL wx.br.s.oldcompany             OK        159 fam=  52   7294ms [BRANDS] Name a company founded before 1900 :: Nintendo | Juventus FC | Nokia | Nestlé | Dutch East India Company | Koninklijke Philips NV | Pfizer | Shell
+POOL wx.hi.s.ww2                    OK        456 fam=  36   4966ms [HISTORY] Name a battle or operation of World War II :: Battle of Stalingrad | Attack on Pearl Harbor | 1939 Invasion of Poland | Battle of France | Normandy landings | Battle of Berlin | Battle of Kursk | Siege of Leningrad
+POOL wx.hi.s.ww1                    OK        227 fam=   9    490ms [HISTORY] Name a battle of World War I :: Battle of Verdun | Battle of the Somme | First Battle of the Marne | Battle of Tannenberg | Third Battle of Ypres | Battle of Caporetto | Battle of Cambrai | Battle of Liège
+POOL wx.sp.s.oldclub                OK        369 fam= 128   1710ms [SPORT] Name a football club founded before 1900 :: Manchester United F.C. | Liverpool F.C. | Juventus FC | AC Milan | Arsenal F.C. | Manchester City F.C. | Tottenham Hotspur F.C. | Aston Villa F.C.
+POOL wx.sp.s.bigstadium             OK        329 fam=  82   4127ms [SPORT] Name a stadium with more than 50,000 seats :: Colosseum | Camp Nou | Maracanã Stadium | Old Trafford | Bernabéu | Allianz Arena | Anfield | Wembley Stadium
+POOL wx.hi.s.war1800s               OK        132 fam=  35  29862ms [HISTORY] Name a war that began in the 1800s :: American Civil War | Crimean War | Franco-Prussian War | War of 1812 | Spanish–American War | French invasion of Russia | First Sino-Japanese War | First Opium War
+POOL wx.lm.s.unescoafrica           OK        168 fam=  73   1318ms [LANDMARKS] Name a UNESCO World Heritage Site in Africa :: Rabat | Timbuktu | Victoria Falls | Axum | Kairouan | Virunga National Park | Serengeti National Park | Great Zimbabwe
+POOL wx.lm.s.gothic                 OK        114 fam=  10    242ms [LANDMARKS] Name a Gothic cathedral :: Church of the Holy Sepulchre | Florence Cathedral | Tournai Cathedral | Wawel Cathedral | Lala Mustafa Pasha Mosque | Riga Cathedral | York Minster | Nidaros Cathedral
+POOL wx.lm.s.busyairport            OK         63 fam=  58   2177ms [LANDMARKS] Name an airport with more than 30 million passengers a year :: Tan Son Nhat International Airport | London Heathrow Airport | Amsterdam Schiphol Airport | Paris-Charles de Gaulle Airport | Frankfurt Airport | John F. Kennedy International Airport | Dubai International Airport | Beijing Capital International Airport
+POOL wx.lm.s.longbridge             OK        461 fam=  24   1102ms [LANDMARKS] Name a bridge longer than 1 km :: Golden Gate Bridge | Brooklyn Bridge | Millau Viaduct | Øresund Bridge | Akashi Kaikyō Bridge | Sydney Harbour Bridge | Crimean Bridge | Aqueduct of Segovia
+POOL wx.lm.s.supertall              OK        189 fam=  36   1564ms [LANDMARKS] Name a skyscraper taller than 300 m :: Burj Khalifa | Empire State Building | Willis Tower | Petronas Towers | Taipei 101 | Chrysler Building | One World Trade Center | Abeno Harukas
+POOL wx.ho.s.king                   OK        207 fam=   3    679ms [HORROR] Name a Stephen King book or story :: It | The Shining | Carrie | The Stand | Misery | 'Salem's Lot | The Green Mile | The Dark Tower
+POOL wx.ho.s.horror1980s            OK        297 fam=  21   1410ms [HORROR] Name a horror film from the 1980s :: Blue Velvet | The Name of the Rose | A Nightmare on Elm Street | Friday the 13th | The Fly | Child's Play | Friday the 13th Part III | Friday the 13th Part 2
+POOL wx.pc.s.dc                     OK        196 fam=  13  12778ms [POP CULTURE] Name a DC Comics character :: Batman | Superman | Wonder Woman | The Joker | Catwoman | Flash | Aquaman | Harley Quinn
+POOL wx.tv.s.tenseasons             OK        299 fam=  44    450ms [TV] Name a TV series with 10 or more seasons :: The Big Bang Theory | Friends | Doctor Who | Sesame Street | The X-Files | The Walking Dead | Grey's Anatomy | Supernatural
+POOL wx.tv.s.series2010s            OK        179 fam=  83   5670ms [TV] Name a TV series that started in the 2010s :: Game of Thrones | Liv and Maddie | Stranger Things | Sherlock | Money Heist | Victorious | Black Mirror | American Horror Story
+POOL wx.tv.s.sitcom1990s            OK        104 fam=   6    743ms [TV] Name a sitcom that started in the 1990s :: Friends | Mr. Bean | Sex and the City | Will & Grace | Frasier | Everybody Loves Raymond | The Nanny | Sabrina the Teenage Witch
+POOL wx.tv.s.netflix                OK        370 fam=  19   1580ms [TV] Name a Netflix series :: Squid Game | Stranger Things | Black Mirror | Wednesday | The Crown | House of Cards | Sex Education | Narcos
+POOL wx.tv.s.hbo                    OK        127 fam=  16    606ms [TV] Name an HBO series :: Game of Thrones | Sesame Street | The Sopranos | Sex and the City | The Last of Us | House of the Dragon | Westworld | True Blood
+POOL wx.gm.s.gamecube               OK        422 fam=  10   1705ms [GAMING] Name a GameCube game :: The Sims | The Sims 2 | Resident Evil 4 | Need for Speed: Most Wanted | Need for Speed: Carbon | Resident Evil 2 | The Legend of Zelda: Ocarina of Time | Resident Evil 3: Nemesis
+POOL wx.gm.s.ds                     OK        589 fam=  10  15123ms [GAMING] Name a Nintendo DS game :: The Sims 3 | The Sims 2 | Call of Duty: Modern Warfare 3 | Need for Speed: Most Wanted | Resident Evil | Need for Speed: Carbon | Myst | Sonic the Hedgehog
+POOL wx.lm.s.unescosam              FAIL    65002ms HttpTimeoutException: request timed out
+POOL wx.gm.s.nes                    OK        560 fam=   9   2186ms [GAMING] Name an NES game :: Super Mario Bros. | Space Invaders | Super Mario Bros. 3 | Super Mario Bros. 2 | Final Fantasy | Super Mario Bros.: The Lost Levels | Mario Bros. | Zelda II: The Adventure of Link
+POOL wx.gm.s.ps1                    OK        563 fam=  15    330ms [GAMING] Name a PlayStation (PS1) game :: Space Invaders | Metal Gear Solid | Final Fantasy VII | Resident Evil | Civilization | Tomb Raider | Final Fantasy VIII | Diablo
+POOL wx.gm.s.wii                    OK        583 fam=  16   1488ms [GAMING] Name a Wii game :: Call of Duty 4: Modern Warfare | The Sims 3 | Call of Duty: World at War | Resident Evil 4 | Call of Duty: Modern Warfare 3 | Wii Sports | Call of Duty 3 | Need for Speed: Carbon
+POOL wx.gm.s.nintendo               OK        563 fam=  14   2796ms [GAMING] Name a game published by Nintendo :: Super Mario Bros. | Pokémon Go | The Legend of Zelda: Breath of the Wild | Super Mario 64 | Super Mario Bros. 3 | Wii Sports | Mario Kart Wii | Super Mario Odyssey
+POOL wx.gm.s.ps2                    OK        559 fam=  22  16520ms [GAMING] Name a PlayStation 2 game :: Grand Theft Auto: San Andreas | Grand Theft Auto: Vice City | Grand Theft Auto III | Half-Life | The Sims | Age of Empires II: The Age of Kings | The Sims 2 | Max Payne
+POOL wx.gm.s.2000s                  OK        535 fam=  66  37522ms [GAMING] Name a video game from the 2000s :: Grand Theft Auto: San Andreas | Roblox | Grand Theft Auto IV | Grand Theft Auto: Vice City | Grand Theft Auto III | Team Fortress 2 | League of Legends | Half-Life 2
+POOL wx.gm.s.pre1990                OK        383 fam=  12  33359ms [GAMING] Name a video game released before 1990 :: Super Mario Bros. | Pong | Space Invaders | Super Mario Bros. 3 | Spacewar! | Super Mario Bros. 2 | Final Fantasy | Minesweeper
+POOL wx.gm.s.1990s                  FAIL    65004ms HttpTimeoutException: request timed out
+POOL wx.mu.s.winds                  OK        320 fam=  31   2098ms [MUSIC] Name a wind instrument :: flute | trumpet | saxophone | clarinet | pipe organ | trombone | oboe | tuba
+POOL wx.mu.s.strings                OK        374 fam=  32   1832ms [MUSIC] Name a string instrument :: guitar | violin | cello | harp | viola | harpsichord | electric guitar | bass guitar
+POOL wx.mu.s.percussion             OK        231 fam=  21   7470ms [MUSIC] Name a percussion instrument :: drum | bell | xylophone | drum kit | tambourine | timpani | gong | tuning fork
+POOL wx.mu.s.album1990s             OK        596 fam=  14   8020ms [MUSIC] Name an album released in the 1990s :: Nevermind | Innuendo | Metallica | Dangerous | OK Computer | Made in Heaven | In Utero | The Division Bell
+POOL wx.mv.s.korean                 OK        348 fam=   4   2105ms [MOVIES] Name a South Korean film :: Parasite | Oldboy | Train to Busan | Snowpiercer | Mickey 17 | Memories of Murder | Bugonia | Spring, Summer, Fall, Winter... and Spring
+POOL wx.mv.s.1990s                  OK        367 fam= 268  39825ms [MOVIES] Name a film from the 1990s :: The Silence of the Lambs | Star Wars: Episode I – The Phantom Menace | Life Is Beautiful | The Green Mile | Léon: The Professional | Reservoir Dogs | The Sixth Sense | The Usual Suspects
+POOL wx.mu.s.album1970s             OK        538 fam=  23 100975ms [MUSIC] Name an album released in the 1970s :: A Night at the Opera | The Dark Side of the Moon | Let It Be | Queen | Wish You Were Here | The Wall | Sheer Heart Attack | News of the World
+POOL wx.mv.s.pre1960                OK        573 fam= 171  15690ms [MOVIES] Name a film released before 1960 :: Casablanca | Citizen Kane | The Great Dictator | Some Like It Hot | Saludos Amigos | Seven Samurai | The Three Caballeros | Battleship Potemkin
+POOL wx.mv.s.billion                SMALL      21 fam=  54   1868ms [MOVIES] Name a film that made more than $1 billion :: Frozen | Star Wars: Episode I – The Phantom Menace | Avengers: Endgame | Joker | Frozen 2 | Barbie | Iron Man 3 | Spider-Man: Far From Home
+POOL wx.mv.s.palme                  OK         74 fam=  39    644ms [MOVIES] Name a film that won the Palme d'Or :: Parasite | The Pianist | La Dolce Vita | The Piano | The Mission | Amour | Blue Is the Warmest Colour | The Leopard
+POOL wx.mv.s.1980s                  OK        258 fam= 169  80105ms [MOVIES] Name a film from the 1980s :: Blade Runner | Scarface | The Last Emperor | First Blood | Tootsie | Dune | Blue Velvet | The Living Daylights
+POOL wx.na.s.africapark             OK        307 fam=  21  12073ms [NATURE] Name a national park in Africa :: Virunga National Park | Serengeti National Park | Niokolo-Koba National Park | Comoé National Park | Garamba National Park | Salonga National Park | Kahuzi-Biéga National Park | W National Park
+POOL wx.an2.s.antelope              OK         75 fam=  37   6489ms [ANIMALS] Name an antelope or gazelle :: impala | Saiga | Antilope cervicapra | springbok | Addax nasomaculatus | waterbuck | gerenuk | hartebeest
+POOL wx.an2.s.venomsnake            FAIL    10024ms IllegalStateException: HTTP 429 
+POOL wx.an2.s.butterfly             OK        599 fam=  27  21319ms [ANIMALS niche] Name a butterfly :: Pieris brassicae | Vanessa atalanta | Papilio machaon | Danaus plexippus | Aglais io | Parnassius apollo | Anthocharis cardamines | Aglais urticae
+POOL wx.an2.s.decapod               OK        507 fam=   8  12443ms [ANIMALS] Name a crab, lobster or shrimp :: Coconut crab | Astacus astacus | Homarus gammarus | Japanese spider crabs | Nephrops norvegicus | Carcinus maenas | Eriocheir sinensis | Callinectes sapidus
+POOL wx.an2.s.flightless            OK        228 fam=  28  23277ms [ANIMALS] Name a flightless bird :: Common ostrich | Emu | Emperor Penguin | King Penguin | Adelie penguin | African Penguin | Little Penguin | Gentoo Penguin
+POOL wx.an2.s.lizard                OK        600 fam=  21  13351ms [ANIMALS] Name a lizard species :: Komodo dragon | Anguis fragilis | green iguana | Gila monster | Viviparous lizard | marine iguana | Sand lizard | Asian water monitor
+POOL wx.an2.s.marsupial             OK        260 fam=   8    834ms [ANIMALS] Name a marsupial :: Thylacine | Tasmanian devil | Didelphis virginiana | numbat | water opossum | greater bilby | tiger quoll | Eastern quoll
+POOL wx.ge.s.caribisland            OK        234 fam=  19    282ms [GEOGRAPHY] Name a Caribbean island :: Sint Eustatius | Navassa Island | Trinidad | Antigua | Tobago | Isla de la Juventud | Nevis | Saint Kitts
+POOL wx.an2.s.spider                OK        599 fam=   4  32777ms [ANIMALS niche] Name a spider species :: Araneus diadematus | Argiope bruennichi | black widow spider | Goliath birdeater | Latrodectus tredecimguttatus | Pholcus phalangioides | Lycosa tarantula | Atrax robustus
+POOL wx.ge.s.longriver              OK        239 fam= 169  12984ms [GEOGRAPHY] Name a river longer than 1,000 km :: Nile | Amazon River | Danube | Rhine | Volga | Ganges | Mississippi River | Yangtze River
+POOL wx.ge.s.medisland              OK        580 fam= 103  27177ms [GEOGRAPHY] Name an island in the Mediterranean :: Crete | Mallorca | Rhodes | Ibiza | Corfu | Elba | Lesbos | Capri
+POOL wx.ge.s.volcano5000            OK        123 fam=  13   2639ms [GEOGRAPHY] Name a volcano higher than 5,000 m :: Mount Kilimanjaro | Mount Ararat | Chimborazo | Damavand | Popocatépetl | Cotopaxi volcano | Mount Kazbek | Llullaillaco
+POOL wx.ge.s.southcapital           OK         44 fam=  44    957ms [GEOGRAPHY] Name a national capital south of the equator :: Santiago | Buenos Aires | Jakarta | Nairobi | Brasília | Lima | Cape Town | Canberra
+POOL wx.ge.s.islandnation           OK         43 fam=  43   1738ms [GEOGRAPHY] Name an island country :: Japan | United Kingdom | Indonesia | Iceland | New Zealand | Ireland | Philippines | Singapore
+POOL wx.ge.s.monarchy               OK         35 fam=  35   6758ms [GEOGRAPHY] Name a country that is a monarchy :: Japan | Australia | Canada | Spain | United Kingdom | Norway | Sweden | Thailand
+POOL wx.ge.s.french                 OK         28 fam=  28   1188ms [GEOGRAPHY] Name a country where French is an official language :: France | Canada | Switzerland | Belgium | Luxembourg | Democratic Republic of the Congo | Madagascar | Monaco
+POOL wx.ge.s.english                OK         58 fam=  58    236ms [GEOGRAPHY] Name a country where English is an official language :: India | Australia | Canada | United Kingdom | South Africa | Pakistan | New Zealand | Nigeria
+POOL wx.ge.s.noa                    OK         31 fam=  31   1051ms [GEOGRAPHY] Name a country without the letter A in its name :: Turkey | Mexico | United Kingdom | Egypt | Belgium | Chile | Greece | Sweden
+POOL wx.ge.s.startss                OK         26 fam=  26   1669ms [GEOGRAPHY] Name a country whose name starts with S :: Spain | Switzerland | Sweden | South Africa | South Korea | Serbia | Saudi Arabia | Slovakia
+POOL wx.ge.s.bigisland              OK         86 fam=  62  23165ms [GEOGRAPHY] Name an island larger than 10,000 km² :: Great Britain | Ireland | Java | Sumatra | New Guinea | Borneo | Kyushu | Shikoku
+POOL wx.ge.s.hugecountry            OK         31 fam=  31   5118ms [GEOGRAPHY] Name a country larger than 1 million km² :: United States | Russia | India | Mexico | People's Republic of China | Australia | Canada | Egypt
+POOL wx.ge.s.bigcountry             OK         28 fam=  28   1346ms [GEOGRAPHY] Name a country with more than 50 million people :: Turkey | France | United States | Russia | Japan | Italy | Germany | India
+POOL wx.ge.s.endsia                 OK         38 fam=  38   8076ms [GEOGRAPHY] Name a country whose name ends in -ia :: Russia | India | Australia | Albania | Algeria | Austria | Colombia | Indonesia
+POOL wx.ge.s.tinycountry            OK         38 fam=  38   4496ms [GEOGRAPHY] Name a country with fewer than 1 million people :: Iceland | Vatican City | Luxembourg | Andorra | Malta | Montenegro | Monaco | Liechtenstein
+POOL wx.ge.s.city10m                OK         30 fam=  30  14488ms [GEOGRAPHY] Name a city with more than 10 million people :: Moscow | Beijing | Tokyo | Istanbul | Ho Chi Minh City | São Paulo | Jakarta | Shanghai
+POOL wx.ge.s.samcity1m              FAIL    65003ms HttpTimeoutException: request timed out
+POOL wx.ge.s.africacity1m           FAIL    65002ms HttpTimeoutException: request timed out
+POOL wx.ge.s.eutown50k              OK        891 fam= 900  17877ms [GEOGRAPHY] Name a town or city in Europe with more than 50,000 people :: Paris | London | Rome | Moscow | Berlin | Vienna | Helsinki | Istanbul
+POOL wx.mv.by.actor.fr              OK        591 fam= 212  23877ms [MOVIES people] Name a famous French actor :: Albert Camus | Sarah Bernhardt | Brigitte Bardot | Édith Piaf | Alain Delon | Avril Lavigne | Sophia Loren | Charlotte Rampling
+POOL wx.mv.by.actor.jp              OK        598 fam=  18  18149ms [MOVIES people] Name a famous Japanese actor :: Toshirō Mifune | Yukio Mishima | Ichirō Mizuki | Takeshi Kitano | Momoko Kōchi | Zeami Motokiyo | Ken Watanabe | Mackenyu
+POOL wx.mv.by.filmdirector.kr       OK        186 fam=   5   1500ms [MOVIES people] Name a famous South Korean film director :: Kim Ki-duk | Bong Joon-ho | Moon Geun-young | Park Chan-wook | Lee Jung-jae | Koo Hye-sun | Hwang Dong-hyeok | Jenna Ushkowitz
+POOL wx.mu.by.singer.kr             OK        592 fam=  42   2127ms [MUSIC people] Name a famous South Korean singer :: Psy | Jennie | Yun Hyon-seok | Lee Min-ho | Jisoo | Jung Kook | IU | V
+POOL wx.mu.by.singer.br             OK        506 fam=  19   5219ms [MUSIC people] Name a famous Brazilian singer :: Hebe Camargo | Marjorie Estiano | Antônio Carlos Jobim | Ronald Golias | Carmen Miranda | Melanie Martinez | João Gilberto | Dante
+POOL wx.mu.by.rapper.us             OK        520 fam= 121   2571ms [MUSIC people] Name a famous American rapper :: Eminem | Will Smith | Tupac Shakur | IShowSpeed | Mark Wahlberg | Snoop Dogg | John Cena | Joaquin Phoenix
+POOL wx.fd.by.chef.fr               OBSCURE    65 fam=   2   3138ms [PEOPLE people] Name a famous French chef :: Auguste Escoffier | Marie-Antoine Carême | Emmanuel Mounier | Paul Bocuse | Joël Robuchon | Alain Ducasse | François Pierre La Varenne | Michel Roux
+POOL wx.mu.by.rapper.fr             OBSCURE    82 fam=   1  10852ms [MUSIC people] Name a famous French rapper :: Aya Nakamura | Booba | Ana Tijoux | MC Solaar | Orelsan | Keny Arkana | Gaël Faye | La Fouine
+POOL wx.fd.by.chef.it               SMALL      13 fam=   0   7325ms [PEOPLE people] Name a famous Italian chef :: Massimo Bottura | Antonio Carluccio | Francesco Bellissimo | Lidia Bastianich | Gianfranco Chiarini | Andy Luotto | Nadia Santini | Gualtiero Marchesi
+POOL wx.sp.by.tennisplayer.es       OK        168 fam=  14   7392ms [SPORT people] Name a famous Spanish tennis player :: Rafael Nadal | Diego Forlán | Carlos Alcaraz | Garbiñe Muguruza | Pompeu Fabra | Arantxa Sánchez Vicario | Juan Carlos Ferrero | Carlos Moyá
+POOL wx.sp.by.basketballplayer.us   OK        528 fam= 100  17577ms [SPORT people] Name a famous American basketball player :: LeBron James | Michael Clarke Duncan | Shaquille O'Neal | Michael Crichton | Carl Lewis | Nick Nolte | Wilt Chamberlain | Bill Russell
+POOL wx.sp.by.cyclist.be            OK        599 fam=   3  12335ms [SPORT people] Name a famous Belgian cyclist :: Eddy Merckx | Remco Evenepoel | Philippe Gilbert | Wout van Aert | Greg Van Avermaet | Tom Boonen | Philippe Thys | Wouter Weylandt
+POOL wx.sp.by.racingdriver.de       OBSCURE    54 fam=   2    117ms [SPORT people] Name a famous German racing driver :: Michael Fassbender | Mick Schumacher | Kurt Ahrens | Sabine Schmitz | Hans Stuck | Sophia Flörsch | Maximilian Günther | Kelvin van der Linde
+POOL wx.sp.by.boxer.mx              OBSCURE   170 fam=   1   2755ms [SPORT people] Name a famous Mexican boxer :: Oscar De La Hoya | Canelo Álvarez | Julio César Chávez | Andy Ruiz Jr. | Juan Manuel Márquez Méndez | Ricardo Delgado | Erik Morales | Fidel Ortiz
+POOL wx.sp.by.swimmer.au            OK        330 fam=   4   6553ms [SPORT people] Name a famous Australian swimmer :: Ian Thorpe | Katherine Langford | Stephanie Rice | Dawn Fraser | Cody Simpson | Ariarne Titmus | Annette Kellermann | Emma McKeon
+POOL wx.bk.by.poet.ie               OK        100 fam=  13   5953ms [PEOPLE niche people] Name a famous Irish poet :: Oscar Wilde | James Joyce | Samuel Beckett | Seamus Heaney | Michael D. Higgins | Iris Murdoch | Douglas Hyde | Seán O'Casey
+POOL wx.sp.by.chessplayer.ru        OK        240 fam=  15   7676ms [SPORT people] Name a famous Russian chess player :: Garry Kasparov | Anatoly Karpov | Boris Spassky | Mikhail Botvinnik | Vladimir Kramnik | Vasily Smyslov | Sergey Karjakin | Ian Nepomniachtchi
+POOL wx.bk.by.philosopher.gr        OBSCURE    30 fam=   2   7514ms [PEOPLE niche people] Name a famous Greek philosopher :: Nikos Kazantzakis | Cornelius Castoriadis | Konstantinos Tsatsos | Euclid Tsakalotos | Nikos Poulantzas | Panagiotis Kanellopoulos | Dimitris Kitsikis | Christos Yannaras
+POOL wx.bk.by.architect.ch          OK        145 fam=   8  10062ms [PEOPLE niche people] Name a famous Swiss architect :: Le Corbusier | Rudolf Steiner | Max Frisch | Francesco Borromini | Carlo Maderno | H. R. Giger | Peter Zumthor | Mario Botta
+POOL wx.sc.by.mathematician.in      OK         80 fam=   4   6788ms [PEOPLE niche people] Name a famous Indian mathematician :: Subrahmanyan Chandrasekhar | Satyendra Nath Bose | Shakuntala Devi | Subhash Kak | S. R. Ranganathan | Sathamangalam Ranga Iyengar Srinivasa Varadhan | Akshay Venkatesh | Calyampudi Radhakrishna Rao
+POOL wx.sc.by.physicist.de          OK        504 fam=  49  10366ms [PEOPLE niche people] Name a famous German physicist :: Albert Einstein | Angela Merkel | Erwin Schrödinger | Maria Göppert Mayer | Philipp Lenard | Wilhelm Wien | Max von Laue | Wilhelm Ostwald
+POOL wx.tv.by.comedian.us           OK        592 fam= 292   2880ms [PEOPLE people] Name a famous American comedian :: Jackie Chan | Robin Williams | Woody Allen | Tom Hanks | Jim Carrey | Bing Crosby | Mae West | Eddie Murphy
+POOL wx.tv.by.comedian.uk           OK        436 fam=  47   3154ms [PEOPLE people] Name a famous British comedian :: Charlie Chaplin | Rowan Atkinson | Simon Pegg | Cary Grant | Peter Sellers | Emma Thompson | Peter Ustinov | Mike Myers
+POOL wx.pc.by.model.us              OK        582 fam= 342   1669ms [PEOPLE people] Name a famous American model :: Corbin Bleu | Selena Gomez | Ariana Grande | Whitney Houston | Nicole Kidman | Julia Roberts | Christina Aguilera | Jane Fonda
+POOL wx.pc.by.fashiondesigner.it    OK         70 fam=   7   2730ms [PEOPLE people] Name a famous Italian fashion designer :: Giorgio Armani | Donatella Versace | Gianni Versace | Pierre Cardin | Valentino | Miuccia Prada | Roberto Cavalli | Elsa Schiaparelli
+POOL SUMMARY ok=100 bad=12 of 112
+POOL RESCORE wx.ge.s.eutown50k          measured 120/120 missing 0 1143ms  top: Paris | London | Rome | Moscow -> London | Paris | Berlin | Rome  up: Kaliningrad +60, Luxembourg +48, Kraków +38, Birmingham +38  down: Edirne -59, Roubaix -58, Krasnodar -53  gem: Derby -> Derby
+POOL RESCORE wx.mv.s.1980s              measured 98/120 missing 0 2109ms  top: Blade Runner | Scarface | The Last Emperor | First Blood -> Blade Runner | Scarface | Blue Velvet | First Blood  up: Friday the 13th: The Final Chapter +49, Friday the 13th Part 2 +48, Evil Dead II +45, They Live +43  down: Moscow Does Not Believe in Tears -65, The Right Stuff -57, Dune -56  gem: Moonstruck -> The Right Stuff
+POOL RESCORE wx.an2.s.flightless        measured 97/120 missing 20 3690ms  top: Common ostrich | Emu | Emperor Penguin | King Penguin -> Emu | Emperor Penguin | Common ostrich | Gentoo Penguin  up: Vorombe titan +74, Waimanu manneringi +44, Pygoscelis kerguelensis +38, Mullerornis agilis +37  down: Inguza predemersus -27, Palaeospheniscus patagonicus -26, Archaeospheniscus wimani -24  gem: Marambiornis exilis -> Pachystruthio transcaucasicus
+POOL RESCORE wx.an2.s.antelope          measured 74/75 missing 1 1730ms  top: impala | Saiga | Antilope cervicapra | springbok -> Antilope cervicapra | impala | springbok | Saiga  up: Saiga borealis +43, Goa +32, Damaliscus korrigum +26, Kirk's dik-dik +24  down: Dorcatragus megalotis -22, Dibatag -19, Raphicerus sharpei -17  gem: Dorcatragus megalotis -> dama gazelle
+POOL RESCORE wx.an2.s.butterfly         measured 103/120 missing 0 4158ms  top: Pieris brassicae | Vanessa atalanta | Papilio machaon | Danaus plexippus -> Vanessa atalanta | Danaus plexippus | Aglais urticae | Vanessa cardui  up: Sasakia charonda +61, Papilio demoleus +57, Kallima inachus +55, Graphium sarpedon +49  down: Glaucopsyche alexis -41, Brenthis ino -37, Fabriciana niobe -34  gem: Boloria frigga -> Boloria frigga
+EXTRA wx.wo.rhyme.cat                OK       97     91ms [WORDS] Name a word that rhymes with “cat” :: that/HELLO_WORLD | at/HELLO_WORLD | sat/HELLO_WORLD | flat/HELLO_WORLD | fat/LEGACY | format/LEGACY | rat/LEGACY | hat/LEGACY
+EXTRA wx.wo.rhyme.sing               OK       64     13ms [WORDS] Name a word that rhymes with “sing” :: thing/HELLO_WORLD | anything/HELLO_WORLD | king/HELLO_WORLD | everything/LEGACY | bring/LEGACY | spring/LEGACY | ring/LEGACY | string/LEGACY
+EXTRA wx.wo.rhyme.whale              OK      198     15ms [WORDS] Name a word that rhymes with “whale” :: scale/HELLO_WORLD | male/HELLO_WORLD | female/HELLO_WORLD | detail/HELLO_WORLD | mail/HELLO_WORLD | sale/HELLO_WORLD | fail/HELLO_WORLD | trail/HELLO_WORLD
+EXTRA wx.wo.syn.big                  OK       83     12ms [WORDS] Name a word that means “big” :: great/HELLO_WORLD | high/HELLO_WORLD | important/HELLO_WORLD | large/HELLO_WORLD | deep/LEGACY | larger/LEGACY | bad/LEGACY | giving/LEGACY
+EXTRA wx.wo.syn.poor                 OK       32     11ms [WORDS] Name a word that means “poor” :: low/HELLO_WORLD | short/HELLO_WORLD | mean/LEGACY | bad/LEGACY | broke/LEGACY | inadequate/LEGACY | inferior/MEMORY_LEAK | insufficient/MEMORY_LEAK
+EXTRA wx.wo.syn.look                 OK       19     11ms [WORDS] Name a word that means “look” :: see/HELLO_WORLD | face/LEGACY | feel/LEGACY | front/MEMORY_LEAK | looking/MEMORY_LEAK | seem/MEMORY_LEAK | appear/MEMORY_LEAK | spirit/MEMORY_LEAK
+EXTRA wx.wo.end.ology                OK      245     19ms [WORDS] Name a word ending in “-ology” :: technology/HELLO_WORLD | psychology/HELLO_WORLD | theology/HELLO_WORLD | ideology/HELLO_WORLD | sociology/HELLO_WORLD | biology/HELLO_WORLD | methodology/HELLO_WORLD | anthropology/HELLO_WORLD
+EXTRA wx.wo.end.scope                OK       41     16ms [WORDS] Name a word ending in “-scope” :: microscope/HELLO_WORLD | telescope/HELLO_WORLD | oscilloscope/LEGACY | laryngoscope/LEGACY | stethoscope/LEGACY | horoscope/LEGACY | kaleidoscope/LEGACY | endoscope/MEMORY_LEAK
+EXTRA wx.wo.end.ware                 OK       40     12ms [WORDS] Name a word ending in “-ware” :: software/HELLO_WORLD | hardware/HELLO_WORLD | unaware/LEGACY | delaware/LEGACY | beware/LEGACY | earthenware/LEGACY | netware/MEMORY_LEAK | glassware/MEMORY_LEAK
+EXTRA wx.mu.dz.queen                 OK       60    660ms [MUSIC] Name a song by Queen :: Bohemian Rhapsody/HELLO_WORLD | Under Pressure/HELLO_WORLD | Don't Stop Me Now/HELLO_WORLD | Another One Bites The Dust/LEGACY | The Show Must Go On/LEGACY | A Kind of Magic/LEGACY | Radio Ga Ga/LEGACY | Somebody To Love/LEGACY
+EXTRA wx.mu.dz.ledzeppelin           OK       69    558ms [MUSIC] Name a song by Led Zeppelin :: Stairway to Heaven/HELLO_WORLD | Whole Lotta Love/HELLO_WORLD | Immigrant Song/HELLO_WORLD | Kashmir/LEGACY | Black Dog/LEGACY | Babe I'm Gonna Leave You/LEGACY | Rock and Roll/LEGACY | Thank You/LEGACY
+EXTRA wx.mu.dz.tinaturner            OK       63    481ms [MUSIC] Name a song by Tina Turner :: The Best/HELLO_WORLD | We Don't Need Another Hero (Thunderdome)/HELLO_WORLD | What's Love Got to Do with It/HELLO_WORLD | Proud Mary/LEGACY | Private Dancer/LEGACY | Let's Stay Together/LEGACY | Goldeneye/LEGACY | Typical Male/LEGACY
+EXTRA wx.bk.ol.fantasy               OK      394   3792ms [BOOKS & ART] Name a fantasy book :: Alice's Adventures in Wonderland/HELLO_WORLD | The Wonderful Wizard of Oz/HELLO_WORLD | Treasure Island/HELLO_WORLD | Gulliver's Travels/HELLO_WORLD | A Midsummer Night's Dream/HELLO_WORLD | The Prince/HELLO_WORLD | Through the Looking-Glass/HELLO_WORLD | The Wind in the Willows/HELLO_WORLD
+EXTRA wx.bk.ol.war                   OK      385   1434ms [BOOKS & ART] Name a book about war :: The Art of War/HELLO_WORLD | The Prince/HELLO_WORLD | The Red Badge of Courage/HELLO_WORLD | The deerslayer/HELLO_WORLD | The  black arrow/HELLO_WORLD | A Room of One's Own/HELLO_WORLD | Rights of Man/HELLO_WORLD | Vom Kriege/HELLO_WORLD
+EXTRA wx.bk.ol.adventure             OK      397   3749ms [BOOKS & ART] Name an adventure book :: Robinson Crusoe/HELLO_WORLD | Gulliver's Travels/HELLO_WORLD | The Adventures of Tom Sawyer/HELLO_WORLD | Le Comte de Monte-Cristo/HELLO_WORLD | Le petit prince/HELLO_WORLD | The Prisoner of Zenda/HELLO_WORLD | The Scarlet Pimpernel/HELLO_WORLD | She/HELLO_WORLD
+EXTRA wx.gm.poke.normal              OK      131     78ms [GAMING] Name a Normal-type Pokémon :: Pidgey/HELLO_WORLD | Pidgeotto/HELLO_WORLD | Pidgeot/HELLO_WORLD | Rattata/HELLO_WORLD | Raticate/HELLO_WORLD | Spearow/HELLO_WORLD | Fearow/LEGACY | Jigglypuff/LEGACY
+EXTRA wx.gm.poke.flying              OK      109     15ms [GAMING] Name a Flying-type Pokémon :: Charizard/HELLO_WORLD | Butterfree/HELLO_WORLD | Pidgey/HELLO_WORLD | Pidgeotto/HELLO_WORLD | Pidgeot/HELLO_WORLD | Spearow/LEGACY | Fearow/LEGACY | Zubat/LEGACY
+EXTRA wx.gm.poke.fairy               OK       64     15ms [GAMING] Name a Fairy-type Pokémon :: Clefairy/HELLO_WORLD | Clefable/HELLO_WORLD | Jigglypuff/HELLO_WORLD | Wigglytuff/LEGACY | Mr. Mime/LEGACY | Cleffa/LEGACY | Igglybuff/LEGACY | Togepi/LEGACY
+EXTRA SUMMARY ok=18 bad=0 of 18
