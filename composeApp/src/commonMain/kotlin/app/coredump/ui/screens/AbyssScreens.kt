@@ -104,6 +104,7 @@ private fun abyssLabel(it: Item): String = when (it.key) {
     "solo" -> "FREE DIVE"
     "duel" -> "BUDDY DIVE"
     "party" -> "PRESSURE PARTY"
+    "friends" -> "DIVE BUDDIES"
     "stats" -> "DIVE LOG"
     "browse" -> "SPECIMENS"
     "theme" -> "WATER COLOUR"

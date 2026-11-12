@@ -260,12 +260,27 @@ private fun AddFriendLink(model: AppModel, name: String, code: String?) {
 }
 
 /** Friends: my code (never changes), add by code, each friend with our record and a join button, then every 1v1. */
+/**
+ * FRIENDS (main menu): your code and rating, adding friends by code, requests, every friend with their rating, your
+ * record and streak against them, and one-tap 1v1 / party invites; the 1v1 history below.
+ */
+@Composable
+fun FriendsScreen(model: AppModel) {
+    Frame(model, Th.say("./friends", "Friends")) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
+            FriendsPane(model) { tab -> LobbyProbe.tab = tab.ordinal; model.go(Screen.Lobby) }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
 @Composable
 private fun FriendsPane(model: AppModel, goTab: (Tab) -> Unit) {
     val s = model.settings
     val code = remember { model.myRoom() }
     Panel(Th.say("YOUR CODE", "Your code")) {
         TText(JoinTicket.pretty(code), size = 28.sp, weight = FontWeight.Bold, color = C.hot, spacing = 3.sp)
+        TText("rating ${s.elo} · win streak ${s.streak} (best ${s.bestStreak}) · ${s.rankedGames} ranked games", size = 12.sp, color = C.amber)
         TText("it never changes. friends with this code can join you whenever you are on the host screen.", size = 11.sp, color = C.dim)
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth()) {
@@ -328,14 +343,16 @@ private fun FriendsPane(model: AppModel, goTab: (Tab) -> Unit) {
                         streakVs(games).let { if (it.isEmpty()) "" else " · $it" }, size = 11.sp, color = C.amber)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    TLink("invite", { model.inviteFriend(f, "duel"); goTab(Tab.HOST) }, color = C.hot)
+                    TLink("1v1", { model.inviteFriend(f, "duel"); goTab(Tab.HOST) }, color = C.hot)
+                    TLink("party", { model.inviteFriend(f, "party"); model.go(Screen.Meltdown) }, color = C.hot)
                     TLink("join", { goTab(Tab.JOIN); model.joinFriend(f) }, color = C.hot)
                     TLink("remove", { model.removeFriend(f) })
                 }
             }
         }
         InviteStatus(model, "duel")
-        if (s.friends.isNotEmpty()) TText("invite: they get a pop-up in the app (it must be open) and join you with one tap.", size = 10.sp, color = C.dim)
+        InviteStatus(model, "party")
+        if (s.friends.isNotEmpty()) TText("1v1 / party: they get a pop-up in the app (it must be open) and join you with one tap.", size = 10.sp, color = C.dim)
     }
     Spacer(Modifier.height(14.dp))
     Panel(Th.say("1V1 HISTORY", "1v1 history") + " (${duels.size})") {

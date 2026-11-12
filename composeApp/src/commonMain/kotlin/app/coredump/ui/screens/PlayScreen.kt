@@ -2,7 +2,7 @@ package app.coredump.ui.screens
 
 import app.coredump.ui.ModalCard
 import app.coredump.ui.LocalHyper
-import app.coredump.ui.ScoreRun
+import app.coredump.ui.StagedScoreRun
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -590,7 +590,7 @@ fun PlayScreen(model: AppModel, session: MatchSession) {
         st.reveal?.let { v ->
             if (st.phase == Phase.REVEAL) {
                 if (runs && v.me.tier.isValid && v.me.points > 0) {
-                    ScoreRun(from = (st.myTotal - v.me.points).coerceAtLeast(0), gain = v.me.points, max = st.total * 100,
+                    StagedScoreRun(from = (st.myTotal - v.me.points).coerceAtLeast(0), gain = v.me.points, max = st.total * 100,
                         tier = v.me.tier, key = v.index, onArrive = { landed = v.index })
                 }
                 // after a run the points were already counted on screen: the burst brings only its pieces

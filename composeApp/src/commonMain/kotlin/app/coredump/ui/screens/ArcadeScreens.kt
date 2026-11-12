@@ -102,6 +102,7 @@ private fun arcadeLabel(key: String, fallback: String) = when (key) {
     "solo" -> "1 PLAYER"
     "duel" -> "VS MODE"
     "party" -> "BATTLE ROYALE"
+    "friends" -> "PLAYER LIST"
     "stats" -> "RECORDS"
     "browse" -> "STAGES"
     "theme" -> "CABINET"

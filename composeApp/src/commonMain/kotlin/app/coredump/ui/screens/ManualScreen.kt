@@ -97,12 +97,12 @@ fun ManualScreen(model: AppModel) {
                 for (l in listOf(
                     "host: LINK 1v1 → HOST. a sigil + room code appear.",
                     "peer: LINK 1v1 → JOIN → SCAN SIGIL or type the room code.",
-                    "every look draws its own sigil (bars, bubbles, pixels, bulbs, star dust …); any phone reads any look. direct Wi-Fi games show a QR code instead.",
+                    "every look has its own sigil (a memory map, a halftone, a neon sun, a honeycomb, a pixel gem, a starburst, a ball of glowing dots, a metro map, a roulette wheel, a chat spiral, a tile board, a patch of night sky); any phone reads any of them. direct Wi-Fi games show a QR code instead.",
                     "same prompts, same clock. the rarer answer takes the round.",
                     "ONLINE RELAY works on any network (Android ↔ iPhone, LiveContainer).",
                     "DIRECT WI-FI needs both on one network that allows device-to-device traffic.",
                     "your room code never changes: send it, leave the app, come back. the host screen reconnects with the same code.",
-                    "FRIENDS tab: add people by code alone (they get a friend request), see your record, streak and every 1v1, invite or join in one tap.",
+                    "FRIENDS (main menu, also a tab here): add people by code alone (they get a friend request), see their rating, your record and streak against each, invite them to a 1v1 or a party, or join them, in one tap.",
                     "speed penalty (host setting): once one player answers, the other loses ${app.coredump.core.SpeedTax.PER_SECOND} points a second (at most ${app.coredump.core.SpeedTax.MAX}) until they answer or skip.",
                     "RANKED tab: a random online opponent near your rating, fixed rules (5 prompts, 25 s, speed penalty on). wins raise your rating (Elo); friendly 1v1s count half.",
                 )) TText("· $l", size = 12.sp, color = C.amber)

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -202,6 +203,37 @@ private fun expBar(total: Float): Float {
     var left = total.coerceAtLeast(0f)
     while (left >= Exp.need(level)) { left -= Exp.need(level); level++ }
     return left / Exp.need(level)
+}
+
+/** A run waiting to be shown by [RunStageHost] (the app root), over the whole window. */
+class RunSpec(val from: Int, val gain: Int, val max: Int, val tier: Tier, val key: Any, val onArrive: () -> Unit)
+
+/** The run on screen: the play screen puts it here, the app root draws it over everything, edge to edge. */
+object RunStage {
+    var current by mutableStateOf<RunSpec?>(null)
+}
+
+/**
+ * Asks for the score run while this is in composition: the app root draws it ([RunStageHost]) over the whole window,
+ * status bar, notch and keyboard areas included, so nothing of the screen underneath shows at the top or bottom.
+ */
+@Composable
+fun StagedScoreRun(from: Int, gain: Int, max: Int, tier: Tier, key: Any, onArrive: () -> Unit) {
+    val arrive by rememberUpdatedState(onArrive)
+    DisposableEffect(key) {
+        val spec = RunSpec(from, gain, max, tier, key) { arrive() }
+        RunStage.current = spec
+        onDispose { if (RunStage.current === spec) RunStage.current = null }
+    }
+}
+
+/** Draws the staged run (if any), filling its parent: put it in the app's root box, outside the safe-area padding. */
+@Composable
+fun RunStageHost() {
+    val s = RunStage.current ?: return
+    androidx.compose.runtime.key(s.key) {
+        ScoreRun(s.from, s.gain, s.max, s.tier, s.key, s.onArrive)
+    }
 }
 
 /**

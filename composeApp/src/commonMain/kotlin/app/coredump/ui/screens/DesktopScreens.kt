@@ -92,6 +92,7 @@ private fun deskLabel(it: Item): String = when (it.key) {
     "solo" -> "Solo"
     "duel" -> "1v1"
     "party" -> "Meltdown"
+    "friends" -> "Friends"
     "stats" -> "Stats"
     "browse" -> "Lists"
     "theme" -> "Theme"

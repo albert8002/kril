@@ -168,6 +168,9 @@ fun GazetteMenu(model: AppModel) {
                     Story("Records", "Your Season So Far", if (History.games == 0) "No runs on file yet." else "${History.games} runs · best ${History.best} points.") { open("stats") }
                     Spacer(Modifier.height(12.dp))
                     Story("Archive", "Every List on File", "Browse each list and all of its answers.") { open("browse") }
+                    Spacer(Modifier.height(12.dp))
+                    Story("Friends", "Your Circle", if (model.settings.requests.isNotEmpty()) "${model.settings.requests.size} friend request(s) waiting for you."
+                        else "Friend codes, ratings and your streak against each friend.") { open("friends") }
                 }
             }
         }

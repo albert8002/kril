@@ -96,6 +96,7 @@ private fun cardName(it: Item): String = when (it.key) {
     "solo" -> "THE HERMIT"
     "duel" -> "THE RIVALS"
     "party" -> "THE TOWER"
+    "friends" -> "THE LOVERS"
     "stats" -> "THE WHEEL"
     "browse" -> "THE ARCHIVE"
     "theme" -> "THE MOON"

@@ -11,36 +11,37 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * The sigil: CORE DUMP's own scannable join code, drawn in every look's style (it replaces the QR on the relay host
- * screens). Every look draws the same geometry, so any phone reads any look:
+ * The sigil: CORE DUMP's own scannable join code. Every look has its own (a memory map, a halftone, a neon sun,
+ * a honeycomb, a pixel gem, a starburst, a ball of glowing dots, a metro map, a roulette wheel, a chat spiral, a tile
+ * board, a patch of night sky), and any phone reads any of them, because they share three things:
  *
  *  - a bullseye in the middle (disc, gap, ring: 1:1:3:1:1 across any line through the centre) — found in the camera
- *    frame like a QR finder, but the same from every direction; its two edges give the tilt (an ellipse fit);
- *  - a timing ring of [ANGLES] short marks, one per angle, all but one: the empty angle is the key (where the code
- *    starts); the marks give the exact angle of every column;
- *  - three data rings: at each angle a bar of height 0..3 (it fills the inner rings first, like a sound wave),
- *    two bits per angle, 42 angles = 84 bits = 14 symbols of 6 bits: 8 carry the payload, 6 are Reed–Solomon
- *    parity over GF(64) (up to 3 wrong symbols or 6 unreadable ones are repaired).
+ *    frame like a QR finder, but the same from every direction; its edges give the tilt (an ellipse fit);
+ *  - the look's emblem, alone just outside the code at [EMBLEM]: it says which way is up;
+ *  - [CELLS] cells, each a mark or an empty spot, at the places its [layouts] entry gives (one layout per look):
+ *    84 bits = 14 symbols of 6 bits, 8 of payload and 6 of Reed–Solomon parity over GF(64).
  *
+ * The reader tries every layout (both ways round: a mirrored camera) and keeps the one whose parity checks out.
  * Payload (48 bits): version 0 (1), party (1), relay broker index (6), room code (40: base 31).
- * Lengths are in modules (u) from the centre; a drawing is 2 × [EXTENT] modules wide.
- * Marks fill at most [DUTY] of their angle cell and the radial band of their ring; nothing else may be drawn
- * inside [OUTER_BG] except near the key angle, beyond [OUTER] (the look's emblem).
+ * Lengths are in modules (u) from the centre; a drawing is 2 × [EXTENT] modules wide. Marks keep inside
+ * [MARK_MIN]..[MARK_MAX] and at least a small gap from each other; between [MARK_MAX] and [EXTENT] nothing but the
+ * emblem may stand out from the plate (soft decoration only).
  */
 object Sigil {
-    const val ANGLES = 43
     const val DISC = 1.5f
     const val GAP = 2.5f
     const val RING = 3.5f
-    const val TIMING = 5.0f
-    const val TIMING_HALF = 0.38f
-    val DATA = floatArrayOf(6.2f, 7.4f, 8.6f)
-    const val DATA_HALF = 0.42f
-    const val DUTY = 0.6f
-    const val OUTER = 9.05f
-    const val OUTER_BG = 9.6f
+    /** Cell centres lie between these radii; marks may reach [MARK_MIN]..[MARK_MAX]. */
+    const val CELL_IN = 4.85f
+    const val CELL_OUT = 8.65f
+    const val MARK_MIN = 4.3f
+    const val MARK_MAX = 9.15f
+    const val OUTER_BG = 9.45f
     const val EMBLEM = 10.3f
-    const val EXTENT = 11.2f
+    const val EMBLEM_R = 0.6f
+    const val EXTENT = 11.4f
+    const val CELLS = 84
+    const val LAYOUTS = 12
 
     private const val N = 14
     private const val K = 8
@@ -48,8 +49,8 @@ object Sigil {
     /** Parity a camera read may spend (2·errors + erasures); the other 2 symbols only check. */
     const val BUDGET = 4
 
-    /** What a sigil says (same as a [ShortCode]). */
-    fun encode(room: String, broker: Int, party: Boolean): IntArray {
+    /** The 84 bits of a code (true = mark), cell order of every layout. */
+    fun encode(room: String, broker: Int, party: Boolean): BooleanArray {
         val r = room.uppercase().filter { it != '-' && it != ' ' }
         require(r.length == JoinTicket.ROOM_LEN && r.all { it in JoinTicket.ROOM_ALPHABET }) { "bad room code: $room" }
         require(broker in 0..63) { "broker index out of range: $broker" }
@@ -58,17 +59,8 @@ object Sigil {
         v = v or (broker.toLong() shl 40) or (if (party) 1L shl 46 else 0L)
         val msg = IntArray(K) { j -> ((v shr (6 * (K - 1 - j))) and 63L).toInt() }
         val cw = Rs.encode(msg)
-        return IntArray(ANGLES) { a ->
-            if (a == 0) -1 else {
-                val s = (a - 1) / 3
-                val q = (a - 1) % 3
-                ((cw[s] xor WHITE[s]) shr (4 - 2 * q)) and 3
-            }
-        }
+        return BooleanArray(CELLS) { i -> ((cw[i / 6] xor WHITE[i / 6]) shr (5 - i % 6)) and 1 == 1 }
     }
-
-    /** Heights for a short code ("CD1:…"), or null if it is not one. */
-    fun encode(short: ShortCode.Decoded): IntArray = encode(short.room, short.broker, short.party)
 
     /** The payload of 14 read symbols (whitened, as drawn), after repair; null if it cannot be repaired. */
     internal fun decodeSymbols(sym: IntArray, erasures: List<Int>, budget: Int = BUDGET): ShortCode.Decoded? {
@@ -88,8 +80,21 @@ object Sigil {
         return ShortCode.Decoded(chars.concatToString(), broker, party)
     }
 
-    /** Fixed whitening of the 14 symbols: neighbouring bars differ, so the drawing looks like a varied wave. */
+    /** Fixed whitening of the 14 symbols (about half the cells are marks, whatever the room). */
     private val WHITE = IntArray(N) { s -> ((s * 0x2B + 0x15) xor (s * s * 7) xor 0x2A) and 63 }
+
+    // ------------------------------------------------------------------ layouts (one per look, Style order)
+
+    /**
+     * Layout [id]: x0, y0, x1, y1 … (modules, emblem along +x), 84 cells in reading order (round from the emblem,
+     * then outwards: 6 neighbouring cells make one symbol). Fixed tables ([SigilLayouts]), so every phone and every
+     * app version places the cells exactly alike.
+     */
+    val layouts: Array<FloatArray> get() = SigilLayouts.all
+
+    /** Names, for logs. */
+    val layoutNames = listOf("grid", "halftone", "stripes", "honeycomb", "diamond", "spokes", "sunflower", "metro", "roulette",
+        "spiral", "tiles", "sky")
 
     /** Reed–Solomon over GF(64) (x^6 + x + 1), n = 14, k = 8, generator roots α^1..α^6, parity first. */
     internal object Rs {
@@ -202,6 +207,7 @@ object Sigil {
  * [scan] only answers when two frames out of the last few agree (a single misread frame never joins a wrong room).
  */
 class SigilReader {
+    companion object { internal var PASSES = intArrayOf(14, 9, 20) }
     private var w = 0
     private var h = 0
     private var integ = IntArray(0)
@@ -229,12 +235,16 @@ class SigilReader {
     fun read(lum: ByteArray, w: Int, h: Int, stride: Int = w, offset: Int = 0): ShortCode.Decoded? {
         if (w < 40 || h < 40) return null
         this.lum = lum; this.w = w; this.h = h; this.stride = stride; this.offset = offset
-        binarize()
-        val found = finders()
-        trace = "finders=${found.size}"
-        for (c in found.take(4)) {
-            val d = attempt(c)
-            if (d != null) return d
+        trace = ""
+        // three threshold windows: about 1/14 of the frame, then 1/9 (big codes, soft light), then 1/20 (small, blurred)
+        for ((pass, div) in PASSES.withIndex()) {
+            binarize(div)
+            val found = finders()
+            trace += (if (pass > 0) " | " else "") + "finders=${found.size}"
+            for (c in found.take(4)) {
+                val d = attempt(c)
+                if (d != null) return d
+            }
         }
         return null
     }
@@ -242,7 +252,7 @@ class SigilReader {
     private fun px(x: Int, y: Int): Int = lum[offset + y * stride + x].toInt() and 0xFF
 
     /** Dark = 1, against the mean of a window of about a fifth of the frame. */
-    private fun binarize() {
+    private fun binarize(div: Int) {
         val iw = w + 1
         if (integ.size < iw * (h + 1)) integ = IntArray(iw * (h + 1))
         if (bin.size < w * h) bin = ByteArray(w * h)
@@ -254,7 +264,7 @@ class SigilReader {
                 integ[(y + 1) * iw + x + 1] = integ[y * iw + x + 1] + row
             }
         }
-        val rad = max(8, min(w, h) / 10)
+        val rad = max(8, min(w, h) / div)
         for (y in 0 until h) {
             val y0 = max(0, y - rad); val y1 = min(h, y + rad + 1)
             for (x in 0 until w) {
@@ -394,111 +404,158 @@ class SigilReader {
             lumAt(ix(r, t + da), iy(r, t + da)) + lumAt(ix(r, t - da), iy(r, t - da))) / 5f
     }
 
+    private val sectors = 24
+    private val mk = FloatArray(sectors)
+    private val bgIn = FloatArray(sectors)
+    private val bgOut = FloatArray(sectors)
+
+    /**
+     * Markness at the code point (r, t): 0 = background, 1 = mark, against the local levels round the code (mark on
+     * the bullseye ring, background in the gap, between ring and cells, and outside the cells; glare as additive).
+     * [quick]: one tap instead of five.
+     */
+    private fun levelAt(t: Double, r: Float, quick: Boolean = false): Float {
+        var a = (t / (2 * PI) * sectors) % sectors
+        if (a < 0) a += sectors
+        val i0 = a.toInt() % sectors; val i1 = (i0 + 1) % sectors; val f = (a - a.toInt()).toFloat()
+        val m = mk[i0] * (1 - f) + mk[i1] * f
+        val bi = bgIn[i0] * (1 - f) + bgIn[i1] * f
+        val bo = bgOut[i0] * (1 - f) + bgOut[i1] * f
+        val k = ((r - 3.0f) / (Sigil.OUTER_BG - 3.0f)).coerceIn(0f, 1f)
+        val bg = bi + (bo - bi) * k
+        val mark = m + (bg - bi)
+        val span = mark - bg
+        if (abs(span) < 6f) return 0.5f
+        val v = if (quick) lumAt(ix(r, t), iy(r, t)) else tap(r, t)
+        return (v - bg) / span
+    }
+
     private fun attempt(c: Cand): ShortCode.Decoded? {
         if (!fit(c)) return null
-        // local levels round the code: mark on the bullseye ring, background inside (gap), between ring and timing,
-        // and outside the data
-        val sectors = 24
-        val mk = FloatArray(sectors); val bgIn = FloatArray(sectors); val bgOut = FloatArray(sectors)
         for (i in 0 until sectors) {
             val t = 2 * PI * i / sectors
             mk[i] = tap(3.0f, t)
             bgIn[i] = (tap(2.0f, t) + tap(4.05f, t)) / 2f
-            bgOut[i] = tap(Sigil.OUTER_BG - 0.15f, t)
+            bgOut[i] = tap(Sigil.OUTER_BG, t)
         }
         val inner = mk.average().toFloat()
         val bgAvg = bgIn.average().toFloat()
         val contrast = inner - bgAvg
         if (abs(contrast) < 12f) { trace += " lowcontrast=${contrast.toInt()}"; return null }
-        // the key's emblem may sit outside the data: outer background is the median-ish of its sectors
-        val sortedOut = bgOut.sortedArray()
-        val outMed = sortedOut[sectors / 2]
+        // a stray mark outside the cells: that sector takes the median background
+        val outMed = bgOut.sortedArray()[sectors / 2]
         for (i in 0 until sectors) if (abs(bgOut[i] - outMed) > abs(contrast) * 0.35f) bgOut[i] = outMed
+        fun level(t: Double, r: Float) = levelAt(t, r)
 
-        fun level(t: Double, r: Float): Float {
-            // markness at code point: 0 = background, 1 = mark (local levels, glare taken as additive)
-            var a = (t / (2 * PI) * sectors) % sectors
-            if (a < 0) a += sectors
-            val i0 = a.toInt() % sectors; val i1 = (i0 + 1) % sectors; val f = (a - a.toInt()).toFloat()
-            val m = mk[i0] * (1 - f) + mk[i1] * f
-            val bi = bgIn[i0] * (1 - f) + bgIn[i1] * f
-            val bo = bgOut[i0] * (1 - f) + bgOut[i1] * f
-            val k = ((r - 3.0f) / (Sigil.OUTER_BG - 0.15f - 3.0f)).coerceIn(0f, 1f)
-            val bg = bi + (bo - bi) * k
-            val mark = m + (bg - bi)
-            val span = mark - bg
-            if (abs(span) < 6f) return 0.5f
-            return (tap(r, t) - bg) / span
+        // the emblem: the one mark just outside the code, which way is up
+        val steps = 360
+        val ring = FloatArray(steps) { j ->
+            val t = 2 * PI * j / steps
+            (level(t, Sigil.EMBLEM - 0.22f) + level(t, Sigil.EMBLEM) + level(t, Sigil.EMBLEM + 0.22f)) / 3f
         }
+        val sm = FloatArray(steps) { j -> var a = 0f; for (d in -3..3) a += ring[(j + d + steps) % steps]; a / 7f }
+        var peak = 0
+        for (j in 1 until steps) if (sm[j] > sm[peak]) peak = j
+        val med = sm.sortedArray()[steps / 2]
+        if (sm[peak] < 0.2f || sm[peak] - med < 0.15f) { trace += " emblem=${(sm[peak] * 100).toInt()}/${(med * 100).toInt()}"; return null }
+        var cx = 0.0; var cy = 0.0
+        for (d in -9..9) {
+            val j = (peak + d + steps) % steps
+            val wgt = (ring[j] - med).coerceAtLeast(0f).toDouble()
+            val t = 2 * PI * j / steps
+            cx += wgt * cos(t); cy += wgt * sin(t)
+        }
+        val key = atan2(cy, cx)
 
-        // timing: the angle of the marks (the strongest 43-fold wave round the ring), then the empty one (the key)
-        // every ring has a gap between neighbouring marks, so all four carry the 43-fold wave; the outer ones (wider
-        // cells) survive blur best
-        val samples = Sigil.ANGLES * 8
-        var re = 0.0; var im = 0.0
-        val radii = floatArrayOf(Sigil.TIMING, Sigil.DATA[0], Sigil.DATA[1], Sigil.DATA[2])
-        for (r in radii) for (j in 0 until samples) {
-            val t = 2 * PI * j / samples
-            val m = level(t, r)
-            re += m * cos(Sigil.ANGLES * t); im -= m * sin(Sigil.ANGLES * t)
+        // every layout, both ways round, each turned a little either side of the emblem: the best fit first
+        class Fit(val layout: Int, val dir: Int, val turn: Double, val score: Float)
+        val fits = ArrayList<Fit>()
+        val vals = FloatArray(Sigil.CELLS)
+        val deg = PI / 180
+        for (id in 0 until Sigil.LAYOUTS) {
+            val cells = Sigil.layouts[id]
+            for (dir in intArrayOf(1, -1)) {
+                var best = -1f; var bestTurn = 0.0
+                var d = -3.5
+                while (d <= 3.51) {
+                    sampleCells(cells, key + d * deg, dir, vals, quick = true)
+                    val sc = separation(vals)
+                    if (sc > best) { best = sc; bestTurn = d }
+                    d += 0.5
+                }
+                fits.add(Fit(id, dir, bestTurn, best))
+            }
         }
-        val amp = sqrt(re * re + im * im) / samples / radii.size
-        if (amp < 0.006) { trace += " timing=${(amp * 1000).toInt()}‰"; return null }
-        val psi = -atan2(im, re) / Sigil.ANGLES
-        val cell = 2 * PI / Sigil.ANGLES
-        val marks = FloatArray(Sigil.ANGLES) { k -> level(psi + k * cell, Sigil.TIMING) }
-        var key = 0
-        for (k in 1 until Sigil.ANGLES) if (marks[k] < marks[key]) key = k
-        val others = marks.filterIndexed { k, _ -> k != key }.sorted()
-        val q1 = others[others.size / 4]
-        if (q1 < 0.15f || marks[key] > 0.5f * q1 || marks[key] > 0.45f) {
-            trace += " key=${(marks[key] * 100).toInt()}/${(others[others.size / 4] * 100).toInt()}"
-            return null
-        }
-        // data rings, read once (angle order is decided below): blur lowers small marks more than the bullseye ring,
-        // so each ring's levels are rescaled between its own two clusters (marks and gaps)
-        val raw = Array(3) { ring -> FloatArray(Sigil.ANGLES) { k -> if (k == key) 0f else level(psi + k * cell, Sigil.DATA[ring]) } }
-        for (ring in 0 until 3) {
-            val v = raw[ring].filterIndexed { k, _ -> k != key }
+        fits.sortByDescending { it.score }
+        for (f in fits.take(6)) {
+            if (f.score < 0.25f) break
+            // a finer turn round the best one, then the full read
+            var best = f.score; var turn = f.turn
+            for (d in doubleArrayOf(f.turn - 0.25, f.turn + 0.25)) {
+                sampleCells(Sigil.layouts[f.layout], key + d * deg, f.dir, vals, quick = true)
+                val sc = separation(vals)
+                if (sc > best) { best = sc; turn = d }
+            }
+            sampleCells(Sigil.layouts[f.layout], key + turn * deg, f.dir, vals, quick = false)
+            // rescale between the two clusters (blur lowers small marks more than the bullseye ring)
             var lo = 0f; var hi = 1f
             repeat(8) {
                 val mid = (lo + hi) / 2
-                val a = v.filter { it < mid }; val bq = v.filter { it >= mid }
-                if (a.isNotEmpty()) lo = a.average().toFloat()
-                if (bq.isNotEmpty()) hi = bq.average().toFloat()
+                var sa = 0f; var na = 0; var sb = 0f; var nb = 0
+                for (v in vals) if (v < mid) { sa += v; na++ } else { sb += v; nb++ }
+                if (na > 0) lo = sa / na
+                if (nb > 0) hi = sb / nb
             }
-            // trust the clusters only when they are well apart and not past the ideal levels
-            val l = lo.coerceIn(-0.2f, 0.35f); val hgh = hi.coerceIn(0.45f, 1.1f)
-            if (hgh - l > 0.25f) for (k in 0 until Sigil.ANGLES) raw[ring][k] = (raw[ring][k] - l) / (hgh - l)
-        }
-        // data, both ways round (a mirrored camera reads it backwards)
-        for (dir in intArrayOf(1, -1)) {
-            val heights = IntArray(Sigil.ANGLES - 1)
-            val sure = FloatArray(Sigil.ANGLES - 1)
-            for (a in 1 until Sigil.ANGLES) {
-                val k = (((key + dir * a) % Sigil.ANGLES) + Sigil.ANGLES) % Sigil.ANGLES
-                val m = FloatArray(3) { raw[it][k] }
-                var best = 0; var bestCost = Float.MAX_VALUE; var second = Float.MAX_VALUE
-                for (hh in 0..3) {
-                    var cost = 0f
-                    for (ring in 0 until 3) { val e = if (ring < hh) 1f else 0f; val d = m[ring].coerceIn(-0.3f, 1.3f) - e; cost += d * d }
-                    if (cost < bestCost) { second = bestCost; bestCost = cost; best = hh } else if (cost < second) second = cost
-                }
-                heights[a - 1] = best
-                sure[a - 1] = second - bestCost - bestCost
+            val l = lo.coerceIn(-0.2f, 0.35f); val h = hi.coerceIn(0.45f, 1.1f)
+            val sym = IntArray(14)
+            val sure = FloatArray(14) { 9f }
+            for (i in 0 until Sigil.CELLS) {
+                val m = if (h - l > 0.25f) (vals[i] - l) / (h - l) else vals[i]
+                if (m >= 0.5f) sym[i / 6] = sym[i / 6] or (1 shl (5 - i % 6))
+                sure[i / 6] = min(sure[i / 6], abs(m - 0.5f))
             }
-            val sym = IntArray(14) { s -> (heights[3 * s] shl 4) or (heights[3 * s + 1] shl 2) or heights[3 * s + 2] }
-            val symSure = FloatArray(14) { s -> min(sure[3 * s], min(sure[3 * s + 1], sure[3 * s + 2])) }
-            val order = (0 until 14).sortedBy { symSure[it] }
-            Sigil.decodeSymbols(sym, emptyList())?.let { trace += " ok dir=$dir"; return it }
-            for (f in intArrayOf(2, 4)) {
-                val er = order.take(f).filter { symSure[it] < 0.6f }
+            val order = (0 until 14).sortedBy { sure[it] }
+            Sigil.decodeSymbols(sym, emptyList())?.let { trace += " ok ${Sigil.layoutNames[f.layout]} dir=${f.dir}"; return it }
+            for (n in intArrayOf(2, 4)) {
+                val er = order.take(n).filter { sure[it] < 0.3f }
                 if (er.isEmpty()) continue
-                Sigil.decodeSymbols(sym, er)?.let { trace += " ok dir=$dir er=${er.size}"; return it }
+                Sigil.decodeSymbols(sym, er)?.let { trace += " ok ${Sigil.layoutNames[f.layout]} dir=${f.dir} er=${er.size}"; return it }
             }
         }
-        trace += " rs-fail"
+        trace += " rs-fail(${fits.take(3).joinToString(",") { Sigil.layoutNames[it.layout] + ":" + (it.score * 100).toInt() }})"
         return null
+    }
+
+    /** Markness of every cell of a layout turned to [rot] (radians, emblem direction), read [dir]-wise round. */
+    private fun sampleCells(cells: FloatArray, rot: Double, dir: Int, out: FloatArray, quick: Boolean) {
+        for (i in 0 until Sigil.CELLS) {
+            val x = cells[2 * i]; val y = cells[2 * i + 1]
+            val r = sqrt(x * x + y * y)
+            val t = rot + dir * atan2(y.toDouble(), x.toDouble())
+            out[i] = levelAt(t, r, quick)
+        }
+    }
+
+    /** How well the values split into marks and gaps: between-cluster share of the variance × the gap. */
+    private fun separation(v: FloatArray): Float {
+        val sorted = v.sortedArray()
+        val n = sorted.size
+        var total = 0.0; var sq = 0.0
+        for (x in sorted) { total += x; sq += x * x }
+        val mean = total / n
+        val varT = sq / n - mean * mean
+        if (varT <= 1e-6) return 0f
+        var best = 0.0; var gap = 0.0
+        var left = 0.0
+        for (k in 1 until n) {
+            left += sorted[k - 1]
+            val w0 = k.toDouble() / n; val w1 = 1 - w0
+            if (w0 < 0.15 || w1 < 0.15) continue
+            val m0 = left / k; val m1 = (total - left) / (n - k)
+            val b = w0 * w1 * (m0 - m1) * (m0 - m1)
+            if (b > best) { best = b; gap = m1 - m0 }
+        }
+        return ((best / varT) * min(1.0, gap)).toFloat()
     }
 
     /**

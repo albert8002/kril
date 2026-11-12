@@ -34,6 +34,7 @@ sealed interface Screen {
     data class Dump(val promptId: String) : Screen
     data object Config : Screen
     data object Lobby : Screen
+    data object Friends : Screen
     data object Manual : Screen
     data object Stats : Screen
     data object Appearance : Screen

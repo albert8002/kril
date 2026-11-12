@@ -430,10 +430,13 @@ object SelfTest {
             while (req.status.value != app.coredump.game.Inviter.Status.ACCEPTED && iw < 12_000) { delay(250); iw += 250 }
             log("FRIEND answer status=${req.status.value} name='${req.replyName}' friends=${model.settings.friends.map { it.name + ":" + it.elo }}")
             req.cancel()
-            app.coredump.ui.screens.LobbyProbe.tab = 2
-            model.go(Screen.Lobby); delay(1500)
+            // the FRIENDS screen from the main menu
+            model.go(Screen.Friends); delay(1500)
             shot("friends_chat")
             model.back(); delay(500)
+            model.setTheme(Style.ORACLE, plan.first { it.first == Style.ORACLE }.second)
+            model.home(); delay(1200)
+            shot("menu_friends_oracle")
 
             // ranked: two searchers on the real relay find each other (one hosts, one joins)
             var m1: app.coredump.game.RankedMatch? = null

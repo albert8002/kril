@@ -154,6 +154,7 @@ private fun metroLabel(it: Item): String = when (it.key) {
     "solo" -> "SOLO"
     "duel" -> "1V1 LINK"
     "party" -> "MELTDOWN LOOP"
+    "friends" -> "FRIENDS LINE"
     "stats" -> "STATS"
     "browse" -> "ALL LINES"
     "theme" -> "THEME"
