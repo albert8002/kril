@@ -1,0 +1,44 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+> Task :composeApp:kmpPartiallyResolvedDependenciesChecker
+> Task :composeApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :composeApp:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForCommonMain
+> Task :composeApp:prepareComposeResourcesTaskForCommonMain
+> Task :composeApp:generateResourceAccessorsForCommonMain
+> Task :composeApp:generateActualResourceCollectorsForAndroidMain
+> Task :composeApp:generateComposeResClass
+> Task :composeApp:generateExpectResourceCollectorsForCommonMain
+> Task :composeApp:convertXmlValueResourcesForAndroidRelease NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidRelease NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidRelease NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidRelease NO-SOURCE
+> Task :composeApp:preBuild UP-TO-DATE
+> Task :composeApp:preReleaseBuild UP-TO-DATE
+> Task :composeApp:checkReleaseAarMetadata
+> Task :composeApp:generateReleaseResValues FROM-CACHE
+> Task :composeApp:mapReleaseSourceSetPaths
+> Task :composeApp:generateReleaseResources FROM-CACHE
+> Task :composeApp:mergeReleaseResources FROM-CACHE
+> Task :composeApp:packageReleaseResources FROM-CACHE
+> Task :composeApp:parseReleaseLocalResources FROM-CACHE
+> Task :composeApp:createReleaseCompatibleScreenManifests
+> Task :composeApp:extractDeepLinksRelease FROM-CACHE
+> Task :composeApp:processReleaseMainManifest FROM-CACHE
+> Task :composeApp:processReleaseManifest FROM-CACHE
+> Task :composeApp:processReleaseManifestForPackage FROM-CACHE
+> Task :composeApp:processReleaseResources FROM-CACHE
+> Task :composeApp:compileReleaseKotlinAndroid
+w: Opt-in requirement marker kotlinx.cinterop.ExperimentalForeignApi is unresolved. Please make sure it's present in the module dependencies
+w: Opt-in requirement marker kotlinx.cinterop.BetaInteropApi is unresolved. Please make sure it's present in the module dependencies
+w: file:///home/runner/work/kril/kril/composeApp/src/androidMain/kotlin/app/coredump/platform/Platform.android.kt:30:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/runner/work/kril/kril/composeApp/src/androidMain/kotlin/app/coredump/platform/Platform.android.kt:163:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/runner/work/kril/kril/composeApp/src/commonMain/kotlin/app/coredump/platform/Platform.kt:6:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///home/runner/work/kril/kril/composeApp/src/commonMain/kotlin/app/coredump/platform/Platform.kt:38:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1794478050981.json
+
+BUILD SUCCESSFUL in 1m 31s
+21 actionable tasks: 11 executed, 10 from cache
