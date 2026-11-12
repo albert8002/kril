@@ -399,7 +399,8 @@ class SigilReader {
 
     /** Mean luminance round the code point (r, t): five taps, [dr] modules apart radially, [dt] radians round. */
     private fun tap(r: Float, t: Double, dr: Float = 0.12f, dt: Double = 0.0): Float {
-        val da = if (dt != 0.0) dt else 0.12 / r
+        // [dr] modules out and in, the same distance round
+        val da = if (dt != 0.0) dt else (dr / r).toDouble()
         return (lumAt(ix(r, t), iy(r, t)) + lumAt(ix(r + dr, t), iy(r + dr, t)) + lumAt(ix(r - dr, t), iy(r - dr, t)) +
             lumAt(ix(r, t + da), iy(r, t + da)) + lumAt(ix(r, t - da), iy(r, t - da))) / 5f
     }
@@ -426,7 +427,9 @@ class SigilReader {
         val mark = m + (bg - bi)
         val span = mark - bg
         if (abs(span) < 6f) return 0.5f
-        val v = if (quick) lumAt(ix(r, t), iy(r, t)) else tap(r, t)
+        // quick (the turn search): a wide footprint, so a cell read off-centre gives an in-between value even in a
+        // sharp picture, and the right turn stands out
+        val v = if (quick) tap(r, t, 0.3f) else tap(r, t)
         return (v - bg) / span
     }
 
@@ -487,8 +490,8 @@ class SigilReader {
             }
         }
         fits.sortByDescending { it.score }
-        for (f in fits.take(6)) {
-            if (f.score < 0.25f) break
+        for (f in fits) {
+            if (f.score < 0.2f) break
             // a finer turn round the best one, then the full read
             var best = f.score; var turn = f.turn
             for (d in doubleArrayOf(f.turn - 0.25, f.turn + 0.25)) {
