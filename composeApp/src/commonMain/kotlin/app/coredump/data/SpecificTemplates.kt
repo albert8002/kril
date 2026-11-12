@@ -3,7 +3,7 @@ package app.coredump.data
 /**
  * "Slightly specific" lists in the spirit of Krillion's daily prompts: a familiar category with one qualifying
  * condition (a size, a date, a place, a membership, a spelling rule) — "Name a town in Europe with more than 50,000
- * people", "Name a mountain higher than 7,000 m", "Name a film from the 1980s", "Name a country without the letter A".
+ * people", "Name a volcano higher than 5,000 m", "Name a film from the 1980s", "Name a country without the letter A".
  * The condition is the fun part: it rules out the first answer that comes to mind and rewards the second thought.
  *
  * All are collected on the device like the rest of [WikidataPool] (ids "wx.<group>.s.<name>": the group picks the
@@ -39,7 +39,9 @@ object SpecificTemplates {
     private const val CITY = "VALUES ?cls { wd:Q515 wd:Q1549591 wd:Q1637706 wd:Q200250 wd:Q5119 } ?item wdt:P31 ?cls ;"
     /** Film classes (film, feature, animated feature, animated film). */
     private const val FILM = "VALUES ?cls { wd:Q11424 wd:Q24869 wd:Q29168811 wd:Q202866 } ?item wdt:P31 ?cls ;"
-    private fun years(v: String, from: Int, to: Int) = "FILTER(YEAR(?$v) >= $from && YEAR(?$v) < $to)"
+    /** ?[v] in [from, to), and no earlier date on [path] (re-releases and ports would put old works in a later decade). */
+    private fun years(v: String, from: Int, to: Int, path: String) =
+        "FILTER(YEAR(?$v) >= $from && YEAR(?$v) < $to) FILTER NOT EXISTS { ?item $path ?${v}0 . FILTER(YEAR(?${v}0) < $from) }"
     private fun before(v: String, year: Int) = "FILTER(YEAR(?$v) < $year)"
     /** Species below the taxa named (scientific names), written order kept (see [WikidataPool]). */
     private fun species(vararg taxa: String) =
@@ -66,8 +68,6 @@ object SpecificTemplates {
     val all: List<WikidataTemplate> = listOf(
         // ---------------- geography: sizes, places, spelling
         s("ge", "eutown50k", "Name a town or city in Europe with more than 50,000 people", EU_TOWN, minLinks = 12, famousMin = 8, limit = 900),
-        s("ge", "asiacity5m", "Name a city in Asia with more than 5 million people",
-            "$CITY wdt:P1082 ?pop . FILTER(?pop >= 5000000) ?item wdt:P17 ?c . ?c wdt:P30 wd:Q48 . FILTER(?c != wd:Q159 && ?c != wd:Q79)", famousMin = 8),
         s("ge", "africacity1m", "Name a city in Africa with more than 1 million people",
             "$CITY wdt:P1082 ?pop . FILTER(?pop >= 1000000) ?item wdt:P17/wdt:P30 wd:Q15 .", famousMin = 6),
         s("ge", "samcity1m", "Name a city in South America with more than 1 million people",
@@ -78,8 +78,6 @@ object SpecificTemplates {
         s("ge", "bigcountry", "Name a country with more than 50 million people", "$STATE ?item wdt:P1082 ?pop . FILTER(?pop >= 50000000)", famousMin = 8),
         s("ge", "hugecountry", "Name a country larger than 1 million km²",
             "$STATE ?item p:P2046/psn:P2046/wikibase:quantityAmount ?a . FILTER(?a >= 1.0E12)", famousMin = 8),
-        s("ge", "smallcountry", "Name a country smaller than 10,000 km²",
-            "$STATE ?item p:P2046/psn:P2046/wikibase:quantityAmount ?a . FILTER(?a < 1.0E10)", famousMin = 8),
         s("ge", "endsia", "Name a country whose name ends in -ia", "$STATE ${label("STRENDS(LCASE(?l), \"ia\")")}", famousMin = 8),
         s("ge", "startss", "Name a country whose name starts with S", "$STATE ${label("STRSTARTS(?l, \"S\")")}", famousMin = 8),
         s("ge", "noa", "Name a country without the letter A in its name", "$STATE ${label("!CONTAINS(LCASE(?l), \"a\")")}", famousMin = 8),
@@ -90,11 +88,6 @@ object SpecificTemplates {
         s("ge", "southcapital", "Name a national capital south of the equator",
             "?c wdt:P31 wd:Q3624078 ; wdt:P36 ?item . FILTER NOT EXISTS { ?c wdt:P576 ?gone . } ?item wdt:P625 ?xy . FILTER(geof:latitude(?xy) < 0)",
             famousMin = 8),
-        s("ge", "alps4000", "Name a mountain in Europe higher than 4,000 m",
-            "?item wdt:P31 wd:Q8502 ; wdt:P2044 ?h . FILTER(?h >= 4000) ?item wdt:P17 ?c . ?c wdt:P30 wd:Q46 . " +
-                "?item wdt:P625 ?xy . FILTER(geof:longitude(?xy) < 50)", famousMin = 3),
-        s("ge", "peak7000", "Name a mountain higher than 7,000 m",
-            "?item wdt:P31 wd:Q8502 ; wdt:P2044 ?h . FILTER(?h >= 7000) ?item wdt:P17/wdt:P30 wd:Q48 .", famousMin = 6),
         s("ge", "volcano5000", "Name a volcano higher than 5,000 m",
             "?item wdt:P31/wdt:P279* wd:Q8072 ; p:P2044/psn:P2044/wikibase:quantityAmount ?h . FILTER(?h >= 5000)", famousMin = 4),
         s("ge", "bigisland", "Name an island larger than 10,000 km²",
@@ -103,21 +96,11 @@ object SpecificTemplates {
         s("ge", "longriver", "Name a river longer than 1,000 km",
             "hint:Query hint:optimizer \"None\" . ?item wdt:P31 wd:Q4022 ; wikibase:sitelinks ?sl . FILTER(?sl >= 8) " +
                 "?item p:P2043/psn:P2043/wikibase:quantityAmount ?len . FILTER(?len >= 1.0E6)", famousMin = 8),
-        s("ge", "euriver", "Name a river in Europe",
-            "?item wdt:P31 wd:Q4022 ; wdt:P17 ?c . ?c wdt:P30 wd:Q46 . FILTER(?c != wd:Q43) ?item wdt:P625 ?xy . FILTER(geof:longitude(?xy) < 60)",
-            minLinks = 15, famousMin = 8),
-        s("ge", "africalake", "Name a lake in Africa", "?item wdt:P31 wd:Q23397 ; wdt:P17/wdt:P30 wd:Q15 .", minLinks = 3, famousMin = 4),
         s("ge", "medisland", "Name an island in the Mediterranean", "?item wdt:P31 wd:Q23442 ; wdt:P206/wdt:P361* wd:Q4918 .",
             minLinks = 5, famousMin = 5),
         s("ge", "caribisland", "Name a Caribbean island", "?item wdt:P31 wd:Q23442 ; wdt:P206/wdt:P361* wd:Q1247 .", minLinks = 3, famousMin = 4),
 
         // ---------------- animals & nature
-        s("an2", "endangeredmammal", "Name an endangered mammal", status("Q11394", "Q219127", under = "Q7377"), minLinks = 5, famousMin = 6),
-        s("an2", "critical", "Name a critically endangered animal", status("Q219127"), minLinks = 5, famousMin = 5),
-        s("an2", "extinct", "Name an animal that died out in modern times (like the dodo)", status("Q237350"), minLinks = 3, famousMin = 3),
-        s("an2", "australia", "Name an animal found only in Australia",
-            "hint:Query hint:optimizer \"None\" . VALUES ?w { wd:Q408 wd:Q34366 } ?item wdt:P183 ?w . ?item wdt:P171+ wd:Q729 .",
-            minLinks = 5, famousMin = 4),
         s("an2", "marsupial", "Name a marsupial", species("Marsupialia"), minLinks = 5, famousMin = 4),
         s("an2", "lizard", "Name a lizard species",
             species("Iguanidae", "Agamidae", "Gekkota", "Scincidae", "Varanidae", "Chamaeleonidae", "Lacertidae", "Anguidae", "Helodermatidae"),
@@ -134,47 +117,24 @@ object SpecificTemplates {
             species("Antilopinae", "Alcelaphinae", "Reduncinae", "Hippotraginae", "Cephalophinae", "Aepycerotinae"), minLinks = 5, famousMin = 4),
         s("an2", "butterfly", "Name a butterfly", species("Papilionidae", "Nymphalidae", "Pieridae", "Lycaenidae", "Hesperiidae"),
             minLinks = 8, famousMin = 2),
-        s("na", "trees", "Name an oak, maple or pine species", species("Quercus", "Acer", "Pinus"), minLinks = 8, famousMin = 3),
         s("na", "africapark", "Name a national park in Africa", "?item wdt:P31 wd:Q46169 ; wdt:P17/wdt:P30 wd:Q15 .", minLinks = 5, famousMin = 4),
 
         // ---------------- food & drink: dishes by country
-        s("fd", "japan", "Name a Japanese dish or food", dishes("Q17"), minLinks = 5, famousMin = 4),
-        s("fd", "korea", "Name a Korean dish or food", dishes("Q884"), minLinks = 4, famousMin = 2),
-        s("fd", "thai", "Name a Thai dish or food", dishes("Q869"), minLinks = 4, famousMin = 2),
-        s("fd", "spain", "Name a Spanish dish or food", dishes("Q29"), minLinks = 5, famousMin = 3),
-        s("fd", "germany", "Name a German dish or food", dishes("Q183"), minLinks = 5, famousMin = 3),
-        s("fd", "greece", "Name a Greek dish or food", dishes("Q41"), minLinks = 5, famousMin = 3),
 
         // ---------------- movies: awards, studios, decades, countries
         s("mv", "palme", "Name a film that won the Palme d'Or", "?item wdt:P166 wd:Q179808 ; wdt:P31/wdt:P279* wd:Q11424 .", famousMin = 8),
-        s("mv", "pixar", "Name a Pixar film", "$FILM wdt:P272 wd:Q127552 .", minLinks = 10, famousMin = 8),
-        s("mv", "ghibli", "Name a Studio Ghibli film", "$FILM wdt:P272 wd:Q182950 .", minLinks = 5, famousMin = 6),
         s("mv", "billion", "Name a film that made more than \$1 billion",
             "$FILM p:P2142/psv:P2142 ?bo . ?bo wikibase:quantityAmount ?usd ; wikibase:quantityUnit wd:Q4917 . FILTER(?usd >= 1000000000)",
             famousMin = 8),
         s("mv", "pre1960", "Name a film released before 1960", "?item wdt:P31 wd:Q11424 ; wdt:P577 ?d . ${before("d", 1960)}", minLinks = 25, famousMin = 8),
-        s("mv", "1980s", "Name a film from the 1980s", "?item wdt:P31 wd:Q11424 ; wdt:P577 ?d . ${years("d", 1980, 1990)}", minLinks = 30, famousMin = 8),
-        s("mv", "1990s", "Name a film from the 1990s", "?item wdt:P31 wd:Q11424 ; wdt:P577 ?d . ${years("d", 1990, 2000)}", minLinks = 30, famousMin = 8),
-        s("mv", "french", "Name a French film", "?item wdt:P31 wd:Q11424 ; wdt:P495 wd:Q142 .", minLinks = 20, famousMin = 6),
-        s("mv", "japanese", "Name a Japanese film", "?item wdt:P31 wd:Q11424 ; wdt:P495 wd:Q17 .", minLinks = 15, famousMin = 6),
+        s("mv", "1980s", "Name a film from the 1980s", "?item wdt:P31 wd:Q11424 ; wdt:P577 ?d . ${years("d", 1980, 1990, "wdt:P577")}", minLinks = 30, famousMin = 8),
+        s("mv", "1990s", "Name a film from the 1990s", "?item wdt:P31 wd:Q11424 ; wdt:P577 ?d . ${years("d", 1990, 2000, "wdt:P577")}", minLinks = 30, famousMin = 8),
         s("mv", "korean", "Name a South Korean film", "?item wdt:P31 wd:Q11424 ; wdt:P495 wd:Q884 .", minLinks = 10, famousMin = 3),
 
         // ---------------- music: decades, instrument families
-        s("mu", "band1960s", "Name a band formed in the 1960s",
-            "VALUES ?cls { wd:Q215380 wd:Q5741069 } ?item wdt:P31 ?cls ; wdt:P571 ?d . ${years("d", 1960, 1970)}", minLinks = 15, famousMin = 6),
-        s("mu", "band1970s", "Name a band formed in the 1970s",
-            "VALUES ?cls { wd:Q215380 wd:Q5741069 } ?item wdt:P31 ?cls ; wdt:P571 ?d . ${years("d", 1970, 1980)}", minLinks = 15, famousMin = 6),
-        s("mu", "band1980s", "Name a band formed in the 1980s",
-            "VALUES ?cls { wd:Q215380 wd:Q5741069 } ?item wdt:P31 ?cls ; wdt:P571 ?d . ${years("d", 1980, 1990)}", minLinks = 15, famousMin = 6),
-        s("mu", "band1990s", "Name a band formed in the 1990s",
-            "VALUES ?cls { wd:Q215380 wd:Q5741069 } ?item wdt:P31 ?cls ; wdt:P571 ?d . ${years("d", 1990, 2000)}", minLinks = 15, famousMin = 6),
-        s("mu", "song1960s", "Name a song released in the 1960s",
-            "VALUES ?cls { wd:Q7366 wd:Q134556 } ?item wdt:P31 ?cls ; wdt:P577 ?d . ${years("d", 1960, 1970)}", minLinks = 10, famousMin = 4),
-        s("mu", "song1980s", "Name a song released in the 1980s",
-            "VALUES ?cls { wd:Q7366 wd:Q134556 } ?item wdt:P31 ?cls ; wdt:P577 ?d . ${years("d", 1980, 1990)}", minLinks = 10, famousMin = 4),
-        s("mu", "album1970s", "Name an album released in the 1970s", "?item wdt:P31 wd:Q482994 ; wdt:P577 ?d . ${years("d", 1970, 1980)}",
+        s("mu", "album1970s", "Name an album released in the 1970s", "?item wdt:P31 wd:Q482994 ; wdt:P577 ?d . ${years("d", 1970, 1980, "wdt:P577")}",
             minLinks = 15, famousMin = 6),
-        s("mu", "album1990s", "Name an album released in the 1990s", "?item wdt:P31 wd:Q482994 ; wdt:P577 ?d . ${years("d", 1990, 2000)}",
+        s("mu", "album1990s", "Name an album released in the 1990s", "?item wdt:P31 wd:Q482994 ; wdt:P577 ?d . ${years("d", 1990, 2000, "wdt:P577")}",
             minLinks = 15, famousMin = 6),
         s("mu", "strings", "Name a string instrument", "?item wdt:P279+ wd:Q1798603 .", minLinks = 5, famousMin = 5),
         s("mu", "winds", "Name a wind instrument", "?item wdt:P279+ wd:Q173453 .", minLinks = 5, famousMin = 5),
@@ -183,9 +143,9 @@ object SpecificTemplates {
         // ---------------- gaming: eras, publisher, platforms
         s("gm", "pre1990", "Name a video game released before 1990", "?item wdt:P31 wd:Q7889 ; wdt:P577 ?d . ${before("d", 1990)}",
             minLinks = 10, famousMin = 6),
-        s("gm", "1990s", "Name a video game from the 1990s", "?item wdt:P31 wd:Q7889 ; wdt:P577 ?d . ${years("d", 1990, 2000)}",
+        s("gm", "1990s", "Name a video game from the 1990s", "?item wdt:P31 wd:Q7889 ; wdt:P577 ?d . ${years("d", 1990, 2000, "wdt:P577")}",
             minLinks = 15, famousMin = 8),
-        s("gm", "2000s", "Name a video game from the 2000s", "?item wdt:P31 wd:Q7889 ; wdt:P577 ?d . ${years("d", 2000, 2010)}",
+        s("gm", "2000s", "Name a video game from the 2000s", "?item wdt:P31 wd:Q7889 ; wdt:P577 ?d . ${years("d", 2000, 2010, "wdt:P577")}",
             minLinks = 15, famousMin = 8),
         s("gm", "nintendo", "Name a game published by Nintendo", "?item wdt:P31 wd:Q7889 ; wdt:P123 wd:Q8093 .", minLinks = 8, famousMin = 8),
         s("gm", "wii", "Name a Wii game", "?item wdt:P31 wd:Q7889 ; wdt:P400 wd:Q8079 .", minLinks = 5, famousMin = 3),
@@ -199,9 +159,9 @@ object SpecificTemplates {
         s("tv", "hbo", "Name an HBO series", "?item wdt:P31 wd:Q5398426 ; wdt:P449 wd:Q23633 .", minLinks = 5, famousMin = 6),
         s("tv", "netflix", "Name a Netflix series", "?item wdt:P31 wd:Q5398426 ; wdt:P449 wd:Q907311 .", minLinks = 10, famousMin = 6),
         s("tv", "sitcom1990s", "Name a sitcom that started in the 1990s",
-            "?item wdt:P31 wd:Q5398426 ; wdt:P136 wd:Q170238 ; wdt:P580|wdt:P577 ?d . ${years("d", 1990, 2000)}", minLinks = 5, famousMin = 4),
+            "?item wdt:P31 wd:Q5398426 ; wdt:P136 wd:Q170238 ; wdt:P580|wdt:P577 ?d . ${years("d", 1990, 2000, "wdt:P580|wdt:P577")}", minLinks = 5, famousMin = 4),
         s("tv", "series2010s", "Name a TV series that started in the 2010s",
-            "?item wdt:P31 wd:Q5398426 ; wdt:P580|wdt:P577 ?d . ${years("d", 2010, 2020)}", minLinks = 30, famousMin = 8),
+            "?item wdt:P31 wd:Q5398426 ; wdt:P580|wdt:P577 ?d . ${years("d", 2010, 2020, "wdt:P580|wdt:P577")}", minLinks = 30, famousMin = 8),
         s("tv", "tenseasons", "Name a TV series with 10 or more seasons", "?item wdt:P31 wd:Q5398426 ; wdt:P2437 ?n . FILTER(?n >= 10)",
             minLinks = 10, famousMin = 6),
 
@@ -211,7 +171,7 @@ object SpecificTemplates {
         s("my", "greekbeast", "Name a creature from Greek mythology", "?item wdt:P1080 wd:Q34726 ; wdt:P31/wdt:P279* wd:Q2239243 .",
             minLinks = 5, famousMin = 5),
         s("ho", "horror1980s", "Name a horror film from the 1980s",
-            "?item wdt:P31 wd:Q11424 ; wdt:P136 wd:Q200092 ; wdt:P577 ?d . ${years("d", 1980, 1990)}", minLinks = 8, famousMin = 5),
+            "?item wdt:P31 wd:Q11424 ; wdt:P136 wd:Q200092 ; wdt:P577 ?d . ${years("d", 1980, 1990, "wdt:P577")}", minLinks = 8, famousMin = 5),
         s("ho", "king", "Name a Stephen King book or story", "?item wdt:P50 wd:Q39829 . FILTER NOT EXISTS { ?item wdt:P31 wd:Q3331189 . }",
             minLinks = 3, famousMin = 5),
 
@@ -240,7 +200,7 @@ object SpecificTemplates {
         s("hi", "ww2", "Name a battle or operation of World War II",
             "VALUES ?cls { wd:Q178561 wd:Q188055 wd:Q645883 } ?item wdt:P31 ?cls ; wdt:P361+ wd:Q362 .", minLinks = 10, famousMin = 6),
         s("hi", "war1800s", "Name a war that began in the 1800s",
-            "VALUES ?cls { wd:Q198 wd:Q8465 } ?item wdt:P31 ?cls ; wdt:P580 ?d . ${years("d", 1800, 1900)}", minLinks = 10, famousMin = 6),
+            "VALUES ?cls { wd:Q198 wd:Q8465 } ?item wdt:P31 ?cls ; wdt:P580 ?d . ${years("d", 1800, 1900, "wdt:P580")}", minLinks = 10, famousMin = 6),
         s("hi", "oldempire", "Name an empire founded before the year 1000", "?item wdt:P31 wd:Q48349 ; wdt:P571 ?d . ${before("d", 1000)}",
             minLinks = 5, famousMin = 6),
         s("hi", "pyramid", "Name an Egyptian pyramid", "?item wdt:P31/wdt:P279* wd:Q12516 ; wdt:P17 wd:Q79 .", minLinks = 2, famousMin = 2),

@@ -204,7 +204,10 @@ fun main(args: Array<String>) {
         runCatching { searchSelfTest() }.onFailure { log("SEARCH crashed: ${it::class.simpleName}: ${it.message?.take(120)}") }
         val only = args.getOrNull(1)?.split(',')?.filter { it.isNotBlank() }
         // the qualifier lists (SpecificTemplates) are always checked, first, whatever the filter
-        val spec = app.coredump.data.SpecificTemplates.all
+        // forward on even CI runs, backward on odd ones: when the time budget runs out, the next run checks the other end
+        val spec = app.coredump.data.SpecificTemplates.all.let {
+            if ((System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) % 2 == 1) it.reversed() else it
+        }
         val specIds = app.coredump.data.SpecificTemplates.ids
         val list = spec + app.coredump.data.WikidataPool.all.filter { it.id !in specIds && (only == null || only.any { o -> it.id.startsWith(o) }) }
         log("POOL checking ${list.size} templates (${spec.size} qualifier lists first)")
@@ -236,7 +239,7 @@ fun main(args: Array<String>) {
         // give (the exact requests and maths the app's background rescoring uses, see Rescore)
         run {
             val rs = app.coredump.data.Rescore
-            val sample = (listOf("wx.an2.s.australia", "wx.ge.s.eutown50k", "wx.mv.s.1980s").mapNotNull { kept[it] } +
+            val sample = (listOf("wx.ge.s.eutown50k", "wx.mv.s.1980s", "wx.an2.s.flightless").mapNotNull { kept[it] } +
                 kept.values.filter { it.id in specIds }.sortedBy { it.id }).distinctBy { it.id }.take(5)
             for (p in sample) {
                 if (overBudget()) { log("POOL RESCORE ${p.id.padEnd(26)} SKIP budget"); continue }
