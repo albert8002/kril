@@ -60,7 +60,9 @@ object SpecificTemplates {
         "Q183", "Q41", "Q28", "Q189", "Q27", "Q38", "Q1246", "Q211", "Q347", "Q37", "Q32", "Q233", "Q217", "Q235", "Q236", "Q55",
         "Q29999", "Q221", "Q20", "Q36", "Q45", "Q218", "Q159", "Q238", "Q403", "Q214", "Q215", "Q29", "Q34", "Q39", "Q43", "Q212",
         "Q145", "Q237")
-    private val EU_TOWN = "hint:Query hint:optimizer \"None\" . ?item wdt:P1082 ?pop . FILTER(?pop >= 50000) ?item wdt:P17 ?c . " +
+    private val EU_TOWN = "hint:Query hint:optimizer \"None\" . ?item wdt:P1082 ?pop . FILTER(?pop >= 50000) " +
+        // known places first (cheap), so the slow class check below runs on a few thousand items only
+        "?item wikibase:sitelinks ?sl . FILTER(?sl >= 12) ?item wdt:P17 ?c . " +
         "FILTER(?c IN (${europe.joinToString(", ") { "wd:$it" }})) ?item wdt:P625 ?xy . " +
         "FILTER((?c != wd:Q159 || geof:longitude(?xy) < 60) && (?c != wd:Q43 || geof:longitude(?xy) < 29.2)) " +
         "?item wdt:P31/wdt:P279* wd:Q486972 ."
@@ -166,14 +168,11 @@ object SpecificTemplates {
             minLinks = 10, famousMin = 6),
 
         // ---------------- pop culture, myth, horror
-        s("pc", "marvel", "Name a Marvel Comics character", "?item wdt:P1080 wd:Q931597 ; wdt:P31/wdt:P279* wd:Q95074 .", minLinks = 10, famousMin = 6),
         s("pc", "dc", "Name a DC Comics character", "?item wdt:P1080 wd:Q1152150 ; wdt:P31/wdt:P279* wd:Q95074 .", minLinks = 10, famousMin = 6),
-        s("my", "greekbeast", "Name a creature from Greek mythology", "?item wdt:P1080 wd:Q34726 ; wdt:P31/wdt:P279* wd:Q2239243 .",
-            minLinks = 5, famousMin = 5),
         s("ho", "horror1980s", "Name a horror film from the 1980s",
             "?item wdt:P31 wd:Q11424 ; wdt:P136 wd:Q200092 ; wdt:P577 ?d . ${years("d", 1980, 1990, "wdt:P577")}", minLinks = 8, famousMin = 5),
         s("ho", "king", "Name a Stephen King book or story", "?item wdt:P50 wd:Q39829 . FILTER NOT EXISTS { ?item wdt:P31 wd:Q3331189 . }",
-            minLinks = 3, famousMin = 5),
+            minLinks = 3, famousMin = 3),
 
         // ---------------- landmarks
         s("lm", "supertall", "Name a skyscraper taller than 300 m",
@@ -183,8 +182,6 @@ object SpecificTemplates {
         s("lm", "busyairport", "Name an airport with more than 30 million passengers a year",
             "?item wdt:P31/wdt:P279* wd:Q1248784 ; wdt:P3872 ?pax . FILTER(?pax >= 30000000)", famousMin = 6),
         s("lm", "gothic", "Name a Gothic cathedral", "?item wdt:P31 wd:Q2977 ; wdt:P149/wdt:P279* wd:Q176483 .", minLinks = 8, famousMin = 6),
-        s("lm", "parismuseum", "Name a museum in Paris", "?item wdt:P131+ wd:Q90 ; wdt:P31/wdt:P279* wd:Q33506 .", minLinks = 5, famousMin = 4),
-        s("lm", "londonmuseum", "Name a museum in London", "?item wdt:P131+ wd:Q84 ; wdt:P31/wdt:P279* wd:Q33506 .", minLinks = 5, famousMin = 4),
         s("lm", "unescoafrica", "Name a UNESCO World Heritage Site in Africa", "?item wdt:P1435 wd:Q9259 ; wdt:P17/wdt:P30 wd:Q15 .", famousMin = 4),
         s("lm", "unescosam", "Name a UNESCO World Heritage Site in South America", "?item wdt:P1435 wd:Q9259 ; wdt:P17/wdt:P30 wd:Q18 .", famousMin = 4),
 
@@ -201,8 +198,6 @@ object SpecificTemplates {
             "VALUES ?cls { wd:Q178561 wd:Q188055 wd:Q645883 } ?item wdt:P31 ?cls ; wdt:P361+ wd:Q362 .", minLinks = 10, famousMin = 6),
         s("hi", "war1800s", "Name a war that began in the 1800s",
             "VALUES ?cls { wd:Q198 wd:Q8465 } ?item wdt:P31 ?cls ; wdt:P580 ?d . ${years("d", 1800, 1900, "wdt:P580")}", minLinks = 10, famousMin = 6),
-        s("hi", "oldempire", "Name an empire founded before the year 1000", "?item wdt:P31 wd:Q48349 ; wdt:P571 ?d . ${before("d", 1000)}",
-            minLinks = 5, famousMin = 6),
         s("hi", "pyramid", "Name an Egyptian pyramid", "?item wdt:P31/wdt:P279* wd:Q12516 ; wdt:P17 wd:Q79 .", minLinks = 2, famousMin = 2),
 
         // ---------------- brands & tech
@@ -235,7 +230,6 @@ object SpecificTemplates {
             "hint:Query hint:optimizer \"None\" . ?item wdt:P31 wd:Q3305213 ; wikibase:sitelinks ?sl . FILTER(?sl >= 8) " +
                 "?item wdt:P571 ?d . ${before("d", 1700)}", famousMin = 6),
         s("bk", "shakespeare", "Name a play or poem by Shakespeare", "?item wdt:P50 wd:Q692 .", minLinks = 10, famousMin = 8),
-        s("bk", "louvre", "Name a work of art in the Louvre", "?item wdt:P195 wd:Q19675 .", minLinks = 5, famousMin = 4),
     )
 
     val ids: Set<String> by lazy { all.mapTo(HashSet()) { it.id } }

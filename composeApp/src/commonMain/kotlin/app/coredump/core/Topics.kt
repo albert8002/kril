@@ -241,7 +241,7 @@ object Topics {
     /** A qualifier list: a category with one condition ("a river longer than 1,000 km"). */
     fun isSpecific(id: String): Boolean = id.startsWith("wx.") && id.split('.').getOrNull(2) == "s"
 
-    private val nicheSpecific = setOf("wx.an2.s.spider", "wx.an2.s.butterfly", "wx.na.s.trees", "wx.hi.s.pyramid", "wx.sc.s.comet")
+    private val nicheSpecific = setOf("wx.an2.s.spider", "wx.an2.s.butterfly", "wx.hi.s.pyramid", "wx.sc.s.comet")
 
     // ---------------- people lists by job (the "Name a famous <nationality> <job>" kind)
 
