@@ -40,6 +40,8 @@ object PeerBook {
     private val stats = HashMap<String, Pair<Int, Int>>()
     fun note(name: String?, code: String?) { if (!name.isNullOrBlank() && !code.isNullOrBlank()) codes[name] = code }
     fun codeOf(name: String?): String? = name?.let { codes[it] }
+    /** Everyone met in this app session (1v1 rivals, party guests and hosts): (name, code). */
+    fun recent(): List<Pair<String, String>> = codes.entries.map { it.key to it.value }
 
     /** The other player's rating and win streak, as they sent them. */
     fun noteStats(name: String?, elo: Int, streak: Int) { if (!name.isNullOrBlank() && elo > 0) stats[name] = elo to streak }

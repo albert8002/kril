@@ -146,7 +146,8 @@ private fun MeltRules(model: AppModel) {
             "2–8 players sit round $w. whoever holds it names an answer nobody said yet this round, and it passes on.",
             "every turn has a countdown (the host sets the seconds). still holding $w at 0: it blows, you lose a heart.",
             "type ahead while you wait: press enter and it goes out the moment it's your turn.",
-            "not on the list? the host checks it online. a miss shows \"did you mean\".",
+            "not on the list? it's checked online and your clock stops meanwhile: keep typing. a wrong answer clears itself.",
+            "the categories are big: several lists joined (every animal, every city…), hundreds of answers each.",
             "rare answers fill your meter. full meter: +1 heart (3 at most). no hearts left: out. last one standing wins.",
         )) {
             Row(Modifier.padding(vertical = 2.dp)) {
@@ -257,17 +258,28 @@ private fun PartyHostPane(model: AppModel) {
         }
         if (lobby.players.size < 2) TText("waiting for friends… or add bots below.", size = 11.sp, color = C.dim)
     }
-    if (s.friends.isNotEmpty()) {
+    // friends, and players met in this session (1v1 rivals, party guests) who aren't friends yet
+    val recent = app.coredump.game.PeerBook.recent()
+        .filter { (n, c) -> c != host.room && c.length == JoinTicket.ROOM_LEN && s.friends.none { it.code == c || it.name.equals(n, ignoreCase = true) } }
+        .distinctBy { it.second }
+        .map { (n, c) -> app.coredump.data.Friend(n, c, 0L) }
+    if (s.friends.isNotEmpty() || recent.isNotEmpty()) {
         Spacer(Modifier.height(12.dp))
-        Panel(Th.say("INVITE", "Invite friends")) {
-            for (f in s.friends.sortedBy { it.name.lowercase() }) {
+        Panel(Th.say("INVITE", if (recent.isEmpty()) "Invite friends" else "Invite friends and players")) {
+            @Composable
+            fun InviteRow(f: app.coredump.data.Friend, note: String?) {
                 val seated = lobby.players.any { it.name.equals(f.name, ignoreCase = true) }
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TText(f.name, Modifier.weight(1f), size = 14.sp, weight = FontWeight.Bold)
+                    Column(Modifier.weight(1f)) {
+                        TText(f.name, size = 14.sp, weight = FontWeight.Bold)
+                        if (note != null) TText(note, size = 10.sp, color = C.dim)
+                    }
                     if (seated) TText("seated", size = 11.sp, color = C.hot)
                     else TLink("invite", { model.inviteFriend(f, "party") }, color = C.hot)
                 }
             }
+            for (f in s.friends.sortedBy { it.name.lowercase() }) InviteRow(f, null)
+            for (f in recent) InviteRow(f, "played with you")
             InviteStatus(model, "party")
             TText("they get a pop-up in the app (it must be open) and sit down with one tap.", size = 10.sp, color = C.dim)
         }
@@ -363,18 +375,27 @@ fun MeltScreen(model: AppModel, session: MeltSession) {
     val nudge = remember { Animatable(0f) }
     val focus = remember { FocusRequester() }
 
-    // my own attempts: clear on a hit, say why on a miss (with "did you mean")
+    // my own attempts: clear on a hit, say why on a miss (with "did you mean"). The field empties itself after a
+    // wrong answer and as soon as an answer goes off to be checked, so the next one can be typed at once — but only
+    // if it still holds that answer (never what I've started typing since).
     LaunchedEffect(session) {
         session.verdicts.collect { v ->
+            fun clearIfSame() { if (input.trim().equals(v.text.trim(), ignoreCase = true)) input = "" }
             when (v.kind) {
                 "ok" -> { input = ""; note = ""; suggestions = emptyList() }
-                "check" -> { note = "checking “${v.text}” online…"; suggestions = emptyList() }
+                "check" -> { clearIfSame(); note = "checking “${v.text}” online · clock stopped · keep typing"; suggestions = emptyList() }
+                "busy" -> { note = "still checking your other answers…" }
                 "miss" -> {
+                    clearIfSame()
                     note = "“${v.text}” is not on the list" + if (v.suggestions.isNotEmpty()) " · did you mean:" else ""
                     suggestions = v.suggestions
                     nudge.snapTo(1f); nudge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 900f))
                 }
-                "dup" -> { note = "already said this round"; suggestions = emptyList(); nudge.snapTo(1f); nudge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 900f)) }
+                "dup" -> {
+                    clearIfSame()
+                    note = "“${v.text}” was already said this round"; suggestions = emptyList()
+                    nudge.snapTo(1f); nudge.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 900f))
+                }
                 else -> { note = "not your turn yet" }
             }
             Unit
@@ -449,8 +470,12 @@ fun MeltScreen(model: AppModel, session: MeltSession) {
                     if (st.phase == MeltPhase.COUNTDOWN) Countdown(st.countdown, Modifier.align(Alignment.Center))
                     // seconds left, on the core
                     if (st.phase == MeltPhase.TURN) {
-                        TText("$secs", Modifier.align(Alignment.Center), size = 34.sp, weight = FontWeight.Bold,
-                            color = if (secs <= 3) C.white else C.bg, align = TextAlign.Center)
+                        Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                            TText("$secs", size = 34.sp, weight = FontWeight.Bold,
+                                color = if (secs <= 3) C.white else C.bg, align = TextAlign.Center)
+                            // the holder's answer is being checked online: the clock waits
+                            if (st.hold) TText("⏸ checking", size = 10.sp, weight = FontWeight.Bold, color = if (secs <= 3) C.white else C.bg)
+                        }
                     }
                 }
                 if (st.phase != MeltPhase.OVER) {
@@ -523,7 +548,7 @@ fun MeltScreen(model: AppModel, session: MeltSession) {
                                 else -> " "
                             },
                             size = 12.sp,
-                            color = when { note.isNotEmpty() && !note.startsWith("checking") -> C.blood; myTurn || next == myId || queued.isNotEmpty() -> C.hot; else -> C.amber },
+                            color = when { note.isNotEmpty() && !note.startsWith("checking") && !note.startsWith("still") -> C.blood; myTurn || next == myId || queued.isNotEmpty() -> C.hot; else -> C.amber },
                             weight = FontWeight.Bold, maxLines = 2,
                         )
                     }

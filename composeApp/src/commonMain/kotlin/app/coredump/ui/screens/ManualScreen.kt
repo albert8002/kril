@@ -112,7 +112,10 @@ fun ManualScreen(model: AppModel) {
                 for (l in listOf(
                     "battle royale for 2–8 players: bots offline, or friends online (HOST PARTY / JOIN PARTY, same code as 1v1).",
                     "one player holds the core. name an answer nobody said yet this round: the core passes on.",
-                    "a wrong or repeated answer does not pass it. keep trying: a miss shows \"did you mean\"; answers not on the list are checked online by the host.",
+                    "a wrong or repeated answer does not pass it and clears itself from the field. keep trying: a miss shows \"did you mean\".",
+                    "answers not on the list are checked online by the host; your clock stops meanwhile (up to 6 s a turn) and you can keep sending answers.",
+                    "categories are merged pools: several lists of one kind joined (every animal, every city, every film…), hundreds of answers each.",
+                    "invite friends, or players you met this session, from HOST PARTY: they get a pop-up wherever they are in the app.",
                     "every turn has a countdown shown on the core (the host sets 5–20 s and the topics). still holding it at 0: it blows, −1 heart, new category.",
                     "type ahead while you wait: enter queues it, it goes out the moment the core reaches you. × clears it.",
                     "rarer answers fill your meter faster (common +1 … legendary +6). full meter (10): +1 heart, 3 at most.",

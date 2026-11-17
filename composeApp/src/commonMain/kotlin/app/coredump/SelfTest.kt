@@ -461,6 +461,27 @@ object SelfTest {
             log("INVITE answer status=${inviter.status.value} after ${iw}ms")
             inviter.cancel()
 
+            // party invites pop up on the MELTDOWN screens too: in my party lobby and in the middle of a game
+            for (where in listOf("lobby", "game")) {
+                model.setTheme(Style.ABYSS, plan.first { it.first == Style.ABYSS }.second)
+                model.home(); delay(400)
+                model.go(Screen.Meltdown); delay(800)
+                if (where == "lobby") { model.openPartyHost(); delay(1500) } else { model.startMeltBots(3, 1); delay(4500) }
+                val pinv = app.coredump.game.Inviter(model.scope, "ME", model.myRoom(), "PARTYBOT", app.coredump.net.JoinTicket.newRoom(),
+                    model.settings.roomBroker, "party")
+                pinv.send()
+                iw = 0
+                while (model.invites.isEmpty() && iw < 30_000) { delay(250); iw += 250 }
+                log("INVITE party/$where screen=${model.screen::class.simpleName} popup=${model.invites.size} mode=${model.invites.firstOrNull()?.mode} after ${iw}ms")
+                delay(900)
+                shot("invite_party_$where")
+                model.invites.firstOrNull()?.let { model.declineInvite(it) }
+                pinv.cancel()
+                (model.screen as? Screen.Melt)?.session?.let { model.leaveMelt(it) }
+                model.closeParty()
+                delay(500)
+            }
+
             // friend request by code only: pop-up, accept, the sender gets my name back
             model.setTheme(Style.CHAT, plan.first { it.first == Style.CHAT }.second)
             model.home(); delay(400)

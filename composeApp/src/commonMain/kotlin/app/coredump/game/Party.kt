@@ -137,6 +137,8 @@ class PartyHost(
                         val p = MeltPlayer(id, name, bot = false, elo = o["e"]?.toIntOrNull() ?: 0, streak = o["s"]?.toIntOrNull() ?: 0,
                             wins = o["wn"]?.toIntOrNull() ?: 0)
                         _lobby.update { it.copy(players = it.players + p) }
+                        // their own code (newer guests send it): they can be invited again later
+                        o["c"]?.takeIf { it.length == app.coredump.net.JoinTicket.ROOM_LEN }?.let { PeerBook.note(name, it) }
                     }
                     sendLobby()
                 } else send(body("state") { put("s", Meltdown.encode(g.state.value)) })
@@ -194,7 +196,7 @@ class PartyHost(
  * [lobby] shows the seating until the host starts.
  */
 class PartyGuest(private val scope: CoroutineScope, private val myName: String, val room: String, private val broker: Int = 0,
-                 private val me: MeltPlayer? = null) : MeltSession {
+                 private val me: MeltPlayer? = null, private val myCode: String = "") : MeltSession {
     override val myId: String = Meltdown.newId()
     override val online: Boolean = true
     private val _state = MutableStateFlow(MeltState())
@@ -268,6 +270,7 @@ class PartyGuest(private val scope: CoroutineScope, private val myName: String, 
             for (attempt in 0 until (if (n == 0) 10 else 6)) {
                 l.send(body("join") {
                     put("id", myId); put("n", myName)
+                    if (myCode.isNotBlank()) put("c", myCode)
                     me?.let { m -> put("e", m.elo.toString()); put("s", m.streak.toString()); put("wn", m.wins.toString()) }
                 })
                 val relay = if (order.size > 1) " · relay ${n + 1}/${order.size}" else ""

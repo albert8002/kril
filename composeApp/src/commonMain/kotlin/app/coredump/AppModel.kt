@@ -311,18 +311,24 @@ class AppModel(val scope: CoroutineScope) {
         go(Screen.Play(s), push = false)
     }
 
-    /** Same 7 hand-ranked prompts for everyone today (seeded by the date). */
+    /**
+     * Same 7 hand-ranked prompts for everyone today: drawn only from the fixed [app.coredump.data.DailyPool], each
+     * list ranked by a hash of (day, list id) — not a shuffle of whatever this build has — so new lists, imported
+     * packs or collected lists never change a day's run. Seven different topics where possible.
+     */
     fun dailyPrompts(n: Int): List<Prompt> {
         val pool = bank.all()
-            .filter { it.source == app.coredump.core.SourceKind.BUNDLED && it.size >= 24 && !it.niche }
-            .sortedBy { it.id }
-        val rnd = Random(n * 7919L + 17L)
+            .filter { it.source == app.coredump.core.SourceKind.BUNDLED && it.id in app.coredump.data.DailyPool.IDS && it.size >= 24 && !it.niche }
+            .distinctBy { it.id }
+            .sortedWith(compareBy<Prompt> { app.coredump.core.stableHash("daily#$n#${it.id}") }.thenBy { it.id })
         val out = ArrayList<Prompt>()
         val topics = HashSet<String>()
-        for (p in pool.shuffled(rnd)) {
+        for (p in pool) {
             if (out.size >= 7) break
-            if (topics.add(p.topic) || topics.size >= 7) out += p
+            if (topics.add(p.topic)) out += p
         }
+        // fewer than 7 topics: fill up in the same order
+        for (p in pool) { if (out.size >= 7) break; if (p !in out) out += p }
         return out
     }
 
@@ -538,15 +544,47 @@ class AppModel(val scope: CoroutineScope) {
 
     private val meltSeen = HashSet<String>()
 
-    /** Next MELTDOWN category: a big list (60+ answers) in the chosen topics nobody saw in this game; never a niche one. */
+    /** The merged pools ([app.coredump.core.Pools]) for the lists on hand, and what they were made from. */
+    private class MeltPools(val key: Long, val pools: List<Prompt>, val members: Set<String>)
+    private var meltPools: MeltPools? = null
+
+    private fun meltPoolsNow(): MeltPools {
+        val all = bank.all()
+        val gone = discarded
+        val key = all.size * 1_000_003L + all.sumOf { it.size.toLong() } * 31 + gone.size
+        meltPools?.takeIf { it.key == key }?.let { return it }
+        val usable = all.filter { !it.niche && it.id !in gone }
+        val pools = app.coredump.core.Pools.build(usable)
+        val members = pools.flatMap { pl -> app.coredump.core.Pools.membersOf(app.coredump.core.Pools.groups.first { it.id == pl.id }, usable).map { it.id } }.toSet()
+        return MeltPools(key, pools, members).also { meltPools = it }
+    }
+
+    /** Builds the merged pools off the main thread before a game needs them (they take a moment on a phone). */
+    private fun warmMeltPools() {
+        scope.launch(kotlinx.coroutines.Dispatchers.Default) { runCatching { meltPoolsNow() } }
+    }
+
+    /**
+     * Next MELTDOWN category, one nobody saw in this game, in the chosen topics: a merged pool (several lists of one
+     * kind joined, 150+ answers) or a list that big on its own; with nothing that big in the topics, the biggest
+     * lists there (60+, then 30+). Never a niche list.
+     */
     fun meltPrompt(): Prompt? {
         val topics = meltConfig.topics
-        val all = bank.all().filter { !it.niche && it.id !in discarded && (topics.isEmpty() || it.topic in topics) }
-            .ifEmpty { bank.all().filter { !it.niche && it.id !in discarded } }
-        val big = all.filter { it.size >= 60 }.ifEmpty { all.filter { it.size >= 30 } }
+        fun inTopics(p: Prompt) = topics.isEmpty() || p.topic in topics
+        val mp = meltPoolsNow()
+        val singles = bank.all().filter { !it.niche && it.id !in discarded && it.size >= app.coredump.core.Pools.MIN_SIZE && it.id !in mp.members }
+        val big = (mp.pools + singles).filter(::inTopics)
+            .ifEmpty {
+                val all = bank.all().filter { !it.niche && it.id !in discarded && inTopics(it) }
+                    .ifEmpty { bank.all().filter { !it.niche && it.id !in discarded } }
+                all.filter { it.size >= 60 }.ifEmpty { all.filter { it.size >= 30 } }
+            }
         val fresh = big.filter { it.id !in meltSeen }.ifEmpty { meltSeen.clear(); big }
         val p = fresh.randomOrNull() ?: return null
         meltSeen += p.id
+        // the answer index of a big pool takes a moment: build it now, off the main thread, before the first answer
+        scope.launch(kotlinx.coroutines.Dispatchers.Default) { runCatching { p.index } }
         return p
     }
 
@@ -555,7 +593,8 @@ class AppModel(val scope: CoroutineScope) {
 
     /** The host checks an answer that is not on the list online (cached, as in solo): its name and tier, or null. */
     private suspend fun meltCheck(p: Prompt, text: String): app.coredump.game.MeltOnline? =
-        when (val r = bank.verify(p, text)) {
+        // a turn is short: no answer within 8 s counts as not found
+        when (val r = kotlinx.coroutines.withTimeoutOrNull(8_000) { bank.verify(p, text) }) {
             is app.coredump.data.AnswerCheck.Outcome.Listed -> {
                 val i = p.entries.indexOfFirst { it.name == r.name }
                 if (i >= 0) app.coredump.game.MeltOnline(p.entries[i].name, p.entries[i].tier, i) else null
@@ -570,6 +609,7 @@ class AppModel(val scope: CoroutineScope) {
     /** Offline game against [bots] bots (skill from [meltConfig]). */
     fun startMeltBots(bots: Int, level: Int = meltConfig.botLevel) {
         closeParty()
+        warmMeltPools()
         lastMelt = bots to level
         meltSeen.clear()
         val me = me()
@@ -585,6 +625,7 @@ class AppModel(val scope: CoroutineScope) {
 
     /** Opens my party room (same code as 1v1: friends join with it). */
     fun openPartyHost(): app.coredump.game.PartyHost {
+        warmMeltPools()
         partyGuest?.leave(); partyGuest = null
         closeLobbies()
         partyHost?.let { return it }
@@ -611,7 +652,7 @@ class AppModel(val scope: CoroutineScope) {
         partyHost?.close(); partyHost = null
         closeLobbies()
         partyGuest?.leave()
-        val g = app.coredump.game.PartyGuest(scope, settings.handle.ifBlank { "GUEST" }.take(16), room, t.broker, me())
+        val g = app.coredump.game.PartyGuest(scope, settings.handle.ifBlank { "GUEST" }.take(16), room, t.broker, me(), myRoom())
         partyGuest = g
         g.connect()
         partyWatch?.cancel()

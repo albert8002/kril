@@ -38,6 +38,8 @@ import kotlin.random.Random
  * loses a heart (and a new category starts). Everyone starts with 2 hearts (3 at most). Rare answers charge a meter
  * (common +1 … rarest +6): at 10 you win a heart back. Out at 0 hearts; the last one standing wins.
  * Answers not on the list are checked online by the host (as in solo); a miss comes back with "did you mean".
+ * While the holder's answer is being checked their clock stops (up to [Meltdown.HOLD_MS] a turn) and they can keep
+ * typing and sending other answers.
  */
 
 enum class MeltPhase { LOBBY, COUNTDOWN, TURN, BLAST, OVER }
@@ -66,7 +68,7 @@ data class MeltPlayer(
 
 data class MeltUsed(val name: String, val tier: Tier, val by: String)
 
-/** The result of one of my attempts: kind ok | miss | dup | wait | check; [suggestions] for a miss. */
+/** The result of one of my attempts: kind ok | miss | dup | wait | check | busy; [suggestions] for a miss. */
 data class MeltVerdict(val text: String, val kind: String, val suggestions: List<String> = emptyList())
 
 data class MeltState(
@@ -99,6 +101,8 @@ data class MeltState(
     val evn: Int = 0,
     /** Topics the host picked (empty = all), shown in the lobby. */
     val topics: List<String> = emptyList(),
+    /** The holder's answer is being checked online: their clock is stopped meanwhile. */
+    val hold: Boolean = false,
 ) {
     fun player(id: String) = players.firstOrNull { it.id == id }
     val alive: List<MeltPlayer> get() = players.filter { !it.out }
@@ -125,6 +129,10 @@ object Meltdown {
     const val MAX_HEARTS = 3
     const val CHARGE = 10
     const val MAX_PLAYERS = 8
+    /** The most a holder's clock stops in one turn while their answers are checked online (ms). */
+    const val HOLD_MS = 6_000L
+    /** Online checks one player may have under way at once (count). */
+    const val MAX_CHECKS = 3
     val TURN_CHOICES = listOf(5, 7, 10, 12, 15, 20)
     val botNames = listOf("BYTE", "NULLPTR", "SEGV", "DAEMON", "PANIC", "SUDO", "CRON", "KERNEL", "MALLOC", "FORK", "STACK", "GLITCH")
 
@@ -136,6 +144,7 @@ object Meltdown {
         put("ev", s.event); put("ek", s.eventKind); put("eb", s.eventBy); s.eventTier?.let { put("et", it.name) }
         put("w", s.winner); put("seq", s.seq); put("evn", s.evn)
         put("tps", JsonArray(s.topics.map { JsonPrimitive(it) }))
+        if (s.hold) put("ck", true)
         put("p", JsonArray(s.players.map { p ->
             buildJsonObject {
                 put("i", p.id); put("n", p.name); put("b", p.bot); put("h", p.hearts); put("c", p.charge); put("pl", p.place); put("a", p.answers)
@@ -159,6 +168,7 @@ object Meltdown {
             event = s("ev"), eventKind = s("ek"), eventBy = s("eb"), eventTier = Tier.byName(s("et")),
             winner = s("w"), seq = i("seq"), evn = i("evn"),
             topics = o["tps"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty(),
+            hold = o["ck"]?.jsonPrimitive?.booleanOrNull ?: false,
             players = o["p"]?.jsonArray?.mapNotNull { el ->
                 val p = el as? JsonObject ?: return@mapNotNull null
                 MeltPlayer(p.str("i"), p.str("n").take(24), p["b"]?.jsonPrimitive?.booleanOrNull ?: false,
@@ -207,8 +217,16 @@ class MeltdownGame(
     private var left = 0L
     /** Clock time (ms) when the bot holding the core answers; -1 = it is stuck this turn. */
     private var botDue = -1L
-    /** Players with an online check under way (one at a time each). */
-    private val checking = HashSet<String>()
+    /** Online checks under way, by player id: the answers (compact form) being checked. */
+    private val checking = HashMap<String, MutableSet<String>>()
+    /** What is left of this turn's clock stop for online checks (ms, see [Meltdown.HOLD_MS]). */
+    private var holdLeft = Meltdown.HOLD_MS
+    /** Clock time (ms) of the bot holder's planned wrong try (a repeat or a slip), -1 = none. */
+    private var botSlipAt = -1L
+    /** The last category's answers: what a bot may wrongly blurt out in this one. */
+    private var lastNames: List<String> = emptyList()
+    /** Counts every turn (each pass of the core): an online result from an earlier turn is dropped. */
+    private var turnNo = 0
     private var job: Job? = null
     private val rnd = Random(Platform.epochMillis())
 
@@ -232,9 +250,13 @@ class MeltdownGame(
                 last = now
                 val s = _s.value
                 if (s.phase != MeltPhase.TURN) continue
-                left -= dt
+                // the holder's answer is being checked online: their clock stops (up to HOLD_MS a turn)
+                val held = checking[s.holder].orEmpty().isNotEmpty() && holdLeft > 0L
+                if (held) holdLeft -= dt else left -= dt
+                if (held != s.hold) set { it.copy(hold = held) }
                 if (left <= 0L) { blast(); continue }
                 val h = s.player(s.holder)
+                if (h != null && h.bot && botSlipAt in 1..now) { botSlipAt = -1L; botSlip(h) }
                 if (h != null && h.bot && botDue in 1..now) botAnswer(h)
                 // the countdown goes out 4 times a second (guests show whole seconds and the core's heat)
                 if (now - lastPush >= 250) {
@@ -262,12 +284,16 @@ class MeltdownGame(
     private fun newCategory(holder: String) {
         val p = pickPrompt()
         if (p == null) { set { it.copy(phase = MeltPhase.OVER, event = "no lists to play", eventKind = "win", evn = it.evn + 1) }; return }
+        prompt?.let { old -> lastNames = old.entries.map { it.name } }
         prompt = p
         usedKeys.clear()
         usedNames.clear()
+        checking.clear()
+        turnNo++
         left = turnMs.toLong()
+        holdLeft = Meltdown.HOLD_MS
         set { it.copy(phase = MeltPhase.TURN, holder = holder, prompt = p.text, topic = p.topic, size = p.size, used = emptyList(),
-            heat = 0f, leftMs = turnMs, round = it.round + 1, event = "", eventKind = "") }
+            heat = 0f, leftMs = turnMs, round = it.round + 1, event = "", eventKind = "", hold = false) }
         scheduleBot()
     }
 
@@ -286,21 +312,48 @@ class MeltdownGame(
     private fun passFrom(id: String) {
         val n = nextAfter(id) ?: return
         left = turnMs.toLong()
-        set { it.copy(holder = n, leftMs = turnMs, heat = 0f) }
+        holdLeft = Meltdown.HOLD_MS
+        turnNo++
+        set { it.copy(holder = n, leftMs = turnMs, heat = 0f, hold = false) }
         scheduleBot()
     }
 
+    /**
+     * Plans the bot holder's turn. Bots are beatable: they blank (hold the core till it blows) far more often than
+     * before, more so as the list fills up, take a good part of the turn to answer, and now and then blurt out a
+     * wrong answer first (one already said, or one from the last category), like a person under pressure.
+     * Chances per turn, easy / normal / hard: blank 34 / 24 / 13 % at the start of a category (more as it fills up),
+     * a wrong try first 35 / 25 / 14 %. Simulated games: right in roughly 55 / 70 / 88 % of turns.
+     */
     private fun scheduleBot() {
         val s = _s.value
         val h = s.player(s.holder) ?: return
-        if (!h.bot) { botDue = -1L; return }
+        if (!h.bot) { botDue = -1L; botSlipAt = -1L; return }
         val p = prompt ?: return
-        // answer time as a share of the turn: easy bots are slow, hard ones quick
-        val (lo, hi) = when (botLevel) { 0 -> 0.35f to 0.9f; 2 -> 0.1f to 0.4f; else -> 0.2f to 0.7f }
+        val now = Platform.epochMillis()
+        // answer time as a share of the turn: easy bots are slow, hard ones quicker
+        val (lo, hi) = when (botLevel) { 0 -> 0.45f to 0.95f; 2 -> 0.2f to 0.7f; else -> 0.3f to 0.88f }
         val crowd = usedKeys.size.toFloat() / p.size.coerceAtLeast(1)
-        val stuck = (0.04f + 0.55f * crowd) * when (botLevel) { 0 -> 1.6f; 2 -> 0.45f; else -> 1f }
+        val base = when (botLevel) { 0 -> 0.34f; 2 -> 0.13f; else -> 0.24f }
+        val press = when (botLevel) { 0 -> 1.4f; 2 -> 0.7f; else -> 1f }
+        val stuck = (base + 1.2f * crowd * press).coerceAtMost(0.85f)
         val at = (turnMs * (lo + rnd.nextFloat() * (hi - lo))).toLong()
-        botDue = if (rnd.nextFloat() < stuck) -1L else Platform.epochMillis() + at
+        botDue = if (rnd.nextFloat() < stuck) -1L else now + at
+        val slip = when (botLevel) { 0 -> 0.35f; 2 -> 0.14f; else -> 0.25f }
+        val slipBy = if (botDue > 0) botDue - now else turnMs.toLong()
+        botSlipAt = if (rnd.nextFloat() < slip && slipBy > 900) now + (slipBy * (0.3f + 0.4f * rnd.nextFloat())).toLong() else -1L
+    }
+
+    /** The bot holder's wrong try: an answer already said this round, or one from the last category. */
+    private fun botSlip(bot: MeltPlayer) {
+        val p = prompt ?: return
+        val said = _s.value.used
+        // a few names from the last category, the first that is not right here too
+        val stale = (0 until 12).asSequence().mapNotNull { lastNames.randomOrNull(rnd) }.firstOrNull { p.index.lookup(it, 1) == null }
+        when {
+            said.isNotEmpty() && (stale == null || rnd.nextBoolean()) -> said[rnd.nextInt(said.size)].let { dup(bot, it.name, it.name) }
+            stale != null -> miss(bot, p, stale)
+        }
     }
 
     private fun botAnswer(bot: MeltPlayer) {
@@ -321,7 +374,7 @@ class MeltdownGame(
         if (s.phase != MeltPhase.TURN || s.holder != id || p == null) { verdict(id, MeltVerdict(text, "wait")); return }
         val who = s.player(id) ?: return
         val input = text.trim().take(80)
-        if (input.isEmpty() || id in checking) return
+        if (input.isEmpty()) return
         val hit = p.index.lookup(input, if (input.length >= 8) 2 else 1)
         if (hit != null) {
             val e = p.entries[hit.entry]
@@ -331,18 +384,24 @@ class MeltdownGame(
             return
         }
         val check = checkOnline
-        if (check == null || compact(input).length < 3) { miss(who, p, input); return }
-        // not on the list: the host checks it online while the clock keeps running
-        checking += id
-        val round = s.round
+        val key = compact(input)
+        if (check == null || key.length < 3) { miss(who, p, input); return }
+        if (key in usedNames) { dup(who, input, input); return }
+        // not on the list: the host checks it online; meanwhile the holder's clock stops (see the loop) and they can
+        // send other answers (the first right one passes the core on, a late result is dropped)
+        val mine = checking.getOrPut(id) { HashSet() }
+        if (key in mine) { verdict(id, MeltVerdict(input, "check")); return }
+        if (mine.size >= Meltdown.MAX_CHECKS) { verdict(id, MeltVerdict(input, "busy")); return }
+        mine += key
+        val turn = turnNo
         verdict(id, MeltVerdict(input, "check"))
         set { it.copy(event = "${who.name}: $input … checking", eventKind = "check", eventBy = id, eventTier = null, evn = it.evn + 1) }
         scope.launch {
             val r = runCatching { check(p, input) }.getOrNull()
-            checking -= id
+            checking[id]?.remove(key)
             val now = _s.value
             // too late: the turn passed or the core blew meanwhile
-            if (now.phase != MeltPhase.TURN || now.holder != id || now.round != round || prompt !== p) return@launch
+            if (now.phase != MeltPhase.TURN || now.holder != id || turnNo != turn || prompt !== p) return@launch
             when {
                 r == null -> miss(who, p, input)
                 (r.entry != null && r.entry in usedKeys) || compact(r.name) in usedNames -> dup(who, r.name, input)
