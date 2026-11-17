@@ -189,8 +189,7 @@ private fun Badge(text: String, colors: List<Color>, tint: Color, heat: Int, tex
     LaunchedEffect(key, motion) { if (motion) enter.animateTo(1f, entrySpec(k)) }
     val looping = motion && heat >= loopFrom(k)
     val beat: State<Float> = if (looping) {
-        rememberInfiniteTransition().animateFloat(0f, 1f, infiniteRepeatable(
-            tween(if (k == Kind.GLOW || k == Kind.ORNATE) 3200 else 2400, easing = LinearEasing), RepeatMode.Restart))
+        rememberLoop(if (k == Kind.GLOW || k == Kind.ORNATE) 3200 else 2400)
     } else remember { mutableFloatStateOf(0f) }
 
     val fill = if (k == Kind.BLOCK) listOf(C.amber, C.amber) else colors

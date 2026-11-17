@@ -146,8 +146,7 @@ fun AppTitle(size: TextUnit = 40.sp) {
             Box(Modifier.fillMaxWidth().height(1.dp).background(C.amber))
         }
         Style.NEON -> {
-            val t = rememberInfiniteTransition()
-            val shift by t.animateFloat(0f, 1f, infiniteRepeatable(tween(3200, easing = LinearEasing), RepeatMode.Reverse))
+            val shift by app.coredump.ui.rememberLoop(3200, reverse = true)
             val look = LocalLook.current
             BasicText(
                 "CORE DUMP",

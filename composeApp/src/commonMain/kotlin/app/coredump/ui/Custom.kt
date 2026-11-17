@@ -110,7 +110,7 @@ fun CustomIcon(key: String, side: Dp, modifier: Modifier = Modifier, animated: B
     val a = anim ?: IconAnim.byName(Names.custom[key]?.anim)
     val motion = animated && a != IconAnim.NONE && !LocalLook.current.reduceMotion
     val t: State<Float> = if (motion) {
-        rememberInfiniteTransition().animateFloat(0f, 1f, infiniteRepeatable(tween(periodOf(a), easing = LinearEasing), RepeatMode.Restart))
+        rememberLoop(periodOf(a))
     } else remember { mutableFloatStateOf(0f) }
     Image(bmp, null, modifier.size(side).graphicsLayer {
         val p = t.value

@@ -169,7 +169,8 @@ fun rememberNow(startedAt: Long, running: Boolean): State<Long> {
     val now = remember { mutableLongStateOf(Platform.epochMillis()) }
     LaunchedEffect(startedAt, running) {
         now.longValue = Platform.epochMillis()
-        while (running) { kotlinx.coroutines.delay(100); now.longValue = Platform.epochMillis() }
+        // on the ambient grid (every third tick, ~10 a second): the same frames as the looks' own ambient motion
+        while (running) { app.coredump.ui.ambientWait(3); now.longValue = Platform.epochMillis() }
     }
     return now
 }

@@ -202,9 +202,10 @@ fun DrawScope.drawBox(style: Style, stroke: Color, fill: Color, sw: Float, glow:
 @Composable
 fun Cursor(size: TextUnit = 14.sp, color: Color = C.amber) {
     if (Th.style != Style.TERMINAL && Th.style != Style.PIXEL) return
-    val t = rememberInfiniteTransition()
-    val a by t.animateFloat(1f, 0f, infiniteRepeatable(tween(530, easing = { if (it < 0.5f) 0f else 1f }), RepeatMode.Restart))
-    TText("█", Modifier.graphicsLayer { alpha = a }, size = size, color = color)
+    // on 265 ms, off 265 ms: a state flipped twice a period, so no frames are asked for in between
+    var on by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) { while (true) { delay(265); on = !on } }
+    TText("█", Modifier.graphicsLayer { alpha = if (on) 1f else 0f }, size = size, color = color)
 }
 
 /** Types text out char by char (TERMINAL / PIXEL / NEON); fades in elsewhere. */
@@ -755,8 +756,7 @@ fun Spinner(color: Color = C.amber, size: TextUnit = 14.sp) {
         TText("|/-\\"[i].toString(), size = size, color = color)
         return
     }
-    val t = rememberInfiniteTransition()
-    val a by t.animateFloat(0f, 360f, infiniteRepeatable(tween(900, easing = LinearEasing)))
+    val a by rememberLoop(900, 0f, 360f)
     Canvas(Modifier.size((size.value * 1.1f).dp)) {
         val sw = 2.dp.toPx()
         drawArc(color.copy(alpha = 0.25f), 0f, 360f, false, style = Stroke(sw))

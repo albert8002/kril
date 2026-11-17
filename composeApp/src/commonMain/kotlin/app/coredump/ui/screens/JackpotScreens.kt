@@ -141,8 +141,7 @@ private fun symbolFor(key: String): String = when (key) {
 @Composable
 private fun Marquee(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     val motion = !LocalLook.current.reduceMotion
-    val loop = rememberInfiniteTransition()
-    val chase by loop.animateFloat(0f, 3f, infiniteRepeatable(tween(900, easing = LinearEasing)))
+    val chase by app.coredump.ui.rememberLoop(900, 0f, 3f)
     val gold = C.line
     val bulb = C.white
     val panel = C.panel

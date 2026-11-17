@@ -119,8 +119,7 @@ fun ArcadeMenu(model: AppModel) {
     val haptic = rememberHaptic()
     val last = History.runs.firstOrNull()?.points ?: 0
     val motion = !LocalLook.current.reduceMotion
-    val pulse = rememberInfiniteTransition()
-    val glow by pulse.animateFloat(0.55f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse))
+    val glow by app.coredump.ui.rememberLoop(900, 0.55f, 1f, reverse = true, easing = androidx.compose.animation.core.FastOutSlowInEasing)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
         Spacer(Modifier.height(10.dp))

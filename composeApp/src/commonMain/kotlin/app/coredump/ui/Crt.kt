@@ -29,6 +29,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.ImageShader
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
@@ -143,7 +149,6 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
         // ---- content (+ shake / tear)
         Box(
             Modifier.fillMaxSize().graphicsLayer {
-                alpha = flicker
                 val s = shake.value
                 if (s > 0f) {
                     val p = fx.shakePower
@@ -191,6 +196,10 @@ fun ThemedScreen(look: Look, fx: Fx, content: @Composable BoxScope.() -> Unit) {
             else -> Unit
         }
         Spacer(Modifier.fillMaxSize().drawBehind {
+            // CRT flicker: a faint veil of the background colour (same look as fading the content, without drawing
+            // the whole screen into an extra off-screen layer)
+            val fl = flicker
+            if (fl < 1f) drawRect(bg.copy(alpha = 1f - fl))
             val sv = surge.value
             if (sv > 0f) drawRect(C.hot.copy(alpha = 0.07f * sv))
             val fv = flash.value
@@ -206,15 +215,14 @@ private fun CrtGlass(scanlines: Boolean, motion: Boolean, beamAt: () -> Float) {
     val amber = C.amber
     Spacer(
         Modifier.fillMaxSize().drawWithCache {
-            val lines = Path()
-            if (scanlines) {
-                val step = 3.dp.toPx().coerceAtLeast(3f)
-                var y = 0f
-                while (y < size.height) {
-                    lines.addRect(Rect(0f, y, size.width, y + step / 3f))
-                    y += step
-                }
-            }
+            // scanlines: one tiny tile (a dark row, then clear rows) repeated by the GPU, one draw call instead of
+            // a path of ~1,000 rectangles filled again on every frame
+            val lines: Brush? = if (scanlines) {
+                val step = kotlin.math.round(3.dp.toPx()).toInt().coerceAtLeast(3)
+                val tile = ImageBitmap(1, step)
+                Canvas(tile).drawRect(Rect(0f, 0f, 1f, (step / 3f).coerceAtLeast(1f)), Paint().apply { color = Color.Black })
+                ShaderBrush(ImageShader(tile, TileMode.Repeated, TileMode.Repeated))
+            } else null
             val vignette = Brush.radialGradient(
                 0.0f to Color.Transparent,
                 0.62f to Color.Transparent,
@@ -223,7 +231,7 @@ private fun CrtGlass(scanlines: Boolean, motion: Boolean, beamAt: () -> Float) {
                 radius = max(size.width, size.height) * 0.78f,
             )
             onDrawBehind {
-                if (scanlines) drawPath(lines, Color.Black.copy(alpha = 0.28f))
+                if (lines != null) drawRect(lines, alpha = 0.28f)
                 drawRect(vignette)
             }
         }
@@ -464,13 +472,16 @@ private fun StarBackdrop(tp: () -> Float) {
 private fun LcdMatrix() {
     val grid = C.line.copy(alpha = 0.07f)
     Spacer(Modifier.fillMaxSize().drawWithCache {
-        val step = 3.dp.toPx()
-        val p = Path()
-        var x = 0f
-        while (x < size.width) { p.addRect(Rect(x, 0f, x + 1f, size.height)); x += step }
-        var y = 0f
-        while (y < size.height) { p.addRect(Rect(0f, y, size.width, y + 1f)); y += step }
-        onDrawBehind { drawPath(p, grid) }
+        // one grid cell (a 1 px line on its top and left edge) repeated by the GPU: one draw call per frame
+        val step = kotlin.math.round(3.dp.toPx()).toInt().coerceAtLeast(2)
+        val tile = ImageBitmap(step, step)
+        val c = Canvas(tile)
+        val ink = Paint().apply { color = Color.White }
+        c.drawRect(Rect(0f, 0f, step.toFloat(), 1f), ink)
+        c.drawRect(Rect(0f, 1f, 1f, step.toFloat()), ink)
+        val brush = ShaderBrush(ImageShader(tile, TileMode.Repeated, TileMode.Repeated))
+        val tint = androidx.compose.ui.graphics.ColorFilter.tint(grid.copy(alpha = 1f))
+        onDrawBehind { drawRect(brush, alpha = grid.alpha, colorFilter = tint) }
     })
 }
 

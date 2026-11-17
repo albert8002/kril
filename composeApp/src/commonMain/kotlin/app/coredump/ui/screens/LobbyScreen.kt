@@ -395,8 +395,7 @@ private fun StatusLine(st: LobbyState) {
 @Composable
 fun QrSigil(data: String, modifier: Modifier = Modifier) {
     val m = remember(data) { QrEncoder.encode(data) }
-    val t = rememberInfiniteTransition()
-    val pulse by t.animateFloat(0.35f, 1f, infiniteRepeatable(tween(1100, easing = LinearEasing), RepeatMode.Reverse))
+    val pulse by app.coredump.ui.rememberLoop(1100, 0.35f, 1f, reverse = true)
     Canvas(modifier.aspectRatio(1f)) {
         val pad = 14.dp.toPx()
         val side = size.minDimension - pad * 2

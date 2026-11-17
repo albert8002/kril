@@ -221,8 +221,7 @@ private fun Bubble(text: String, me: Boolean, small: Boolean = false, strike: Bo
 /** The bot is typing: three dots that bounce in turn. */
 @Composable
 private fun BotTyping(label: String? = null) {
-    val t = rememberInfiniteTransition()
-    val p by t.animateFloat(0f, 1f, infiniteRepeatable(tween(1100, easing = LinearEasing)))
+    val p by app.coredump.ui.rememberLoop(1100)
     val dot = C.dim
     val motion = !LocalLook.current.reduceMotion
     Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {

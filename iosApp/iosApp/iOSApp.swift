@@ -11,7 +11,7 @@ final class ThemeState: ObservableObject {
 struct iOSApp: App {
     @StateObject private var theme = ThemeState()
 
-    var body: some Scene {
+    var body: some SwiftUI.Scene {
         WindowGroup {
             ComposeView(theme: theme)
                 .ignoresSafeArea(.all)

@@ -356,8 +356,7 @@ private fun Candle(leftMs: Long, seconds: Int, running: Boolean) {
     val f = (leftMs / (seconds * 1000f)).coerceIn(0f, 1f)
     val low = leftMs in 1..5000
     val motion = !LocalLook.current.reduceMotion
-    val t = rememberInfiniteTransition()
-    val flick by t.animateFloat(0f, 1f, infiniteRepeatable(tween(620, easing = LinearEasing), RepeatMode.Reverse))
+    val flick by app.coredump.ui.rememberLoop(620, reverse = true)
     val gold = C.hot
     val line = C.line
     val blood = C.blood

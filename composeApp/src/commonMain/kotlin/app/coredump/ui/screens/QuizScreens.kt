@@ -259,8 +259,7 @@ fun QuizPlay(model: AppModel, session: MatchSession, st: MatchState, a: AnswerSt
 
 @Composable
 private fun ProgressDots(st: MatchState, modifier: Modifier) {
-    val t = rememberInfiniteTransition()
-    val beat by t.animateFloat(0.85f, 1.15f, infiniteRepeatable(tween(650), RepeatMode.Reverse))
+    val beat by app.coredump.ui.rememberLoop(650, 0.85f, 1.15f, reverse = true, easing = androidx.compose.animation.core.FastOutSlowInEasing)
     val done = st.rounds.map { tierColor(it.me.tier) }
     val ghost = C.ghost
     val hot = C.hot

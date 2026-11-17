@@ -144,8 +144,7 @@ private fun DepthMarker(index: Int, count: Int, item: Item) {
     val haptic = rememberHaptic()
     val enter = remember { Animatable(if (motion) 0f else 1f) }
     LaunchedEffect(Unit) { delay(90L * index + 120L); enter.animateTo(1f, tween(640, easing = FastOutSlowInEasing)) }
-    val loop = rememberInfiniteTransition()
-    val ping by loop.animateFloat(0f, 1f, infiniteRepeatable(tween(2800, easing = LinearEasing)))
+    val ping by app.coredump.ui.rememberLoop(2800)
     val primary = index == 0
     val hot = C.hot
     val line = C.line

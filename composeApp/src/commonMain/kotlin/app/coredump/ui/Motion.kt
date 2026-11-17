@@ -80,14 +80,53 @@ fun rememberClock(running: Boolean, fps: Int = 0): State<Float> {
         if (fps <= 0) {
             while (true) withFrameMillis { s.floatValue = (it - start) / 1000f }
         } else {
-            val step = (1000L / fps).coerceAtLeast(8L)
+            // every ambient clock ticks on one shared grid (30, 15 or 10 times a second, all on the same instants):
+            // several clocks on one screen then ask for the same frames, never for a frame each of their own
+            val ticks = when { fps >= 22 -> 1; fps >= 13 -> 2; else -> 3 }
             while (true) {
-                kotlinx.coroutines.delay(step)
+                ambientWait(ticks)
                 withFrameMillis { s.floatValue = (it - start) / 1000f }
             }
         }
     }
     return s
+}
+
+/** The shared grid of the ambient clocks (unit: ms per tick, 30 ticks a second) and its zero instant. */
+private const val AMBIENT_GRID_MS = 33L
+private val ambientEpoch = kotlin.time.TimeSource.Monotonic.markNow()
+
+/** Waits until the next instant of the ambient grid that is a whole number of [ticks] (33 ms each) from its zero. */
+suspend fun ambientWait(ticks: Int) {
+    val every = AMBIENT_GRID_MS * ticks.coerceAtLeast(1)
+    val now = ambientEpoch.elapsedNow().inWholeMilliseconds
+    kotlinx.coroutines.delay(every - now % every)
+}
+
+/**
+ * An endless loop on the ambient grid, in place of an infinite transition (which asks for every frame, 60 or 120 a
+ * second, for as long as it is shown): [from] → [to] over [periodMs] (unit: ms), then again from [from], or back to
+ * [from] when [reverse] (as RepeatMode.Reverse: [periodMs] each way). [easing] shapes each pass. [fps] 30, 15 or 10.
+ * Read the value inside draw / graphicsLayer blocks where possible, so a tick only redraws.
+ */
+@Composable
+fun rememberLoop(
+    periodMs: Int, from: Float = 0f, to: Float = 1f, reverse: Boolean = false,
+    easing: androidx.compose.animation.core.Easing = LinearEasing, fps: Int = 30, running: Boolean = true,
+): State<Float> {
+    val clock = rememberClock(running, fps)
+    return remember(clock, periodMs, from, to, reverse, easing) {
+        object : State<Float> {
+            override val value: Float
+                get() {
+                    val n = clock.value * 1000f / periodMs.coerceAtLeast(1)
+                    val k = kotlin.math.floor(n)
+                    var u = n - k
+                    if (reverse && (k.toLong() and 1L) == 1L) u = 1f - u
+                    return from + (to - from) * easing.transform(u)
+                }
+        }
+    }
 }
 
 /** A colour on the colour wheel; [h] in degrees (any value, wraps). */

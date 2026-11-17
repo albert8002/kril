@@ -120,8 +120,7 @@ private fun ComicBar(index: Int, label: String, hint: String, badge: String?, pr
     val tilt = if (index % 2 == 0) -1.2f else 1.2f
     val fill = if (primary) C.hot else C.panel
     val ink = if (primary) onColor(C.hot) else C.amber
-    val spin = rememberInfiniteTransition()
-    val badgeTurn by spin.animateFloat(-8f, 8f, infiniteRepeatable(tween(1400), RepeatMode.Reverse))
+    val badgeTurn by app.coredump.ui.rememberLoop(1400, -8f, 8f, reverse = true, easing = androidx.compose.animation.core.FastOutSlowInEasing)
     Box(
         Modifier.fillMaxWidth()
             .graphicsLayer { translationX = (1f - slide.value) * -size.width; rotationZ = tilt + if (pressed) -tilt else 0f }

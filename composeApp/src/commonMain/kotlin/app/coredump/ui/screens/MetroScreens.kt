@@ -289,8 +289,7 @@ private fun RouteLine(st: MatchState, modifier: Modifier) {
     val line = C.line
     val done = st.rounds.map { tierColor(it.me.tier) }
     val motion = !LocalLook.current.reduceMotion
-    val loop = rememberInfiniteTransition()
-    val ping by loop.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = LinearEasing)))
+    val ping by app.coredump.ui.rememberLoop(1600)
     val round = st.round
     Canvas(modifier) {
         val y = size.height / 2f

@@ -749,8 +749,7 @@ private fun CoreRing(st: MeltState, myId: String, modifier: Modifier) {
 
 @Composable
 private fun PlayerChip(p: MeltPlayer, holder: Boolean, me: Boolean, winner: Boolean) {
-    val loop = rememberInfiniteTransition()
-    val beat by loop.animateFloat(0f, 1f, infiniteRepeatable(tween(520, easing = LinearEasing), RepeatMode.Reverse))
+    val beat by app.coredump.ui.rememberLoop(520, reverse = true)
     val still = LocalLook.current.reduceMotion
     val stroke = when { winner -> C.hot; holder -> C.blood; me -> C.hot; else -> C.line }
     // opaque, so the beam and the orbit never show through the text
