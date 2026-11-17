@@ -965,6 +965,8 @@ class QuestionBank(private val scope: CoroutineScope) {
      * an unlisted member. Outcomes are cached on the device; failed lookups are not, so the player can retry.
      */
     suspend fun verify(prompt: Prompt, input: String): AnswerCheck.Outcome {
+        // open prompts ("Something people do to relax"): only the list counts; an encyclopedia cannot judge them
+        if (prompt.id.startsWith("life.")) return AnswerCheck.Outcome.Missing
         val key = prompt.id + "|" + AnswerCheck.key(input)
         verifyLock.withLock { VerifyCache.get(key) }?.let { return it }
         suspend fun once(ms: Long) = withTimeoutOrNull(ms) {

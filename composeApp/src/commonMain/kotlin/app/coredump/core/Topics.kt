@@ -230,6 +230,8 @@ object Topics {
         if (check != null && (check.contains("wd:Q5 ") || check.contains("wd:Q5;"))) return true
         // qualifier lists say exactly what they hold ("a Stephen King book" is not about kings)
         if (isSpecific(id)) return false
+        // open everyday prompts ("Something people do to relax") are about activities, not people
+        if (id.startsWith("life.")) return false
         if (id.startsWith("wf.oscar.q102427")) return false
         val w = words(text.substringBefore("("))
         if (notPeople.any { has(w, it) } && !has(w, "film director") && !has(w, "film actor") && !has(w, "film producer")) return false

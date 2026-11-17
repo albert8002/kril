@@ -197,7 +197,7 @@ fun Modifier.breathe(on: Boolean, seed: Int = 0): Modifier {
     val hyper = LocalHyper.current
     val soft = style == Style.CLEAN || style == Style.NEON || style == Style.ABYSS || style == Style.ORACLE || style == Style.CHAT || style == Style.JACKPOT
     if (!soft && !hyper.on) return this
-    val clock = rememberClock(true)
+    val clock = rememberClock(true, fps = 30)
     val amp = if (hyper.on) 0.035f else 0.014f
     val period = if (style == Style.ABYSS || style == Style.ORACLE) 3.6f else 2.4f
     return graphicsLayer {

@@ -1,5 +1,11 @@
 package app.coredump.ui.screens
 
+import androidx.compose.ui.layout.positionInParent
+
+import androidx.compose.ui.layout.onGloballyPositioned
+
+import androidx.compose.runtime.mutableIntStateOf
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -266,12 +272,21 @@ fun ChatPlay(model: AppModel, session: MatchSession, st: MatchState, a: AnswerSt
     val now by rememberNow(st.startedAt, isRunning(st))
     val left = timeLeft(st, now)
     val scroll = rememberScrollState()
-    // keep the newest message in view
-    LaunchedEffect(st.round, st.attempts.size, st.phase, st.confirm, st.reveal) { delay(150); scroll.animateScrollTo(scroll.maxValue) }
-    LaunchedEffect(st.round) { delay(900); scroll.animateScrollTo(scroll.maxValue) }
+    // keep the newest message in view; on the reveal, your answer and the bot's verdict (not the end of the list)
+    var verdictY by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(st.round, st.attempts.size, st.phase, st.confirm, st.reveal) {
+        delay(150)
+        if (st.phase != Phase.REVEAL) scroll.animateScrollTo(scroll.maxValue)
+    }
+    LaunchedEffect(st.round) { delay(900); if (st.phase != Phase.REVEAL) scroll.animateScrollTo(scroll.maxValue) }
+    LaunchedEffect(st.reveal, verdictY) {
+        if (st.phase == Phase.REVEAL && verdictY >= 0) { delay(120); scroll.animateScrollTo((verdictY - 140).coerceAtLeast(0)) }
+    }
     Column(Modifier.fillMaxSize()) {
         ChatTopBar(model, session, st)
         if (st.seconds > 0) TimeStrip(left, st.seconds)
+        // your answer stays pinned on top while the answers are shown
+        if (st.phase == Phase.REVEAL) st.reveal?.let { MyAnswerBar(it.me) }
         Column(Modifier.weight(1f).verticalScroll(scroll).padding(horizontal = 12.dp, vertical = 8.dp)) {
             if (st.phase == Phase.WAITING) {
                 BotTyping(st.message)
@@ -302,7 +317,7 @@ fun ChatPlay(model: AppModel, session: MatchSession, st: MatchState, a: AnswerSt
                 when (st.phase) {
                     Phase.LOCKED -> { Bubble("✓ Locked in", me = true); BotTyping("waiting for ${st.oppName ?: "your friend"}") }
                     Phase.REVEAL -> st.reveal?.let { v ->
-                        ChatVerdict(v)
+                        Box(Modifier.onGloballyPositioned { verdictY = it.positionInParent().y.toInt() }) { ChatVerdict(v) }
                         RevealExtras(v, session.isMulti)
                     }
                     Phase.ERROR -> Bubble(st.message ?: "Something went wrong.", me = false, error = true)
@@ -405,6 +420,29 @@ private fun SendButton(enabled: Boolean, onClick: () -> Unit) {
             drawLine(ink, Offset(cx, 0f), Offset(cx - size.width * 0.38f, size.height * 0.4f), sw, StrokeCap.Round)
             drawLine(ink, Offset(cx, 0f), Offset(cx + size.width * 0.38f, size.height * 0.4f), sw, StrokeCap.Round)
         }
+    }
+}
+
+/** Your answer for this round, its tier and points: a strip under the top bar, so it never scrolls away. */
+@Composable
+private fun MyAnswerBar(me: app.coredump.core.PlayView) {
+    Row(Modifier.fillMaxWidth().background(C.panel).padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            TText("You answered", size = 11.sp, color = C.dim)
+            TText(
+                when {
+                    me.tier == Tier.SKIPPED -> "Skipped"
+                    me.input.isNotBlank() -> me.input
+                    else -> "No answer"
+                },
+                size = 18.sp, weight = FontWeight.Bold, color = C.amber, maxLines = 1,
+            )
+            me.canonical?.takeIf { me.tier.isValid && !it.equals(me.input, ignoreCase = true) }?.let { TText("counted as $it", size = 11.sp, color = C.dim) }
+        }
+        if (me.tier.isValid) TierBadge(me.tier, 12.sp)
+        Spacer(Modifier.width(10.dp))
+        TText("${signed(me.points)} pts", size = 16.sp, weight = FontWeight.Bold,
+            color = when { me.points > 0 -> tierColor(me.tier); me.points < 0 -> C.blood; else -> C.dim })
     }
 }
 

@@ -276,6 +276,18 @@ object PromptPicker {
                 }
             }
         }
+        // about one round in four is an open prompt ("Something people do to relax", "An excuse for being late"),
+        // when its category is in play: not every round should be "Name a …"
+        val open = general.filter { it.id.startsWith(OPEN_PREFIX) && fresh(it) }
+        if (open.isNotEmpty() && cfg.rounds >= 2) {
+            val want = ((cfg.rounds + 2) / 4).coerceAtLeast(1)
+            val before = out.size
+            for (p in open.shuffled(rnd).sortedBy { if (it.id in recent) 1 else 0 }) {
+                if (out.size - before >= want) break
+                out.getOrPut(Norm.key(p.text)) { p }
+            }
+        }
+        fill(general.filter { fresh(it) && sized(it) && !it.id.startsWith(OPEN_PREFIX) })
         fill(general.filter { fresh(it) && sized(it) })
         fill(general.filter { fresh(it) })
         fill(pool.filter { fresh(it) })
@@ -288,8 +300,12 @@ object PromptPicker {
         }
         if (out.isEmpty()) fill(usable.filter { cfg.peopleLists || !it.people }, capped = false)
         if (out.isEmpty()) fill(usable, capped = false)
-        return out.values.toList()
+        // the open prompts were taken first: spread them through the game
+        return out.values.toList().shuffled(rnd)
     }
+
+    /** Id prefix of the open everyday prompts (the life pack). */
+    const val OPEN_PREFIX = "life."
 }
 
 /** One finished round of one player. */

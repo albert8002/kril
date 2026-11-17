@@ -160,13 +160,16 @@ fun suggestionsOf(st: MatchState): List<String> =
 /** The best "did you mean" choice, unless already tried. */
 fun suggestionOf(st: MatchState): String? = suggestionsOf(st).firstOrNull()
 
-/** Epoch ms, ticking every frame while [running]. */
+/**
+ * Epoch ms, ticking 10 times a second while [running]: enough for every clock and time bar (a step is ~1 px), and the
+ * play screens that read it recompose 10 times a second instead of on every display frame (60–120 Hz on iPhones).
+ */
 @Composable
 fun rememberNow(startedAt: Long, running: Boolean): State<Long> {
     val now = remember { mutableLongStateOf(Platform.epochMillis()) }
     LaunchedEffect(startedAt, running) {
         now.longValue = Platform.epochMillis()
-        while (running) { withFrameMillis { }; now.longValue = Platform.epochMillis() }
+        while (running) { kotlinx.coroutines.delay(100); now.longValue = Platform.epochMillis() }
     }
     return now
 }

@@ -24,6 +24,27 @@ object SelfTest {
         delay(1800)
     }
 
+    private val paceLog = ArrayList<Pair<String, Int>>()
+
+    /**
+     * Frame pacing for [ms]: the gaps between frames (vsync times) while the screen runs as usual. Logs the median,
+     * the 95th percentile, the worst gap and how many frames came late (a gap over 25 ms at 60 Hz = a dropped frame).
+     */
+    private suspend fun pace(label: String, ms: Long) {
+        val gaps = ArrayList<Long>()
+        var last = -1L
+        val end = app.coredump.platform.Platform.epochMillis() + ms
+        while (app.coredump.platform.Platform.epochMillis() < end) {
+            androidx.compose.runtime.withFrameNanos { t -> if (last >= 0) gaps += (t - last) / 1_000_000; last = t }
+        }
+        if (gaps.isEmpty()) { log("PACE $label no frames"); return }
+        val sorted = gaps.sorted()
+        val p50 = sorted[sorted.size / 2]; val p95 = sorted[(sorted.size * 95 / 100).coerceAtMost(sorted.size - 1)]
+        val late = gaps.count { it > 25 }
+        paceLog += label to (late * 100 / gaps.size)
+        log("PACE $label frames=${gaps.size + 1} p50=${p50}ms p95=${p95}ms max=${sorted.last()}ms late=$late (${late * 100 / gaps.size}%)")
+    }
+
     /** First word (4+ letters) of a multi-word answer that is not an answer by itself: should get "did you mean" choices. */
     private fun wordProbe(p: app.coredump.core.Prompt): String? = p.entries.asSequence()
         .filter { it.name.trim().contains(' ') }
@@ -65,39 +86,63 @@ object SelfTest {
         probe.armed = true
         val rnd = Random(5)
         var clean = 0; var cam = 0; var n = 0
-        for ((i, look) in (plan + extra).withIndex()) {
+        val t0 = app.coredump.platform.Platform.epochMillis()
+        for ((i, look) in plan.withIndex()) {
             model.setTheme(look.first, look.second)
             val want = app.coredump.net.ShortCode.Decoded(app.coredump.net.JoinTicket.newRoom(rnd), rnd.nextInt(4), i % 2 == 1)
+            val wantCode = app.coredump.net.ShortCode.encode(want.room, want.broker, want.party)
             probe.show = want
-            delay(1100)
-            val bmp = runCatching { probe.layer?.toImageBitmap() }.getOrNull()
-            if (bmp == null || bmp.width < 50) { log("SIGIL ${look.first}/${look.second} no capture"); continue }
-            val w = bmp.width; val h = bmp.height
-            val px = IntArray(w * h)
-            bmp.readPixels(px)
-            val lum = ByteArray(w * h) { k ->
-                val c = px[k]
-                val a = (c ushr 24) and 0xFF
-                val l = ((c shr 16 and 0xFF) * 299 + (c shr 8 and 0xFF) * 587 + (c and 0xFF) * 114) / 1000
-                ((l * a + 128 * (255 - a)) / 255).toByte()
+            delay(700)
+            pace("sigil_${look.first.name.lowercase()}", 1200)
+            // film the animated code for up to 12 s: every capture goes to two scanners (all 12 looks' readers): the
+            // pixels as drawn, and the same through a simulated phone camera
+            val sc1 = app.coredump.sigil.SigilScanner(); val sc2 = app.coredump.sigil.SigilScanner()
+            var got1: String? = null; var got2: String? = null
+            var at1 = -1L; var at2 = -1L
+            var frames = 0; var size = ""
+            val start = app.coredump.platform.Platform.epochMillis()
+            while (app.coredump.platform.Platform.epochMillis() - start < 12_000 && (got1 == null || got2 == null)) {
+                val bmp = runCatching { probe.layer?.toImageBitmap() }.getOrNull()
+                if (bmp == null || bmp.width < 50) { delay(100); continue }
+                val now = app.coredump.platform.Platform.epochMillis()
+                val w = bmp.width; val h = bmp.height
+                size = "${w}x$h"
+                val px = IntArray(w * h)
+                bmp.readPixels(px)
+                val lum = ByteArray(w * h) { k ->
+                    val c = px[k]
+                    val a = (c ushr 24) and 0xFF
+                    val l = ((c shr 16 and 0xFF) * 299 + (c shr 8 and 0xFF) * 587 + (c and 0xFF) * 114) / 1000
+                    ((l * a + 128 * (255 - a)) / 255).toByte()
+                }
+                frames++
+                if (got1 == null) {
+                    got1 = runCatching { sc1.feed(app.coredump.sigil.SigilFrame(lum, w, h, w, 0, now - t0)) }.getOrNull()
+                    if (got1 != null) at1 = now - start
+                }
+                if (got2 == null) {
+                    val (cl, cw, ch) = cameraView(lum, w, h, i * 31)
+                    got2 = runCatching { sc2.feed(app.coredump.sigil.SigilFrame(cl, cw, ch, cw, 0, now - t0)) }.getOrNull()
+                    if (got2 != null) at2 = now - start
+                }
+                delay(40)
             }
             n++
-            val reader = app.coredump.net.SigilReader()
-            val got = reader.read(lum, w, h)
-            val ok1 = got == want
+            val ok1 = got1 == wantCode; val ok2 = got2 == wantCode
             if (ok1) clean++
-            val (cl, cw, ch) = cameraView(lum, w, h, i)
-            val reader2 = app.coredump.net.SigilReader()
-            val got2 = reader2.read(cl, cw, ch)
-            val ok2 = got2 == want
             if (ok2) cam++
-            log("SIGIL ${look.first}/${look.second} ${w}x$h clean=${if (ok1) "ok" else "FAIL(${reader.trace})"} " +
-                "camera=${if (ok2) "ok" else "FAIL(${reader2.trace})"}")
-            if (i < plan.size) shot("sigil_${look.first.name.lowercase()}")
+            fun verdict(got: String?, at: Long, sc: app.coredump.sigil.SigilScanner) = when {
+                got == null -> "NONE"
+                got == wantCode -> "ok ${at}ms (${sc.lastScheme})"
+                else -> "WRONG $got (${sc.lastScheme})"
+            }
+            log("SIGIL ${look.first}/${look.second} $size frames=$frames clean=${verdict(got1, at1, sc1)} camera=${verdict(got2, at2, sc2)}")
+            shot("sigil_${look.first.name.lowercase()}")
         }
         probe.show = null
         probe.armed = false
         log("SIGIL SUMMARY clean=$clean/$n camera=$cam/$n")
+        log("PACE SUMMARY late%: " + paceLog.sortedByDescending { it.second }.joinToString(" ") { "${it.first}=${it.second}" })
         model.setTheme(Style.TERMINAL, "amber")
         model.home(); delay(400)
     }
@@ -272,6 +317,7 @@ object SelfTest {
                 model.setTheme(style, pal)
                 model.home(); delay(1200)
                 shot("menu_${style.name.lowercase()}")
+                pace("menu_${style.name.lowercase()}", 1000)
                 model.startSolo(); delay(1500)
                 val s = (model.screen as? Screen.Play)?.session
                 if (s == null) { log("no session"); continue }
@@ -282,6 +328,7 @@ object SelfTest {
                     s.submit("zzqx nothing ${Random.nextInt(999)}")   // miss -> online check
                     delay(700)
                     if (round == 1) {
+                        pace("play_${style.name.lowercase()}", 1500)
                         s.skip()
                     } else {
                         val e = p.entries.firstOrNull { it.name.length >= 7 } ?: p.entries[Random.nextInt(p.entries.size)]
@@ -313,7 +360,8 @@ object SelfTest {
                         delay(400)
                         log("RUN ${style.name} points=${s.state.value.reveal?.me?.points}")
                         shot("run_${style.name.lowercase()}")
-                        delay(4600)
+                        pace("run_${style.name.lowercase()}", 2000)
+                        delay(2600)
                     } else delay(1300)
                     if (round == 0) {
                         delay(300); shot("reveal_${style.name.lowercase()}")

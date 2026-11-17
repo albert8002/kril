@@ -84,7 +84,7 @@ import kotlin.math.max
 // the results are a dive log with a depth profile. Motion is slow and soft: things sink into place.
 
 /** Metres of depth per point (unit: m / point). */
-private const val M_PER_POINT = 2
+private const val M_PER_POINT = 1
 
 /** Ocean zone for a depth in metres. */
 private fun zoneOf(m: Int): String = when {

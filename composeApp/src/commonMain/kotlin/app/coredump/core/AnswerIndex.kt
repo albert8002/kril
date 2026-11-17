@@ -361,7 +361,38 @@ object Lenient {
         out += swapped(k)
         if (',' in raw) Norm.key(raw.substringBefore(',')).takeIf { it.length >= 3 }?.let { out += it }
         numeralKey(k)?.let { out += it }
+        out += activityForms(k)
         out.remove(k)
+        return out.toList()
+    }
+
+    private val activityLead = listOf("to ", "i would ", "id ", "i ", "youd ", "you ", "we ", "they ", "people ", "go and ")
+
+    /**
+     * Ways a player writes an activity that a list keeps in base form: a leading "to" / "I" / "you" / "people" dropped,
+     * and -ing words back to their base ("watching tv" → "watch tv", "going for a walk" → "go for a walk",
+     * "dancing" → "dance", "running" → "run"). Only lookups: a form that is on no list changes nothing.
+     */
+    fun activityForms(k: String): List<String> {
+        val out = LinkedHashSet<String>()
+        var base = k
+        for (w in activityLead) if (base.startsWith(w) && base.length > w.length + 2) { base = base.substring(w.length); out += base; break }
+        val toks = base.split(' ')
+        if (toks.any { it.length >= 5 && it.endsWith("ing") }) {
+            // three guesses for every -ing word at once: drop "ing", drop it and add "e", drop it and undo a doubled consonant
+            for (mode in 0..2) {
+                out += toks.joinToString(" ") { t ->
+                    if (t.length < 5 || !t.endsWith("ing")) t else {
+                        val stem = t.dropLast(3)
+                        when (mode) {
+                            0 -> stem
+                            1 -> stem + "e"
+                            else -> if (stem.length >= 3 && stem[stem.length - 1] == stem[stem.length - 2]) stem.dropLast(1) else stem
+                        }
+                    }
+                }
+            }
+        }
         return out.toList()
     }
 

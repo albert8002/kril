@@ -1,6 +1,8 @@
 package app.coredump.platform
 
-import app.coredump.net.SigilReader
+import app.coredump.sigil.SigilFrame
+import app.coredump.sigil.SigilScanner
+import platform.Foundation.NSProcessInfo
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
@@ -171,12 +173,12 @@ class ScanViewController(
 }
 
 /**
- * Camera frames (on its own queue) to the sigil reader: copies the luminance plane (or the green of BGRA) into a
- * reused buffer, halving frames wider than 1600 px; [onCode] once two frames agree.
+ * Camera frames (on its own queue) to the sigil scanner: copies the luminance plane (or the green of BGRA) into a
+ * reused buffer, halving frames wider than 1600 px; [onCode] once the scanner is sure (some looks take a few seconds).
  */
 @OptIn(ExperimentalForeignApi::class)
 class FrameTap(private val onCode: (String) -> Unit) : NSObject(), AVCaptureVideoDataOutputSampleBufferDelegateProtocol {
-    private val reader = SigilReader()
+    private val reader = SigilScanner()
     private var buf = ByteArray(0)
     private var row = ByteArray(0)
     private var done = false
@@ -218,7 +220,8 @@ class FrameTap(private val onCode: (String) -> Unit) : NSObject(), AVCaptureVide
             CVPixelBufferUnlockBaseAddress(img, kCVPixelBufferLock_ReadOnly)
         }
         if (w == 0 || h == 0) return
-        val code = runCatching { reader.scan(buf, w, h) }.getOrNull() ?: return
+        val ms = (NSProcessInfo.processInfo.systemUptime * 1000).toLong()
+        val code = runCatching { reader.feed(SigilFrame(buf, w, h, w, 0, ms)) }.getOrNull() ?: return
         done = true
         onCode(code)
     }

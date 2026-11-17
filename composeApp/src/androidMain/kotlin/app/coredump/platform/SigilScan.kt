@@ -1,7 +1,9 @@
 package app.coredump.platform
 
 import android.os.Bundle
-import app.coredump.net.SigilReader
+import android.os.SystemClock
+import app.coredump.sigil.SigilFrame
+import app.coredump.sigil.SigilScanner
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.DecodeHintType
 import com.google.zxing.LuminanceSource
@@ -13,7 +15,8 @@ import com.journeyapps.barcodescanner.Decoder
 import com.journeyapps.barcodescanner.DecoderFactory
 
 /**
- * The camera scanner: zxing-embedded's capture screen with a decoder that looks for a sigil first ([SigilReader])
+ * The camera scanner: zxing-embedded's capture screen with a decoder that looks for a sigil first ([SigilScanner]: every look's
+ * animated code; it keeps frames over time)
  * and falls back to QR codes (direct Wi-Fi codes and older app versions).
  */
 class SigilScanActivity : CaptureActivity() {
@@ -36,12 +39,14 @@ object SigilDecoders : DecoderFactory {
     }
 }
 
-/** One per decoder thread: the sigil reader keeps its buffers and needs two agreeing frames. */
+/** One per decoder thread: the sigil scanner keeps what it saw across frames (some looks send their code over time). */
 class SigilDecoder(qr: MultiFormatReader) : Decoder(qr) {
-    private val sigils = SigilReader()
+    private val sigils = SigilScanner()
 
     override fun decode(source: LuminanceSource): Result? {
-        val code = runCatching { sigils.scan(source.matrix, source.width, source.height) }.getOrNull()
+        val code = runCatching {
+            sigils.feed(SigilFrame(source.matrix, source.width, source.height, source.width, 0, SystemClock.elapsedRealtime()))
+        }.getOrNull()
         if (code != null) return Result(code, null, null, BarcodeFormat.QR_CODE)
         return super.decode(source)
     }
