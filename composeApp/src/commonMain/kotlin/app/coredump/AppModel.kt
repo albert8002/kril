@@ -565,27 +565,33 @@ class AppModel(val scope: CoroutineScope) {
     }
 
     /**
-     * Next MELTDOWN category, one nobody saw in this game, in the chosen topics: a merged pool (several lists of one
-     * kind joined, 150+ answers) or a list that big on its own; with nothing that big in the topics, the biggest
-     * lists there (60+, then 30+). Never a niche list.
+     * Next MELTDOWN category, one nobody saw in this game, in the chosen topics. First the merged pools (several
+     * lists of one kind joined, 150+ answers); once every pool in the topics was played, single lists that big;
+     * with nothing that big in the topics, the biggest lists there (60+, then 30+). Never a niche list.
      */
     fun meltPrompt(): Prompt? {
         val topics = meltConfig.topics
         fun inTopics(p: Prompt) = topics.isEmpty() || p.topic in topics
         val mp = meltPoolsNow()
-        val singles = bank.all().filter { !it.niche && it.id !in discarded && it.size >= app.coredump.core.Pools.MIN_SIZE && it.id !in mp.members }
-        val big = (mp.pools + singles).filter(::inTopics)
-            .ifEmpty {
-                val all = bank.all().filter { !it.niche && it.id !in discarded && inTopics(it) }
-                    .ifEmpty { bank.all().filter { !it.niche && it.id !in discarded } }
-                all.filter { it.size >= 60 }.ifEmpty { all.filter { it.size >= 30 } }
-            }
-        val fresh = big.filter { it.id !in meltSeen }.ifEmpty { meltSeen.clear(); big }
-        val p = fresh.randomOrNull() ?: return null
-        meltSeen += p.id
+        val pools = mp.pools.filter(::inTopics)
+        val singles = bank.all().filter { !it.niche && it.id !in discarded && it.size >= app.coredump.core.Pools.MIN_SIZE && it.id !in mp.members && inTopics(it) }
+        val small = {
+            val all = bank.all().filter { !it.niche && it.id !in discarded && inTopics(it) }
+                .ifEmpty { bank.all().filter { !it.niche && it.id !in discarded } }
+            all.filter { it.size >= 60 }.ifEmpty { all.filter { it.size >= 30 } }
+        }
+        val tiers = listOf({ pools }, { singles }, small)
+        var p: Prompt? = null
+        for (round in 0..1) {
+            for (t in tiers) { p = t().filter { it.id !in meltSeen }.randomOrNull(); if (p != null) break }
+            if (p != null) break
+            meltSeen.clear()  // all played: start over
+        }
+        val chosen = p ?: return null
+        meltSeen += chosen.id
         // the answer index of a big pool takes a moment: build it now, off the main thread, before the first answer
-        scope.launch(kotlinx.coroutines.Dispatchers.Default) { runCatching { p.index } }
-        return p
+        scope.launch(kotlinx.coroutines.Dispatchers.Default) { runCatching { chosen.index } }
+        return chosen
     }
 
     private fun me() = app.coredump.game.MeltPlayer(app.coredump.game.Meltdown.newId(), settings.handle.ifBlank { "YOU" }.take(16), bot = false,
