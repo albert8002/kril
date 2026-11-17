@@ -71,8 +71,12 @@ class SigilScanner(schemes: List<SigilScheme> = SigilSchemes.all) {
         private set
 
     fun feed(frame: SigilFrame): String? {
-        // big frames: halve (the codes are drawn big; this keeps every reader quick)
-        val f = if (kotlin.math.max(frame.w, frame.h) > 1000) frame.shrink(2) else frame
+        // big frames: halve until the long side is ≤ 1000 px and the short side ≤ 640 px (a camera frame of
+        // 1280×720 or 1920×1080 becomes 640×360 or 960×540): the readers are made for codes up to ~700 px across,
+        // and this keeps every reader quick
+        var k = 1
+        while (kotlin.math.max(frame.w, frame.h) / k > 1000 || kotlin.math.min(frame.w, frame.h) / k > 640) k *= 2
+        val f = frame.shrink(k)
         val now = f.tMs
         val locked = readers.indices.filter { now - seenAt[it] < 1500 }
         val order = if (locked.isEmpty()) readers.indices.toList()
