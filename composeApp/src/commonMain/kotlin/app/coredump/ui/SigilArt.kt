@@ -19,8 +19,10 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
@@ -88,6 +90,14 @@ fun ThemedSigil(room: String, broker: Int, party: Boolean, modifier: Modifier = 
 /** Draws a [Scene] (unit square) at [side] px, on the plate. */
 internal fun DrawScope.drawScene(scene: Scene, ink: Ink, side: Float, corner: Float) {
     drawRoundRect(Color(ink.plate), Offset.Zero, Size(side, side), CornerRadius(corner, corner))
+    // nothing outside the square (glows, impact lines): the code stays inside its own tile, as in the lab
+    clipRect(0f, 0f, side, side) { drawOps(scene, side) }
+}
+
+/** Radial glow brushes by opaque colour (UI thread only). */
+private val glowBrushes = HashMap<Int, Brush>()
+
+private fun DrawScope.drawOps(scene: Scene, side: Float) {
     for (op in scene.ops) {
         when (op) {
             is Scene.Op.Circle -> {
@@ -132,9 +142,18 @@ internal fun DrawScope.drawScene(scene: Scene, ink: Ink, side: Float, corner: Fl
             is Scene.Op.Arc -> drawArc(Color(op.color), op.start, op.sweep, false,
                 Offset((op.x - op.r) * side, (op.y - op.r) * side), Size(2 * op.r * side, 2 * op.r * side), style = Stroke(op.width * side))
             is Scene.Op.Glow -> if (op.r > 0f) {
-                val c = Offset(op.x * side, op.y * side)
-                val col = Color(op.color)
-                drawCircle(Brush.radialGradient(listOf(col, col.copy(alpha = 0f)), c, op.r * side), op.r * side, c)
+                // one radius-1 gradient per colour (kept), moved and scaled into place; the colour's own alpha goes
+                // on the draw: the same falloff as a fresh gradient, without making one per glow per frame
+                val a = ((op.color ushr 24) and 0xFF) / 255f
+                if (a > 0.004f) {
+                    val rgb = op.color or (0xFF shl 24)
+                    if (glowBrushes.size > 256) glowBrushes.clear()
+                    val unit = glowBrushes.getOrPut(rgb) { Color(rgb).let { Brush.radialGradient(listOf(it, it.copy(alpha = 0f)), Offset.Zero, 1f) } }
+                    val r = op.r * side
+                    withTransform({ translate(op.x * side, op.y * side); scale(r, r, Offset.Zero) }) {
+                        drawCircle(unit, radius = 1f, center = Offset.Zero, alpha = a)
+                    }
+                }
             }
         }
     }
