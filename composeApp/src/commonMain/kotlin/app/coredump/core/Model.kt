@@ -44,7 +44,9 @@ class Prompt(
     val size: Int get() = entries.size
     /** Built on demand and kept only for recently used prompts (see [IndexCache]). */
     val index: AnswerIndex get() = IndexCache.of(this)
-    internal val cacheKey: String = id + "#" + entries.size + "#" + (entries.firstOrNull()?.name ?: "")
+    // the tiers are part of the key: a list re-tiered ([Tiering.retier]) never shares an answer index with its old self
+    internal val cacheKey: String = id + "#" + entries.size + "#" + (entries.firstOrNull()?.name ?: "") + "#" +
+        entries.fold(7) { h, e -> h * 31 + e.tier.ordinal }.toString(36)
     val zeroDay: AnswerEntry? get() = entries.firstOrNull { it.tier == Tier.ZERO_DAY }
     fun countOf(t: Tier): Int = entries.count { it.tier == t }
 }
@@ -67,6 +69,42 @@ object Tiering {
         val r = s + max(1, ceil(n * 0.25).toInt())
         return Cuts(p.coerceAtMost(n), s.coerceAtMost(n), r.coerceAtMost(n))
     }
+
+    /** The band a list position falls in under today's cuts [c] (COPYPASTA and the gem aside). */
+    private fun band(i: Int, c: Cuts): Tier = when {
+        i < c.hello -> Tier.HELLO_WORLD
+        i < c.legacy -> Tier.LEGACY
+        i < c.leak -> Tier.MEMORY_LEAK
+        else -> Tier.HEISENBUG
+    }
+
+    /**
+     * True when [entries] (a list in rank order) already follow today's point bands: every answer in the band its
+     * place gives it (COPYPASTA and the gem aside) and, from 3 answers on, exactly one gem. Quick: no text work.
+     */
+    fun conforms(entries: List<AnswerEntry>): Boolean {
+        val n = entries.size
+        if (n == 0) return true
+        val c = cuts(n)
+        var gems = 0
+        for (i in 0 until n) {
+            val e = entries[i]
+            if (e.rank != i) return false
+            when (e.tier) {
+                Tier.COPYPASTA -> Unit
+                Tier.ZERO_DAY -> gems++
+                else -> if (e.tier != band(i, c)) return false
+            }
+        }
+        return if (n >= 3) gems == 1 else gems <= 1
+    }
+
+    /**
+     * [entries] put back on today's point bands ([cuts]): the same order of familiarity, names, aliases, COPYPASTA
+     * marks and gem (one is picked when there is none); only the tiers are dealt again.
+     */
+    fun retier(entries: List<AnswerEntry>, seed: String): List<AnswerEntry> =
+        build(entries.sortedBy { it.rank }.map { RawAnswer(it.name, it.aliases, tooClever = it.tier == Tier.COPYPASTA, zeroDay = it.tier == Tier.ZERO_DAY) }, seed)
 
     /** Dedupe by key, assign tiers by position, mark COPYPASTA and one ZERO_DAY. */
     fun build(ranked: List<RawAnswer>, seed: String): List<AnswerEntry> {

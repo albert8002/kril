@@ -125,6 +125,52 @@ private fun bulbSpots(path: Path, gap: Float): FloatArray {
 }
 
 /**
+ * Marquee bulbs grouped for drawing: every bulb is lit one tick in three ((i + tick) % 3 == 0), lit ones in one of 12
+ * colour steps round the wheel (i × 25°, rounded to 30° steps), unlit ones all one colour. So a whole marquee is 14
+ * point draws (12 lit colours, 2 unlit groups) instead of a circle per bulb. Points as x, y pairs.
+ */
+private class BulbKit(spots: FloatArray) {
+    /** [phase][colour step]: the bulbs lit at tick ≡ -phase (mod 3), by colour step. */
+    val lit: Array<Array<FloatArray>>
+    /** [phase]: the bulbs of that phase (unlit when another phase is lit). */
+    val byPhase: Array<FloatArray>
+    init {
+        val n = spots.size / 2
+        val lists = Array(3) { Array(12) { ArrayList<Float>() } }
+        val all = Array(3) { ArrayList<Float>() }
+        for (i in 0 until n) {
+            val ph = i % 3
+            val step = ((i * 25f / 30f).toInt()) % 12
+            lists[ph][step].add(spots[2 * i]); lists[ph][step].add(spots[2 * i + 1])
+            all[ph].add(spots[2 * i]); all[ph].add(spots[2 * i + 1])
+        }
+        lit = Array(3) { ph -> Array(12) { st -> lists[ph][st].toFloatArray() } }
+        byPhase = Array(3) { all[it].toFloatArray() }
+    }
+    val paint = Paint().apply { strokeCap = StrokeCap.Round; isAntiAlias = true }
+}
+
+/**
+ * PIXEL's 8-bit blocks round an element's stepped edge, grouped by colour step: block i on a side shows
+ * hue((i + tick) × 30° + the side's offset), so the blocks fall into 12 steps and a whole frame is 12 point draws
+ * (square points) instead of a rectangle per block. Same look as before.
+ */
+private class BlockKit(w: Float, h: Float, val b: Float) {
+    val steps: Array<FloatArray>
+    init {
+        val lists = Array(12) { ArrayList<Float>() }
+        fun add(step: Int, x: Float, y: Float) { val k = step.mod(12); lists[k].add(x + b / 2f); lists[k].add(y + b / 2f) }
+        var i = 0
+        var x = b
+        while (x < w - b) { add(i, x, 0f); add(i + 6, x, h - b); x += b * 2; i++ }
+        var y = b
+        while (y < h - b) { add(i + 3, 0f, y); add(i + 9, w - b, y); y += b * 2; i++ }
+        steps = Array(12) { lists[it].toFloatArray() }
+    }
+    val paint = Paint().apply { strokeCap = StrokeCap.Square; strokeWidth = b; isAntiAlias = false }
+}
+
+/**
  * What one decorated element draws with, made once per size: its outline where the box draws its rule (ORACLE: both
  * rules), the bulb spots (JACKPOT), the measure to walk the outline (ORACLE stars), the highlighter swipe (GAZETTE).
  */
@@ -141,7 +187,9 @@ private class FrameKit(style: Style, val w: Float, val h: Float, dp: Float, val 
     val inner: Path? = if (style == Style.ORACLE && h > 26 * dp) outline(style, w, h, dp, pill, r, stroke + 3 * dp) else null
     val measure: PathMeasure? = if (style == Style.ORACLE && rule != null) PathMeasure().apply { setPath(rule, true) } else null
     val ruleLength: Float = measure?.length ?: 0f
-    val bulbs: FloatArray? = if (style == Style.JACKPOT && rule != null) bulbSpots(rule, 14 * dp) else null
+    val bulbs: BulbKit? = if (style == Style.JACKPOT && rule != null) BulbKit(bulbSpots(rule, 14 * dp)) else null
+    /** PIXEL: the chasing blocks, grouped by their colour step (see [BlockKit]). */
+    val blocks: BlockKit? = if (style == Style.PIXEL) BlockKit(w, h, max(3f, dp * 3f)) else null
     val swipe: Path? = if (style == Style.PAPER && h <= 90 * dp) Path().apply {
         moveTo(-4 * dp, h * 0.55f); lineTo(w + 6 * dp, h * 0.5f)
         lineTo(w + 2 * dp, h * 0.98f); lineTo(-6 * dp, h * 1.02f); close()
@@ -252,22 +300,15 @@ private fun DrawScope.decoFront(style: Style, t: Float, s: Float, ink: HyInk, ki
             }
         }
         Style.PIXEL -> {
-            // 8-bit blocks chasing round the stepped edge (8 frames a second)
-            val b = max(3f, px * 3f)
+            // 8-bit blocks chasing round the stepped edge (8 frames a second): 12 point draws, one per colour step
+            val bk = kit.blocks ?: return
             val tick = (t * 8f).toInt()
-            val cell = Size(b, b)
-            var i = 0
-            var x = b
-            while (x < w - b) {
-                drawRect(hue((i + tick) * 30f, 0.9f, 1f), Offset(x, 0f), cell)
-                drawRect(hue((i + tick) * 30f + 180f, 0.9f, 1f), Offset(x, h - b), cell)
-                x += b * 2; i++
-            }
-            var y = b
-            while (y < h - b) {
-                drawRect(hue((i + tick) * 30f + 90f, 0.9f, 1f), Offset(0f, y), cell)
-                drawRect(hue((i + tick) * 30f + 270f, 0.9f, 1f), Offset(w - b, y), cell)
-                y += b * 2; i++
+            val canvas = drawContext.canvas
+            for (k in 0 until 12) {
+                val pts = bk.steps[k]
+                if (pts.isEmpty()) continue
+                bk.paint.color = hue((k + tick) * 30f, 0.9f, 1f)
+                canvas.drawRawPoints(PointMode.Points, pts, bk.paint)
             }
         }
         Style.COMIC -> {
@@ -325,14 +366,21 @@ private fun DrawScope.decoFront(style: Style, t: Float, s: Float, ink: HyInk, ki
     }
 }
 
-/** Marquee bulbs at [spots] (x, y pairs), chasing. */
-private fun DrawScope.bulbs(spots: FloatArray, t: Float, r: Float) {
-    val n = spots.size / 2
+/** Marquee bulbs of [kit], chasing (radius [r] unlit, a quarter bigger lit): 14 point draws a frame. */
+private fun DrawScope.bulbs(kit: BulbKit, t: Float, r: Float) {
     val tick = (t * 9f).toInt()
-    val off = Color(0xFFFFE08A).copy(alpha = 0.35f)
-    for (i in 0 until n) {
-        val on = (i + tick) % 3 == 0
-        drawCircle(if (on) hue(i * 25f + t * 100f, 0.8f, 1f) else off, if (on) r * 1.25f else r, Offset(spots[2 * i], spots[2 * i + 1]))
+    val litPhase = (-tick).mod(3)
+    val canvas = drawContext.canvas
+    val paint = kit.paint
+    paint.color = Color(0xFFFFE08A).copy(alpha = 0.35f)
+    paint.strokeWidth = 2f * r
+    for (ph in 0 until 3) if (ph != litPhase && kit.byPhase[ph].isNotEmpty()) canvas.drawRawPoints(PointMode.Points, kit.byPhase[ph], paint)
+    paint.strokeWidth = 2.5f * r
+    val groups = kit.lit[litPhase]
+    for (st in 0 until 12) {
+        if (groups[st].isEmpty()) continue
+        paint.color = hue(st * 30f + t * 100f, 0.8f, 1f)
+        canvas.drawRawPoints(PointMode.Points, groups[st], paint)
     }
 }
 
@@ -655,12 +703,12 @@ fun HyperFront(h: Hyper, taps: List<Tap>, modifier: Modifier = Modifier) {
     Spacer(modifier.fillMaxSize().graphicsLayer { }.drawWithCache {
         val dp = 1.dp.toPx()
         // JACKPOT: bulbs round the screen edge, placed once per size
-        val spots = if (style == Style.JACKPOT) bulbSpots(Path().apply { addRect(Rect(5 * dp, 5 * dp, size.width - 5 * dp, size.height - 5 * dp)) }, 26 * dp) else null
+        val spots = if (style == Style.JACKPOT) BulbKit(bulbSpots(Path().apply { addRect(Rect(5 * dp, 5 * dp, size.width - 5 * dp, size.height - 5 * dp)) }, 26 * dp)) else null
         onDrawBehind { front(style, h.t, taps, spots) }
     })
 }
 
-private fun DrawScope.front(style: Style, t: Float, taps: List<Tap>, edgeBulbs: FloatArray?) {
+private fun DrawScope.front(style: Style, t: Float, taps: List<Tap>, edgeBulbs: BulbKit?) {
     val w = size.width
     val hh = size.height
     val dp = 1.dp.toPx()

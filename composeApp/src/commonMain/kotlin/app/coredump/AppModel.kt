@@ -136,6 +136,23 @@ class AppModel(val scope: CoroutineScope) {
         }
     }
 
+    /** What the last re-rank found ("546 lists checked · all on today's point bands"), null before the first. */
+    var reranked by mutableStateOf<String?>(null)
+        private set
+
+    /**
+     * Re-rank (lists screen): every list checked against today's point bands (4 % / 10 % / 25 % / the rest, one
+     * gem) and fixed where it is off — instant, offline — then re-ranked by current interest online ([rescoreNow]).
+     * The bands are also checked for every list as it loads, and the online pass runs by itself twice a week.
+     */
+    fun rerankNow() {
+        scope.launch {
+            val (n, fixed) = runCatching { bank.rerank() }.getOrElse { 0 to 0 }
+            reranked = "${app.coredump.ui.group(n)} lists checked · " + if (fixed == 0) "all on today's point bands" else "$fixed put back on today's point bands"
+            rescoreNow()
+        }
+    }
+
     // ------------------------------------------------------------------ invites
 
     private fun onInvite(inv: app.coredump.game.Invite) {
@@ -558,6 +575,9 @@ class AppModel(val scope: CoroutineScope) {
         val members = pools.flatMap { pl -> app.coredump.core.Pools.membersOf(app.coredump.core.Pools.groups.first { it.id == pl.id }, usable).map { it.id } }.toSet()
         return MeltPools(key, pools, members).also { meltPools = it }
     }
+
+    /** A MELTDOWN category by its text: a merged pool or a list (for the self-test). */
+    fun meltPromptByText(text: String): Prompt? = meltPools?.pools?.firstOrNull { it.text == text } ?: bank.all().firstOrNull { it.text == text }
 
     /** Builds the merged pools off the main thread before a game needs them (they take a moment on a phone). */
     private fun warmMeltPools() {

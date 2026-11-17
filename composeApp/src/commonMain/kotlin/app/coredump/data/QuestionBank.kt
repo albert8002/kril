@@ -7,6 +7,7 @@ import app.coredump.core.FameScore
 import app.coredump.core.Norm
 import app.coredump.core.Prompt
 import app.coredump.core.SourceKind
+import app.coredump.core.Tiering
 import app.coredump.platform.CrashLog
 import app.coredump.platform.Platform
 import app.coredump.res.Res
@@ -138,11 +139,34 @@ class QuestionBank(private val scope: CoroutineScope) {
     private suspend fun putAll(list: List<Prompt>) = lock.withLock {
         val gone = Discards.ids
         for (p0 in list) if (p0.id !in gone) {
-            val p = withStoredOrder(p0)
+            // every list on today's point bands as it comes in (lists collected or shared under older rules too)
+            val p = onBands(withStoredOrder(p0))
             byId[p.id] = p
             shownKeys += p.cacheKey
         }
         publish()
+    }
+
+    /** [p], or [p] re-tiered on today's point bands when it is not ([Tiering.conforms]). */
+    private fun onBands(p: Prompt): Prompt =
+        if (Tiering.conforms(p.entries)) p
+        else Prompt(p.id, p.text, p.topic, p.source, Tiering.retier(p.entries, p.id), p.check, p.cuts)
+
+    /**
+     * Re-ranking now: every list in the bank checked against today's point bands and re-tiered where it is off.
+     * Returns (lists checked, lists fixed). Instant and offline; [rescore] (by popularity) is the online part.
+     */
+    suspend fun rerank(): Pair<Int, Int> = withContext(Dispatchers.Default) {
+        lock.withLock {
+            var fixed = 0
+            val all = byId.values.toList()
+            for (p in all) {
+                val q = onBands(p)
+                if (q !== p) { byId[p.id] = q; shownKeys += q.cacheKey; fixed++ }
+            }
+            if (fixed > 0) publish()
+            all.size to fixed
+        }
     }
 
     /**

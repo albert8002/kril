@@ -37,6 +37,7 @@ import app.coredump.ui.C
 import app.coredump.ui.Divider
 import app.coredump.ui.Panel
 import app.coredump.ui.TButton
+import app.coredump.ui.TLink
 import app.coredump.ui.TText
 import app.coredump.ui.TermInput
 import app.coredump.ui.TierBadge
@@ -74,7 +75,15 @@ fun BrowseScreen(model: AppModel) {
                 items(topics) { t -> Chip(Th.say("#" + t.key.replace(' ', '_'), t.icon + " " + t.label), topic == t.key) { haptic(false); topic = t.key } }
             }
             Spacer(Modifier.height(6.dp))
-            TText("${list.size} lists · ${group(list.sumOf { it.size })} answers", size = 11.sp, color = C.dim)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TText("${list.size} lists · ${group(list.sumOf { it.size })} answers", Modifier.weight(1f), size = 11.sp, color = C.dim)
+                // re-rank: every list back on today's point bands, then re-ranked by how well known each answer is now
+                val busy = model.rescoring != null
+                TLink(if (busy) Th.say("reranking…", "Re-ranking…") else Th.say("rerank", "Re-rank"), { if (!busy) { haptic(true); model.rerankNow() } },
+                    color = if (busy) C.dim else C.hot)
+            }
+            val status = listOfNotNull(model.reranked, model.rescoring?.let { "by popularity: $it" }).joinToString(" · ")
+            if (status.isNotEmpty()) TText(status, size = 10.sp, color = C.dim)
         }
         LazyColumn(Modifier.weight(1f).padding(horizontal = 16.dp)) {
             items(list, key = { it.id }) { p ->
@@ -136,6 +145,9 @@ fun DumpScreen(model: AppModel, promptId: String) {
                                 size = 11.sp, color = tierColor(t))
                         }
                     }
+                    val ok = app.coredump.core.Tiering.conforms(p.entries)
+                    TText(if (ok) "on today's point bands (best-known 4 % · next 10 % · next 25 % · the rest · one gem)"
+                        else "off today's point bands: tap re-rank on the lists screen", size = 10.sp, color = if (ok) C.dim else C.blood)
                 }
                 Spacer(Modifier.height(12.dp))
                 TermInput(probe, { probe = it }, Modifier.fillMaxWidth(), prompt = Th.say("probe", "$"), placeholder = Th.say("test an answer", "Test an answer"), size = 14.sp)

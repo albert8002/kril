@@ -71,7 +71,7 @@ object SelfTest {
 
     /** Answers for me whenever I hold the core (a real entry nobody said yet), so the game moves on. */
     private fun meltAnswer(model: AppModel, st: app.coredump.game.MeltState): String? {
-        val p = model.bank.all().firstOrNull { it.text == st.prompt } ?: return null
+        val p = model.meltPromptByText(st.prompt) ?: return null
         val said = st.used.map { it.name }.toSet()
         return p.entries.firstOrNull { it.name !in said && it.name.length >= 4 }?.name
     }
@@ -396,6 +396,12 @@ object SelfTest {
                 model.setTheme(style, pal)
                 model.home(); delay(1500)
                 shot("hyper_menu_${style.name.lowercase()}")
+                pace("hyper_menu_${style.name.lowercase()}", 1200)
+                // and a question with ADHD-fy on (timer running)
+                model.startSolo(); delay(1600)
+                pace("hyper_play_${style.name.lowercase()}", 1500)
+                (model.screen as? Screen.Play)?.session?.let { model.abortRun(it) }
+                delay(300)
             }
             model.setTheme(Style.ABYSS, plan.first { it.first == Style.ABYSS }.second)
             model.startSolo(); delay(1500)
