@@ -13,6 +13,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.exp
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -77,29 +78,11 @@ object Constellation : SigilScheme {
         floatArrayOf(MOON[0] + sx / n, MOON[1] + sy / n)
     }
 
-    /** Constellation lines: a minimum spanning tree over the houses and guide stars (indices: houses, then 28 + anchor). */
-    private val EDGES: IntArray by lazy {
-        val n = HOUSES + 4
-        val px = FloatArray(n) { if (it < HOUSES) REG[2 * it] else ANCH[2 * (it - HOUSES)] }
-        val py = FloatArray(n) { if (it < HOUSES) REG[2 * it + 1] else ANCH[2 * (it - HOUSES) + 1] }
-        val inT = BooleanArray(n); inT[HOUSES] = true
-        val out = ArrayList<Int>()
-        repeat(n - 1) {
-            var bi = -1; var bj = -1; var bd = Float.MAX_VALUE
-            for (i in 0 until n) if (inT[i]) for (j in 0 until n) if (!inT[j]) {
-                val d = (px[i] - px[j]) * (px[i] - px[j]) + (py[i] - py[j]) * (py[i] - py[j])
-                if (d < bd) { bd = d; bi = i; bj = j }
-            }
-            if (bd < 0.17f * 0.17f) { out.add(bi); out.add(bj) }
-            inT[bj] = true
-        }
-        out.toIntArray()
-    }
-
     // ---------------------------------------------------------------- drawing
 
     private const val WHITE = 0xFFFFFFFF.toInt()
     private const val BLACK = 0xFF000000.toInt()
+    private const val TAU = 6.2831855f
 
     /** A colour of hue [hue] (saturation [sat]) with the lightness of [base]. */
     private fun tint(base: Int, hue: Float, sat: Float): Int {
@@ -120,6 +103,60 @@ object Constellation : SigilScheme {
     private fun hash(i: Int): Float { var x = i * 0x27d4eb2d + 0x165667b1; x = x xor (x ushr 15); x *= 0x2c1b3c6d; x = x xor (x ushr 12); return (x and 0xFFFF) / 65535f }
 
     private fun ease(x: Float): Float { val c = x.coerceIn(0f, 1f); return c * c * (3 - 2 * c) }
+    private fun easeOut(x: Float): Float { val c = 1f - x.coerceIn(0f, 1f); return 1f - c * c * c }
+    /** Ease-out with a little overshoot (a "pop"). */
+    private fun popOut(x: Float): Float { val c = x.coerceIn(0f, 1f) - 1f; return 1f + c * c * (2.7f * c + 1.7f) }
+
+    /** The look's colours for one ink (worked out once per palette, not per frame). */
+    private class Look(ink: Ink) {
+        val p = ink.plate; val main = ink.main
+        val dark = ink.dark
+        // midnight blue on dark looks, warm parchment (an old star atlas) on light ones; plate lightness either way
+        val sky = if (dark) tint(p, 228f, 0.5f) else tint(p, 40f, 0.2f)
+        val skyDeep = Colors.mix(sky, tint(p, 260f, 0.5f), 0.5f)
+        val gold = tint(main, 44f, 0.58f)
+        val starC = tint(main, 48f, 0.16f)
+        val lineC = Colors.mix(sky, gold, 0.27f)
+        val lineHi = Colors.mix(sky, gold, 0.42f)
+        val faintStar = Colors.mix(sky, starC, 0.2f)
+        val newStar = Colors.mix(sky, starC, 0.38f)
+        val milky = Colors.mix(sky, starC, 0.16f)
+        val warm = tint(Colors.mix(p, main, 0.35f), 36f, 0.6f)
+        val orn = Colors.mix(p, gold, 0.55f)
+        val ornSoft = Colors.mix(p, gold, 0.35f)
+        val tick = Colors.mix(p, gold, 0.4f)
+        val vignette = if (dark) Colors.mix(p, BLACK, 0.55f) else Colors.mix(p, tint(main, 30f, 0.5f), 0.22f)
+        val grain = Colors.mix(p, main, 0.09f)
+        val wax = tint(Colors.mix(p, main, 0.78f), 40f, 0.22f)
+        val waxShade = Colors.mix(wax, BLACK, 0.18f)
+        val wick = Colors.mix(waxShade, BLACK, 0.4f)
+        val flame = tint(main, 40f, 0.85f)
+        val flameCore = if (dark) WHITE else tint(main, 45f, 0.4f)
+        val smoke = Colors.mix(p, main, 0.16f)
+        val crater1 = Colors.mix(starC, sky, 0.12f); val crater2 = Colors.mix(starC, sky, 0.1f)
+        val earthshine = Colors.mix(sky, starC, 0.07f)
+    }
+
+    private var lookKey = 0L
+    private var lookCache: Look? = null
+    private fun look(ink: Ink): Look {
+        val k = (ink.plate.toLong() shl 32) xor (ink.main.toLong() and 0xFFFFFFFFL) xor (ink.alt.toLong() * 31)
+        val c = lookCache
+        if (c != null && k == lookKey) return c
+        val n = Look(ink); lookCache = n; lookKey = k
+        return n
+    }
+
+    /** Neighbours of every star (houses 0..27, guide stars 28..31) for constellations. */
+    private val NB: Array<IntArray> by lazy {
+        val n = HOUSES + 4
+        val px = FloatArray(n) { if (it < HOUSES) REG[2 * it] else ANCH[2 * (it - HOUSES)] }
+        val py = FloatArray(n) { if (it < HOUSES) REG[2 * it + 1] else ANCH[2 * (it - HOUSES) + 1] }
+        Array(n) { i ->
+            (0 until n).filter { j -> j != i && (px[i] - px[j]) * (px[i] - px[j]) + (py[i] - py[j]) * (py[i] - py[j]) < 0.165f * 0.165f }
+                .sortedBy { j -> (px[i] - px[j]) * (px[i] - px[j]) + (py[i] - py[j]) * (py[i] - py[j]) }.toIntArray()
+        }
+    }
 
     /** A four- (or more-) pointed star polygon. */
     private fun sparkle(out: Scene, x: Float, y: Float, r: Float, inner: Float, points: Int, turn: Float, color: Int) {
@@ -132,65 +169,122 @@ object Constellation : SigilScheme {
         out.poly(pts, color)
     }
 
-    private fun candle(out: Scene, x: Float, base: Float, h: Float, t: Float, seed: Int, wax: Int, waxShade: Int, flame: Int, core: Int, glowC: Int) {
+    /** Stroke capitals (polylines in a 1 × 1 box, NaN breaks a stroke). */
+    private val GLYPH: Map<Char, FloatArray> = run {
+        val n = Float.NaN
+        mapOf(
+            'T' to floatArrayOf(0f, 0f, 1f, 0f, n, n, 0.5f, 0f, 0.5f, 1f),
+            'H' to floatArrayOf(0f, 0f, 0f, 1f, n, n, 1f, 0f, 1f, 1f, n, n, 0f, 0.5f, 1f, 0.5f),
+            'E' to floatArrayOf(1f, 0f, 0f, 0f, 0f, 1f, 1f, 1f, n, n, 0f, 0.5f, 0.75f, 0.5f),
+            'S' to floatArrayOf(1f, 0.12f, 0.8f, 0f, 0.2f, 0f, 0f, 0.16f, 0f, 0.36f, 0.2f, 0.5f, 0.8f, 0.5f, 1f, 0.64f, 1f, 0.86f, 0.8f, 1f, 0.2f, 1f, 0f, 0.88f),
+            'A' to floatArrayOf(0f, 1f, 0.5f, 0f, 1f, 1f, n, n, 0.22f, 0.62f, 0.78f, 0.62f),
+            'R' to floatArrayOf(0f, 1f, 0f, 0f, 0.75f, 0f, 1f, 0.16f, 1f, 0.34f, 0.75f, 0.5f, 0f, 0.5f, n, n, 0.45f, 0.5f, 1f, 1f),
+            'X' to floatArrayOf(0f, 0f, 1f, 1f, n, n, 1f, 0f, 0f, 1f),
+            'V' to floatArrayOf(0f, 0f, 0.5f, 1f, 1f, 0f),
+            'I' to floatArrayOf(0.5f, 0f, 0.5f, 1f, n, n, 0.15f, 0f, 0.85f, 0f, n, n, 0.15f, 1f, 0.85f, 1f),
+        )
+    }
+
+    /** A line of stroke capitals centred on (cx, y), [h] tall. */
+    private fun caption(out: Scene, s: String, cx: Float, y: Float, h: Float, w: Float, gap: Float, color: Int, width: Float) {
+        val total = s.length * w + (s.length - 1) * gap
+        var x = cx - total / 2
+        for (ch in s) {
+            val g = GLYPH[ch]
+            if (g != null) {
+                var px = Float.NaN; var py = Float.NaN
+                var i = 0
+                while (i < g.size) {
+                    if (g[i].isNaN()) { px = Float.NaN; i += 2; continue }
+                    val qx = x + g[i] * w; val qy = y + g[i + 1] * h
+                    if (!px.isNaN()) out.line(px, py, qx, qy, width, color)
+                    px = qx; py = qy; i += 2
+                }
+            }
+            x += w + gap
+        }
+    }
+
+    private fun candle(out: Scene, lk: Look, x: Float, base: Float, h: Float, t: Float, seed: Int) {
         val w = 0.046f
         val top = base - h
-        out.rect(x, base - h / 2, w, h, wax, corner = 0.006f)
-        out.rect(x + w * 0.28f, base - h / 2, w * 0.3f, h, waxShade, corner = 0.004f)
-        // a drip
-        out.oval(x - w * 0.3f, top + 0.012f, 0.006f, 0.014f, wax)
-        out.line(x, top, x, top - 0.012f, 0.0035f, Colors.mix(waxShade, BLACK, 0.4f))
-        val fl = 1f + 0.12f * sin(t * 9.1f + seed) + 0.07f * sin(t * 23.7f + seed * 2)
-        val sway = 0.004f * sin(t * 5.3f + seed)
-        out.glow(x, top - 0.03f, 0.11f * fl, Colors.alpha(glowC, 0.22f))
+        out.rect(x, base - h / 2, w, h, lk.wax, corner = 0.006f)
+        out.rect(x + w * 0.28f, base - h / 2, w * 0.3f, h, lk.waxShade, corner = 0.004f)
+        // a drip that slowly creeps down and is renewed
+        val dr = (t * 0.05f + hash(seed * 7)) % 1f
+        out.oval(x - w * 0.3f, top + 0.008f + 0.03f * ease(dr), 0.0055f, 0.012f + 0.01f * ease(dr), lk.wax)
+        out.line(x, top, x, top - 0.012f, 0.0035f, lk.wick)
+        val fl = 1f + 0.12f * sin(t * 9.1f + seed) + 0.07f * sin(t * 23.7f + seed * 2) + 0.05f * sin(t * 3.3f + seed * 5)
+        val sway = 0.004f * sin(t * 5.3f + seed) + 0.002f * sin(t * 13.1f + seed)
+        out.glow(x, top - 0.03f, 0.12f * fl, Colors.alpha(lk.warm, 0.24f))
         val fh = 0.05f * fl
         val pts = floatArrayOf(x + sway * 2.5f, top - 0.014f - fh, x + 0.009f + sway, top - 0.03f, x + 0.012f, top - 0.019f,
             x + 0.007f, top - 0.01f, x, top - 0.008f, x - 0.007f, top - 0.01f, x - 0.012f, top - 0.019f, x - 0.009f + sway, top - 0.03f)
-        out.poly(pts, flame)
-        out.oval(x + sway, top - 0.022f, 0.005f, 0.011f * fl, core)
+        out.poly(pts, lk.flame)
+        out.oval(x + sway, top - 0.022f, 0.005f, 0.011f * fl, lk.flameCore)
+        // a thread of smoke curling up, and embers drifting off
+        var px = x + sway * 2.5f; var py = top - 0.016f - fh
+        for (k in 1..4) {
+            val qy = py - 0.022f
+            val qx = x + sway * 3f + 0.008f * sin(t * 1.7f + k * 1.3f + seed) * k
+            out.line(px, py, qx, qy, 0.003f, Colors.alpha(lk.smoke, 0.5f * (1f - k / 5f)))
+            px = qx; py = qy
+        }
+        for (k in 0 until 3) {
+            val life = (t * 0.45f + hash(seed * 31 + k)) % 1f
+            val ex = x + 0.03f * sin(t * 1.1f + k * 2.1f + seed) * life
+            val ey = top - 0.06f - 0.16f * life
+            out.circle(ex, ey, 0.0022f * (1f - life), Colors.alpha(lk.flame, 0.8f * sin(life * PI.toFloat())))
+        }
     }
 
     override fun draw(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
-        val p = ink.plate; val main = ink.main
-        val dark = ink.dark
-        // midnight blue on dark looks, warm parchment (an old star atlas) on light ones; plate lightness either way
-        val sky = if (dark) tint(p, 228f, 0.5f) else tint(p, 40f, 0.2f)
-        val gold = tint(main, 44f, 0.58f)
-        val starC = tint(main, 48f, 0.16f)
-        val lineC = Colors.mix(sky, gold, 0.27f)
-        val faintStar = Colors.mix(sky, starC, 0.2f)
+        val lk = look(ink)
+        val p = lk.p
         val cx = 0.5f; val cy = 0.5f
         val phi = -t * 2.2f * PI.toFloat() / 180f            // the sky turns slowly
         val cp = cos(phi); val sp = sin(phi)
         fun sx(x: Float, y: Float) = cx + x * cp - y * sp
         fun sy(x: Float, y: Float) = cy + x * sp + y * cp
 
-        // the table: candle light pools, corner ornaments
-        val warm = tint(Colors.mix(p, main, 0.35f), 36f, 0.6f)
-        out.glow(0.08f, 0.9f, 0.32f, Colors.alpha(warm, 0.22f + 0.04f * sin(t * 7f)))
-        out.glow(0.92f, 0.9f, 0.32f, Colors.alpha(warm, 0.22f + 0.04f * sin(t * 6.3f + 1f)))
-        val orn = Colors.mix(p, gold, 0.55f)
-        for ((k, ox) in floatArrayOf(0.075f, 0.925f).withIndex()) {
-            val tw = 0.8f + 0.2f * sin(t * 1.7f + k * 2f)
-            sparkle(out, ox, 0.075f, 0.034f * tw, 0.008f, 4, PI.toFloat() / 4 * k, orn)
-            sparkle(out, ox + (if (k == 0) 0.06f else -0.06f), 0.05f, 0.014f, 0.004f, 4, 0f, Colors.mix(p, gold, 0.35f))
-            out.circle(ox + (if (k == 0) 0.035f else -0.035f), 0.13f, 0.005f, Colors.mix(p, gold, 0.35f))
+        // ---- the card: vignette, grain, candle light, a gilt border with corner stars
+        for ((qx, qy) in arrayOf(0f to 0f, 1f to 0f, 0f to 1f, 1f to 1f)) out.glow(qx, qy, 0.42f, Colors.alpha(lk.vignette, 0.8f))
+        for (i in 0 until 26) {
+            val gx = hash(i * 5 + 1); val gy = hash(i * 5 + 2)
+            if ((gx - 0.5f) * (gx - 0.5f) + (gy - 0.5f) * (gy - 0.5f) < 0.2f) continue
+            out.circle(gx, gy, 0.0018f + 0.0018f * hash(i * 5 + 3), lk.grain)
+        }
+        out.glow(0.09f, 0.93f, 0.34f, Colors.alpha(lk.warm, 0.2f + 0.04f * sin(t * 7f) + 0.02f * sin(t * 17f)))
+        out.glow(0.91f, 0.93f, 0.32f, Colors.alpha(lk.warm, 0.2f + 0.04f * sin(t * 6.3f + 1f) + 0.02f * sin(t * 15f)))
+        out.rect(0.5f, 0.5f, 0.956f, 0.956f, lk.ornSoft, corner = 0.03f, stroke = 0.003f)
+        out.rect(0.5f, 0.5f, 0.932f, 0.932f, Colors.alpha(lk.ornSoft, 0.6f), corner = 0.024f, stroke = 0.0018f)
+        for ((k, c) in arrayOf(0.06f to 0.06f, 0.94f to 0.06f, 0.06f to 0.94f, 0.94f to 0.94f).withIndex()) {
+            val tw = 0.75f + 0.25f * sin(t * (1.1f + 0.37f * k) + k * 2f)
+            if (k < 2) sparkle(out, c.first, c.second, 0.026f * tw, 0.006f, 4, 0.08f * sin(t * 0.4f + k), lk.orn)
+        }
+        // XVII above, THE STAR below (a tarot card's number and name)
+        caption(out, "XVII", 0.5f, 0.026f, 0.026f, 0.016f, 0.007f, lk.orn, 0.0032f)
+        caption(out, "THE STAR", 0.5f, 0.952f, 0.024f, 0.016f, 0.008f, lk.orn, 0.003f)
+        for (sgn in intArrayOf(-1, 1)) {
+            val tw = 0.7f + 0.3f * sin(t * 2.3f + sgn)
+            sparkle(out, 0.5f + sgn * 0.135f, 0.964f, 0.009f * tw, 0.003f, 4, 0f, lk.orn)
+            sparkle(out, 0.5f + sgn * 0.06f, 0.039f, 0.007f * tw, 0.0025f, 4, 0f, lk.orn)
         }
 
-        // sky disc and the milky way
-        out.circle(cx, cy, SKY, sky)
-        out.glow(cx, cy, SKY * 1.05f, Colors.alpha(Colors.mix(sky, tint(p, 260f, 0.5f), 0.5f), 0.35f))
+        // ---- sky disc, its breathing deep glow, the drifting milky way
+        out.circle(cx, cy, SKY, lk.sky)
+        out.glow(cx, cy, SKY * (1.03f + 0.03f * sin(t * 0.31f)), Colors.alpha(lk.skyDeep, 0.3f + 0.06f * sin(t * 0.23f + 1f)))
         for (k in 0 until 9) {
-            val u = (k - 4) / 4f * 0.32f
-            val bx = u; val by = -0.55f * u + 0.03f * sin(k * 1.9f)
-            out.glow(sx(bx, by), sy(bx, by), 0.09f + 0.02f * hash(k), Colors.alpha(Colors.mix(sky, starC, 0.16f), 0.5f))
+            val u = (k - 4) / 4f * 0.32f + 0.02f * sin(t * 0.13f + k)
+            val bx = u; val by = -0.55f * u + 0.03f * sin(k * 1.9f + t * 0.09f)
+            out.glow(sx(bx, by), sy(bx, by), 0.085f + 0.02f * hash(k) + 0.01f * sin(t * 0.21f + k * 0.7f), Colors.alpha(lk.milky, 0.42f + 0.1f * sin(t * 0.17f + k)))
         }
-        // background stars (faint, twinkling)
-        for (i in 0 until 90) {
-            val r = 0.39f * sqrt(hash(i * 3 + 1)); val a = 2 * PI.toFloat() * hash(i * 3 + 2)
+        // background stars (faint), each on its own twinkle
+        for (i in 0 until 84) {
+            val r = 0.39f * sqrt(hash(i * 3 + 1)); val a = TAU * hash(i * 3 + 2)
             val x = r * cos(a); val y = r * sin(a)
-            val tw = 0.55f + 0.45f * sin(t * (1.3f + 2.5f * hash(i)) + 6.28f * hash(i * 5))
-            out.circle(sx(x, y), sy(x, y), 0.0024f + 0.0028f * hash(i * 7), Colors.alpha(faintStar, 0.35f + 0.65f * tw))
+            val tw = 0.55f + 0.45f * sin(t * (0.9f + 2.6f * hash(i)) + TAU * hash(i * 5))
+            out.circle(sx(x, y), sy(x, y), 0.0022f + 0.0028f * hash(i * 7), Colors.alpha(lk.faintStar, 0.3f + 0.7f * tw * tw))
         }
 
         // where each house's star shines
@@ -202,93 +296,153 @@ object Constellation : SigilScheme {
         fun starX(i: Int) = if (i < HOUSES) placeX(i, place[i]) else ANCH[2 * (i - HOUSES)]
         fun starY(i: Int) = if (i < HOUSES) placeY(i, place[i]) else ANCH[2 * (i - HOUSES) + 1]
         fun starR(i: Int) = if (i < HOUSES) 0.0115f + 0.0035f * hash(i * 13 + 5) else ANCH_R
+        val flare = FloatArray(HOUSES + 4)
 
-        // constellation lines draw themselves in, hold, fade
-        val cyc = 15f
-        val ct = t % cyc
-        val fade = if (ct > 12.5f) 1f - ease((ct - 12.5f) / 1.6f) else 1f
-        val ne = EDGES.size / 2
-        for (e in 0 until ne) {
-            val a = EDGES[2 * e]; val b = EDGES[2 * e + 1]
-            val grow = ease((ct - 0.3f * e) / 0.7f) * fade
-            if (grow <= 0f) continue
-            var x0 = starX(a); var y0 = starY(a); var x1 = starX(b); var y1 = starY(b)
-            val len = sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0))
-            val c0 = (starR(a) + 0.014f) / len; val c1 = (starR(b) + 0.014f) / len
-            if (c0 + c1 >= 0.95f) continue
-            val ax = x0 + (x1 - x0) * c0; val ay = y0 + (y1 - y0) * c0
-            val bx = x1 - (x1 - x0) * c1; val by = y1 - (y1 - y0) * c1
+        /** A constellation line from star a to (bx, by), grown to [grow], [alpha]. */
+        fun link(ax0: Float, ay0: Float, ra: Float, bx0: Float, by0: Float, rb: Float, grow: Float, alpha: Float) {
+            if (grow <= 0f || alpha <= 0f) return
+            val len = sqrt((bx0 - ax0) * (bx0 - ax0) + (by0 - ay0) * (by0 - ay0))
+            val c0 = (ra + 0.013f) / len; val c1 = (rb + 0.013f) / len
+            if (c0 + c1 >= 0.92f) return
+            val ax = ax0 + (bx0 - ax0) * c0; val ay = ay0 + (by0 - ay0) * c0
+            val bx = bx0 - (bx0 - ax0) * c1; val by = by0 - (by0 - ay0) * c1
             val ex = ax + (bx - ax) * grow; val ey = ay + (by - ay) * grow
-            out.line(sx(ax, ay), sy(ax, ay), sx(ex, ey), sy(ex, ey), 0.0034f, lineC)
-            x0 = ex; y0 = ey
-            if (grow < 1f) out.circle(sx(x0, y0), sy(x0, y0), 0.004f, Colors.mix(sky, gold, 0.3f))
+            out.line(sx(ax, ay), sy(ax, ay), sx(ex, ey), sy(ex, ey), 0.0032f, Colors.alpha(lk.lineC, alpha))
+            if (grow < 1f) out.glow(sx(ex, ey), sy(ex, ey), 0.012f, Colors.alpha(lk.lineHi, alpha))
         }
 
-        // the moon
-        val mx = sx(MOON[0], MOON[1]); val my = sy(MOON[0], MOON[1])
-        out.glow(mx, my, MOON_R * 1.55f, Colors.alpha(starC, 0.22f))
-        out.circle(mx, my, MOON_R, starC)
-        out.circle(mx + 0.013f * cp - 0.009f * sp, my + 0.013f * sp + 0.009f * cp, 0.007f, Colors.mix(starC, sky, 0.12f))
-        out.circle(mx - 0.019f * cp + 0.005f * sp, my - 0.019f * sp - 0.005f * cp, 0.005f, Colors.mix(starC, sky, 0.1f))
-        val kx = sx(MOON[0] + CARVE_DX, MOON[1] + CARVE_DY); val ky = sy(MOON[0] + CARVE_DX, MOON[1] + CARVE_DY)
-        out.circle(kx, ky, CARVE_R, sky)
-
-        // the constellation's stars
-        for (h in 0 until HOUSES) {
-            val x = sx(placeX(h, place[h]), placeY(h, place[h])); val y = sy(placeX(h, place[h]), placeY(h, place[h]))
-            val r = starR(h)
-            val tw = sin(t * (2.1f + 1.7f * hash(h)) + 6.28f * hash(h * 3))
-            out.glow(x, y, r * 2.6f, Colors.alpha(starC, 0.28f + 0.1f * tw))
-            out.circle(x, y, r, starC)
-            if (hash(h * 11) > 0.55f) sparkle(out, x, y, r * (1.9f + 0.35f * tw), r * 0.35f, 4, phi + 0.4f, starC)
-        }
-        // guide stars: bigger, with rays
-        for (a in 0 until 4) {
-            val x = sx(ANCH[2 * a], ANCH[2 * a + 1]); val y = sy(ANCH[2 * a], ANCH[2 * a + 1])
-            val tw = sin(t * 2.7f + a * 1.3f)
-            out.glow(x, y, ANCH_R * 3.2f, Colors.alpha(gold, 0.3f + 0.08f * tw))
-            sparkle(out, x, y, ANCH_R * (2.1f + 0.25f * tw), ANCH_R * 0.42f, 4, phi, starC)
-            out.circle(x, y, ANCH_R, starC)
-        }
-
-        // now and then a shooting star
-        val sc = 8.5f
-        val k = floor(t / sc).toInt()
-        val st = t - k * sc - 2f
-        if (st in 0f..0.75f) {
-            val a0 = 6.28f * hash(k * 17 + 3)
-            val hx0 = 0.3f * cos(a0); val hy0 = 0.3f * sin(a0)
-            val dir = a0 + PI.toFloat() + (hash(k * 5) - 0.5f) * 1.2f
-            val u = ease(st / 0.75f)
-            val hx = hx0 + 0.52f * u * cos(dir); val hy = hy0 + 0.52f * u * sin(dir)
-            val al = sin(u * PI.toFloat())
-            for (s in 0 until 6) {
-                val f0 = s / 6f; val f1 = (s + 1) / 6f
-                val tl = 0.16f * min(1f, u * 3f)
-                out.line(cx + hx - tl * f0 * cos(dir), cy + hy - tl * f0 * sin(dir), cx + hx - tl * f1 * cos(dir), cy + hy - tl * f1 * sin(dir),
-                    0.004f * (1f - f0), Colors.alpha(starC, al * (1f - f0)))
+        // ---- little events: constellations join up line by line, new stars pop into being and reach out
+        val ev = 1.05f; val life = 5.6f
+        val w0 = floor(t / ev).toInt()
+        for (back in 0..5) {
+            val w = w0 - back
+            val age = t - w * ev - 0.4f * hash(w * 3 + 11)
+            if (age < 0f || age > life) continue
+            val fade = 1f - ease((age - (life - 1.1f)) / 1.1f)
+            if (hash(w * 7 + 1) < 0.64f) {
+                // a constellation: a random walk over neighbouring stars, drawn line by line
+                var cur = (hash(w * 13 + 5) * (HOUSES + 4)).toInt().coerceIn(0, HOUSES + 3)
+                val len = 3 + (hash(w * 17 + 2) * 3.99f).toInt()
+                val seen = IntArray(len + 1) { -1 }; seen[0] = cur
+                flare[cur] = max(flare[cur], bump(age - 0.1f) * fade)
+                for (step in 0 until len) {
+                    val nb = NB[cur]
+                    if (nb.isEmpty()) break
+                    var nxt = -1
+                    for (tr in 0 until 4) {
+                        val c = nb[(hash(w * 31 + step * 7 + tr) * nb.size).toInt().coerceIn(0, nb.size - 1)]
+                        if (c !in seen) { nxt = c; break }
+                    }
+                    if (nxt < 0) break
+                    val t0 = 0.25f + 0.42f * step
+                    val g = easeOut((age - t0) / 0.42f)
+                    link(starX(cur), starY(cur), starR(cur), starX(nxt), starY(nxt), starR(nxt), g, fade)
+                    flare[nxt] = max(flare[nxt], bump(age - t0 - 0.42f) * fade)
+                    seen[step + 1] = nxt
+                    cur = nxt
+                }
+            } else {
+                // a star is born somewhere, pops, and reaches for its nearest bright neighbours
+                val rr = 0.08f + 0.27f * sqrt(hash(w * 19 + 3)); val aa = TAU * hash(w * 23 + 4)
+                val bx = rr * cos(aa); val by = rr * sin(aa)
+                val mdx = bx - MOON[0]; val mdy = by - MOON[1]
+                if (mdx * mdx + mdy * mdy < 0.09f * 0.09f) continue
+                val s = popOut(age / 0.38f) * fade
+                val x = sx(bx, by); val y = sy(bx, by)
+                out.glow(x, y, 0.03f * s, Colors.alpha(lk.newStar, 0.5f * fade))
+                sparkle(out, x, y, 0.016f * s, 0.003f * s, 4, phi + age * 0.6f, Colors.alpha(lk.newStar, fade))
+                out.circle(x, y, 0.0035f * s, Colors.alpha(lk.newStar, fade))
+                // ring burst as it appears
+                if (age < 0.6f) out.circle(x, y, 0.012f + 0.04f * easeOut(age / 0.6f), Colors.alpha(lk.newStar, 0.5f * (1f - age / 0.6f)), 0.0025f)
+                var b1 = -1; var b2 = -1; var d1 = 9f; var d2 = 9f
+                for (j in 0 until HOUSES + 4) {
+                    val d = (starX(j) - bx) * (starX(j) - bx) + (starY(j) - by) * (starY(j) - by)
+                    if (d < d1) { d2 = d1; b2 = b1; d1 = d; b1 = j } else if (d < d2) { d2 = d; b2 = j }
+                }
+                if (b1 >= 0) { link(bx, by, 0.004f, starX(b1), starY(b1), starR(b1), easeOut((age - 0.45f) / 0.5f), fade); flare[b1] = max(flare[b1], bump(age - 0.95f) * fade) }
+                if (b2 >= 0 && hash(w * 29) < 0.6f) { link(bx, by, 0.004f, starX(b2), starY(b2), starR(b2), easeOut((age - 0.9f) / 0.5f), fade); flare[b2] = max(flare[b2], bump(age - 1.4f) * fade) }
             }
         }
 
-        // the gold ring, ticks outside it
-        out.circle(cx, cy, RR, gold, RT)
-        out.circle(cx, cy, RR + RT / 2 + 0.012f, Colors.mix(p, gold, 0.3f), 0.003f)
-        for (i in 0 until 48) {
-            val a = i * PI.toFloat() / 24 + phi * 0.25f
-            val l = if (i % 4 == 0) 0.022f else 0.01f
-            val r0 = RR + RT / 2 + 0.018f
-            out.line(cx + r0 * cos(a), cy + r0 * sin(a), cx + (r0 + l) * cos(a), cy + (r0 + l) * sin(a), 0.003f, Colors.mix(p, gold, 0.4f))
+        // ---- the moon: breathing halo, earthshine, craters
+        val mx = sx(MOON[0], MOON[1]); val my = sy(MOON[0], MOON[1])
+        out.glow(mx, my, MOON_R * (1.6f + 0.12f * sin(t * 0.7f)), Colors.alpha(lk.starC, 0.2f + 0.05f * sin(t * 0.53f)))
+        out.circle(mx, my, MOON_R, lk.starC)
+        out.circle(mx + 0.013f * cp - 0.009f * sp, my + 0.013f * sp + 0.009f * cp, 0.007f, lk.crater1)
+        out.circle(mx - 0.019f * cp + 0.005f * sp, my - 0.019f * sp - 0.005f * cp, 0.005f, lk.crater2)
+        val kx = sx(MOON[0] + CARVE_DX, MOON[1] + CARVE_DY); val ky = sy(MOON[0] + CARVE_DX, MOON[1] + CARVE_DY)
+        out.circle(kx, ky, CARVE_R, lk.sky)
+        out.circle(kx, ky, CARVE_R * 0.97f, Colors.alpha(lk.earthshine, 0.6f + 0.2f * sin(t * 0.4f)))
+
+        // ---- the constellation's stars: steady cores, breathing glows, flaring when a line reaches them
+        for (h in 0 until HOUSES) {
+            val px0 = placeX(h, place[h]); val py0 = placeY(h, place[h])
+            val x = sx(px0, py0); val y = sy(px0, py0)
+            val r = starR(h)
+            val tw = sin(t * (1.3f + 1.9f * hash(h)) + TAU * hash(h * 3))
+            val fl = flare[h]
+            out.glow(x, y, r * (2.6f + 0.9f * fl), Colors.alpha(lk.starC, 0.26f + 0.08f * tw + 0.22f * fl))
+            out.circle(x, y, r, lk.starC)
+            val rays = if (hash(h * 11) > 0.55f) 1f else fl
+            if (rays > 0.05f) sparkle(out, x, y, r * (1.6f + 0.35f * tw + 0.9f * fl) * min(1f, rays * 1.5f), r * 0.32f, 4, phi + 0.4f + 0.3f * fl, lk.starC)
+        }
+        // guide stars: bigger, rays slowly turning
+        for (a in 0 until 4) {
+            val x = sx(ANCH[2 * a], ANCH[2 * a + 1]); val y = sy(ANCH[2 * a], ANCH[2 * a + 1])
+            val tw = sin(t * (1.9f + 0.4f * a) + a * 1.3f)
+            val fl = flare[HOUSES + a]
+            out.glow(x, y, ANCH_R * (3.2f + 0.6f * fl), Colors.alpha(lk.gold, 0.28f + 0.07f * tw + 0.15f * fl))
+            sparkle(out, x, y, ANCH_R * (2.1f + 0.25f * tw + 0.4f * fl), ANCH_R * 0.42f, 4, phi + 0.05f * sin(t * 0.37f + a), lk.starC)
+            out.circle(x, y, ANCH_R, lk.starC)
         }
 
-        // candles
-        val wax = tint(Colors.mix(p, main, 0.78f), 40f, 0.22f)
-        val waxShade = Colors.mix(wax, BLACK, 0.18f)
-        val flame = tint(main, 40f, 0.85f)
-        val flameCore = if (dark) WHITE else tint(main, 45f, 0.4f)
-        candle(out, 0.072f, 1.0f, 0.14f, t, 1, wax, waxShade, flame, flameCore, warm)
-        candle(out, 0.13f, 1.0f, 0.085f, t, 3, wax, waxShade, flame, flameCore, warm)
-        candle(out, 0.928f, 1.0f, 0.12f, t, 2, wax, waxShade, flame, flameCore, warm)
+        // ---- shooting stars at random moments
+        val sc = 3.3f
+        val ks = floor(t / sc).toInt()
+        for (kk in intArrayOf(ks, ks - 1)) {
+            if (hash(kk * 41 + 7) > 0.55f) continue
+            val st = t - kk * sc - 2.4f * hash(kk * 43)
+            if (st !in 0f..0.8f) continue
+            val a0 = TAU * hash(kk * 17 + 3)
+            val hx0 = 0.3f * cos(a0); val hy0 = 0.3f * sin(a0)
+            val dir = a0 + PI.toFloat() + (hash(kk * 5) - 0.5f) * 1.2f
+            val u = easeOut(st / 0.8f)
+            val hx = hx0 + 0.5f * u * cos(dir); val hy = hy0 + 0.5f * u * sin(dir)
+            val al = sin(u * PI.toFloat())
+            val tl = 0.16f * min(1f, u * 3f)
+            for (s in 0 until 5) {
+                val f0 = s / 5f; val f1 = (s + 1) / 5f
+                out.line(cx + hx - tl * f0 * cos(dir), cy + hy - tl * f0 * sin(dir), cx + hx - tl * f1 * cos(dir), cy + hy - tl * f1 * sin(dir),
+                    0.004f * (1f - f0), Colors.alpha(lk.starC, al * (1f - f0)))
+            }
+        }
+
+        // ---- the gold ring with glints running round it, ticks outside (clear of the card's number and name)
+        out.circle(cx, cy, RR, lk.gold, RT)
+        out.circle(cx, cy, RR + RT / 2 + 0.012f, lk.ornSoft, 0.003f)
+        for (g in 0 until 2) {
+            val a = t * (0.21f + 0.13f * g) + g * 2.4f
+            val tw = 0.6f + 0.4f * sin(t * 1.3f + g * 2f)
+            sparkle(out, cx + RR * cos(a), cy + RR * sin(a), 0.022f * tw, 0.004f, 4, a * 2f, lk.starC)
+        }
+        val tr = t * 0.02f
+        for (i in 0 until 48) {
+            val a = i * PI.toFloat() / 24 + tr
+            val vert = abs(cos(a))                 // fade the ticks near the top and the bottom
+            if (vert < 0.36f) continue
+            val l = (if (i % 4 == 0) 0.022f else 0.01f) * min(1f, (vert - 0.36f) * 5f)
+            val r0 = RR + RT / 2 + 0.018f
+            out.line(cx + r0 * cos(a), cy + r0 * sin(a), cx + (r0 + l) * cos(a), cy + (r0 + l) * sin(a), 0.003f, lk.tick)
+        }
+
+        // ---- candles on the table
+        candle(out, lk, 0.072f, 1.0f, 0.14f, t, 1)
+        candle(out, lk, 0.135f, 1.0f, 0.085f, t, 3)
+        candle(out, lk, 0.928f, 1.0f, 0.12f, t, 2)
     }
+
+    /** A quick rise and a slow fall (a star flaring as a line reaches it). */
+    private fun bump(x: Float): Float = if (x <= 0f) 0f else if (x < 0.12f) x / 0.12f else exp(-(x - 0.12f) / 0.55f)
 
     // ---------------------------------------------------------------- reading
 

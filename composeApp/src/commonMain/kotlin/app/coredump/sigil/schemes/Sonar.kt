@@ -13,6 +13,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.exp
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -20,10 +21,14 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * ABYSS: a sonar scope in the deep. A bright bezel with compass ticks (a long one at north), range rings, a hub, and a
- * sweep beam turning clockwise once every [PERIOD] seconds with a glowing trail. Behind the beam the blips light up
- * (a ping), glow steadily for a while, then fade out before the beam comes round again. Plankton drifts in the glass,
- * bubbles rise in the corners.
+ * ABYSS: a sonar scope in the deep. A bright bezel with compass ticks in a dark housing, a dark CRT glass with range
+ * rings, a hub, and a sweep beam turning clockwise once every [PERIOD] seconds with a glowing trail. Behind the beam the
+ * blips ping (flash and ripples), glow while they are read, then fade like phosphor before the beam comes round again;
+ * the rings glow where the beam has just been, a ping ring leaves the hub every turn, sea clutter flickers round it, a
+ * faint band rolls down the glass. Round the scope the sea lives: light from the surface in rays and caustics, marine
+ * snow falling (far behind, near in front), kelp swaying, bubbles wobbling up; now and then a jellyfish rises, a fish
+ * with a glowing lure swims round the housing, a little school darts by, a stream of bubbles, a stray fish-shaped echo
+ * on the scope.
  *
  * Data: 14 sectors (one 6-bit symbol each) × 6 range cells; a cell holds a blip for a 1 bit (bits XOR a scheme mask).
  * Reader: finds the bezel (ring), its 4 ticks (homography, north = the long one), the beam (its angle, and from the side
@@ -75,15 +80,183 @@ object Sonar : SigilScheme {
     private fun hash(i: Int): Float { var h = i * 374761393 + 668265263; h = (h xor (h ushr 13)) * 1274126177; h = h xor (h ushr 16); return (h and 0xFFFFFF) / 16777216f }
 
     // ------------------------------------------------------------------ drawing
+    //
+    // Only the blips carry data, and the reader looks at them in two windows: 50–140° after the beam (lit or not) and
+    // 285–350° (always dark). Everything else is the deep sea round the scope; whatever moves over the glass is faint,
+    // and nothing the beam paints (phosphor, clutter, a stray fish echo) is still lit in the dark window.
+
+    private const val WHITE = 0xFFFFFFFF.toInt()
+    private const val BLACK = 0xFF000000.toInt()
+    /** Little deep-sea events: one every [EV] seconds or so. */
+    private const val EV = 1.5f
+    private val PHOS_A = floatArrayOf(0f, 8f, 20f, 40f, 70f, 110f)
+    private val PHOS_K = floatArrayOf(0.55f, 0.34f, 0.2f, 0.1f, 0.04f)
+    private val RINGS = floatArrayOf(0.145f, 0.195f, 0.245f, 0.295f, 0.345f)
+
+    private fun smooth(x: Float): Float { val c = x.coerceIn(0f, 1f); return c * c * (3f - 2f * c) }
+    private fun easeOut(x: Float): Float { val c = 1f - x.coerceIn(0f, 1f); return 1f - c * c * c }
+    /** 0 → 1 → 0 over x in 0..1, eased in and out. */
+    private fun life(x: Float, fadeIn: Float = 0.15f, fadeOut: Float = 0.25f): Float =
+        if (x <= 0f || x >= 1f) 0f else smooth(x / fadeIn) * smooth((1f - x) / fadeOut)
+
+    private fun evStart(w: Int) = w * EV + 0.5f * hash(w * 3 + 17)
+    private fun evKind(w: Int) = (hash(w * 5 + 3) * 6f).toInt().coerceIn(0, 5)
+    private val EV_DUR = floatArrayOf(6.5f, 4.5f, 2.2f, 6f, 3f, 3.2f)
+
+    /** A jellyfish: a pulsing bell (it rises as it contracts), trailing tentacles, a bioluminescent glow. */
+    private fun jelly(out: Scene, x: Float, y: Float, s: Float, u: Float, vis: Float, bell: Int, glow: Int) {
+        val p = 0.5f + 0.5f * sin(u * 3.7f)
+        val w = s * (1f - 0.2f * p); val h = s * 0.72f * (1f + 0.15f * p)
+        out.glow(x, y + h * 0.3f, s * 1.7f, Colors.alpha(glow, 0.24f * vis * (0.7f + 0.3f * p)))
+        for (j in 0 until 4) {
+            var px = x + w * (-0.6f + 0.4f * j); var py = y + h * 0.05f
+            for (g in 0 until 3) {
+                val nx = px + 0.007f * sin(u * 2.6f + j * 1.3f + g * 1.1f); val ny = py + s * (0.42f + 0.1f * (1f - p))
+                out.line(px, py, nx, ny, 0.0032f - g * 0.0008f, Colors.alpha(bell, 0.45f * vis * (1f - g * 0.25f)))
+                px = nx; py = ny
+            }
+        }
+        val pts = FloatArray(2 * 12)
+        for (i in 0..8) { val a = PI.toFloat() * i / 8f; pts[2 * i] = x - w * cos(a); pts[2 * i + 1] = y - h * sin(a) }
+        pts[18] = x + w * 0.75f; pts[19] = y + h * 0.18f
+        pts[20] = x; pts[21] = y + h * 0.06f
+        pts[22] = x - w * 0.75f; pts[23] = y + h * 0.18f
+        out.poly(pts, Colors.alpha(bell, 0.6f * vis))
+        out.oval(x - w * 0.32f, y - h * 0.55f, w * 0.26f, h * 0.14f, Colors.alpha(WHITE, 0.22f * vis), -25f)
+    }
+
+    /** A fish heading [head] degrees (0 = +x, clockwise), tail beating; an optional glowing lure. */
+    private fun fish(out: Scene, x: Float, y: Float, s: Float, head: Float, u: Float, c: Int, lure: Int?) {
+        val hx = cos(rad(head)); val hy = sin(rad(head))
+        val beat = 22f * sin(u * 11f)
+        out.oval(x, y, s, s * 0.42f, c, head + 0.3f * beat)
+        val tx = x - hx * s * 0.95f; val ty = y - hy * s * 0.95f
+        val ta = rad(head + 180f + beat)
+        val a1 = ta - 0.5f; val a2 = ta + 0.5f
+        out.poly(floatArrayOf(tx, ty, tx + s * 0.6f * cos(a1), ty + s * 0.6f * sin(a1), tx + s * 0.6f * cos(a2), ty + s * 0.6f * sin(a2)), c)
+        if (lure != null) {
+            val lx = x + hx * s * 1.5f - hy * s * 0.5f; val ly = y + hy * s * 1.5f + hx * s * 0.5f + 0.003f * sin(u * 3f)
+            out.line(x + hx * s * 0.7f, y + hy * s * 0.7f - s * 0.2f, lx, ly, 0.002f, c)
+            out.glow(lx, ly, s * 1.4f, Colors.alpha(lure, 0.55f + 0.2f * sin(u * 5f)))
+            out.circle(lx, ly, s * 0.13f, lure)
+        }
+    }
 
     override fun draw(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
+        val tt = max(0f, t)
         val beam = wrap(t / PERIOD * 360f)
         val tint = Colors.hueShift(ink.alt, 22f * sin(t * 0.45f))
         val tint2 = Colors.hueShift(ink.alt, -30f + 18f * sin(t * 0.31f + 1f))
         val core = Colors.hueShift(ink.main, 10f * sin(t * 0.6f))
+        val dk = ink.dark
+        val plate = ink.plate
+        // events of the last few windows (some last several seconds)
+        val wn = floor(tt / EV).toInt()
+        var rayBoost = 0f; var rayWhich = 0
 
-        // the glass: a faint glow, range rings, cross hairs
-        out.glow(0.5f, 0.5f, BEZEL * 0.98f, Colors.alpha(ink.soft, 0.55f))
+        // ---- the water: light from the surface above, darker below, light rays swaying, far marine snow, kelp
+        // (the light falls in from the top corners: the north gap of the bezel must stay the darkest spot on it)
+        for (q in 0 until 2) out.glow(if (q == 0) 0.1f else 0.9f, -0.06f, 0.42f, Colors.mix(plate, tint, if (dk) 0.2f else 0.12f))
+        out.glow(0.5f, 1.15f, 0.72f, Colors.alpha(if (dk) BLACK else ink.soft, if (dk) 0.5f else 0.35f))
+        for (w in wn - 2..wn) if (w >= 0 && evKind(w) == 4) {
+            val v = life((tt - evStart(w)) / EV_DUR[4], 0.3f, 0.4f)
+            if (v > rayBoost) { rayBoost = v; rayWhich = (hash(w + 77) * 3f).toInt().coerceIn(0, 2) }
+        }
+        val rayC = if (dk) Colors.mix(tint, WHITE, 0.3f) else tint
+        for (i in 0 until 3) {
+            val x0 = 0.01f + 0.3f * i + (if (i == 2) 0.02f else 0f) + 0.035f * sin(tt * (0.19f + 0.05f * i) + i * 2.1f)
+            val sl = 0.17f + 0.05f * sin(tt * (0.13f + 0.03f * i) + i)
+            val a = (if (dk) 0.055f else 0.065f) * (1f + 1.5f * (if (i == rayWhich) rayBoost else 0f)) * (0.8f + 0.2f * sin(tt * 0.9f + i * 2f))
+            for (len in floatArrayOf(0.82f, 0.42f)) {
+                val ww = 0.05f + 0.06f * len
+                out.poly(floatArrayOf(x0, -0.01f, x0 + 0.07f, -0.01f, x0 + 0.07f + sl * len + ww, len, x0 + sl * len, len), Colors.alpha(rayC, a))
+            }
+        }
+        // caustics flickering just under the surface
+        for (i in 0 until 4) {
+            val cx = 0.12f + 0.25f * i + 0.05f * sin(tt * (0.5f + 0.13f * i) + i)
+            out.glow(cx, 0.015f, 0.07f, Colors.alpha(rayC, (if (dk) 0.06f else 0.08f) * (0.5f + 0.5f * sin(tt * (1.7f + 0.4f * i) + i * 2.3f))))
+        }
+        // far marine snow (falls behind the scope)
+        val snow = if (dk) Colors.mix(plate, ink.main, 0.32f) else Colors.mix(plate, ink.main, 0.25f)
+        for (i in 0 until 20) {
+            val sp = 0.012f + 0.01f * hash(i + 300)
+            val y = ((hash(i + 310) + tt * sp) % 1.06f) - 0.03f
+            val x = (hash(i + 320) + 0.015f * sin(tt * (0.4f + 0.3f * hash(i + 330)) + i)) % 1f
+            out.circle(x, y, 0.0022f + 0.002f * hash(i + 340), Colors.alpha(snow, 0.4f + 0.3f * sin(tt * 1.3f + i)))
+        }
+        // kelp in the bottom corners, swaying
+        val kelp = if (dk) Colors.mix(plate, tint2, 0.3f) else Colors.mix(plate, tint2, 0.35f)
+        for (f in 0 until 4) {
+            val lft = f < 2
+            var px = if (lft) 0.025f + 0.07f * (f % 2) else 0.975f - 0.07f * (f % 2)
+            var py = 1.01f
+            val hgt = 0.045f - 0.006f * (f % 2)
+            for (g in 0 until 5) {
+                val sw = 0.012f * (g + 1) * 0.35f * sin(tt * (0.55f + 0.1f * f) + g * 0.45f + f * 1.7f)
+                val nx = px + sw + (if (lft) 0.004f else -0.004f); val ny = py - hgt
+                out.line(px, py, nx, ny, 0.008f - g * 0.0011f, kelp)
+                // a leaf on alternate sides, fluttering
+                val side = if (g % 2 == 0) 1f else -1f
+                val lean = side * (35f + 12f * sin(tt * 1.1f + g + f))
+                out.oval((px + nx) / 2 + side * 0.01f, (py + ny) / 2, 0.016f - g * 0.0015f, 0.0055f, kelp, lean)
+                px = nx; py = ny
+            }
+        }
+
+        // ---- creatures out in the water (behind the scope's rim): jellyfish, a fish with a lure, a darting school
+        val crit = if (dk) Colors.mix(plate, tint2, 0.38f) else Colors.mix(plate, ink.main, 0.25f)
+        for (w in wn - 4..wn) {
+            if (w < 0) continue
+            val k = evKind(w)
+            val u = tt - evStart(w)
+            if (u < 0f || u > EV_DUR[k]) continue
+            val v = life(u / EV_DUR[k])
+            val h1 = hash(w * 7 + 1); val h2 = hash(w * 7 + 2)
+            when (k) {
+                0 -> {
+                    // rises through one corner
+                    val q = (h1 * 4f).toInt().coerceIn(0, 3)
+                    val cx = if (q % 2 == 0) 0.075f + 0.03f * h2 else 0.925f - 0.03f * h2
+                    val cy = (if (q < 2) 0.2f else 0.94f) - 0.12f * (u / EV_DUR[0]) - 0.012f * sin(u * 3.7f)
+                    jelly(out, cx, cy, 0.035f + 0.01f * h2, u, v, Colors.mix(crit, tint, 0.35f), if (dk) tint else tint2)
+                }
+                1 -> {
+                    // swims round the outside of the scope through a corner
+                    val dir = if (h2 < 0.5f) 1f else -1f
+                    val a0 = 45f + 90f * (h1 * 4f).toInt().coerceIn(0, 3) - dir * 30f
+                    val a = a0 + dir * 60f * (u / EV_DUR[1])
+                    val rr = 0.52f + 0.02f * sin(u * 1.3f)
+                    val x = 0.5f + rr * sin(rad(a)); val y = 0.5f - rr * cos(rad(a))
+                    val head = a + (if (dir > 0f) 0f else 180f)
+                    fish(out, x, y, 0.022f, head, u, Colors.alpha(crit, v), if (dk) Colors.alpha(core, v) else null)
+                }
+                5 -> {
+                    // a little school darting along the top or the bottom edge
+                    val top = h1 < 0.5f
+                    val dir = if (h2 < 0.5f) 1f else -1f
+                    val p = smooth(u / EV_DUR[5])
+                    for (j in 0 until 5) {
+                        val x = 0.5f + dir * (-0.75f + 1.5f * p) - dir * j * 0.028f + 0.004f * sin(u * 6f + j)
+                        val y = (if (top) 0.035f else 0.972f) + 0.009f * sin(j * 2.1f + u * 2f)
+                        fish(out, x, y, 0.009f, if (dir > 0f) 0f else 180f, u + j, Colors.alpha(crit, 0.9f * v), null)
+                    }
+                }
+            }
+        }
+
+        // ---- the scope's housing: a collar round the bezel that hides the water behind it (the bezel and its ticks
+        // keep clean surroundings, at least as clean as a bare plate)
+        out.circle(0.5f, 0.5f, 0.448f, Colors.mix(plate, if (dk) BLACK else WHITE, 0.15f), 0.048f)
+        // ---- the scope: a dark (or bright) glass, a phosphor glow, a slow rolling band, range rings, grid, ticks
+        out.circle(0.5f, 0.5f, BEZEL + BEZEL_W * 0.5f, Colors.mix(plate, if (dk) BLACK else WHITE, if (dk) 0.32f else 0.35f))
+        out.glow(0.5f, 0.5f, BEZEL * 0.98f, Colors.alpha(ink.soft, 0.55f + 0.08f * sin(tt * 0.7f)))
+        run {
+            val by = 0.5f + 0.42f * sin(tt * 0.33f)
+            val dy = by - 0.5f
+            val half = sqrt(max(0f, 0.37f * 0.37f - dy * dy))
+            if (half > 0.05f) out.rect(0.5f, by, 2f * half, 0.045f, Colors.alpha(tint, if (dk) 0.035f else 0.04f), 0f, 0.0225f)
+        }
         for (r in floatArrayOf(0.145f, 0.245f, 0.345f)) out.circle(0.5f, 0.5f, r, Colors.alpha(ink.soft, 0.75f), 0.0026f)
         for (r in floatArrayOf(0.195f, 0.295f)) out.circle(0.5f, 0.5f, r, Colors.alpha(ink.faint, 0.9f), 0.0018f)
         for (k in 0 until 4) {
@@ -97,14 +270,31 @@ object Sonar : SigilScheme {
             val r0 = if (k % 3 == 0) 0.389f else 0.395f
             out.line(0.5f + r0 * sin(a), 0.5f - r0 * cos(a), 0.5f + 0.401f * sin(a), 0.5f - 0.401f * cos(a), 0.0022f, Colors.alpha(ink.soft, 0.8f), false)
         }
-
-        // plankton drifting in the glass (faint: decoration only)
-        for (i in 0 until 26) {
-            val a0 = hash(i) * 6.2832f; val r0 = 0.05f + 0.33f * sqrt(hash(i + 99))
-            val a = a0 + t * (0.03f + 0.04f * hash(i + 7)); val wob = 0.012f * sin(t * (0.7f + hash(i + 3)) + i)
-            val x = 0.5f + (r0 + wob) * cos(a); val y = 0.5f + (r0 + wob) * sin(a) - 0.01f * sin(t * 0.5f + i)
-            val tw = 0.5f + 0.5f * sin(t * (1.3f + hash(i + 5) * 2f) + i * 1.7f)
-            out.circle(x, y, 0.0028f + 0.0022f * hash(i + 11), Colors.alpha(ink.faint, 0.35f + 0.65f * tw))
+        // phosphor: the rings glow where the beam has just been and fade behind it
+        for ((ri, r) in RINGS.withIndex()) {
+            val wdt = if (ri % 2 == 0) 0.004f else 0.003f
+            for (s in 0 until PHOS_K.size) {
+                val a0 = beam - PHOS_A[s + 1]; val sw = PHOS_A[s + 1] - PHOS_A[s]
+                out.arc(0.5f, 0.5f, r, a0 - 90f, sw, wdt, Colors.alpha(tint, PHOS_K[s] * (if (ri % 2 == 0) 1f else 0.7f)))
+            }
+        }
+        // a ping ring leaves the hub each time the beam crosses north
+        run {
+            val u = (tt % PERIOD) / 1.4f
+            if (u < 1f) out.circle(0.5f, 0.5f, HUB + 0.36f * easeOut(u), Colors.alpha(tint, 0.2f * (1f - u) * (1f - u)), 0.0028f)
+        }
+        // sea clutter round the hub: specks the beam paints, new ones every turn
+        val turn = floor(t / PERIOD).toInt()
+        for (i in 0 until 12) {
+            val a = hash(i * 13 + 5) * 360f
+            val trn = if (wrap(beam - a) <= beam) turn else turn - 1
+            val h = hash(trn * 31 + i)
+            if (h < 0.35f) continue
+            val age = wrap(beam - a)
+            if (age > 200f) continue
+            val rr = 0.045f + 0.05f * hash(trn * 17 + i * 3)
+            val k = exp(-age / 60f)
+            out.circle(0.5f + rr * sin(rad(a)), 0.5f - rr * cos(rad(a)), 0.0035f + 0.003f * h, Colors.alpha(tint, 0.65f * k))
         }
 
         // the trail behind the beam: nested wedges, all starting at the beam (a smooth fade, no seams)
@@ -119,7 +309,24 @@ object Sonar : SigilScheme {
             out.poly(pts, Colors.alpha(if (k <= 3) tint else tint2, if (k <= 2) 0.16f else 0.085f))
         }
 
-        // blips
+        // a stray contact now and then: a faint fish-shaped echo the beam paints, swimming slowly (never a round blip)
+        for (w in wn - 4..wn) {
+            if (w < 0 || evKind(w) != 3) continue
+            val u = tt - evStart(w)
+            if (u < 0f || u > EV_DUR[3]) continue
+            val v = life(u / EV_DUR[3], 0.2f, 0.3f)
+            val dir = if (hash(w * 7 + 3) < 0.5f) 1f else -1f
+            val a = hash(w * 7 + 1) * 360f + dir * 9f * u
+            val rr = 0.15f + 0.18f * hash(w * 7 + 2)
+            val age = wrap(beam - a)
+            val lit = if (age < 200f) exp(-age / 70f) else 0f
+            if (lit * v < 0.02f) continue
+            val x = 0.5f + rr * sin(rad(a)); val y = 0.5f - rr * cos(rad(a))
+            out.glow(x, y, 0.03f, Colors.alpha(tint, 0.18f * lit * v))
+            fish(out, x, y, 0.013f, a + (if (dir > 0f) 0f else 180f), u, Colors.alpha(tint, 0.3f * lit * v), null)
+        }
+
+        // blips: a ping (flash and ripples), a steady glow while they are read, then a phosphor fade
         for (c in 0 until 84) {
             if (bits[c] == MASK[c]) continue
             val age = wrap(beam - CELL_DEG[c])
@@ -128,33 +335,44 @@ object Sonar : SigilScheme {
                 age < 22f -> {
                     val k = age / 22f
                     out.glow(x, y, BLIP * (3.6f - 1.2f * k), Colors.alpha(tint, 0.9f * (1f - k)))
-                    out.circle(x, y, BLIP * (1.2f - 0.2f * k), core)
-                    out.circle(x, y, BLIP * (1.4f + 1.6f * k), Colors.alpha(tint, 0.8f * (1f - k)), 0.0022f)
+                    out.circle(x, y, BLIP * (1.25f - 0.25f * easeOut(k)), core)
+                    out.circle(x, y, BLIP * (1.4f + 1.6f * easeOut(k)), Colors.alpha(tint, 0.8f * (1f - k)), 0.0022f)
                 }
                 age < 150f -> {
-                    out.glow(x, y, BLIP * 2.2f, Colors.alpha(tint, 0.35f))
+                    if (age < 60f) { val k = (age - 22f) / 38f; out.circle(x, y, BLIP * (2.2f + 0.8f * k), Colors.alpha(tint, 0.35f * (1f - k)), 0.0016f) }
+                    val sh = 0.5f + 0.5f * sin(tt * 2.3f + c * 1.7f)
+                    out.glow(x, y, BLIP * (2.0f + 0.2f * sh), Colors.alpha(tint, 0.3f + 0.1f * sh))
                     out.circle(x, y, BLIP, core)
                 }
                 age < 268f -> {
                     val k = 1f - (age - 150f) / 118f
-                    out.glow(x, y, BLIP * 2.2f, Colors.alpha(tint, 0.35f * k))
-                    out.circle(x, y, BLIP * (0.75f + 0.25f * k), Colors.alpha(core, k * k))
+                    out.glow(x, y, BLIP * 2.2f, Colors.alpha(tint2, 0.35f * k))
+                    out.circle(x, y, BLIP * (0.75f + 0.25f * k), Colors.alpha(Colors.mix(tint2, core, k), k * k))
                 }
             }
         }
 
-        // the beam itself
+        // the beam itself: a soft wide stroke, the bright line, a spark at its tip
         val bx = sin(rad(beam)); val by = -cos(rad(beam))
+        out.line(0.5f + HUB * bx, 0.5f + HUB * by, 0.5f + BEAM_END * bx, 0.5f + BEAM_END * by, 0.018f, Colors.alpha(tint, 0.13f))
         out.line(0.5f + HUB * bx, 0.5f + HUB * by, 0.5f + BEAM_END * bx, 0.5f + BEAM_END * by, 0.0065f, Colors.alpha(core, 0.95f))
-        out.glow(0.5f + BEAM_END * bx, 0.5f + BEAM_END * by, 0.02f, Colors.alpha(tint, 0.7f))
+        // (the tip's glow keeps its size: anything light touching the bezel's inner edge costs the scanner its lock)
+        val tip = 0.5f + 0.5f * sin(tt * 7.3f)
+        out.glow(0.5f + BEAM_END * bx, 0.5f + BEAM_END * by, 0.02f, Colors.alpha(tint, 0.58f + 0.2f * tip))
 
-        // hub
+        // hub: it throbs with each ping
+        val throb = exp(-(tt % PERIOD) * 3f)
+        out.glow(0.5f, 0.5f, HUB * (2.2f + 1.5f * throb), Colors.alpha(tint, 0.25f + 0.4f * throb))
         out.circle(0.5f, 0.5f, HUB, ink.main)
         out.circle(0.5f, 0.5f, HUB * 0.55f, ink.plate)
-        out.circle(0.5f, 0.5f, HUB * 0.25f, tint)
+        out.circle(0.5f, 0.5f, HUB * (0.25f + 0.1f * throb), tint)
+
+        // a faint reflection on the glass, shimmering
+        out.arc(0.5f, 0.5f, 0.383f, 200f + 6f * sin(tt * 0.21f), 48f, 0.005f, Colors.alpha(WHITE, (if (dk) 0.09f else 0.25f) + 0.04f * sin(tt * 0.8f)))
 
         // bezel and compass ticks
         out.arc(0.5f, 0.5f, BEZEL, -90f + GAP, 360f - 2 * GAP, BEZEL_W, ink.main)
+        out.glow(0.5f, 0.5f - 0.458f, 0.022f, Colors.alpha(tint, 0.2f + 0.15f * sin(tt * 2.2f)))
         tickN(out, tint)
         for (k in 1..3) {
             val a = rad(90f * k)
@@ -162,18 +380,47 @@ object Sonar : SigilScheme {
             out.rect(0.5f + r * sin(a), 0.5f - r * cos(a), 0.024f, 0.022f, ink.main, 90f * k)
         }
 
-        // bubbles rising in the corners
+        // ---- in front: near marine snow drifting past the glass (faint), bubbles rising and wobbling in the corners,
+        // now and then a stream of them
+        for (i in 0 until 9) {
+            val sp = 0.025f + 0.02f * hash(i + 400)
+            val y = ((hash(i + 410) + tt * sp) % 1.08f) - 0.04f
+            val x = (hash(i + 420) + 0.03f * sin(tt * (0.3f + 0.2f * hash(i + 430)) + i * 2f) + 1f) % 1f
+            val dx = x - 0.5f; val dy = y - 0.5f
+            val d2 = dx * dx + dy * dy
+            // faint over the glass, barely there over the bezel (it must stay one clean ring)
+            val a = if (d2 < 0.385f * 0.385f) 0.25f else if (d2 < 0.47f * 0.47f) 0.06f else 0.6f
+            out.glow(x, y, 0.009f + 0.006f * hash(i + 440), Colors.alpha(snow, a))
+        }
         for (i in 0 until 12) {
             val q = i % 4
             val qx = if (q % 2 == 0) 0f else 1f; val qy = if (q < 2) 0f else 1f
-            val ph = (t * (0.11f + 0.05f * hash(i + 40)) + hash(i + 20)) % 1f
-            val dx = 0.025f + 0.09f * hash(i + 30) + 0.008f * sin(t * 2f + i)
+            val ph = (tt * (0.11f + 0.05f * hash(i + 40)) + hash(i + 20)) % 1f
+            val dx = 0.025f + 0.09f * hash(i + 30) + 0.008f * sin(tt * 2f + i) + 0.004f * sin(tt * 5.3f + i * 1.3f)
             val x = if (qx == 0f) dx else 1f - dx
             val y0 = if (qy == 0f) 0.135f else 0.995f; val y = y0 - ph * 0.13f
             val r = 0.006f + 0.008f * hash(i + 50)
             val a = sin(ph * PI.toFloat())
-            out.circle(x, y, r, Colors.alpha(tint2, 0.65f * a), 0.0022f)
+            out.oval(x, y, r * (1f + 0.08f * sin(tt * 6f + i)), r * (1f - 0.08f * sin(tt * 6f + i)), Colors.alpha(tint2, 0.65f * a), 0f, 0.0022f)
             out.circle(x - r * 0.35f, y - r * 0.35f, r * 0.25f, Colors.alpha(ink.main, 0.5f * a))
+        }
+        for (w in wn - 2..wn) {
+            if (w < 0 || evKind(w) != 2) continue
+            val u = tt - evStart(w)
+            if (u < 0f || u > EV_DUR[2]) continue
+            val q = (hash(w * 7 + 1) * 4f).toInt().coerceIn(0, 3)
+            val bx0 = if (q % 2 == 0) 0.04f + 0.08f * hash(w * 7 + 2) else 0.96f - 0.08f * hash(w * 7 + 2)
+            val by0 = if (q < 2) 0.2f else 1.02f
+            for (j in 0 until 7) {
+                val uj = u - j * 0.16f
+                if (uj < 0f || uj > 1.5f) continue
+                val y = by0 - 0.17f * (uj / 1.5f) * (1f + 0.4f * uj)
+                val x = bx0 + 0.008f * sin(uj * 9f + j * 2f)
+                val r = 0.003f + 0.004f * hash(w * 13 + j)
+                val a = life(uj / 1.5f, 0.1f, 0.3f)
+                out.circle(x, y, r, Colors.alpha(tint2, 0.7f * a), 0.0018f)
+                out.circle(x - r * 0.35f, y - r * 0.35f, r * 0.3f, Colors.alpha(ink.main, 0.6f * a))
+            }
         }
     }
 

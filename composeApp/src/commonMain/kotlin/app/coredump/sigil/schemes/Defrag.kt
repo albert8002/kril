@@ -86,6 +86,9 @@ object Defrag : SigilScheme {
     private fun hash(i: Int): Float { var x = i * 0x27d4eb2d + 0x165667b1; x = x xor (x ushr 15); x *= 0x2c1b3c6d; x = x xor (x ushr 12); return (x and 0xFFFF) / 65535f }
 
     private fun ease(x: Float): Float { val c = x.coerceIn(0f, 1f); return c * c * (3 - 2 * c) }
+    private fun easeOut(x: Float): Float { val c = 1f - x.coerceIn(0f, 1f); return 1f - c * c * c }
+    /** Ease-out with a small overshoot (a window or balloon popping open). */
+    private fun popOut(x: Float): Float { val c = x.coerceIn(0f, 1f) - 1f; return 1f + c * c * (2.4f * c + 1.4f) }
 
     /** 3 × 5 pixel font, rows top to bottom, 3 bits each. */
     private val FONT: Map<Char, Int> = mapOf(
@@ -93,19 +96,42 @@ object Defrag : SigilScheme {
         'F' to 0b111_100_110_100_100, 'G' to 0b011_100_101_101_011, 'R' to 0b110_101_110_101_101, 'S' to 0b011_100_010_001_110,
         'T' to 0b111_010_010_010_010, 'O' to 0b010_101_101_101_010, 'P' to 0b110_101_110_100_100, 'U' to 0b101_101_101_101_111,
         'I' to 0b111_010_010_010_111, 'V' to 0b101_101_101_101_010, 'L' to 0b100_100_100_100_111, 'M' to 0b101_111_111_101_101,
-        'N' to 0b110_101_101_101_101, 'K' to 0b101_101_110_101_101, 'Z' to 0b111_001_010_100_111,
+        'N' to 0b110_101_101_101_101, 'K' to 0b101_101_110_101_101, 'Z' to 0b111_001_010_100_111, 'W' to 0b101_101_111_111_101,
+        'Y' to 0b101_101_010_010_010, 'H' to 0b101_101_111_101_101, 'B' to 0b110_101_110_101_110,
         '0' to 0b111_101_101_101_111, '1' to 0b010_110_010_010_111, '2' to 0b110_001_010_100_111, '3' to 0b110_001_010_001_110,
         '4' to 0b101_101_111_001_001, '5' to 0b111_100_110_001_110, '6' to 0b011_100_111_101_111, '7' to 0b111_001_010_010_010,
         '8' to 0b111_101_111_101_111, '9' to 0b111_101_111_001_110, '%' to 0b101_001_010_100_101, ':' to 0b000_010_000_010_000,
-        '.' to 0b000_000_000_000_010, '_' to 0b000_000_000_000_111,
+        '.' to 0b000_000_000_000_010, '_' to 0b000_000_000_000_111, '!' to 0b010_010_010_000_010,
     )
 
-    private fun text(out: Scene, s: String, x: Float, y: Float, px: Float, color: Int) {
+    /** Each glyph as horizontal runs (row, first column, length): one rect per run. */
+    private val RUNS: Map<Char, IntArray> = FONT.mapValues { (_, g) ->
+        val r = ArrayList<Int>()
+        for (row in 0 until 5) {
+            var col = 0
+            while (col < 3) {
+                if ((g shr (14 - row * 3 - col)) and 1 == 1) {
+                    val c0 = col
+                    while (col < 3 && (g shr (14 - row * 3 - col)) and 1 == 1) col++
+                    r.add(row); r.add(c0); r.add(col - c0)
+                } else col++
+            }
+        }
+        r.toIntArray()
+    }
+
+    private fun text(out: Scene, s: String, x: Float, y: Float, px: Float, color: Int, count: Int = s.length) {
         var cx = x
-        for (ch in s) {
-            val g = FONT[ch]
-            if (g != null) for (row in 0 until 5) for (col in 0 until 3) {
-                if ((g shr (14 - row * 3 - col)) and 1 == 1) out.rect(cx + (col + 0.5f) * px, y + (row + 0.5f) * px, px * 1.02f, px * 1.02f, color)
+        for ((k, ch) in s.withIndex()) {
+            if (k >= count) break
+            val g = RUNS[ch]
+            if (g != null) {
+                var i = 0
+                while (i < g.size) {
+                    val row = g[i]; val c0 = g[i + 1]; val len = g[i + 2]
+                    out.rect(cx + (c0 + len / 2f) * px, y + (row + 0.5f) * px, px * len + px * 0.02f, px * 1.02f, color)
+                    i += 3
+                }
             }
             cx += 4 * px
         }
@@ -121,7 +147,8 @@ object Defrag : SigilScheme {
         out.rect(x1 - lw / 2, (y0 + y1) / 2, lw, y1 - y0, b)
     }
 
-    override fun draw(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
+    /** The look's colours for one ink (worked out once per palette, not per frame). */
+    private class Look(ink: Ink) {
         val p = ink.plate; val main = ink.main; val alt = ink.alt
         val dark = ink.dark
         // decoration: strong only AWAY from the ink, weak toward it
@@ -129,50 +156,115 @@ object Defrag : SigilScheme {
         val lo = if (dark) Colors.mix(p, BLACK, 0.55f) else Colors.mix(p, BLACK, 0.3f)
         val paper = if (dark) Colors.mix(p, BLACK, 0.5f) else Colors.mix(p, WHITE, 0.62f)
         val desk = tint(Colors.mix(p, main, if (dark) 0.18f else 0.42f), 182f, 0.62f)
+        val deskHi = Colors.alpha(hi, 0.05f)
+        val edge = Colors.mix(lo, BLACK, 0.3f)
+        val outline = Colors.mix(paper, main, 0.16f)
+        val logo = IntArray(4) { tint(alt, floatArrayOf(4f, 120f, 215f, 50f)[it], 0.85f) }
+        val ledOn = tint(paper, 120f, 0.9f); val ledOff = Colors.mix(paper, main, 0.3f)
+        val trayOn = tint(paper, 45f, 0.9f)
+        val diskBody = Colors.mix(paper, main, 0.55f)
+        val titleInk = if (dark) Colors.mix(alt, BLACK, 0.85f) else paper
+        val titleHues = IntArray(72) { Colors.hueShift(alt, it * 5f) }
+        val frag = IntArray(FRAG_HUES.size) { tint(alt, FRAG_HUES[it], 0.8f) }
+        val readC = tint(alt, 120f, 0.85f)
+        val writeC = tint(alt, 0f, 0.9f)
+        val hatch = tint(alt, 45f, 0.9f)
+        val bevHi = Colors.alpha(Colors.mix(alt, WHITE, 0.5f), 0.55f)
+        val bevLo = Colors.alpha(Colors.mix(alt, BLACK, 0.45f), 0.55f)
+        val lift = Colors.alpha(lo, 0.55f)
+        val cursor = tint(alt, 55f, 1f)
+        val tip = if (dark) Colors.mix(p, tint(p, 55f, 0.6f), 0.6f) else tint(Colors.mix(p, WHITE, 0.85f), 56f, 0.35f)
+        val shadow = Colors.alpha(BLACK, 0.1f)
+        val scan = Colors.alpha(BLACK, if (dark) 0.12f else 0.045f)
+        val roll = Colors.alpha(WHITE, if (dark) 0.025f else 0.05f)
+        val glare = Colors.alpha(WHITE, if (dark) 0.06f else 0.1f)
+        val vignette = Colors.alpha(BLACK, if (dark) 0.5f else 0.28f)
+        val arrowFill = if (dark) main else WHITE
+        val arrowEdge = if (dark) p else BLACK
+    }
+
+    private var lookKey = 0L
+    private var lookCache: Look? = null
+    private fun look(ink: Ink): Look {
+        val k = (ink.plate.toLong() shl 32) xor (ink.main.toLong() and 0xFFFFFFFFL) xor (ink.alt.toLong() * 31)
+        val c = lookCache
+        if (c != null && k == lookKey) return c
+        val n = Look(ink); lookCache = n; lookKey = k
+        return n
+    }
+
+    /** The classic arrow pointer at (x, y); an hourglass while [busy] (0..1, its sand turning). */
+    private fun pointer(out: Scene, lk: Look, x: Float, y: Float, busy: Float) {
+        if (busy > 0.01f) {
+            val h = 0.04f; val w = 0.026f
+            val turn = 180f * ease(busy)
+            val c = kotlin.math.cos(turn * kotlin.math.PI.toFloat() / 180f); val s = kotlin.math.sin(turn * kotlin.math.PI.toFloat() / 180f)
+            fun px(u: Float, v: Float) = x + u * c - v * s
+            fun py(u: Float, v: Float) = y + u * s + v * c
+            val pts = floatArrayOf(px(-w / 2, -h / 2), py(-w / 2, -h / 2), px(w / 2, -h / 2), py(w / 2, -h / 2), px(w * 0.08f, 0f), py(w * 0.08f, 0f),
+                px(w / 2, h / 2), py(w / 2, h / 2), px(-w / 2, h / 2), py(-w / 2, h / 2), px(-w * 0.08f, 0f), py(-w * 0.08f, 0f))
+            out.poly(pts, lk.arrowFill)
+            out.poly(pts, lk.arrowEdge, 0.003f)
+            out.circle(px(0f, h * 0.3f), py(0f, h * 0.3f), w * 0.18f, lk.hatch)
+            return
+        }
+        val arrow = floatArrayOf(0f, 0f, 0f, 0.05f, 0.012f, 0.039f, 0.021f, 0.058f, 0.029f, 0.054f, 0.02f, 0.036f, 0.036f, 0.036f)
+        val pts = FloatArray(arrow.size) { if (it % 2 == 0) x + arrow[it] else y + arrow[it] }
+        out.poly(pts, lk.arrowFill)
+        out.poly(pts, lk.arrowEdge, 0.003f)
+    }
+
+    override fun draw(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
+        val lk = look(ink)
+        val p = lk.p; val main = lk.main; val alt = lk.alt
         val lw = 0.006f
 
-        // desktop and taskbar
-        out.rect(0.5f, 0.5f, 1f, 1f, desk)
-        for (k in 0 until 7) {   // a faint "wallpaper" of diagonal light streaks
-            val x = ((k * 0.17f + t * 0.012f) % 1.2f) - 0.1f
-            out.line(x, -0.02f, x - 0.3f, 1.02f, 0.035f, Colors.alpha(hi, 0.05f))
+        // ---- desktop wallpaper (slow diagonal sheen) and the window's soft drop shadow
+        out.rect(0.5f, 0.5f, 1f, 1f, lk.desk)
+        for (k in 0 until 6) {
+            val x = ((k * 0.21f + t * 0.011f) % 1.26f) - 0.13f
+            out.line(x, -0.02f, x - 0.3f, 1.02f, 0.03f + 0.012f * hash(k), lk.deskHi)
         }
-        bevel(out, -0.01f, 0.932f, 1.01f, 1.01f, p, hi, lo, lw * 0.8f)
-        bevel(out, 0.035f, 0.945f, 0.17f, 0.99f, p, hi, lo, lw * 0.7f)
+        for (k in 1..3) out.rect(0.5f + 0.006f * k, 0.495f + 0.008f * k, 0.89f, 0.82f, lk.shadow, corner = 0.004f * k)
+
+        // ---- taskbar: Start (a glint runs across now and then), tray lights, a clock with a blinking colon
+        bevel(out, -0.01f, 0.932f, 1.01f, 1.01f, p, lk.hi, lk.lo, lw * 0.8f)
+        bevel(out, 0.035f, 0.945f, 0.17f, 0.99f, p, lk.hi, lk.lo, lw * 0.7f)
         val logo = 0.0075f
-        for (q in 0 until 4) {
-            val c = tint(alt, floatArrayOf(4f, 120f, 215f, 50f)[q], 0.85f)
-            out.rect(0.052f + (q % 2) * logo * 1.25f, 0.958f + (q / 2) * logo * 1.25f, logo, logo, c, -8f)
-        }
+        for (q in 0 until 4) out.rect(0.052f + (q % 2) * logo * 1.25f, 0.958f + (q / 2) * logo * 1.25f, logo, logo, lk.logo[q], -8f + 3f * sin(t * 0.8f))
         text(out, "START", 0.072f, 0.957f, 0.0045f, main)
-        bevel(out, 0.80f, 0.945f, 0.965f, 0.99f, 0, lo, hi, lw * 0.5f)
+        val gk = floor(t / 5.5f).toInt(); val ga = (t - gk * 5.5f - 1.5f * hash(gk)) / 0.6f
+        if (ga in 0f..1f) out.rect(0.04f + 0.125f * ease(ga), 0.9675f, 0.012f, 0.04f, Colors.alpha(WHITE, 0.45f * sin(ga * 3.1416f)), 20f)
+        bevel(out, 0.74f, 0.945f, 0.965f, 0.99f, 0, lk.lo, lk.hi, lw * 0.5f)
+        for (q in 0 until 2) {
+            val on = sin(t * (2.3f + 1.7f * q) + q) > 0.2f
+            out.rect(0.755f + q * 0.016f, 0.9675f, 0.009f, 0.009f, if (on) lk.trayOn else lk.ledOff)
+        }
         val secs = 9 * 3600 + 41 * 60 + t.toInt()
-        val clock = "${(secs / 3600) % 24}:${((secs / 60) % 60).toString().padStart(2, '0')}"
-        text(out, clock, 0.85f, 0.957f, 0.0045f, main)
+        val colon = if ((t % 1f) < 0.5f) ":" else " "
+        text(out, "${(secs / 3600) % 24}$colon${((secs / 60) % 60).toString().padStart(2, '0')}", 0.86f, 0.957f, 0.0045f, main)
 
-        // the window
-        bevel(out, 0.055f, 0.085f, 0.945f, 0.905f, p, hi, lo, lw)
-        out.rect(0.5f, 0.905f - lw * 0.4f, 0.89f, lw * 0.8f, Colors.mix(lo, BLACK, 0.3f))
-        out.rect(0.945f - lw * 0.4f, 0.495f, lw * 0.8f, 0.82f, Colors.mix(lo, BLACK, 0.3f))
-
-        // title bar: alt with a slow hue gradient (lightness kept)
+        // ---- the window
+        bevel(out, 0.055f, 0.085f, 0.945f, 0.905f, p, lk.hi, lk.lo, lw)
+        out.rect(0.5f, 0.905f - lw * 0.4f, 0.89f, lw * 0.8f, lk.edge)
+        out.rect(0.945f - lw * 0.4f, 0.495f, lw * 0.8f, 0.82f, lk.edge)
+        // title bar: alt with a travelling hue gradient (lightness kept)
         val segs = 10
         for (k in 0 until segs) {
             val x0 = TBX0 + (TBX1 - TBX0) * k / segs; val x1 = TBX0 + (TBX1 - TBX0) * (k + 1) / segs
-            val hue = 28f * k / segs + 10f * sin(t * 0.7f + k * 0.35f)
-            out.rect((x0 + x1) / 2, (TB0 + TB1) / 2, x1 - x0 + 0.002f, TB1 - TB0, Colors.hueShift(alt, hue))
+            val hue = 28f * k / segs + 10f * sin(t * 0.7f + k * 0.35f) + 6f * sin(t * 0.23f)
+            out.rect((x0 + x1) / 2, (TB0 + TB1) / 2, x1 - x0 + 0.002f, TB1 - TB0, lk.titleHues[((hue / 5f).toInt() % 72 + 72) % 72])
         }
-        // disk icon with a blinking activity light
-        bevel(out, 0.086f, 0.118f, 0.144f, 0.177f, paper, hi, lo, 0.004f)
-        out.rect(0.115f, 0.128f, 0.03f, 0.014f, Colors.mix(paper, main, 0.55f))
-        out.rect(0.124f, 0.128f, 0.007f, 0.01f, paper)
-        val busy = (t * 7f).toInt() % 3 != 0
-        out.rect(0.134f, 0.168f, 0.008f, 0.005f, if (busy) tint(paper, 120f, 0.9f) else Colors.mix(paper, main, 0.3f))
-        text(out, "DEFRAG", 0.158f, 0.12f, 0.0105f, if (dark) Colors.mix(alt, BLACK, 0.85f) else paper)
-        // caption buttons
+        // disk icon with a busy light
+        bevel(out, 0.086f, 0.118f, 0.144f, 0.177f, lk.paper, lk.hi, lk.lo, 0.004f)
+        out.rect(0.115f, 0.128f, 0.03f, 0.014f, lk.diskBody)
+        out.rect(0.124f + 0.004f * sin(t * 3f), 0.128f, 0.007f, 0.01f, lk.paper)
+        val busy = sin(t * 17f) + sin(t * 5.3f) > 0.3f
+        out.rect(0.134f, 0.168f, 0.008f, 0.005f, if (busy) lk.ledOn else lk.ledOff)
+        text(out, "DEFRAG", 0.158f, 0.12f, 0.0105f, lk.titleInk)
         val bw = 0.052f
         for ((k, bx) in floatArrayOf(0.742f, 0.798f, 0.862f).withIndex()) {
-            bevel(out, bx, 0.12f, bx + bw, 0.175f, p, hi, lo, 0.004f)
+            bevel(out, bx, 0.12f, bx + bw, 0.175f, p, lk.hi, lk.lo, 0.004f)
             val gx = bx + bw / 2; val gy = 0.1475f
             when (k) {
                 0 -> out.rect(gx, gy + 0.012f, 0.02f, 0.006f, main)
@@ -181,11 +273,11 @@ object Defrag : SigilScheme {
             }
         }
 
-        // the cluster map: frame, paper, blocks
+        // ---- the cluster map: frame, paper, blocks
         out.rect((PX0 + PX1) / 2, (PY0 + PY1) / 2, PX1 - PX0, PY1 - PY0, main)
-        out.rect((PX0 + PX1) / 2 + 0.003f, PY1 + 0.004f, PX1 - PX0, 0.005f, hi)
-        out.rect(PX1 + 0.004f, (PY0 + PY1) / 2 + 0.003f, 0.005f, PY1 - PY0, hi)
-        out.rect((PX0 + PX1) / 2, (PY0 + PY1) / 2, PX1 - PX0 - 2 * RING, PY1 - PY0 - 2 * RING, paper)
+        out.rect((PX0 + PX1) / 2 + 0.003f, PY1 + 0.004f, PX1 - PX0, 0.005f, lk.hi)
+        out.rect(PX1 + 0.004f, (PY0 + PY1) / 2 + 0.003f, 0.005f, PY1 - PY0, lk.hi)
+        out.rect((PX0 + PX1) / 2, (PY0 + PY1) / 2, PX1 - PX0 - 2 * RING, PY1 - PY0 - 2 * RING, lk.paper)
 
         val n = COLS * ROWS
         val rate = 4.2f                                   // blocks per second
@@ -196,7 +288,6 @@ object Defrag : SigilScheme {
         val headI = min(n - 1, inPass.toInt())
         val hop = ease((inPass - inPass.toInt()) / 0.3f)  // the head eases to the next block
         val resting = inPass >= n
-        val outline = Colors.mix(paper, main, 0.16f)
 
         for (r in 0 until ROWS) for (c in 0 until COLS) {
             val i = r * COLS + c
@@ -204,64 +295,98 @@ object Defrag : SigilScheme {
             val cx = cellX(c); val cy = cellY(r)
             val bwid = PW * 0.8f; val bht = PH * 0.8f
             if (!on) {
-                out.rect(cx, cy, bwid, bht, outline, stroke = 0.0025f)
+                out.rect(cx, cy, bwid, bht, lk.outline, stroke = 0.0025f)
                 continue
             }
             // state colour: fragmented (scattered hues) until the head has passed, then the optimised colour
             val done = resting || i < headI
             val since = if (resting) 99f else (inPass - i) / rate
-            // absolute hues: fragmented = red / magenta / teal, reading = green, writing = red → settles to alt
-            val frag = FRAG_HUES[(hash(i * 7 + pass * 131) * FRAG_HUES.size).toInt().coerceIn(0, FRAG_HUES.size - 1)]
             val col = when {
-                r == 0 -> Colors.mix(alt, main, 0.0f)
-                !resting && i == headI -> tint(alt, 120f, 0.85f)
-                !done -> tint(alt, frag, 0.8f)
-                since < 1.2f -> Colors.mix(tint(alt, 0f, 0.9f), alt, ease(since / 1.2f))
+                r == 0 -> alt
+                !resting && i == headI -> lk.readC
+                !done -> lk.frag[(hash(i * 7 + pass * 131) * FRAG_HUES.size).toInt().coerceIn(0, FRAG_HUES.size - 1)]
+                since < 1.2f -> Colors.mix(lk.writeC, alt, ease(since / 1.2f))
                 else -> alt
             }
             val lift = if (!resting && i == headI) 0.055f * PW * (1f - abs(hop - 0.5f) * 2f) else 0f
-            if (lift > 0f) out.rect(cx + lift, cy + lift, bwid, bht, Colors.alpha(lo, 0.55f))
+            if (lift > 0f) out.rect(cx + lift, cy + lift, bwid, bht, lk.lift)
             out.rect(cx - lift, cy - lift, bwid, bht, col)
             // a bevel inside the block (outside the sampled middle)
             val e = bwid * 0.09f
-            out.rect(cx - lift, cy - lift - bht / 2 + e / 2, bwid, e, Colors.alpha(Colors.mix(col, WHITE, 0.5f), 0.55f))
-            out.rect(cx - lift + bwid / 2 - e / 2, cy - lift, e, bht, Colors.alpha(Colors.mix(col, BLACK, 0.45f), 0.55f))
-            if (r == 0) {   // "unmovable" system blocks: a little hatch in the block's own lightness
-                out.line(cx - bwid * 0.3f, cy + bht * 0.3f, cx + bwid * 0.3f, cy - bht * 0.3f, bwid * 0.12f, tint(alt, 45f, 0.9f), false)
-            }
+            out.rect(cx - lift, cy - lift - bht / 2 + e / 2, bwid, e, lk.bevHi)
+            out.rect(cx - lift + bwid / 2 - e / 2, cy - lift, e, bht, lk.bevLo)
+            if (r == 0) out.line(cx - bwid * 0.3f, cy + bht * 0.3f, cx + bwid * 0.3f, cy - bht * 0.3f, bwid * 0.12f, lk.hatch, false)
         }
-        // the read/write head: a bracket in the gutters, easing from block to block
         if (!resting) {
+            // the read/write head: a bracket in the gutters, easing from block to block, shedding a few pixel sparks
             val prev = max(0, headI - 1)
             val k = if (headI == 0) 1f else hop
             val hx = cellX(prev % COLS) + (cellX(headI % COLS) - cellX(prev % COLS)) * k
             val hy = cellY(prev / COLS) + (cellY(headI / COLS) - cellY(prev / COLS)) * k
-            val cur = tint(alt, 55f, 1f)
             val s = 0.5f * PW; val a = 0.38f * PW; val th = 0.0042f
             for (sx in intArrayOf(-1, 1)) for (sy in intArrayOf(-1, 1)) {
-                out.line(hx + sx * s, hy + sy * s, hx + sx * (s - a * 0.45f), hy + sy * s, th, cur, false)
-                out.line(hx + sx * s, hy + sy * s, hx + sx * s, hy + sy * (s - a * 0.45f), th, cur, false)
+                out.line(hx + sx * s, hy + sy * s, hx + sx * (s - a * 0.45f), hy + sy * s, th, lk.cursor, false)
+                out.line(hx + sx * s, hy + sy * s, hx + sx * s, hy + sy * (s - a * 0.45f), th, lk.cursor, false)
+            }
+            val ph = inPass - inPass.toInt()
+            for (q in 0 until 4) {
+                val a2 = 6.283f * hash(headI * 7 + q)
+                val d = 0.48f * PW + 0.03f * easeOut(ph)
+                out.rect(hx + d * kotlin.math.cos(a2), hy + d * kotlin.math.sin(a2), 0.0045f, 0.0045f, Colors.alpha(lk.cursor, 1f - ph))
             }
         }
 
-        // status: progress bar (segmented), percentage, buttons, pointer
+        // ---- status: progress bar (segmented, the newest segment pulsing), percentage, a typed status word, buttons
         val frac = if (resting) 1f else (inPass / n).coerceIn(0f, 1f)
-        bevel(out, 0.15f, 0.785f, 0.60f, 0.822f, paper, hi, lo, 0.004f, sunken = true)
+        bevel(out, 0.15f, 0.785f, 0.60f, 0.822f, lk.paper, lk.hi, lk.lo, 0.004f, sunken = true)
         val segW = 0.021f
-        val nSeg = ((0.44f / segW) * frac).toInt()
-        for (k in 0 until nSeg) out.rect(0.158f + k * segW + segW * 0.42f, 0.8035f, segW * 0.8f, 0.024f, Colors.hueShift(alt, 0f))
+        val segF = (0.44f / segW) * frac
+        val nSeg = segF.toInt()
+        for (k in 0 until nSeg) out.rect(0.158f + k * segW + segW * 0.42f, 0.8035f, segW * 0.8f, 0.024f, alt)
+        if (nSeg < 21) out.rect(0.158f + nSeg * segW + segW * 0.42f, 0.8035f, segW * 0.8f, 0.024f, Colors.alpha(alt, ease(segF - nSeg) * (0.6f + 0.4f * sin(t * 12f))))
         text(out, "${(frac * 100).toInt()}%", 0.615f, 0.789f, 0.0062f, main)
+        val word = if (resting) "DONE" else if (hop < 0.999f) "MOVE" else if (((pos * 2f).toInt() and 1) == 0) "READ" else "WRITE"
+        val typed = min(word.length, ((inPass - inPass.toInt()) * 18f).toInt() + 1)
+        text(out, word, 0.152f, 0.85f, 0.0052f, main, typed)
+        if ((t * 2.5f).toInt() % 2 == 0) out.rect(0.152f + typed * 4 * 0.0052f + 0.004f, 0.863f, 0.004f, 0.026f, main)
         for ((k, label) in listOf("STOP", "PAUSE").withIndex()) {
             val x0 = 0.585f + k * 0.135f
-            bevel(out, x0, 0.842f, x0 + 0.125f, 0.886f, p, hi, lo, 0.004f)
+            bevel(out, x0, 0.842f, x0 + 0.125f, 0.886f, p, lk.hi, lk.lo, 0.004f)
             text(out, label, x0 + 0.0625f - label.length * 0.0105f, 0.856f, 0.0053f, main)
         }
-        // the mouse pointer idling over STOP
-        val mx = 0.66f + 0.012f * sin(t * 0.9f); val my = 0.868f + 0.008f * sin(t * 1.3f + 1f)
-        val arrow = floatArrayOf(0f, 0f, 0f, 0.05f, 0.012f, 0.039f, 0.021f, 0.058f, 0.029f, 0.054f, 0.02f, 0.036f, 0.036f, 0.036f)
-        val pts = FloatArray(arrow.size) { if (it % 2 == 0) mx + arrow[it] else my + arrow[it] }
-        out.poly(pts, if (dark) main else WHITE)
-        out.poly(pts, if (dark) p else BLACK, 0.003f)
+
+        // ---- the mouse: idles over STOP, now and then flicks to the percentage and back, sometimes busy
+        val mk = floor(t / 3.1f).toInt(); val ma = t - mk * 3.1f - 1.2f * hash(mk * 3 + 1)
+        val flick = if (hash(mk * 5 + 2) < 0.6f && ma in 0f..1.1f) (if (ma < 0.35f) easeOut(ma / 0.35f) else if (ma < 0.75f) 1f else 1f - ease((ma - 0.75f) / 0.35f)) else 0f
+        val bk = floor(t / 4.3f).toInt(); val ba = t - bk * 4.3f - 2f * hash(bk * 11)
+        val busyT = if (hash(bk * 13) < 0.5f && ba in 0f..0.9f) ba / 0.9f else 0f
+        val mx = 0.66f + 0.012f * sin(t * 0.9f) + 0.006f * sin(t * 2.3f) + (0.64f - 0.66f) * flick
+        val my = 0.868f + 0.008f * sin(t * 1.3f + 1f) + (0.785f - 0.868f) * flick
+        pointer(out, lk, mx, my, busyT)
+
+        // ---- a balloon from the tray now and then
+        val tk = floor(t / 7.3f).toInt(); val ta = t - tk * 7.3f - 2.5f * hash(tk * 7 + 3)
+        if (ta in 0f..2.6f) {
+            val sOpen = popOut(ta / 0.3f) * (1f - ease((ta - 2.2f) / 0.4f))
+            if (sOpen > 0.02f) {
+                val bx = 0.80f; val by = 0.885f
+                val w = 0.27f * sOpen; val h = 0.06f * sOpen
+                out.rect(bx + 0.004f, by + 0.004f - h / 2, w, h, lk.shadow, corner = 0.012f * sOpen)
+                out.rect(bx, by - h / 2, w, h, lk.tip, corner = 0.012f * sOpen)
+                out.rect(bx, by - h / 2, w, h, main, corner = 0.012f * sOpen, stroke = 0.0025f)
+                out.poly(floatArrayOf(bx + 0.06f * sOpen, by - 0.002f, bx + 0.09f * sOpen, by - 0.002f, bx + 0.1f * sOpen, by + 0.035f * sOpen), lk.tip)
+                if (sOpen > 0.8f) text(out, if (hash(tk) < 0.5f) "DRIVE C: OK!" else "DEFRAG RUNNING", bx - w / 2 + 0.014f, by - h / 2 - 0.009f, 0.0042f, main)
+            }
+        }
+
+        // ---- the CRT: scan lines, a slow rolling refresh band, vignette and a breathing glass glare
+        var sy = (t * 0.004f) % 0.024f
+        while (sy < 1f) { out.rect(0.5f, sy, 1f, 0.0035f, lk.scan); sy += 0.024f }
+        val roll = ((t / 7f) % 1f) * 1.3f - 0.15f
+        out.rect(0.5f, roll, 1f, 0.09f, lk.roll)
+        out.rect(0.5f, roll, 1f, 0.03f, lk.roll)
+        for ((qx, qy) in arrayOf(0f to 0f, 1f to 0f, 0f to 1f, 1f to 1f)) out.glow(qx, qy, 0.32f, lk.vignette)
+        out.glow(0.22f + 0.02f * sin(t * 0.21f), 0.18f, 0.36f, Colors.alpha(lk.glare, (0.75f + 0.25f * sin(t * 0.37f)) * Colors.a(lk.glare) / 255f))
     }
 
     // ---------------------------------------------------------------- reading

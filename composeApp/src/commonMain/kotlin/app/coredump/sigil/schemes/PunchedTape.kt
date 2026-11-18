@@ -46,10 +46,10 @@ object PunchedTape : SigilScheme {
     internal const val SPROCKET_R = 0.0102f
     internal const val SPEED = 3.0f          // columns per second
     // the box (outer edge of its rule)
-    internal const val BX0 = 0.09f
-    internal const val BX1 = 0.91f
-    internal const val BY0 = 0.29f
-    internal const val BY1 = 0.71f
+    internal const val BX0 = 0.095f
+    internal const val BX1 = 0.905f
+    internal const val BY0 = 0.30f
+    internal const val BY1 = 0.70f
     internal const val RULE = 0.018f
     internal const val RULE_L = 0.038f      // the punch head side
     // readable window between the guide rollers
@@ -64,10 +64,32 @@ object PunchedTape : SigilScheme {
 
     internal fun rowY(r: Int) = ROW0 + r * P
 
+    private const val EVENT = 1.6f
+
     override fun draw(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
         val plate = ink.plate; val main = ink.main
         val soft = ink.soft; val faint = ink.faint
-        val stampInk = Colors.hueShift(ink.alt, 6f * sin(t * 0.4f))
+
+        // ---- the page: a desk lamp's pool of light wandering over it, darker corners, dust in the light
+        val lx = 0.5f + 0.28f * sin(t * 0.11f) + 0.06f * sin(t * 0.37f)
+        val ly = 0.5f + 0.22f * cos(t * 0.083f)
+        out.glow(lx, ly, 0.62f, Colors.alpha(Colors.mix(plate, ink.alt, 0.25f), 0.10f))
+        val vig = Colors.alpha(Colors.mix(plate, main, 0.35f), 0.22f)
+        for (k in 0 until 4) out.glow((k % 2).toFloat(), (k / 2).toFloat(), 0.42f, vig)
+        for (k in 0 until 8) {
+            val ph = t * (0.021f + 0.004f * k) + k * 0.37f
+            val mx = lx + 0.3f * sin(ph * 6.1f + k)
+            val my = ly + 0.28f * ((ph * 1.3f + hash(k) * 3f) % 1f - 0.5f) * 2f
+            val tw = 0.5f + 0.5f * sin(t * (1.1f + 0.3f * k) + k * 2f)
+            out.circle(mx, my, 0.0018f + 0.0012f * tw, Colors.mix(plate, main, 0.07f + 0.08f * tw))
+        }
+        // paper grain
+        for (k in 0 until 18) {
+            val sx = ((k * 0.6180339f + 0.13f) % 1f) * 0.9f + 0.05f
+            val sy = ((k * 0.4142135f + 0.71f) % 1f) * 0.95f + 0.02f
+            if (sy in 0.27f..0.73f) continue
+            out.circle(sx, sy, 0.0016f + 0.001f * ((k * 7) % 3), Colors.mix(plate, main, 0.15f))
+        }
 
         // ---- masthead
         out.line(0.045f, 0.035f, 0.955f, 0.035f, 0.004f, main, round = false)
@@ -81,45 +103,167 @@ object PunchedTape : SigilScheme {
         }
         out.line(0.045f, 0.127f, 0.955f, 0.127f, 0.0015f, main, round = false)
         out.line(0.045f, 0.137f, 0.955f, 0.137f, 0.004f, main, round = false)
-        // dateline (fine print) and edition ticker
-        out.rect(0.17f, 0.152f, 0.24f, 0.007f, soft)
-        out.rect(0.83f, 0.152f, 0.24f, 0.007f, soft)
-        val tick = ((t * 1.1f) % 1f)
-        out.circle(0.5f, 0.152f, 0.006f + 0.002f * sin(tick * 2 * PI.toFloat()), main)
+        // the wire ticker: dots and dashes running in from the right, fading at both ends
+        ticker(out, t, ink)
 
-        // ---- headline (two bold bars of "words")
-        headline(out, 0.065f, 0.192f, floatArrayOf(0.13f, 0.09f, 0.16f, 0.07f, 0.12f, 0.17f), 0.03f, main)
+        // ---- headline (two bold bars of "words"), now and then a glint of wet ink sweeping across
+        val w1 = floatArrayOf(0.13f, 0.09f, 0.16f, 0.07f, 0.12f, 0.17f)
+        headline(out, 0.065f, 0.192f, w1, 0.03f, main)
         headline(out, 0.065f, 0.243f, floatArrayOf(0.1f, 0.15f, 0.08f, 0.2f, 0.11f), 0.018f, Colors.mix(plate, main, 0.55f))
+        val gl = ((t * 0.19f) % 1f) * 1.6f - 0.3f
+        if (gl in -0.1f..1.1f) {
+            val gx = 0.05f + 0.9f * gl
+            out.rect(gx, 0.192f, 0.018f, 0.04f, Colors.alpha(Colors.mix(main, plate, 0.6f), 0.35f * sin(((gl + 0.1f) / 1.2f) * PI.toFloat())), rot = 18f)
+        }
+
+        // ---- this moment's event (and the stamps of the last few, fading)
+        val ew = floor(t / EVENT).toInt()
+        val ef = t / EVENT - ew
+        for (back in 2 downTo 0) {
+            val w = ew - back
+            if (kindOf(w) <= 1) stampEvent(out, w, (ef + back) / 3f, ink)
+        }
 
         // ---- the box with the tape
         drawBox(bits, t, ink, out)
 
-        // ---- body text columns
+        // ---- body text columns, one line being set by a caret, column rules
+        typeset(out, t, ink)
+
+        // ---- a curl of cut tape lying on the page (bottom left)
+        curl(out, 0.135f, 0.905f, t, ink)
+
+        // ---- the events that are not stamps
+        when (kindOf(ew)) {
+            2 -> pencil(out, ew, ef, w1, ink)
+            3 -> coffee(out, ew, ef, ink)
+            4 -> chads(out, ew, ef, ink)
+        }
+    }
+
+    private fun kindOf(w: Int) = (hash(w * 13 + 5) * 5f).toInt()
+
+    /** Dots and dashes of the wire service running right to left under the masthead. */
+    private fun ticker(out: Scene, t: Float, ink: Ink) {
+        val cell = 0.024f
+        val sh = t * 0.06f
+        val n0 = floor(sh / cell).toInt()
+        val y = 0.155f
+        for (k in 0 until 40) {
+            val n = n0 + k
+            val x = 0.06f + n * cell - sh
+            if (x < 0.06f || x > 0.94f) continue
+            val e = min(1f, min(x - 0.06f, 0.94f - x) / 0.08f)
+            val c = Colors.mix(ink.plate, ink.main, 0.45f * ease(e))
+            when ((hash(n * 3 + 1) * 4f).toInt()) {
+                0, 1 -> out.circle(x, y, 0.0032f, c)
+                2 -> out.rect(x, y, 0.014f, 0.006f, c, corner = 0.003f)
+                else -> {}
+            }
+        }
+    }
+
+    /** Body text in three columns; one line is being set (it grows behind a blinking caret), then the next. */
+    private fun typeset(out: Scene, t: Float, ink: Ink) {
+        val faint = ink.faint
+        val per = 2.3f
+        val cyc = floor(t / per).toInt()
+        val fr = t / per - cyc
+        val active = (hash(cyc * 7 + 3) * 24f).toInt()
         for (col in 0 until 3) {
             val cx0 = 0.045f + col * 0.31f
             for (ln in 0 until 8) {
                 val y = 0.76f + ln * 0.022f
                 if (y > 0.965f) break
                 var len = 0.27f - (if (ln == 7) 0.11f else 0f) - ((col * 7 + ln * 3) % 5) * 0.006f
-                if (col == 2 && ln in 1..6) len -= 0.12f   // room for the stamp
                 if (col == 0 && ln in 3..7) len -= 0.14f   // room for the curl
-                if (len > 0.02f) out.rect(cx0 + len / 2, y, len, 0.008f, faint)
+                if (len <= 0.02f) continue
+                if (col * 8 + ln == active) {
+                    val shown = len * ease((fr / 0.75f).coerceIn(0f, 1f))
+                    if (shown > 0.004f) out.rect(cx0 + shown / 2, y, shown, 0.008f, faint)
+                    if (sin(t * 9f) > -0.2f) out.line(cx0 + shown + 0.004f, y - 0.008f, cx0 + shown + 0.004f, y + 0.008f, 0.0025f, ink.soft, round = false)
+                } else out.rect(cx0 + len / 2, y, len, 0.008f, faint)
             }
+            if (col > 0) out.line(cx0 - 0.02f, 0.75f, cx0 - 0.02f, 0.965f, 0.0015f, Colors.mix(ink.plate, ink.main, 0.08f), round = false)
         }
+    }
 
-        // ---- a curl of cut tape lying on the page (bottom left)
-        curl(out, 0.135f, 0.9f, t, ink)
-
-        // ---- the rubber stamp: TELEGRAM, slammed down now and then
-        stamp(out, 0.82f, 0.875f, t, stampInk, plate)
-
-        // ---- ink speckles
-        for (k in 0 until 18) {
-            val sx = ((k * 0.6180339f + 0.13f) % 1f) * 0.9f + 0.05f
-            val sy = ((k * 0.4142135f + 0.71f) % 1f) * 0.95f + 0.02f
-            if (sy in 0.29f..0.77f) continue
-            out.circle(sx, sy, 0.0018f + 0.0012f * ((k * 7) % 3), Colors.mix(plate, main, 0.18f))
+    /** A rubber stamp lands at a random spot of the lower page and its ink slowly fades ([age] 0..1 over three events). */
+    private fun stampEvent(out: Scene, w: Int, age: Float, ink: Ink) {
+        if (age >= 1f) return
+        val cx = 0.2f + 0.6f * hash(w * 13 + 7)
+        val cy = 0.82f + 0.1f * hash(w * 13 + 8)
+        val rot = -16f + 32f * hash(w * 13 + 9)
+        val design = (hash(w * 13 + 10) * 3f).toInt()
+        val f = age * 3f   // 0..1 within its own event window
+        val land = if (f < 0.16f) f / 0.16f else 1f
+        val drop = if (f < 0.16f) 1.5f - 0.5f * easeOutBack(land) else 1f
+        val fade = (if (f < 0.16f) ease(land) else 1f) * (1f - ease(((age - 0.45f) / 0.55f).coerceIn(0f, 1f)))
+        val c = Colors.alpha(if (design == 1) ink.alt else Colors.mix(ink.alt, ink.main, 0.25f * design), 0.8f * fade)
+        // a little splash ring as it lands
+        if (f in 0.12f..0.4f) { val k = (f - 0.12f) / 0.28f; out.circle(cx, cy, 0.05f + 0.06f * ease(k), Colors.alpha(ink.alt, 0.18f * (1f - k)), 0.002f) }
+        when (design) {
+            0 -> stampTelegram(out, cx, cy, rot, drop, c, ink.plate, fade)
+            1 -> stampPostmark(out, cx, cy, rot, drop, c, ink.plate, fade)
+            else -> stampUrgent(out, cx, cy, rot, drop, c, ink.plate, fade)
         }
+    }
+
+    /** The editor's pencil rings a headline word (drawn round, ticked, then rubbed out). */
+    private fun pencil(out: Scene, w: Int, f: Float, words: FloatArray, ink: Ink) {
+        val wi = (hash(w * 13 + 11) * words.size).toInt().coerceIn(0, words.size - 1)
+        var x = 0.065f
+        for (i in 0 until wi) x += words[i] + 0.021f
+        if (x + words[wi] > 0.955f) return
+        val cx = x + words[wi] / 2; val cy = 0.192f
+        val draw = ease((f / 0.45f).coerceIn(0f, 1f))
+        val fade = 1f - ease(((f - 0.75f) / 0.25f).coerceIn(0f, 1f))
+        val c = Colors.alpha(Colors.mix(ink.plate, ink.alt, 0.85f), 0.85f * fade)
+        val rx = words[wi] / 2 + 0.018f; val ry = 0.028f
+        // the ring as short strokes (an oval traced by hand, slightly open)
+        val n = 18
+        val m = (n * draw).toInt()
+        for (i in 0 until m) {
+            val a0 = -2.2f + i * 6.6f / n; val a1 = -2.2f + (i + 1) * 6.6f / n
+            val wob0 = 1f + 0.06f * sin(a0 * 3f + w); val wob1 = 1f + 0.06f * sin(a1 * 3f + w)
+            out.line(cx + rx * cos(a0) * wob0, cy + ry * sin(a0) * wob0, cx + rx * cos(a1) * wob1, cy + ry * sin(a1) * wob1, 0.0035f, c)
+        }
+        if (f > 0.48f) {
+            val k = ease(((f - 0.48f) / 0.12f).coerceIn(0f, 1f))
+            val tx = cx + rx + 0.012f; val ty = cy - ry
+            out.line(tx, ty, tx + 0.008f * k, ty + 0.01f * k, 0.004f, c)
+            if (k > 0.6f) out.line(tx + 0.008f, ty + 0.01f, tx + 0.008f + 0.02f * (k - 0.6f) / 0.4f, ty + 0.01f - 0.026f * (k - 0.6f) / 0.4f, 0.004f, c)
+        }
+    }
+
+    /** A coffee cup's ring appears on the page and dries away. */
+    private fun coffee(out: Scene, w: Int, f: Float, ink: Ink) {
+        val cx = 0.25f + 0.5f * hash(w * 13 + 12); val cy = 0.84f + 0.08f * hash(w * 13 + 13)
+        val k = ease((f / 0.25f).coerceIn(0f, 1f)) * (1f - ease(((f - 0.6f) / 0.4f).coerceIn(0f, 1f)))
+        if (k < 0.01f) return
+        val c = Colors.mix(ink.plate, Colors.mix(ink.alt, ink.main, 0.4f), 0.2f * k)
+        out.circle(cx, cy, 0.05f, c, 0.006f)
+        out.arc(cx, cy, 0.047f, 30f + 40f * hash(w), 200f, 0.003f, Colors.mix(ink.plate, ink.main, 0.12f * k))
+        out.circle(cx + 0.03f, cy + 0.035f, 0.004f, c)
+    }
+
+    /** Chads flicked out of the punch head, tumbling down the left margin. */
+    private fun chads(out: Scene, w: Int, f: Float, ink: Ink) {
+        for (j in 0 until 5) {
+            val p = ((f - j * 0.06f) / 0.7f)
+            if (p <= 0f || p >= 1f) continue
+            val x = BX0 - 0.025f - 0.045f * ease(p) * (0.6f + 0.4f * hash(w * 5 + j))
+            val y = rowY(2) + (-0.03f + 0.06f * hash(w * 5 + j + 1)) + 0.25f * p * p
+            out.circle(x, y, 0.004f, Colors.mix(ink.plate, ink.main, 0.25f * (1f - p)))
+        }
+    }
+
+    private fun ease(x: Float): Float { val c = x.coerceIn(0f, 1f); return c * c * (3f - 2f * c) }
+    private fun easeOutBack(x: Float): Float { val c1 = 1.70158f; val c3 = c1 + 1; val y = x - 1; return 1 + c3 * y * y * y + c1 * y * y }
+    private fun hash(i: Int): Float {
+        var x = i * 374761393 + 668265263
+        x = (x xor (x ushr 13)) * 1274126177
+        return ((x xor (x ushr 16)) and 0xFFFFFF) / 16777216f
     }
 
     private fun drawBox(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
@@ -131,9 +275,19 @@ object PunchedTape : SigilScheme {
         // tape: paper band, its shadow, edges
         val ty0 = rowY(0) - 0.042f; val ty1 = rowY(5) + 0.042f
         out.rect((ix0 + ix1) / 2, (ty0 + ty1) / 2 + 0.008f, ix1 - ix0, ty1 - ty0, Colors.mix(plate, main, 0.16f))
-        out.rect((ix0 + ix1) / 2, (ty0 + ty1) / 2, ix1 - ix0, ty1 - ty0, Colors.hueShift(Colors.mix(plate, ink.alt, 0.035f), 0f))
-        out.line(ix0, ty0, ix1, ty0, 0.002f, Colors.mix(plate, main, 0.2f), round = false)
-        out.line(ix0, ty1, ix1, ty1, 0.002f, Colors.mix(plate, main, 0.2f), round = false)
+        out.rect((ix0 + ix1) / 2, (ty0 + ty1) / 2, ix1 - ix0, ty1 - ty0, Colors.mix(plate, ink.alt, 0.035f))
+        // its edges flutter a hair as it runs
+        val ec = Colors.mix(plate, main, 0.2f)
+        for (e in 0 until 2) {
+            val ye = if (e == 0) ty0 else ty1
+            var px = ix0; var py = ye
+            for (i in 1..8) {
+                val xx = ix0 + (ix1 - ix0) * i / 8
+                val yy = ye + 0.0012f * sin(xx * 31f + t * (2.1f + e * 0.6f))
+                out.line(px, py, xx, yy, 0.002f, ec, round = false)
+                px = xx; py = yy
+            }
+        }
         // holes: tape coordinate u = x + SPEED·P·t (the tape runs right to left)
         val shift = SPEED * P * t
         val c0 = floor((ix0 + shift) / P).toInt() - 1
@@ -163,7 +317,7 @@ object PunchedTape : SigilScheme {
         // the punch flashes as a column is punched
         val ph = (SPEED * t) % 1f
         val flash = (1f - ph * 3f).coerceAtLeast(0f)
-        if (flash > 0f) out.glow(BX0 + RULE_L + 0.004f, rowY(2), 0.05f, Colors.alpha(Colors.mix(plate, ink.alt, 0.5f), 0.35f * flash))
+        if (flash > 0f) out.glow(BX0 + RULE_L + 0.004f, rowY(2), 0.035f, Colors.alpha(Colors.mix(plate, ink.alt, 0.5f), 0.35f * flash))
     }
 
     private fun roller(out: Scene, x0: Float, x1: Float, y0: Float, y1: Float, ink: Ink, t: Float) {
@@ -203,8 +357,9 @@ object PunchedTape : SigilScheme {
             val on = ((t * 2.2f).toInt() % 3) == k
             out.circle(x - 0.018f + k * 0.018f, y - 0.023f, if (on) 0.0045f else 0.0032f, c)
         }
-        out.line(x - 0.035f, y - 0.025f, x - 0.018f, y - 0.023f, 0.0015f, c)
-        out.line(x + 0.018f, y - 0.023f, x + 0.035f, y - 0.026f, 0.0015f, c)
+        val sag = 0.004f * sin(t * 1.3f)
+        out.line(x - 0.035f, y - 0.025f + sag, x - 0.018f, y - 0.023f, 0.0015f, c)
+        out.line(x + 0.018f, y - 0.023f, x + 0.035f, y - 0.026f - sag, 0.0015f, c)
     }
 
     private fun headline(out: Scene, x0: Float, y: Float, words: FloatArray, h: Float, c: Int) {
@@ -223,7 +378,7 @@ object PunchedTape : SigilScheme {
         val edge = Colors.mix(ink.plate, ink.main, 0.32f)
         val hole = Colors.mix(ink.plate, ink.main, 0.4f)
         val sway = 0.12f * sin(t * 0.8f)
-        val n = 44
+        val n = 30
         // the free end runs out to the right, the coil winds in
         fun at(f: Float): FloatArray {
             val a = -0.3f + f * 10.5f + sway * f
@@ -240,40 +395,72 @@ object PunchedTape : SigilScheme {
             out.poly(floatArrayOf(p0[0], p0[1] - w0 * k0, p1[0], p1[1] - w1 * k1, p1[0], p1[1] + w1 * k1, p0[0], p0[1] + w0 * k0), col)
             out.line(p0[0], p0[1] - w0 * k0, p1[0], p1[1] - w1 * k1, 0.0018f, edge)
             out.line(p0[0], p0[1] + w0 * k0, p1[0], p1[1] + w1 * k1, 0.0018f, edge)
-            if (i % 3 == 0 && sin(p0[2]) > 0.3f) {
+            if (i % 2 == 0 && sin(p0[2]) > 0.3f) {
                 out.circle(p0[0], p0[1] - w0 * k0 * 0.45f, 0.0035f * (1f - 0.4f * f0), hole)
-                if (i % 6 == 0) out.circle(p0[0], p0[1] + w0 * k0 * 0.4f, 0.0042f * (1f - 0.4f * f0), hole)
+                if (i % 4 == 0) out.circle(p0[0], p0[1] + w0 * k0 * 0.4f, 0.0042f * (1f - 0.4f * f0), hole)
             }
         }
     }
 
-    /** The TELEGRAM rubber stamp: a double frame of broken ink with letter blocks, thumped down every few seconds. */
-    private fun stamp(out: Scene, cx: Float, cy: Float, t: Float, c: Int, plate: Int) {
-        val per = 5.5f
-        val ph = ((t % per) + per) % per
-        val drop = if (ph < 0.18f) 1.6f - 0.6f * (ph / 0.18f) else 1f
-        val fade = if (ph < 0.18f) ph / 0.18f else 1f
-        val col = Colors.alpha(c, 0.82f * fade)
-        val rot = -11f
-        val w = 0.25f * drop; val h = 0.105f * drop
+    private fun rot(cx: Float, cy: Float, rot: Float): (Float, Float) -> FloatArray {
         val ca = cos(rot * PI.toFloat() / 180f); val sa = sin(rot * PI.toFloat() / 180f)
-        fun px(u: Float, v: Float) = cx + u * ca - v * sa
-        fun py(u: Float, v: Float) = cy + u * sa + v * ca
-        out.rect(cx, cy, w, h, col, rot = rot, corner = 0.008f, stroke = 0.007f * drop)
-        out.rect(cx, cy, w - 0.022f * drop, h - 0.022f * drop, col, rot = rot, corner = 0.005f, stroke = 0.0025f * drop)
-        // letters T E L E G R A M as blocks
-        val n = 8
-        for (k in 0 until n) {
-            val u = (-0.5f + (k + 0.5f) / n) * (w - 0.05f * drop)
-            val lw = 0.018f * drop; val lh = 0.04f * drop
-            out.rect(px(u, 0f), py(u, 0f), lw, lh, col, rot = rot)
-            out.rect(px(u + 0.003f * drop, ((k * 5) % 3 - 1) * 0.009f * drop), py(u + 0.003f * drop, ((k * 5) % 3 - 1) * 0.009f * drop), lw * 0.45f, lh * 0.18f, Colors.alpha(plate, fade), rot = rot)
+        return { u, v -> floatArrayOf(cx + u * ca - v * sa, cy + u * sa + v * ca) }
+    }
+
+    /** TELEGRAM: a double frame of worn ink with letter blocks. */
+    private fun stampTelegram(out: Scene, cx: Float, cy: Float, rot: Float, s: Float, c: Int, plate: Int, fade: Float) {
+        val w = 0.23f * s; val h = 0.095f * s
+        val p = rot(cx, cy, rot)
+        out.rect(cx, cy, w, h, c, rot = rot, corner = 0.008f, stroke = 0.0065f * s)
+        out.rect(cx, cy, w - 0.02f * s, h - 0.02f * s, c, rot = rot, corner = 0.005f, stroke = 0.0022f * s)
+        for (k in 0 until 8) {
+            val u = (-0.5f + (k + 0.5f) / 8) * (w - 0.05f * s)
+            val q = p(u, 0f)
+            out.rect(q[0], q[1], 0.017f * s, 0.036f * s, c, rot = rot)
+            val n = p(u + 0.003f * s, ((k * 5) % 3 - 1) * 0.008f * s)
+            out.rect(n[0], n[1], 0.008f * s, 0.007f * s, Colors.alpha(plate, fade), rot = rot)
         }
-        // ink wear: plate nicks on the frame
-        for (k in 0 until 6) {
-            val u = (-0.45f + k * 0.18f) * w; val v = (if (k % 2 == 0) -0.5f else 0.5f) * h
-            out.circle(px(u, v), py(u, v), 0.004f * drop, Colors.alpha(plate, 0.9f * fade))
+        for (k in 0 until 5) { val q = p((-0.45f + k * 0.22f) * w, (if (k % 2 == 0) -0.5f else 0.5f) * h); out.circle(q[0], q[1], 0.0035f * s, Colors.alpha(plate, 0.9f * fade)) }
+    }
+
+    /** A round postmark: two rings, a date bar and wavy cancellation lines. */
+    private fun stampPostmark(out: Scene, cx: Float, cy: Float, rot: Float, s: Float, c: Int, plate: Int, fade: Float) {
+        val r = 0.045f * s
+        val p = rot(cx, cy, rot)
+        out.circle(cx, cy, r, c, 0.005f * s)
+        out.circle(cx, cy, r * 0.72f, c, 0.0022f * s)
+        val d = p(0f, 0f); out.rect(d[0], d[1], r * 1.1f, 0.012f * s, c, rot = rot)
+        for (k in 0 until 3) {
+            val v = (k - 1) * 0.016f * s
+            var prev = p(r * 1.15f, v)
+            for (i in 1..6) {
+                val u = r * 1.15f + i * 0.02f * s
+                val q = p(u, v + 0.006f * s * sin(i * 1.7f))
+                out.line(prev[0], prev[1], q[0], q[1], 0.003f * s, c)
+                prev = q
+            }
         }
+        val n = p(-r * 0.3f, r * 0.85f); out.circle(n[0], n[1], 0.004f * s, Colors.alpha(plate, 0.9f * fade))
+    }
+
+    /** URGENT: a slanted bar box with a star. */
+    private fun stampUrgent(out: Scene, cx: Float, cy: Float, rot: Float, s: Float, c: Int, plate: Int, fade: Float) {
+        val w = 0.17f * s; val h = 0.06f * s
+        val p = rot(cx, cy, rot)
+        out.rect(cx, cy, w, h, c, rot = rot, corner = 0.004f, stroke = 0.006f * s)
+        val st = p(-w / 2 + 0.022f * s, 0f)
+        val pts = FloatArray(20)
+        for (i in 0 until 10) {
+            val a = -PI.toFloat() / 2 + i * PI.toFloat() / 5 + rot * PI.toFloat() / 180f
+            val rr = if (i % 2 == 0) 0.016f * s else 0.007f * s
+            pts[2 * i] = st[0] + rr * cos(a); pts[2 * i + 1] = st[1] + rr * sin(a)
+        }
+        out.poly(pts, c)
+        for (k in 0 until 5) {
+            val q = p(-w / 2 + 0.05f * s + k * 0.024f * s, 0f)
+            out.rect(q[0], q[1], 0.014f * s, 0.03f * s, c, rot = rot)
+        }
+        val n = p(w * 0.3f, -h / 2); out.circle(n[0], n[1], 0.004f * s, Colors.alpha(plate, 0.9f * fade))
     }
 
     override fun reader(): SchemeReader = TapeReader()

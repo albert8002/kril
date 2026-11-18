@@ -506,8 +506,11 @@ object ParticleSphere : SigilScheme {
         private val cap = 160
         private val ts = LongArray(cap); private val vs = Array(cap) { FloatArray(units) }
         private val cs = FloatArray(cap); private val gs = FloatArray(cap)
+        /** Each frame's time within the loop (ms, exact: worked out in Long, so big uptime clocks keep their ms). */
+        private val tm = FloatArray(cap)
         private var n = 0
-        private val loopMs = slotMs * slots
+        private val loopL = kotlin.math.round(slotMs * slots).toLong()
+        private val loopMs = loopL.toFloat()
         var phase = 0f; var conf = 0f
 
         fun clear() { n = 0 }
@@ -520,17 +523,20 @@ object ParticleSphere : SigilScheme {
             while (drop < n && t - ts[drop] > (loopMs * 2.3f).toLong()) drop++
             if (drop > 0 || n == cap) {
                 val d = max(drop, if (n == cap) 1 else 0)
-                for (i in d until n) { ts[i - d] = ts[i]; cs[i - d] = cs[i]; gs[i - d] = gs[i]; val tmp = vs[i - d]; vs[i - d] = vs[i]; vs[i] = tmp }
+                for (i in d until n) { ts[i - d] = ts[i]; tm[i - d] = tm[i]; cs[i - d] = cs[i]; gs[i - d] = gs[i]; val tmp = vs[i - d]; vs[i - d] = vs[i]; vs[i] = tmp }
                 n -= d
             }
-            ts[n] = t; cs[n] = clock; gs[n] = glob; v.copyInto(vs[n]); n++
+            ts[n] = t; tm[n] = (((t % loopL) + loopL) % loopL).toFloat(); cs[n] = clock; gs[n] = glob; v.copyInto(vs[n]); n++
         }
 
-        private fun slotOf(t: Long, ph: Float): Int {
-            val x = ((t - ph) % loopMs + loopMs) % loopMs
-            val o = x % slotMs
-            if (o < MARGIN || o > slotMs - MARGIN) return -1
-            return (x / slotMs).toInt()
+        /** Slot of the frame at loop time [x0] for phase [ph] (both in 0 until loopMs), -1 near a slot edge. */
+        private fun slotOf(x0: Float, ph: Float): Int {
+            var x = x0 - ph
+            if (x < 0f) x += loopMs
+            val sl = (x / slotMs).toInt()
+            val o = x - sl * slotMs
+            if (sl >= slots || o < MARGIN || o > slotMs - MARGIN) return -1
+            return sl
         }
 
         /** Fits the phase (ms, 5 ms steps); [conf] = best score over the best one at least half a slot away. */
@@ -548,7 +554,7 @@ object ParticleSphere : SigilScheme {
                 val ph = k * 5f
                 var s = 0f
                 for (i in 0 until n) {
-                    val sl = slotOf(ts[i], ph)
+                    val sl = slotOf(tm[i], ph)
                     if (sl < 0) continue
                     s += (cs[i] - mc) / sc * clockExp[sl] + (gs[i] - mg) / sg * globExp[sl]
                 }
@@ -574,7 +580,7 @@ object ParticleSphere : SigilScheme {
         fun means(mean: Array<FloatArray>, cnt: IntArray) {
             for (s in 0 until slots) { mean[s].fill(0f); cnt[s] = 0 }
             for (i in 0 until n) {
-                val sl = slotOf(ts[i], phase)
+                val sl = slotOf(tm[i], phase)
                 if (sl < 0) continue
                 val m = mean[sl]; val v = vs[i]
                 for (u in 0 until units) m[u] += v[u]

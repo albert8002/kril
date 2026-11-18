@@ -37,17 +37,19 @@ object VoiceNote : SigilScheme {
     override val name = "voice"
 
     // ------------------------------------------------------------------ layout (unit square)
+    /** The thread is drawn at this scale round the centre, so all the reader needs stays within radius 0.45. */
+    internal const val S = 0.87f
     internal const val NB = 14
-    internal const val PITCH = 0.043f
-    internal const val BW = 0.022f
-    internal val LV = floatArrayOf(0.030f, 0.068f, 0.106f, 0.144f)
-    internal val ROW_Y = floatArrayOf(0.25f, 0.49f, 0.775f)
-    internal val BX = floatArrayOf(0.025f, 0.025f, 0.115f)
-    internal const val BUB_W = 0.86f
-    internal const val BUB_H = 0.22f
-    internal const val PLAY_DX = 0.085f
-    internal const val PLAY_R = 0.055f
-    internal const val BAR0_DX = 0.19f
+    internal const val PITCH = 0.043f * S
+    internal const val BW = 0.022f * S
+    internal val LV = floatArrayOf(0.030f * S, 0.068f * S, 0.106f * S, 0.144f * S)
+    internal val ROW_Y = floatArrayOf(0.5f + S * (0.25f - 0.5f), 0.5f + S * (0.49f - 0.5f), 0.5f + S * (0.775f - 0.5f))
+    internal val BX = floatArrayOf(0.5f + S * (0.025f - 0.5f), 0.5f + S * (0.025f - 0.5f), 0.5f + S * (0.115f - 0.5f))
+    internal const val BUB_W = 0.86f * S
+    internal const val BUB_H = 0.22f * S
+    internal const val PLAY_DX = 0.085f * S
+    internal const val PLAY_R = 0.055f * S
+    internal const val BAR0_DX = 0.19f * S
     /** Play-button centre to first bar, in bar pitches. */
     internal const val PLAY_GAP = (BAR0_DX - PLAY_DX) / PITCH
 
@@ -61,62 +63,66 @@ object VoiceNote : SigilScheme {
 
     private const val PLAY_EACH = 2.6f
     private const val CYCLE = PLAY_EACH * 3 + 1.4f
+    private const val EVENT = 1.7f   // a little event every so often
 
     override fun draw(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
         val main = ink.main
         val plate = ink.plate
         val played = Colors.hueShift(towards(ink.alt, Colors.light(plate) + 0.85f * (Colors.light(main) - Colors.light(plate))), 18f * sin(t * 0.7f))
         val soft = ink.soft; val faint = ink.faint
+        val accent = Colors.hueShift(Colors.mix(plate, ink.alt, 0.55f), 12f * sin(t * 0.23f))
 
-        // wallpaper doodles, drifting slowly
-        for (k in 0 until 14) {
-            val gx = ((k * 0.383f + 0.11f) % 1f); val gy = ((k * 0.617f + 0.07f) % 1f)
-            val x = gx + 0.012f * sin(t * 0.4f + k)
-            val y = gy + 0.012f * cos(t * 0.33f + k * 1.7f)
-            val c = Colors.mix(plate, main, 0.05f)
-            when (k % 3) {
-                0 -> out.circle(x, y, 0.014f, c, 0.004f)
-                1 -> out.line(x - 0.012f, y, x + 0.012f, y, 0.004f, c)
-                else -> { out.line(x, y - 0.012f, x, y + 0.012f, 0.004f, c); out.line(x - 0.012f, y, x + 0.012f, y, 0.004f, c) }
-            }
-        }
+        // ---- wallpaper: two layers of doodles drifting at their own pace (parallax), one twinkling now and then
+        wallpaper(out, t, ink)
 
-        // header: contact avatar, name, status line
-        out.rect(0.5f, 0.055f, 1f, 0.11f, Colors.mix(plate, main, 0.06f))
-        out.circle(0.085f, 0.055f, 0.034f, soft)
-        out.circle(0.085f, 0.045f, 0.012f, Colors.mix(plate, main, 0.08f))
-        out.oval(0.085f, 0.074f, 0.02f, 0.011f, Colors.mix(plate, main, 0.08f))
-        out.circle(0.11f, 0.08f, 0.009f, Colors.hueShift(ink.alt, 120f))
-        out.rect(0.24f, 0.042f, 0.2f, 0.018f, soft, corner = 0.009f)
-        out.rect(0.21f, 0.073f, 0.14f, 0.011f, faint, corner = 0.0055f)
+        // ---- the thread scrolls a hair up and down (rubber band), the whole conversation together
+        val bob = 0.003f * sin(t * 0.86f) + 0.0015f * sin(t * 2.3f + 1f)
+
+        // ---- date chip
+        val dcY = 0.148f + bob
+        out.rect(0.5f, dcY + 0.003f, 0.15f, 0.032f, Colors.mix(plate, main, 0.04f), corner = 0.016f)
+        out.rect(0.5f, dcY, 0.15f, 0.032f, Colors.mix(plate, main, 0.075f), corner = 0.016f)
+        out.rect(0.5f, dcY, 0.08f, 0.009f, Colors.mix(plate, main, 0.25f), corner = 0.0045f)
 
         // which note plays now
         val ph = ((t % CYCLE) + CYCLE) % CYCLE
         val playing = if (ph < PLAY_EACH * 3) (ph / PLAY_EACH).toInt() else -1
         val prog = if (playing >= 0) (ph - playing * PLAY_EACH) / PLAY_EACH else 0f
 
+        // this window's event
+        val ew = floor(t / EVENT).toInt()
+        val ef = t / EVENT - ew
+        val kind = (hash(ew * 7 + 1) * 5f).toInt()
+        val evRow = (hash(ew * 7 + 2) * 3f).toInt()
+
         for (r in 0 until 3) {
-            val bx = BX[r]; val cy = ROW_Y[r]
+            val bx = BX[r]; val cy = ROW_Y[r] + bob
             val sent = r == 2
             val fill = if (sent) Colors.hueShift(Colors.mix(plate, ink.alt, 0.13f), 10f * sin(t * 0.5f)) else Colors.mix(plate, main, 0.07f)
-            // soft shadow, bubble, tail
-            out.rect(bx + BUB_W / 2, cy + 0.006f, BUB_W, BUB_H, Colors.mix(plate, main, 0.035f), corner = 0.05f)
-            out.rect(bx + BUB_W / 2, cy, BUB_W, BUB_H, fill, corner = 0.05f)
+            // soft shadow (two layers), bubble, tail
+            out.rect(bx + BUB_W / 2, cy + 0.009f, BUB_W + 0.006f, BUB_H + 0.004f, Colors.mix(plate, main, 0.025f), corner = 0.05f * S)
+            out.rect(bx + BUB_W / 2, cy + 0.004f, BUB_W, BUB_H, Colors.mix(plate, main, 0.045f), corner = 0.045f * S)
+            out.rect(bx + BUB_W / 2, cy, BUB_W, BUB_H, fill, corner = 0.045f * S)
             val ty = cy - BUB_H / 2
-            if (sent) out.poly(floatArrayOf(bx + BUB_W - 0.05f, ty, bx + BUB_W + 0.025f, ty, bx + BUB_W - 0.01f, ty + 0.045f), fill)
-            else out.poly(floatArrayOf(bx + 0.05f, ty, bx - 0.025f, ty, bx + 0.01f, ty + 0.045f), fill)
+            if (sent) out.poly(floatArrayOf(bx + BUB_W - 0.05f * S, ty, bx + BUB_W + 0.022f * S, ty, bx + BUB_W - 0.01f * S, ty + 0.04f * S), fill)
+            else out.poly(floatArrayOf(bx + 0.05f * S, ty, bx - 0.022f * S, ty, bx + 0.01f * S, ty + 0.04f * S), fill)
 
             // play / pause button
             val px = bx + PLAY_DX
             out.circle(px, cy, PLAY_R, main)
-            if (r == playing) {
-                out.rect(px - 0.016f, cy, 0.014f, 0.046f, plate, corner = 0.004f)
-                out.rect(px + 0.016f, cy, 0.014f, 0.046f, plate, corner = 0.004f)
-            } else {
-                out.poly(floatArrayOf(px - 0.016f, cy - 0.027f, px - 0.016f, cy + 0.027f, px + 0.028f, cy), plate)
+            // the icon morphs: pause bars grow out of the triangle as the note starts
+            val morph = if (r == playing) ease((prog * PLAY_EACH / 0.25f).coerceIn(0f, 1f)) * ease(((1f - prog) * PLAY_EACH / 0.25f).coerceIn(0f, 1f)) else 0f
+            if (morph > 0.01f) {
+                val hgt = 0.046f * S * (0.4f + 0.6f * morph)
+                out.rect(px - 0.016f * S, cy, 0.014f * S, hgt, plate, corner = 0.004f * S)
+                out.rect(px + 0.016f * S, cy, 0.014f * S, hgt, plate, corner = 0.004f * S)
+            }
+            if (morph < 0.99f) {
+                val k = 1f - morph
+                out.poly(floatArrayOf(px - 0.016f * S, cy - 0.027f * S * k, px - 0.016f * S, cy + 0.027f * S * k, px + 0.028f * S * k, cy), plate)
             }
 
-            // the waveform
+            // the waveform (data: heights never move)
             val head = when {
                 r < playing || (playing < 0 && ph >= PLAY_EACH * 3 && ph < CYCLE - 0.4f) -> NB.toFloat()
                 r == playing -> prog * NB
@@ -127,7 +133,9 @@ object VoiceNote : SigilScheme {
                 val lv = level(bits[2 * k] != MASK[2 * k], bits[2 * k + 1] != MASK[2 * k + 1])
                 val h = LV[lv]
                 val x = bx + BAR0_DX + i * PITCH
-                val c = if (i + 0.5f < head) played else main
+                // the bar just reached by the playhead takes the played colour with a quick fade-through
+                val f = (head - i).coerceIn(0f, 1f)
+                val c = if (f >= 1f) played else if (f <= 0f) main else Colors.mix(main, played, ease(f))
                 out.rect(x, cy, BW, h, c, corner = BW / 2)
             }
             // playhead: a hairline in the gap after the last played bar (it spans the whole bubble height, so it shifts
@@ -135,40 +143,188 @@ object VoiceNote : SigilScheme {
             if (r == playing) {
                 val hi = floor(prog * NB).toInt().coerceIn(0, NB - 1)
                 val hx = bx + BAR0_DX + (hi - 0.5f) * PITCH
-                out.line(hx, cy - 0.104f, hx, cy + 0.104f, 0.003f, Colors.mix(plate, played, 0.3f), round = false)
+                out.line(hx, cy - 0.104f * S, hx, cy + 0.104f * S, 0.003f, Colors.mix(plate, played, 0.3f), round = false)
             }
 
             // duration "0:0s" (seconds counting while it plays), time + ticks
             val secs = if (r == playing) (prog * 7f).toInt() else 7
-            val dx = bx + BUB_W - 0.072f
-            digits(out, dx, cy - 0.04f, intArrayOf(0, -1, 0, secs), 0.016f, 0.026f, soft)
+            val dx = bx + BUB_W - 0.072f * S
+            digits(out, dx, cy - 0.04f * S, intArrayOf(0, -1, 0, secs), 0.016f * S, 0.026f * S, soft)
+            out.rect(bx + BUB_W - 0.085f * S, cy + 0.072f * S, 0.04f * S, 0.008f, faint, corner = 0.004f)
             if (sent) {
-                val tc = if (playing < 0 || playing == 2) Colors.mix(plate, played, 0.6f) else soft
-                tick(out, bx + BUB_W - 0.07f, cy + 0.07f, tc)
-                tick(out, bx + BUB_W - 0.05f, cy + 0.07f, tc)
-            } else {
-                out.circle(bx + BUB_W - 0.06f, cy + 0.07f, 0.007f, soft)
+                val seen = (playing < 0 || playing == 2) || (kind == 2 && ef < 0.8f)
+                val flash = if (kind == 2) bump(ef, 0.1f, 0.5f) else 0f
+                val tc = if (seen) Colors.mix(soft, accent, 0.6f + 0.4f * flash) else soft
+                if (flash > 0.02f) out.glow(bx + BUB_W - 0.05f * S, cy + 0.072f * S, 0.03f * flash, Colors.alpha(accent, 0.35f * flash))
+                tick(out, bx + BUB_W - 0.068f * S, cy + 0.072f * S, tc)
+                tick(out, bx + BUB_W - 0.05f * S, cy + 0.072f * S, tc)
+            }
+
+            // a reaction pops on this note (event)
+            if (kind == 0 && evRow == r) reaction(out, bx + BUB_W - 0.03f * S, cy + BUB_H / 2 + 0.004f, ef, (hash(ew * 7 + 3) * 4f).toInt(), ink, accent, t)
+        }
+
+        // ---- header: back arrow, avatar with a breathing online ring, name, "typing…" with a shimmer, call icons
+        header(out, t, ink, accent, kind == 1, ef)
+
+        // ---- bottom: a "typing…" bubble that comes and goes, the input bar with a pulsing mic
+        val typingOn = smooth01(((t * 0.13f) % 1f), 0.08f, 0.62f)
+        if (typingOn > 0.01f) {
+            val tyc = 0.872f + bob
+            val sc = 0.6f + 0.4f * easeOutBack(typingOn)
+            out.rect(0.03f + 0.07f * sc, tyc, 0.14f * sc, 0.052f * sc, Colors.mix(plate, main, 0.07f * typingOn), corner = 0.026f * sc)
+            for (k in 0 until 3) {
+                val b = sin((t * 6.5f - k * 0.9f)).coerceAtLeast(0f)
+                out.circle(0.03f + (0.035f + k * 0.035f) * sc, tyc - 0.01f * b * sc, 0.008f * sc, Colors.mix(plate, main, (0.18f + 0.15f * b) * typingOn))
             }
         }
+        inputBar(out, t, ink, accent)
+    }
 
-        // reaction popping on the second note
-        val rp = ((t * 0.31f) % 1f)
-        val pop = if (rp < 0.12f) easeOutBack(rp / 0.12f) else if (rp > 0.9f) 1f - (rp - 0.9f) / 0.1f else 1f
-        if (pop > 0.02f) {
-            val rx = BX[1] + BUB_W - 0.05f; val ry = ROW_Y[1] + BUB_H / 2 + 0.005f
-            val s = 0.028f * pop
-            out.circle(rx, ry, s * 1.15f, Colors.mix(plate, main, 0.09f))
-            out.circle(rx, ry, s, plate)
-            heart(out, rx, ry + s * 0.08f, s * 0.62f, Colors.hueShift(Colors.mix(plate, ink.alt, 0.7f), 300f + 20f * sin(t)))
+    private fun header(out: Scene, t: Float, ink: Ink, accent: Int, toast: Boolean, ef: Float) {
+        val plate = ink.plate; val main = ink.main; val soft = ink.soft; val faint = ink.faint
+        // a notification toast slides down from under the header (event)
+        if (toast) {
+            val k = bump(ef, 0.25f, 0.3f)
+            if (k > 0.01f) {
+                val y = 0.075f + 0.055f * easeOutBack(k)
+                out.rect(0.5f, y + 0.004f, 0.36f, 0.04f, Colors.mix(plate, main, 0.05f * k), corner = 0.02f)
+                out.rect(0.5f, y, 0.36f, 0.04f, Colors.mix(plate, accent, 0.25f * k), corner = 0.02f)
+                out.circle(0.345f, y, 0.011f, Colors.mix(plate, accent, 0.7f * k))
+                out.rect(0.48f, y - 0.005f, 0.2f, 0.007f, Colors.mix(plate, main, 0.3f * k), corner = 0.0035f)
+                out.rect(0.45f, y + 0.007f, 0.14f, 0.006f, Colors.mix(plate, main, 0.18f * k), corner = 0.003f)
+            }
         }
+        out.rect(0.5f, 0.055f, 1f, 0.11f, Colors.mix(plate, main, 0.06f))
+        out.line(0f, 0.111f, 1f, 0.111f, 0.003f, Colors.mix(plate, main, 0.035f), round = false)
+        out.line(0f, 0.115f, 1f, 0.115f, 0.003f, Colors.mix(plate, main, 0.018f), round = false)
+        // back arrow
+        out.line(0.03f, 0.055f, 0.045f, 0.04f, 0.005f, soft); out.line(0.03f, 0.055f, 0.045f, 0.07f, 0.005f, soft)
+        // avatar and its online ring
+        val ax = 0.1f; val ay = 0.055f
+        val ring = (t * 0.45f) % 1f
+        out.circle(ax, ay, 0.036f + 0.02f * ease(ring), Colors.alpha(Colors.mix(plate, accent, 0.5f), 0.5f * (1f - ring)), 0.003f)
+        out.circle(ax, ay, 0.034f, soft)
+        out.circle(ax, ay - 0.009f, 0.012f, Colors.mix(plate, main, 0.08f))
+        out.oval(ax, ay + 0.02f, 0.02f, 0.011f, Colors.mix(plate, main, 0.08f))
+        val on = 0.5f + 0.5f * sin(t * 2.7f)
+        out.glow(ax + 0.025f, ay + 0.025f, 0.018f, Colors.alpha(Colors.hueShift(ink.alt, 120f), 0.25f + 0.2f * on))
+        out.circle(ax + 0.025f, ay + 0.025f, 0.008f + 0.0015f * on, Colors.hueShift(ink.alt, 120f))
+        // name and status with a shimmer sweeping along
+        out.rect(0.255f, 0.042f, 0.2f, 0.018f, soft, corner = 0.009f)
+        out.rect(0.225f, 0.073f, 0.14f, 0.011f, faint, corner = 0.0055f)
+        val sh = ((t * 0.55f) % 1.4f) - 0.2f
+        if (sh in 0f..1f) out.rect(0.155f + 0.14f * sh, 0.073f, 0.03f, 0.011f, Colors.mix(faint, accent, 0.35f * sin(sh * PI.toFloat())), corner = 0.0055f)
+        // call icons
+        out.arc(0.84f, 0.058f, 0.014f, 100f, 160f, 0.006f, soft)
+        out.rect(0.92f, 0.055f, 0.032f, 0.022f, soft, corner = 0.004f)
+        out.poly(floatArrayOf(0.936f, 0.055f, 0.95f, 0.045f, 0.95f, 0.065f), soft)
+    }
 
-        // "typing…" bubble with bouncing dots
-        val tyc = 0.935f
-        out.rect(0.115f, tyc, 0.16f, 0.06f, Colors.mix(plate, main, 0.07f), corner = 0.03f)
-        for (k in 0 until 3) {
-            val b = sin((t * 6.5f - k * 0.9f)).coerceAtLeast(0f)
-            out.circle(0.075f + k * 0.04f, tyc - 0.012f * b, 0.009f, Colors.mix(plate, main, 0.2f + 0.15f * b))
+    private fun inputBar(out: Scene, t: Float, ink: Ink, accent: Int) {
+        val plate = ink.plate; val main = ink.main; val soft = ink.soft; val faint = ink.faint
+        val y = 0.948f
+        out.rect(0.5f, y + 0.012f, 1f, 0.11f, Colors.mix(plate, main, 0.04f))
+        out.rect(0.43f, y, 0.76f, 0.056f, Colors.mix(plate, main, 0.085f), corner = 0.028f)
+        out.circle(0.09f, y, 0.014f, soft, 0.004f)
+        out.circle(0.085f, y - 0.004f, 0.002f, soft); out.circle(0.095f, y - 0.004f, 0.002f, soft)
+        out.arc(0.09f, y + 0.001f, 0.008f, 20f, 140f, 0.003f, soft)
+        // placeholder text with a blinking caret
+        out.rect(0.2f, y, 0.12f, 0.009f, faint, corner = 0.0045f)
+        if (sin(t * 6.3f) > 0f) out.line(0.13f, y - 0.012f, 0.13f, y + 0.012f, 0.003f, soft, round = false)
+        out.rect(0.75f, y + 0.002f, 0.03f, 0.022f, soft, corner = 0.004f, stroke = 0.003f)   // camera
+        out.circle(0.75f, y + 0.002f, 0.006f, soft, 0.003f)
+        // mic button with rings rolling out of it
+        val mx = 0.91f
+        for (k in 0 until 2) {
+            val p = ((t * 0.6f + k * 0.5f) % 1f)
+            out.circle(mx, y, 0.026f + 0.03f * ease(p), Colors.alpha(accent, 0.3f * (1f - p)), 0.0025f)
         }
+        out.circle(mx, y, 0.026f, Colors.mix(plate, accent, 0.75f))
+        out.rect(mx, y - 0.004f, 0.009f, 0.018f, plate, corner = 0.0045f)
+        out.arc(mx, y - 0.002f, 0.009f, 20f, 140f, 0.0025f, plate)
+    }
+
+    /** Doodles of the chat wallpaper: two layers at different drift speeds; one sparkles per event window. */
+    private fun wallpaper(out: Scene, t: Float, ink: Ink) {
+        val plate = ink.plate; val main = ink.main
+        for (layer in 0 until 2) {
+            val n = if (layer == 0) 10 else 12
+            val c = Colors.mix(plate, main, if (layer == 0) 0.075f else 0.045f)
+            val sp = if (layer == 0) 0.011f else 0.006f
+            val sz = if (layer == 0) 0.016f else 0.011f
+            for (k in 0 until n) {
+                val gx = (((k * 0.6180339f + layer * 0.37f) + t * sp) % 1f)
+                val gy = (((k * 0.4142135f + layer * 0.19f) + t * sp * 0.6f) % 1f)
+                val wob = 0.004f * sin(t * (0.5f + 0.07f * k) + k)
+                val x = gx * 1.1f - 0.05f; val y = gy * 1.1f - 0.05f + wob
+                when ((k + layer) % 5) {
+                    0 -> out.circle(x, y, sz, c, 0.003f)
+                    1 -> { out.circle(x - sz * 0.45f, y - sz * 0.2f, sz * 0.5f, c, 0.003f); out.circle(x + sz * 0.45f, y - sz * 0.2f, sz * 0.5f, c, 0.003f) }
+                    2 -> out.poly(floatArrayOf(x - sz, y + sz * 0.6f, x + sz, y, x - sz * 0.3f, y - sz * 0.2f), c, 0.003f)
+                    3 -> { out.circle(x - sz * 0.4f, y + sz * 0.5f, sz * 0.35f, c); out.line(x - sz * 0.1f, y + sz * 0.5f, x - sz * 0.1f, y - sz * 0.7f, 0.003f, c) }
+                    else -> { out.line(x - sz, y, x + sz, y, 0.003f, c); out.line(x, y - sz, x, y + sz, 0.003f, c) }
+                }
+            }
+        }
+        // a sparkle somewhere on the wallpaper (event-like, on its own clock)
+        val w = floor(t / 1.3f).toInt(); val f = t / 1.3f - w
+        val k = bump(f, 0.3f, 0.5f)
+        if (k > 0.01f) {
+            val x = 0.05f + 0.9f * hash(w * 3 + 11); val y = 0.12f + 0.76f * hash(w * 3 + 12)
+            val c = Colors.mix(plate, ink.alt, 0.3f * k)
+            val r = 0.016f * k
+            out.line(x - r, y, x + r, y, 0.003f, c); out.line(x, y - r, x, y + r, 0.003f, c)
+            out.glow(x, y, 0.02f * k, Colors.alpha(ink.alt, 0.12f * k))
+        }
+    }
+
+    /** A reaction badge popping in with overshoot, a few hearts floating up from it, then fading. */
+    private fun reaction(out: Scene, x: Float, y: Float, f: Float, which: Int, ink: Ink, accent: Int, t: Float) {
+        val plate = ink.plate
+        val k = bump(f, 0.18f, 0.25f)
+        if (k < 0.01f) return
+        val pop = if (f < 0.18f) easeOutBack(f / 0.18f) else k
+        val s = 0.024f * pop
+        out.circle(x, y + 0.003f, s * 1.18f, Colors.mix(plate, ink.main, 0.08f * k))
+        out.circle(x, y, s * 1.15f, Colors.mix(plate, ink.main, 0.1f * k))
+        out.circle(x, y, s, plate)
+        val c = Colors.mix(plate, Colors.hueShift(ink.alt, which * 70f), 0.7f * k)
+        when (which) {
+            0 -> heart(out, x, y + s * 0.08f, s * 0.6f, c)
+            1 -> { out.rect(x - s * 0.15f, y + s * 0.15f, s * 0.75f, s * 0.6f, c, corner = s * 0.15f); out.rect(x - s * 0.05f, y - s * 0.35f, s * 0.3f, s * 0.6f, c, rot = -20f, corner = s * 0.1f) }
+            2 -> { out.circle(x, y + s * 0.2f, s * 0.45f, c); out.poly(floatArrayOf(x - s * 0.4f, y + s * 0.1f, x, y - s * 0.75f, x + s * 0.4f, y + s * 0.1f), c) }
+            else -> { out.circle(x, y, s * 0.7f, c, s * 0.18f); out.arc(x, y + s * 0.05f, s * 0.38f, 20f, 140f, s * 0.15f, c) }
+        }
+        // hearts floating up
+        for (j in 0 until 3) {
+            val p = ((f - 0.12f - j * 0.12f) / 0.6f)
+            if (p <= 0f || p >= 1f) continue
+            val hx = x - 0.012f + 0.012f * j + 0.008f * sin(t * 4f + j * 2f)
+            val hy = y - 0.01f - 0.07f * ease(p)
+            heart(out, hx, hy, 0.006f * (1f - 0.4f * p), Colors.mix(plate, accent, 0.5f * (1f - p)))
+        }
+    }
+
+    /** 0 → 1 → 0 over a window: rises by [inF], holds, falls over the last [outF] (eased). */
+    private fun bump(f: Float, inF: Float, outF: Float): Float = when {
+        f < inF -> ease(f / inF)
+        f > 1f - outF -> ease((1f - f) / outF)
+        else -> 1f
+    }
+
+    /** Smooth on/off over a cycle phase: on between a and b with eased edges. */
+    private fun smooth01(p: Float, a: Float, b: Float): Float {
+        val e = 0.06f
+        return ease(((p - a) / e).coerceIn(0f, 1f)) * ease(((b - p) / e).coerceIn(0f, 1f))
+    }
+
+    private fun ease(x: Float): Float { val c = x.coerceIn(0f, 1f); return c * c * (3f - 2f * c) }
+
+    private fun hash(i: Int): Float {
+        var x = i * 374761393 + 668265263
+        x = (x xor (x ushr 13)) * 1274126177
+        return ((x xor (x ushr 16)) and 0xFFFFFF) / 16777216f
     }
 
     /** [c] pulled to lightness [want] (its hue kept). */
@@ -185,8 +341,8 @@ object VoiceNote : SigilScheme {
     private fun easeOutBack(x: Float): Float { val c1 = 1.70158f; val c3 = c1 + 1; val y = x - 1; return 1 + c3 * y * y * y + c1 * y * y }
 
     private fun tick(out: Scene, x: Float, y: Float, c: Int) {
-        out.line(x - 0.012f, y, x - 0.004f, y + 0.008f, 0.0045f, c)
-        out.line(x - 0.004f, y + 0.008f, x + 0.011f, y - 0.009f, 0.0045f, c)
+        out.line(x - 0.012f * S, y, x - 0.004f * S, y + 0.008f * S, 0.004f, c)
+        out.line(x - 0.004f * S, y + 0.008f * S, x + 0.011f * S, y - 0.009f * S, 0.004f, c)
     }
 
     private fun heart(out: Scene, x: Float, y: Float, s: Float, c: Int) {
@@ -221,6 +377,7 @@ object VoiceNote : SigilScheme {
 }
 
 // ====================================================================== reader
+
 
 private const val DIV = 12
 
@@ -285,7 +442,7 @@ internal fun vLocate(f: SigilFrame, darkMarks: Boolean, half: VHalf = VHalf(f)):
         // C where the third button must be (either side: mirror)
         val evx0 = (B.x - A.x) / (uy[1] - uy[0]); val evy0 = (B.y - A.y) / (uy[1] - uy[0])
         val dv = uy[2] - uy[1]; val du = ux[2] - ux[1]
-        var C: Btn? = null; var cd = 0.075f * sqrt(evx0 * evx0 + evy0 * evy0)
+        var C: Btn? = null; var cd = 0.075f * VoiceNote.S * sqrt(evx0 * evx0 + evy0 * evy0)
         for (c in bs.indices) {
             if (c == a || c == b) continue
             val q = bs[c]
@@ -326,20 +483,24 @@ private fun vRefine(f: SigilFrame, btn: FloatArray, eux0: Float, euy0: Float, ev
     for (r in 0 until 3) {
         val bx = btn[2 * r]; val by = btn[2 * r + 1]
         fun l(du: Float, dv: Float) = img(bx + eux0 * du + evx * dv, by + euy0 * du + evy * dv)
-        val inside = (l(-0.04f, 0f) + l(0f, -0.04f) + l(0f, 0.04f)) / 3
-        val out = (l(0f, -0.085f) + l(0f, 0.085f)) / 2
+        val q = VoiceNote.S
+        val inside = (l(-0.04f * q, 0f) + l(0f, -0.04f * q) + l(0f, 0.04f * q)) / 3
+        val out = (l(0f, -0.085f * q) + l(0f, 0.085f * q)) / 2
         cRef += sgn * (out - inside)
     }
     cRef /= 3
     if (cRef < 12f) return null
     // the scale along the rows from the buttons' widths (the screen may be foreshortened either way)
     val el = sqrt(eux0 * eux0 + euy0 * euy0)
+    val vl = sqrt(evx * evx + evy * evy)
     var wsum = 0f; var wn = 0
     for (r in 0 until 3) {
-        val w = vWidth(f, btn[2 * r], btn[2 * r + 1], eux0 / el, euy0 / el, VoiceNote.PLAY_R * el, sgn)
-        if (w > 0f) { wsum += w; wn++ }
+        // the button's own aspect (width along the row / width across it): blur and threshold widen both alike
+        val wu = vWidth(f, btn[2 * r], btn[2 * r + 1], eux0 / el, euy0 / el, VoiceNote.PLAY_R * el, sgn)
+        val wv = vWidth(f, btn[2 * r], btn[2 * r + 1], evx / vl, evy / vl, VoiceNote.PLAY_R * vl, sgn)
+        if (wu > 0f && wv > 0f) { wsum += wu / wv; wn++ }
     }
-    val scale = if (wn > 0) (wsum / wn / (2 * VoiceNote.PLAY_R) / el).coerceIn(0.7f, 1.4f) else 1f
+    val scale = if (wn > 0) (wsum / wn * vl / el).coerceIn(0.7f, 1.4f) else 1f
     val eux = eux0 * scale; val euy = euy0 * scale
     val pit = VoiceNote.PITCH
     val gapU = VoiceNote.BAR0_DX - VoiceNote.PLAY_DX
@@ -393,29 +554,41 @@ private fun vRefine(f: SigilFrame, btn: FloatArray, eux0: Float, euy0: Float, ev
         }
     }
     if (good < 30) return null
-    return robustH(src, dst, k, 0.18f * pit * sqrt(eux * eux + euy * euy))
+    return robustH(src, dst, k, 0.28f * pit * sqrt(eux * eux + euy * euy))
 }
 
-/** Full width (px) at half contrast of a button along direction (ux, uy), or −1. */
+/**
+ * Full width (px) at half contrast of a button along direction (ux, uy), or −1. The outside reference is taken on the
+ * diagonals and the scan starts just outside the rim, so the first bar's blurred edge never counts.
+ */
 private fun vWidth(f: SigilFrame, cx: Float, cy: Float, ux: Float, uy: Float, r: Float, sgn: Float): Float {
     val ring = (f.at(cx + ux * 0.78f * r, cy + uy * 0.78f * r) + f.at(cx - ux * 0.78f * r, cy - uy * 0.78f * r)) / 2
-    val out = (f.at(cx + ux * 1.7f * r, cy + uy * 1.7f * r) + f.at(cx - ux * 1.7f * r, cy - uy * 1.7f * r)) / 2
+    val d = 0.95f * r
+    val out = (f.at(cx + (ux - uy) * d, cy + (uy + ux) * d) + f.at(cx + (-ux - uy) * d, cy + (-uy + ux) * d) +
+        f.at(cx + (ux + uy) * d, cy + (uy - ux) * d) + f.at(cx + (-ux + uy) * d, cy + (-uy - ux) * d)) / 4
     if (sgn * (out - ring) < 10f) return -1f
     val half = (ring + out) / 2
     var tot = 0f
     for (side in intArrayOf(1, -1)) {
-        var t = 1.6f * r
+        var t = 1.3f * r
+        var prev = f.at(cx + side * ux * t, cy + side * uy * t)
         var hit = -1f
         while (t > 0.6f * r) {
-            val v = f.at(cx + side * ux * t, cy + side * uy * t)
-            if (sgn * (half - v) > 0) { hit = t; break }
-            t -= 0.25f
+            val tn = t - 0.25f
+            val v = f.at(cx + side * ux * tn, cy + side * uy * tn)
+            if (sgn * (half - v) > 0) { hit = tn + 0.25f * (sgn * (half - v)) / max(1e-3f, sgn * (prev - v)); break }
+            prev = v; t = tn
         }
         if (hit < 0) return -1f
         tot += hit
     }
     return tot
 }
+
+private const val U6 = 0.006f * VoiceNote.S
+private const val U12 = 0.012f * VoiceNote.S
+private const val U85 = 0.085f * VoiceNote.S
+private const val U98 = 0.098f * VoiceNote.S
 
 /** One walk along a row of bars. */
 private class VWalk(val f: SigilFrame, val ax0: Float, val ay0: Float, val sgn: Float, val cRef: Float) {
@@ -425,7 +598,7 @@ private class VWalk(val f: SigilFrame, val ax0: Float, val ay0: Float, val sgn: 
     private val off = FloatArray(9)
 
     private fun dark3(qx: Float, qy: Float) =
-        -sgn * (f.at(qx - ax0 * 0.006f, qy - ay0 * 0.006f) + f.at(qx, qy) + f.at(qx + ax0 * 0.006f, qy + ay0 * 0.006f))
+        -sgn * (f.at(qx - ax0 * U6, qy - ay0 * U6) + f.at(qx, qy) + f.at(qx + ax0 * U6, qy + ay0 * U6))
 
     private var sx = 0f; private var sy = 0f
 
@@ -433,7 +606,7 @@ private class VWalk(val f: SigilFrame, val ax0: Float, val ay0: Float, val sgn: 
     fun barAt(qx: Float, qy: Float): Float {
         var best = -1e9f
         for (a in -2..2) for (j in -2..2) {
-            val x = qx + ax0 * a * 0.01f + sx * j * 0.12f; val y = qy + ay0 * a * 0.01f + sy * j * 0.12f
+            val x = qx + ax0 * a * 0.01f * VoiceNote.S + sx * j * 0.12f; val y = qy + ay0 * a * 0.01f * VoiceNote.S + sy * j * 0.12f
             val centre = dark3(x, y) / 3
             val gaps = -sgn * (f.at(x - sx / 2, y - sy / 2) + f.at(x + sx / 2, y + sy / 2)) / 2
             best = max(best, (centre - gaps) / cRef)
@@ -449,7 +622,7 @@ private class VWalk(val f: SigilFrame, val ax0: Float, val ay0: Float, val sgn: 
             var best = -1e9f; var bj = 0; var bv = 0f
             val across = if (lastI < 0) 4 else 2
             for (aj in -across..across) {
-                val av = aj * 0.008f
+                val av = aj * 0.008f * VoiceNote.S
                 val bxp = x + ax0 * av; val byp = y + ay0 * av
                 for (j in 0 until 9) {
                     val t = (j - 4) * 0.1f
@@ -468,19 +641,19 @@ private class VWalk(val f: SigilFrame, val ax0: Float, val ay0: Float, val sgn: 
             val qx = cx + sx * t; val qy = cy + sy * t
             val centre = dark3(qx, qy) / 3
             val gaps = -sgn * (f.at(qx - sx / 2, qy - sy / 2) + f.at(qx + sx / 2, qy + sy / 2) +
-                f.at(qx - sx / 2 + ax0 * 0.012f, qy - sy / 2 + ay0 * 0.012f) + f.at(qx + sx / 2 - ax0 * 0.012f, qy + sy / 2 - ay0 * 0.012f)) / 4
+                f.at(qx - sx / 2 + ax0 * U12, qy - sy / 2 + ay0 * U12) + f.at(qx + sx / 2 - ax0 * U12, qy + sy / 2 - ay0 * U12)) / 4
             val con = (centre - gaps) / cRef
             if (con > 0.12f && abs(t) < 0.38f) {
                 // centre line: darkness centroid along the bar
-                val outer = (f.at(qx - ax0 * 0.098f, qy - ay0 * 0.098f) + f.at(qx + ax0 * 0.098f, qy + ay0 * 0.098f)) / 2
+                val outer = (f.at(qx - ax0 * U98, qy - ay0 * U98) + f.at(qx + ax0 * U98, qy + ay0 * U98)) / 2
                 var sw = 0f; var sv = 0f
-                var vv = -0.085f
-                while (vv <= 0.0851f) {
+                var vv = -U85
+                while (vv <= U85 * 1.001f) {
                     val d = sgn * (outer - f.at(qx + ax0 * vv, qy + ay0 * vv)) - 0.3f * cRef
                     if (d > 0) { sw += d; sv += d * vv }
-                    vv += 0.006f
+                    vv += U6
                 }
-                val dv = if (sw > 0) (sv / sw).coerceIn(-0.02f, 0.02f) else 0f
+                val dv = if (sw > 0) (sv / sw).coerceIn(-0.02f * VoiceNote.S, 0.02f * VoiceNote.S) else 0f
                 val fx = qx + ax0 * dv; val fy = qy + ay0 * dv
                 px[found] = fx; py[found] = fy; idx[found] = i; found++
                 if (lastI >= 0) {
@@ -568,11 +741,12 @@ internal fun vMeasure(f: SigilFrame, h: DoubleArray, darkMarks: Boolean): FloatA
     val out = FloatArray(SigilPayload.BITS)
     val sgn = if (darkMarks) 1f else -1f
     val p = FloatArray(2)
-    val half = 0.104f
+    val half = 0.104f * VoiceNote.S
     val prof = FloatArray(200)
     val lv = VoiceNote.LV
     val step = lv[1] - lv[0]
-    val b01 = (lv[0] + lv[1]) / 2 - 0.002f; val b12 = (lv[1] + lv[2]) / 2 - 0.002f; val b23 = (lv[2] + lv[3]) / 2 - 0.002f
+    val sh = 0.002f * VoiceNote.S
+    val b01 = (lv[0] + lv[1]) / 2 - sh; val b12 = (lv[1] + lv[2]) / 2 - sh; val b23 = (lv[2] + lv[3]) / 2 - sh
     var good = 0
     for (r in 0 until 3) for (i in 0 until VoiceNote.NB) {
         val ux = VoiceNote.BX[r] + VoiceNote.BAR0_DX + i * VoiceNote.PITCH; val uy = VoiceNote.ROW_Y[r]
@@ -585,12 +759,12 @@ internal fun vMeasure(f: SigilFrame, h: DoubleArray, darkMarks: Boolean): FloatA
             val v = uy - half + s * dv
             var acc = 0f
             for (t in -1..1) {
-                Fit.apply(h, ux + t * 0.0045f, v, p)
+                Fit.apply(h, ux + t * 0.0045f * VoiceNote.S, v, p)
                 acc += f.at(p[0], p[1])
             }
             prof[s] = acc / 3f
         }
-        val nb = max(2, (0.014f / dv).toInt())
+        val nb = max(2, (0.014f * VoiceNote.S / dv).toInt())
         var top = 0f; var bot = 0f
         for (s in 0 until nb) { top += prof[s]; bot += prof[ns - s] }
         top /= nb; bot /= nb
@@ -599,8 +773,8 @@ internal fun vMeasure(f: SigilFrame, h: DoubleArray, darkMarks: Boolean): FloatA
             val v = -half + s * dv
             val bg = top + (bot - top) * (s.toFloat() / ns)
             val d = sgn * (bg - prof[s])
-            if (abs(v) <= 0.0075f) { peak += d; np++ }
-            if (abs(v) <= 0.089f) integ += d * dv
+            if (abs(v) <= 0.0075f * VoiceNote.S) { peak += d; np++ }
+            if (abs(v) <= 0.089f * VoiceNote.S) integ += d * dv
         }
         peak /= max(1, np)
         val k = r * VoiceNote.NB + i

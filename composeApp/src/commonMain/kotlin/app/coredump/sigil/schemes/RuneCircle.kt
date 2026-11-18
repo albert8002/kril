@@ -89,23 +89,58 @@ object RuneCircle : SigilScheme {
     }
 
     private fun rad(d: Float) = d * PI.toFloat() / 180f
+    private fun fr(x: Float) = x - kotlin.math.floor(x)
+    private fun smooth(e0: Float, e1: Float, x: Float): Float { val k = ((x - e0) / (e1 - e0)).coerceIn(0f, 1f); return k * k * (3 - 2 * k) }
+    private fun env(u: Float, a: Float = 0.18f, b: Float = 0.7f) = smooth(0f, a, u) * (1f - smooth(b, 1f, u))
+    /** A rune's charge as the wave passes ([d]: wave position minus rune index): quick rise, slow fade. */
+    private fun smoothB(d: Float) = if (d < 0f) smooth(-1f, 0f, d) else 1f - smooth(0f, 2.5f, d)
+    private fun hash(n: Int, salt: Int): Float {
+        var x = n * 374761393 + salt * 668265263
+        x = (x xor (x ushr 13)) * 1274126177
+        x = x xor (x ushr 16)
+        return (x and 0xFFFFFF) / 16777216f
+    }
 
     override fun draw(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
         val p = pal(ink)
         val tr = turn(t)
-        // the circle's aura (lighter / darker than the plate, away from the marks)
-        out.glow(0.5f, 0.5f, 0.5f, Colors.alpha(p.s3, 0.8f))
-        // dashed rune-dust ring outside, turning the other way (decoration)
-        for (i in 0 until 48) {
-            val a = rad(i * 7.5f - tr * 1.6f)
-            val r = 0.472f
-            out.rect(0.5f + r * cos(a), 0.5f + r * sin(a), 0.012f, 0.012f, Colors.alpha(p.s1, 0.55f), i * 7.5f - tr * 1.6f)
+        // the handheld's screen: faint LCD scan lines, darkened corners, the circle's aura
+        val scan = Colors.alpha(ink.faint, 0.55f)
+        for (i in 0 until 40) { val y = (i + 0.5f) / 40f; out.line(0f, y, 1f, y, 0.006f, scan, false) }
+        for (c in 0 until 4) out.glow(if (c % 2 == 0) 0f else 1f, if (c < 2) 0f else 1f, 0.32f, Colors.alpha(p.s1, 0.28f))
+        out.glow(0.5f, 0.5f, 0.5f, Colors.alpha(p.s3, 0.8f + 0.15f * sin(t * 0.9f)))
+        // rune dust: a dashed ring outside, turning the other way, its specks breathing one after another
+        for (i in 0 until 40) {
+            val ang = i * 9f - tr * 1.6f
+            val a = rad(ang)
+            val r = 0.486f
+            val br = 0.35f + 0.25f * sin(t * 1.3f + i * 0.9f)
+            out.rect(0.5f + r * cos(a), 0.5f + r * sin(a), 0.011f, 0.011f, Colors.alpha(p.s1, br), ang)
         }
-        // spell charge: runes light up one after another, then the whole circle flashes
+        // fireflies: pixel motes drifting up in the corners and inside the inner ring
+        for (i in 0 until 12) {
+            val per = 5f + 4f * hash(i, 5)
+            val u = fr((t + per * hash(i, 6)) / per)
+            val inner = i < 5
+            val x0 = if (inner) 0.5f + 0.24f * (hash(i, 7) - 0.5f) else (if (hash(i, 7) < 0.5f) 0.05f + 0.07f * hash(i, 8) else 0.88f + 0.07f * hash(i, 8))
+            val y0 = if (inner) 0.62f else 0.95f
+            val rise = if (inner) 0.22f else 0.9f
+            val x = x0 + 0.012f * sin(t * (1.1f + hash(i, 9)) + i)
+            val y = y0 - rise * u
+            out.rect(x, y, 0.008f, 0.008f, Colors.alpha(p.s1, 0.7f * env(u)))
+        }
+        // a hexagram turning slowly round the crystal (well inside the inner ring)
+        for (k in 0 until 2) {
+            val base = (if (k == 0) 1f else -1f) * t * 6f + k * 60f
+            val pts = FloatArray(6)
+            for (j in 0 until 3) { val a = rad(base + j * 120f); pts[2 * j] = 0.5f + 0.185f * cos(a); pts[2 * j + 1] = 0.5f + 0.185f * sin(a) }
+            out.poly(pts, Colors.alpha(p.s1, 0.3f + 0.1f * sin(t * 0.7f + k * 3f)), 0.004f)
+        }
+        // spell charge: a wave of light runs round the runes, then the whole circle flashes (all eased)
         val cyc = (t % 4.2f)
-        val lit = (cyc / 0.22f).toInt()
+        val wave = cyc / 0.22f
         val flash = if (cyc > 3.4f) sin((cyc - 3.4f) / 0.8f * PI.toFloat()) else 0f
-        if (flash > 0f) out.glow(0.5f, 0.5f, 0.5f, Colors.alpha(p.glow, 0.6f * flash))
+        if (flash > 0f) out.glow(0.5f, 0.5f, 0.5f, Colors.alpha(p.glow, 0.6f * flash * flash))
         // rings and ticks
         out.circle(0.5f, 0.5f, (RO0 + RO1) / 2, ink.main, RO1 - RO0)
         out.circle(0.5f, 0.5f, (RI0 + RI1) / 2, ink.main, RI1 - RI0)
@@ -127,8 +162,8 @@ object RuneCircle : SigilScheme {
             val tx = -sin(a); val ty = cos(a)      // clockwise
             val nx = cos(a); val ny = sin(a)       // outwards
             if (k == 0) {
-                // the menu cursor: a steady halo, and it bobs along the reading direction (two-step, like a handheld)
-                val bob = 0.25f * CELL * (if (sin(t * 7f) > 0f) 1f else -1f)
+                // the menu cursor: a breathing halo, and it bobs along the reading direction
+                val bob = 0.25f * CELL * sin(t * 4.2f)
                 out.glow(cx, cy, 0.09f, Colors.alpha(p.glow, 0.75f + 0.25f * sin(t * 3f)))
                 pixels(out, CURSOR, cx + tx * bob, cy + ty * bob, tx, ty, nx, ny, ang, ink.main)
                 continue
@@ -137,8 +172,9 @@ object RuneCircle : SigilScheme {
             var sym = 0
             for (b in 0 until 6) if (bits[6 * idx + b]) sym = sym or (1 shl (5 - b))
             val g = GLYPHS[sym xor MASK[idx]]
-            val on = if (lit == idx) 1f else if (lit == idx + 1) 0.45f else 0f
-            if (on > 0f) out.glow(cx, cy, 0.085f, Colors.alpha(p.glow, 0.85f * on))
+            val d = wave - idx
+            val on = if (d > -1f && d < 2.5f) smoothB(d) else 0f
+            if (on > 0.01f) out.glow(cx, cy, 0.085f, Colors.alpha(p.glow, 0.85f * on))
             pixels(out, g, cx, cy, tx, ty, nx, ny, ang, ink.main)
         }
         // the crystal: a turning pixel gem in four shades, with orbiting sparkles
@@ -155,7 +191,71 @@ object RuneCircle : SigilScheme {
             val tw = sin(t * 1.4f + c * 1.6f)
             if (tw < 0.1f) continue
             val x = if (c % 2 == 0) 0.075f else 0.925f; val y = if (c < 2) 0.075f else 0.925f
-            sparkle(out, x, y, 0.008f * (0.6f + tw), Colors.alpha(p.s1, tw))
+            sparkle(out, x, y, 0.008f * (0.6f + tw), Colors.alpha(p.s1, (tw - 0.1f) / 0.9f))
+        }
+        // event: "LV UP!" / "+EXP" pops up in a corner, rises with a little overshoot, and fades
+        run {
+            val w = 2.2f; val n = kotlin.math.floor(t / w).toInt(); val u = t / w - n
+            val c = (hash(n, 31) * 4).toInt()
+            val txt = TAGS[(hash(n, 32) * TAGS.size).toInt()]
+            val pop = backOut(smooth(0f, 0.3f, u))
+            val x = if (c % 2 == 0) 0.115f else 0.885f
+            val y = (if (c < 2) 0.085f else 0.955f) - 0.035f * smooth(0f, 1f, u)
+            text(out, txt, x, y, 0.0055f * (0.6f + 0.4f * pop), Colors.alpha(p.s1, env(u, 0.12f, 0.65f)))
+        }
+        // event: a shooting star streaks past a corner
+        run {
+            val w = 1.7f; val tt = t + 0.6f; val n = kotlin.math.floor(tt / w).toInt(); val u = tt / w - n
+            if (u < 0.45f) {
+                val k = u / 0.45f
+                val c = (hash(n, 41) * 4).toInt()
+                val sx = if (c % 2 == 0) -1f else 1f; val sy = if (c < 2) -1f else 1f
+                // along the corner, tangent to the circle
+                val x0 = 0.5f + sx * 0.47f - sx * 0.05f; val y0 = 0.5f + sy * 0.3f
+                val x1 = 0.5f + sx * 0.3f; val y1 = 0.5f + sy * 0.47f - sy * 0.05f + sy * 0.0f
+                val e = env(k, 0.15f, 0.6f)
+                for (j in 0 until 4) {
+                    val kj = (k - j * 0.05f).coerceIn(0f, 1f)
+                    val sz = 0.009f - 0.0018f * j
+                    out.rect(x0 + (x1 - x0) * kj + sx * 0.04f, y0 + (y1 - y0) * kj + sy * 0.04f, sz, sz, Colors.alpha(if (j == 0) p.s3 else p.s1, e * (1f - 0.22f * j)))
+                }
+            }
+        }
+        // event: mana sparks spiral from the inner ring into the crystal
+        run {
+            val w = 2.9f; val tt = t + 1.4f; val n = kotlin.math.floor(tt / w).toInt(); val u = tt / w - n
+            if (u < 0.6f) {
+                val k = u / 0.6f
+                val a0 = 360f * hash(n, 51)
+                for (j in 0 until 4) {
+                    val kj = (k - j * 0.07f).coerceIn(0f, 1f)
+                    val r = 0.195f - 0.15f * smooth(0f, 1f, kj)
+                    val a = rad(a0 + j * 9f + 150f * kj)
+                    out.rect(0.5f + r * cos(a), 0.5f + r * sin(a), 0.008f, 0.008f, Colors.alpha(if (j == 0) p.s3 else p.s1, env(kj, 0.1f, 0.75f)), a0 + 150f * kj)
+                }
+                if (k > 0.7f) out.glow(0.5f, 0.5f, 0.07f, Colors.alpha(p.glow, 0.8f * env((k - 0.7f) / 0.3f, 0.3f, 0.5f)))
+            }
+        }
+    }
+
+    private val TAGS = arrayOf("LV UP!", "+EXP", "+1 MP", "LV UP!", "+EXP")
+    private fun backOut(x: Float): Float { val c = 1.7f; val y = x - 1f; return 1f + (c + 1f) * y * y * y + c * y * y }
+
+    /** Text in a 3 × 5 pixel font centred on (x, y). */
+    private fun text(out: Scene, s: String, x: Float, y: Float, px: Float, col: Int) {
+        val w = s.length * 4 - 1
+        for ((i, ch) in s.withIndex()) {
+            val g = when (ch) {
+                'L' -> 0b100_100_100_100_111; 'V' -> 0b101_101_101_101_010; 'U' -> 0b101_101_101_101_111
+                'P' -> 0b110_101_110_100_100; 'E' -> 0b111_100_110_100_111; 'X' -> 0b101_101_010_101_101
+                'M' -> 0b101_111_111_101_101; '!' -> 0b010_010_010_000_010; '+' -> 0b000_010_111_010_000
+                '1' -> 0b010_110_010_010_111; else -> 0
+            }
+            if (g == 0) continue
+            for (r in 0 until 5) for (c in 0 until 3) {
+                if ((g shr (14 - (r * 3 + c))) and 1 == 0) continue
+                out.rect(x + (i * 4 + c - (w - 1) / 2f) * px, y + (r - 2) * px, px * 1.02f, px * 1.02f, col)
+            }
         }
     }
 

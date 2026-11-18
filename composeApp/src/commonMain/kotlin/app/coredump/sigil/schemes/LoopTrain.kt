@@ -69,9 +69,9 @@ object LoopTrain : SigilScheme {
 
     /** Point on a rounded square round (0.5, 0.5) at arc length [s0], clockwise from the top side's left end: x, y, tx, ty. */
     internal fun pathAt(a: Float, rc: Float, s0: Float, out: FloatArray) {
-        val st = 2 * (a - rc); val ar = PI.toFloat() / 2 * rc
+        val st = 2 * (a - rc); val ar = HALF_PI * rc
         val per = 4 * (st + ar)
-        var s = ((s0 % per) + per) % per
+        var s = s0 - per * floor(s0 / per)
         for (side in 0 until 4) {
             val dx = when (side) { 0 -> 1f; 2 -> -1f; else -> 0f }
             val dy = when (side) { 1 -> 1f; 3 -> -1f; else -> 0f }
@@ -82,13 +82,27 @@ object LoopTrain : SigilScheme {
             if (s < ar || side == 3) {
                 val ccx = sx + dx * st - dy * rc
                 val ccy = sy + dy * st + dx * rc
-                val phi = side * PI.toFloat() / 2 - PI.toFloat() / 2 + min(s, ar) / rc
-                out[0] = 0.5f + ccx + rc * cos(phi); out[1] = 0.5f + ccy + rc * sin(phi); out[2] = -sin(phi); out[3] = cos(phi)
+                // angle within the quarter turn (0..π/2), from a table: cos / sin of start + v
+                val v = (min(s, ar) / ar).coerceIn(0f, 1f) * QN
+                val i = min(QN - 1, v.toInt()); val f = v - i
+                val cv = QCOS[i] + (QCOS[i + 1] - QCOS[i]) * f
+                val sv = QSIN[i] + (QSIN[i + 1] - QSIN[i]) * f
+                // start angle side·π/2 - π/2: rotate (cv, sv) by it
+                val c0 = when (side) { 0 -> 0f; 1 -> 1f; 2 -> 0f; else -> -1f }
+                val s0a = when (side) { 0 -> -1f; 1 -> 0f; 2 -> 1f; else -> 0f }
+                val cp = c0 * cv - s0a * sv
+                val sp = s0a * cv + c0 * sv
+                out[0] = 0.5f + ccx + rc * cp; out[1] = 0.5f + ccy + rc * sp; out[2] = -sp; out[3] = cp
                 return
             }
             s -= ar
         }
     }
+
+    private const val HALF_PI = (PI / 2).toFloat()
+    private const val QN = 128
+    private val QCOS = FloatArray(QN + 1) { cos(it * HALF_PI / QN) }
+    private val QSIN = FloatArray(QN + 1) { sin(it * HALF_PI / QN) }
 
     /** Where the nose is at time t (arc length on the centre line); the train runs clockwise (+s). */
     internal fun nose(t: Float): Float = (0.37f + SPEED * t) % LEN
@@ -103,6 +117,11 @@ object LoopTrain : SigilScheme {
         val lineHue = hueOf(ink.alt, 44f)
         val rail = trainTone(lineHue, 0.85f, lv(0.85f))
         val lit = trainTone(if (dark) 44f else 222f, if (dark) 0.3f else 0.55f, lv(1.0f))
+        val lit2 = trainTone(if (dark) 30f else 205f, if (dark) 0.45f else 0.7f, lv(1.0f))
+        val railHi = trainTone(lineHue, 0.35f, lv(1.0f))
+        val map1 = trainTone(lineHue + 160f, 0.25f, Colors.light(ink.faint))
+        val water = trainTone(205f, 0.45f, Colors.light(ink.faint))
+        val park = trainTone(130f, 0.35f, Colors.light(ink.faint))
         val body = trainTone(215f, 0.08f, Colors.light(ink.soft))
         val body2 = trainTone(lineHue, 0.25f, Colors.light(ink.soft))
         val bed = Colors.mix(ink.plate, if (dark) 0xFF000000.toInt() else 0xFFFFFFFF.toInt(), 0.18f)
@@ -128,88 +147,186 @@ object LoopTrain : SigilScheme {
     override fun draw(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
         val p = pal(ink)
         val q = FloatArray(4)
-        // faint map texture: a river and a park behind the line
-        out.glow(0.84f, 0.14f, 0.2f, Colors.alpha(ink.faint, 0.9f))
-        out.glow(0.1f, 0.9f, 0.16f, Colors.alpha(ink.faint, 0.9f))
+        val sn = nose(t)
+        map(out, t, p, ink)
+
         // the track bed with sleepers, between the rails
-        val bedW = OR0 - IR1
-        out.rect(0.5f, 0.5f, 2 * A + 0.002f, 2 * A + 0.002f, p.bed, 0f, RC, bedW)
-        val ns = 120
+        out.rect(0.5f, 0.5f, 2 * A + 0.002f, 2 * A + 0.002f, p.bed, 0f, RC, OR0 - IR1)
+        val ns = 64
+        val sl = Colors.alpha(ink.faint, 0.9f)
         for (i in 0 until ns) {
             LoopTrain.pathAt(A, RC, LEN * i / ns, q)
             val nx = q[3]; val ny = -q[2]
-            out.line(q[0] + nx * 0.062f, q[1] + ny * 0.062f, q[0] - nx * 0.062f, q[1] - ny * 0.062f, 0.005f, Colors.alpha(ink.faint, 0.9f), false)
+            out.line(q[0] + nx * 0.062f, q[1] + ny * 0.062f, q[0] - nx * 0.062f, q[1] - ny * 0.062f, 0.006f, sl, false)
         }
-        // rails
+        // rails, with gleams sliding along them
         out.rect(0.5f, 0.5f, OR0 + OR1, OR0 + OR1, p.rail, 0f, RC + (OR0 + OR1) / 2 - A, OR1 - OR0)
         out.rect(0.5f, 0.5f, IR0 + IR1, IR0 + IR1, p.rail, 0f, max(0.004f, RC + (IR0 + IR1) / 2 - A), IR1 - IR0)
-
-        // stations at the corners: interchange rings straddling the outer rail, with platform ticks
-        for (c in 0 until 4) {
-            val sx = if (c == 1 || c == 2) 1f else -1f
-            val sy = if (c >= 2) 1f else -1f
-            val cx = 0.5f + sx * (A - RC + (RC + 0.081f) * 0.7071f)
-            val cy = 0.5f + sy * (A - RC + (RC + 0.081f) * 0.7071f)
-            out.circle(cx, cy, 0.03f, p.rail)
-            out.circle(cx, cy, 0.021f, p.station)
-            out.circle(cx, cy, 0.009f, ink.plate)
+        for (j in 0 until 4) {
+            val off = if (j < 2) (OR0 + OR1) / 2 - A else (IR0 + IR1) / 2 - A
+            val sp = (if (j % 2 == 0) 0.21f else -0.13f) * (1f + 0.3f * j)
+            LoopTrain.pathAt(A, RC, (t * sp + j * 0.63f) * LEN, q)
+            out.glow(q[0] + q[3] * off, q[1] - q[2] * off, 0.028f, Colors.alpha(p.railHi, 0.75f))
         }
 
-        // the signal at the top-right corner: red while the train is about to pass, else green
-        val sn = nose(t)
-        run {
-            val gx = 0.94f; val gy = 0.18f
-            val stationS = 2 * (A - RC) + PI.toFloat() / 4 * RC   // the top-right corner
-            val ahead = ((stationS - sn) % LEN + LEN) % LEN
-            val red = ahead < 0.25f
-            out.rect(gx, gy + 0.05f, 0.006f, 0.07f, ink.soft)
-            out.rect(gx, gy, 0.034f, 0.062f, Colors.mix(ink.plate, ink.soft, 0.6f), 0f, 0.01f)
-            out.circle(gx, gy - 0.014f, 0.01f, if (red) p.red else Colors.alpha(p.red, 0.25f))
-            out.circle(gx, gy + 0.014f, 0.01f, if (!red) p.green else Colors.alpha(p.green, 0.25f))
-            out.glow(gx, if (red) gy - 0.014f else gy + 0.014f, 0.03f, Colors.alpha(if (red) p.red else p.green, 0.5f))
-        }
+        stations(out, t, p, ink, sn)
+        signal(out, t, p, ink, sn)
 
-        // headlight beam on the track ahead of the nose
+        // headlight beam on the track ahead of the nose (it breathes a little)
         LoopTrain.pathAt(A, RC, sn + 0.06f, q)
-        out.glow(q[0], q[1], 0.07f, Colors.alpha(ink.soft, 0.8f))
+        out.glow(q[0], q[1], 0.065f + 0.008f * sin(t * 2.3f), Colors.alpha(ink.soft, 0.8f))
 
-        // carriages, back to front
+        // carriages, back to front: body, then windows (lit ones shimmer between two warm tones)
         for (k in 13 downTo 0) {
             val x0 = LOCO + COUP + k * (CL + COUP)
             band(out, sn - x0 - CL, sn - x0, -BODY, BODY, if (k % 2 == 0) p.body else p.body2, q)
             for (c in 0 until 3) {
-                val xc = windowX(k, c)
+                // one column: both windows share the track geometry
+                val sc = sn - windowX(k, c)
+                LoopTrain.pathAt(A, RC, sc - WA / 2, q)
+                val ax = q[0]; val ay = q[1]; val anx = q[3]; val any = -q[2]
+                LoopTrain.pathAt(A, RC, sc + WA / 2, q)
+                val bx = q[0]; val by = q[1]; val bnx = q[3]; val bny = -q[2]
+                LoopTrain.pathAt(A, RC, sc, q)
+                val cx = q[0]; val cy = q[1]; val nx = q[3]; val ny = -q[2]
+                val rot = if (q[3] == 0f) (if (q[2] > 0f) 0f else 180f) else if (q[2] == 0f) (if (q[3] > 0f) 90f else 270f) else atan2(q[3], q[2]) * 57.29578f
                 for (row in 0 until 2) {
                     val bi = 6 * k + 2 * c + row
                     val on = bits[bi] xor MASK[bi]
                     val off = if (row == 0) RO else -RO
+                    val dx = (bx + bnx * off) - (ax + anx * off); val dy = (by + bny * off) - (ay + any * off)
+                    val len = sqrt(dx * dx + dy * dy)
+                    val wx = cx + nx * off; val wy = cy + ny * off
+                    out.rect(wx, wy, len, WC, if (on) p.lit else ink.plate, rot, 0.003f)
                     if (on) {
-                        val tw = 0.5f + 0.5f * sin(t * 1.3f + bi * 0.7f)
-                        band(out, sn - xc - WA / 2, sn - xc + WA / 2, off - WC / 2, off + WC / 2, Colors.hueShift(p.lit, 12f * tw - 6f), q)
-                    } else {
-                        band(out, sn - xc - WA / 2, sn - xc + WA / 2, off - WC / 2, off + WC / 2, ink.plate, q)
+                        val sh = 0.5f + 0.5f * sin(t * (0.5f + 0.4f * fr(bi * 0.618f)) + bi * 2.1f)
+                        if (sh > 0.1f) out.rect(wx, wy, len, WC, Colors.alpha(p.lit2, 0.7f * sh), rot, 0.003f)
                     }
                 }
             }
         }
-        // tail lamp
+        // tail lamp (it glimmers)
         band(out, sn - TRAIN + 0.003f, sn - TRAIN + 0.015f, -0.01f, 0.01f, p.red, q)
-        // locomotive: body, windscreen (both rows and the strip between), cab lamp
+        LoopTrain.pathAt(A, RC, sn - TRAIN + 0.009f, q)
+        out.glow(q[0], q[1], 0.022f + 0.004f * sin(t * 5f), Colors.alpha(p.red, 0.45f))
+        // locomotive: body with a tapering nose, windscreen (both rows and the strip between), cab lamp
         band(out, sn - LOCO, sn - 0.016f, -BODY, BODY, p.body2, q)
-        // the nose: tapering to the front
         for (i in 0 until 4) band(out, sn - 0.016f + i * 0.004f, sn - 0.012f + i * 0.004f, -BODY + 0.006f * i, BODY - 0.006f * i, p.body2, q)
         band(out, sn - 0.045f, sn - 0.006f, -0.048f, 0.048f, p.lit, q)
         band(out, sn - 0.085f, sn - 0.065f, -0.012f, 0.012f, p.lit, q)
         LoopTrain.pathAt(A, RC, sn - 0.004f, q)
         out.glow(q[0], q[1], 0.03f, Colors.alpha(p.lit, 0.55f))
+        // event: the pantograph sparks now and then (on the loco's outer edge, away from the cue strip)
+        run {
+            val w = 3.4f; val tt = t + 0.9f; val n = floor(tt / w).toInt(); val u = tt / w - n
+            val e = env(u, 0.05f, 0.3f)
+            if (e > 0.01f) {
+                LoopTrain.pathAt(A, RC, sn - 0.075f, q)
+                val bx = q[0] + q[3] * (BODY + 0.006f); val by = q[1] - q[2] * (BODY + 0.006f)
+                out.glow(bx, by, 0.03f * e, Colors.alpha(ink.soft, e))
+                for (i in 0 until 3) {
+                    val d = 6.2832f * hash(n * 3 + i, 71)
+                    val r = 0.01f + 0.02f * smooth(0f, 0.4f, u)
+                    out.line(bx + 0.004f * cos(d), by + 0.004f * sin(d), bx + r * cos(d), by + r * sin(d), 0.0025f, Colors.alpha(p.lit2, e))
+                }
+            }
+        }
 
-        // the departure board
         board(out, t, p, ink, sn)
+    }
+
+    private fun fr(x: Float) = x - floor(x)
+    private fun smooth(e0: Float, e1: Float, x: Float): Float { val k = ((x - e0) / (e1 - e0)).coerceIn(0f, 1f); return k * k * (3 - 2 * k) }
+    private fun env(u: Float, a: Float = 0.18f, b: Float = 0.7f) = smooth(0f, a, u) * (1f - smooth(b, 1f, u))
+    private fun hash(n: Int, salt: Int): Float {
+        var x = n * 374761393 + salt * 668265263
+        x = (x xor (x ushr 13)) * 1274126177
+        x = x xor (x ushr 16)
+        return (x and 0xFFFFFF) / 16777216f
+    }
+
+    /** The city round the line: blocks and streets, a park, a river with ripples, a second line with a ghost train. */
+    private fun map(out: Scene, t: Float, p: Pal, ink: Ink) {
+        val f = Colors.alpha(p.map1, 0.9f)
+        // blocks in the corners (stopping short of the outer rail)
+        for (i in 0 until 8) {
+            val c = i % 4
+            val sx = if (c == 1 || c == 2) 1f else -1f; val sy = if (c >= 2) 1f else -1f
+            val d = 0.455f + 0.025f * (i / 4)
+            val bx = 0.5f + sx * (d + 0.01f * (i / 4)); val by = 0.5f + sy * (d - 0.03f - 0.06f * (i / 4))
+            out.rect(bx, by, 0.05f, 0.035f, f, 0f, 0.006f)
+            out.rect(0.5f + sx * (d - 0.03f - 0.06f * (i / 4)), 0.5f + sy * (d + 0.01f * (i / 4)), 0.035f, 0.05f, f, 0f, 0.006f)
+        }
+        // a park with a pond, top left
+        out.glow(0.08f, 0.1f, 0.13f, Colors.alpha(p.park, 0.95f))
+        // the river: a wide soft band across the bottom-left corner, ripples drifting down it
+        val rv = floatArrayOf(-0.05f, 0.6f, 0.07f, 0.77f, 0.2f, 0.92f, 0.34f, 1.05f)
+        for (i in 0 until 3) out.line(rv[2 * i], rv[2 * i + 1], rv[2 * i + 2], rv[2 * i + 3], 0.06f, Colors.alpha(p.water, 0.95f))
+        for (j in 0 until 4) {
+            val u = fr(t * 0.06f + j * 0.25f)
+            val seg = min(2, (u * 3).toInt())
+            val v = u * 3 - seg
+            val x = rv[2 * seg] + (rv[2 * seg + 2] - rv[2 * seg]) * v; val y = rv[2 * seg + 1] + (rv[2 * seg + 3] - rv[2 * seg + 1]) * v
+            val w = 0.012f * env(u, 0.1f, 0.9f)
+            out.line(x - w, y + w * 0.3f + 0.012f * sin(j * 2f), x + w, y - w * 0.3f + 0.012f * sin(j * 2f), 0.004f, Colors.alpha(ink.soft, 0.6f))
+        }
+        // a second line, dashed, cutting across the map behind everything; its train glides along now and then
+        val gx0 = -0.05f; val gy0 = 0.16f; val gx1 = 1.05f; val gy1 = 0.42f
+        for (i in 0 until 12) {
+            val a0 = i / 12f; val a1 = a0 + 0.055f
+            out.line(gx0 + (gx1 - gx0) * a0, gy0 + (gy1 - gy0) * a0, gx0 + (gx1 - gx0) * a1, gy0 + (gy1 - gy0) * a1, 0.008f, f, false)
+        }
+        val gu = fr(t / 11f)
+        val gk = smooth(0f, 1f, gu)
+        out.rect(gx0 + (gx1 - gx0) * gk, gy0 + (gy1 - gy0) * gk, 0.07f, 0.016f, Colors.alpha(ink.soft, 0.8f * env(gu, 0.05f, 0.95f)), atan2(gy1 - gy0, gx1 - gx0) * 57.29578f, 0.007f)
+    }
+
+    /** Stations at the corners: interchange rings, a few waiting passengers, a chime ring now and then. */
+    private fun stations(out: Scene, t: Float, p: Pal, ink: Ink, sn: Float) {
+        val w = 1.9f; val n = floor(t / w).toInt(); val u = t / w - n
+        val chime = (hash(n, 81) * 4).toInt()
+        for (c in 0 until 4) {
+            val sx = if (c == 1 || c == 2) 1f else -1f
+            val sy = if (c >= 2) 1f else -1f
+            val cx = 0.5f + sx * (A - RC + (RC + 0.081f) * 0.7071f)
+            val cy = 0.5f + sy * (A - RC + (RC + 0.081f) * 0.7071f)
+            if (c == chime) {
+                for (k in 0 until 2) {
+                    val uk = (u - 0.18f * k).coerceIn(0f, 1f)
+                    out.circle(cx, cy, 0.032f + 0.05f * smooth(0f, 1f, uk), Colors.alpha(p.rail, 0.5f * env(uk, 0.1f, 0.4f)), 0.003f)
+                }
+            }
+            out.circle(cx, cy, 0.03f, p.rail)
+            out.circle(cx, cy, 0.021f, p.station)
+            out.circle(cx, cy, 0.009f, ink.plate)
+            // passengers on the platform outside the corner
+            for (k in 0 until 3) {
+                val ph = t * (0.5f + 0.2f * k) + c * 1.7f + k * 2.3f
+                val r = 0.048f + 0.006f * sin(ph * 0.7f)
+                val ang = (0.785f + 0.32f * (k - 1)) 
+                out.circle(cx + sx * r * cos(ang) + 0.003f * sin(ph), cy + sy * r * sin(ang), 0.0045f, Colors.alpha(ink.soft, 0.6f + 0.4f * sin(ph)))
+            }
+        }
+    }
+
+    /** The signal at the top-right corner: red while the train nears, then green, the lamps fading across. */
+    private fun signal(out: Scene, t: Float, p: Pal, ink: Ink, sn: Float) {
+        val gx = 0.94f; val gy = 0.18f
+        val stationS = 2 * (A - RC) + PI.toFloat() / 4 * RC
+        val ahead = ((stationS - sn) % LEN + LEN) % LEN
+        val red = smooth(0.32f, 0.26f, ahead) * (1f - smooth(0.02f, 0f, ahead) * 0f)
+        val green = 1f - red
+        out.rect(gx, gy + 0.05f, 0.006f, 0.07f, ink.soft)
+        out.rect(gx, gy, 0.034f, 0.062f, Colors.mix(ink.plate, ink.soft, 0.6f), 0f, 0.01f)
+        out.circle(gx, gy - 0.014f, 0.01f, Colors.alpha(p.red, 0.25f + 0.75f * red))
+        out.circle(gx, gy + 0.014f, 0.01f, Colors.alpha(p.green, 0.25f + 0.75f * green))
+        out.glow(gx, gy - 0.014f, 0.03f, Colors.alpha(p.red, 0.5f * red))
+        out.glow(gx, gy + 0.014f, 0.03f, Colors.alpha(p.green, 0.5f * green))
     }
 
     /** A strip of the track between arc lengths [s0]..[s1] and offsets [o0]..[o1] (outwards +). */
     private fun band(out: Scene, s0: Float, s1: Float, o0: Float, o1: Float, col: Int, q: FloatArray) {
-        val n = max(1, ((s1 - s0) / 0.012f).roundToInt())
+        val n = max(1, ((s1 - s0) / 0.03f).roundToInt())
         val pts = FloatArray(4 * (n + 1))
         var m = 0
         for (i in 0..n) {
@@ -240,7 +357,12 @@ object LoopTrain : SigilScheme {
             val cx = 0.5f + (i - 1.5f) * 0.085f
             val cy = 0.49f
             out.rect(cx, cy, 0.074f, 0.1f, p.tile, 0f, 0.008f)
-            val flip = since - i * 0.08f
+            var flip = since - i * 0.08f
+            // event: now and then one tile riffles on its own and settles back
+            run {
+                val w = 2.6f; val tt = t + 0.5f; val n = floor(tt / w).toInt(); val u = tt / w - n
+                if ((hash(n, 91) * 4).toInt() == i && u * w < 0.6f && flip !in 0f..0.6f) flip = u * w
+            }
             var ch = name[i]
             var squash = 1f
             if (flip in 0f..0.6f) {
@@ -252,8 +374,12 @@ object LoopTrain : SigilScheme {
             out.line(cx - 0.037f, cy, cx + 0.037f, cy, 0.003f, Colors.mix(p.tile, ink.plate, 0.6f), false)
         }
         // minutes to the next stop
-        val mins = max(1, ((quarter - rel % quarter) / SPEED / 10f).toInt() + 1)
-        glyphs(out, "$mins MIN", 0.5f, 0.615f, 0.0085f, Colors.alpha(p.letter, 0.8f))
+        val left = (quarter - rel % quarter) / SPEED / 10f
+        val mins = max(1, left.toInt() + 1)
+        // the number flaps over when it changes
+        val edge = min(left - floor(left), 1f - (left - floor(left)))
+        val sq = if (edge < 0.025f) abs(cos(edge / 0.025f * PI.toFloat() / 2f + PI.toFloat() / 2f)) else 1f
+        glyphs(out, "$mins MIN", 0.5f, 0.615f, 0.0085f, Colors.alpha(p.letter, 0.8f), max(0.15f, if (edge < 0.025f) 1f - sq else 1f))
         // a progress dot running along under the board
         val fr = (rel % quarter) / quarter
         out.line(0.37f, 0.665f, 0.63f, 0.665f, 0.004f, ink.soft)
@@ -264,7 +390,9 @@ object LoopTrain : SigilScheme {
     private fun glyphs(out: Scene, s: String, x: Float, y: Float, px: Float, col: Int, sy: Float = 1f) {
         val w = s.length * 4 - 1
         for ((i, ch) in s.withIndex()) {
-            val g = FONT[ch] ?: continue
+            val code = ch.code
+            val g = if (code < 128) FONT[code] else 0
+            if (g == 0) continue
             for (r in 0 until 5) for (c in 0 until 3) {
                 if ((g shr (14 - (r * 3 + c))) and 1 == 0) continue
                 val gx = x + (i * 4 + c - (w - 1) / 2f) * px
@@ -274,15 +402,15 @@ object LoopTrain : SigilScheme {
         }
     }
 
-    private val FONT: Map<Char, Int> = mapOf(
-        'A' to 0b010_101_111_101_101, 'B' to 0b110_101_110_101_110, 'C' to 0b011_100_100_100_011, 'D' to 0b110_101_101_101_110,
+    private val FONT: IntArray = IntArray(128).also { f ->
+        for ((c, g) in listOf('A' to 0b010_101_111_101_101, 'B' to 0b110_101_110_101_110, 'C' to 0b011_100_100_100_011, 'D' to 0b110_101_101_101_110,
         'E' to 0b111_100_110_100_111, 'H' to 0b101_101_111_101_101, 'I' to 0b111_010_010_010_111, 'M' to 0b101_111_111_101_101,
         'N' to 0b110_101_101_101_101, 'O' to 0b111_101_101_101_111, 'P' to 0b110_101_110_100_100, 'R' to 0b110_101_110_101_101,
         'T' to 0b111_010_010_010_010, 'U' to 0b101_101_101_101_111, 'X' to 0b101_101_010_101_101, 'Y' to 0b101_101_010_010_010,
         '0' to 0b111_101_101_101_111, '1' to 0b010_110_010_010_111, '2' to 0b110_001_010_100_111, '3' to 0b110_001_010_001_110,
         '4' to 0b101_101_111_001_001, '5' to 0b111_100_110_001_110, '6' to 0b011_100_111_101_111, '7' to 0b111_001_010_010_010,
-        '8' to 0b111_101_111_101_111, '9' to 0b111_101_111_001_110,
-    )
+        '8' to 0b111_101_111_101_111, '9' to 0b111_101_111_001_110)) f[c.code] = g
+    }
 
     override fun reader(): SchemeReader = TrainReader()
 }

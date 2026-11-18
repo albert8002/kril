@@ -99,6 +99,7 @@ object Kapow : SigilScheme {
     private fun hash(i: Int): Float { var x = i * 0x27d4eb2d + 0x165667b1; x = x xor (x ushr 15); x *= 0x2c1b3c6d; x = x xor (x ushr 12); return (x and 0xFFFF) / 65535f }
 
     private const val DEG = PI.toFloat() / 180f
+    private const val TAU = 6.2831855f
 
     /** Glyph strokes (polylines in a 1 × 1 box, y down), NaN separates strokes. */
     private val GLYPHS: Map<Char, FloatArray> = run {
@@ -137,62 +138,167 @@ object Kapow : SigilScheme {
         }
     }
 
-    override fun draw(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
+    private fun ease(x: Float): Float { val c = x.coerceIn(0f, 1f); return c * c * (3 - 2 * c) }
+    private fun easeOut(x: Float): Float { val c = 1f - x.coerceIn(0f, 1f); return 1f - c * c * c }
+    private fun easeIn(x: Float): Float { val c = x.coerceIn(0f, 1f); return c * c * c }
+    /** Ease-out with an overshoot (a comic "pop"). */
+    private fun popOut(x: Float): Float { val c = x.coerceIn(0f, 1f) - 1f; return 1f + c * c * (3.2f * c + 2.2f) }
+
+    /** The look's colours for one ink (worked out once per palette, not per frame). */
+    private class Look(ink: Ink) {
         val p = ink.plate; val main = ink.main; val alt = ink.alt
         val dark = ink.dark
         // the pop colour: three quarters of the way from the plate to the ink (ink side), hue from the look
-        val fillBase = Colors.mix(p, alt, 0.76f)
-        val fill = tint(fillBase, if (dark) 46f else 356f, 0.95f)
+        val fill = tint(Colors.mix(p, alt, 0.76f), if (dark) 46f else 356f, 0.95f)
         val core = tint(Colors.mix(p, main, 0.1f), if (dark) 350f else 50f, 0.9f)
+        val core2 = tint(Colors.mix(p, main, 0.1f), if (dark) 20f else 35f, 0.9f)
         val flash = if (dark) Colors.mix(p, BLACK, 0.4f) else Colors.mix(p, WHITE, 0.9f)
         val dotC = tint(Colors.mix(p, main, 0.2f), 192f, 0.75f)
         val dotC2 = tint(Colors.mix(p, main, 0.16f), 330f, 0.6f)
+        val paper = tint(Colors.mix(p, main, 0.035f), 48f, 0.25f)
+        val misC = Colors.alpha(tint(Colors.mix(p, main, 0.2f), 190f, 0.9f), 0.85f)
+        val misM = Colors.alpha(tint(Colors.mix(p, main, 0.16f), 320f, 0.8f), 0.85f)
+        val scrapW = if (dark) Colors.mix(p, WHITE, 0.15f) else WHITE
+        val scrapInk = if (dark) p else WHITE
+        val puff = if (dark) Colors.mix(p, WHITE, 0.12f) else Colors.mix(p, WHITE, 0.6f)
+        val shade = Colors.alpha(BLACK, 0.25f)
+    }
 
+    private var lookKey = 0L
+    private var lookCache: Look? = null
+    private fun look(ink: Ink): Look {
+        val k = (ink.plate.toLong() shl 32) xor (ink.main.toLong() and 0xFFFFFFFFL) xor (ink.alt.toLong() * 31)
+        val c = lookCache
+        if (c != null && k == lookKey) return c
+        val n = Look(ink); lookCache = n; lookKey = k
+        return n
+    }
+
+    /** A puff cloud of a few overlapping circles (paper with an ink rim). */
+    private fun puff(out: Scene, lk: Look, x: Float, y: Float, r: Float, seed: Int) {
+        for (pass in 0..1) for (k in 0 until 5) {
+            val a = (k * 72f + 40f * hash(seed + k)) * DEG
+            val d = r * 0.55f
+            val rr = r * (0.5f + 0.18f * hash(seed * 3 + k))
+            if (pass == 0) out.circle(x + d * cos(a), y + d * sin(a), rr + r * 0.06f, lk.main)
+            else out.circle(x + d * cos(a), y + d * sin(a), rr, lk.puff)
+        }
+        out.circle(x, y, r * 0.62f, lk.puff)
+    }
+
+    override fun draw(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
+        val lk = look(ink)
+        val main = lk.main
         val shape = (floor(t / HOLD).toInt() % SHAPES + SHAPES) % SHAPES
         val tau = t - floor(t / HOLD) * HOLD          // time since this shape landed
         val tip = tips(bits, shape)
+        val boil = floor(t * 8f).toInt()             // hand-drawn line boil, 8 drawings a second
 
-        // panel: halftone corners, impact lines, slanted border
-        val step = 0.045f
+        // ---- newsprint: tinted paper, drifting halftone in the corners, impact lines, a slanted panel border
+        out.rect(0.5f, 0.5f, 1f, 1f, lk.paper)
+        val step = 0.062f
+        val ox = (t * 0.008f) % step; val oy = (t * 0.005f) % (step * 0.87f)
         var gy = -1
-        while (gy <= 23) {
+        while (gy <= 17) {
             var gx = -1
-            while (gx <= 23) {
-                val x = gx * step + (if (gy % 2 == 0) 0f else step / 2); val y = gy * step * 0.87f
+            while (gx <= 17) {
+                val x = gx * step + (if (gy % 2 == 0) 0f else step / 2) + ox; val y = gy * step * 0.87f + oy
                 val dx = x - 0.5f; val dy = y - 0.5f
                 val r = sqrt(dx * dx + dy * dy)
-                if (r > 0.46f) {
-                    val rr = min(0.019f, (r - 0.44f) * 0.08f + 0.004f) * (0.9f + 0.1f * sin(t * 3f + r * 20f))
-                    out.circle(x, y, rr, if ((gx + gy) % 5 == 0) dotC2 else dotC)
+                if (r > 0.47f) {
+                    val rr = min(0.024f, (r - 0.45f) * 0.1f + 0.004f) * (0.82f + 0.18f * sin(t * 2.2f - r * 18f + gx * 0.4f))
+                    out.circle(x, y, rr, if ((gx + gy) % 5 == 0) lk.dotC2 else lk.dotC)
                 }
                 gx++
             }
             gy++
         }
-        val lines = 20
-        for (i in 0 until lines) {
-            val a = (i * 360f / lines + 7f * hash(i) + t * 4f) * DEG
-            val r0 = 0.47f + 0.05f * ((t * 1.3f + hash(i * 3)) % 1f)
-            val r1 = 0.78f
-            val w = 0.012f + 0.01f * hash(i * 7)
+        // impact lines: slide outward, jolt inward when a shape lands, boil
+        val jolt = 0.03f * exp(-tau / 0.09f)
+        for (i in 0 until 18) {
+            val a = (i * 20f + 7f * hash(i) + t * 3f + 1.2f * (hash(i * 13 + boil) - 0.5f)) * DEG
+            val r0 = 0.47f + 0.06f * ((t * (1.1f + 0.5f * hash(i * 5)) + hash(i * 3)) % 1f) - jolt
+            val w = 0.011f + 0.009f * hash(i * 7)
             val ca = cos(a); val sa = sin(a); val nx = -sa; val ny = ca
-            out.poly(floatArrayOf(0.5f + ca * r0, 0.5f + sa * r0, 0.5f + ca * r1 + nx * w, 0.5f + sa * r1 + ny * w, 0.5f + ca * r1 - nx * w, 0.5f + sa * r1 - ny * w), main)
+            out.poly(floatArrayOf(0.5f + ca * r0, 0.5f + sa * r0, 0.5f + ca * 0.8f + nx * w, 0.5f + sa * 0.8f + ny * w, 0.5f + ca * 0.8f - nx * w, 0.5f + sa * 0.8f - ny * w), main)
         }
-        out.poly(floatArrayOf(0.022f, 0.045f, 0.975f, 0.018f, 0.965f, 0.972f, 0.035f, 0.985f), main, 0.014f)
+        val bj = FloatArray(8) { 0.003f * (hash(boil * 17 + it) - 0.5f) }
+        out.poly(floatArrayOf(0.022f + bj[0], 0.045f + bj[1], 0.975f + bj[2], 0.018f + bj[3], 0.965f + bj[4], 0.972f + bj[5], 0.035f + bj[6], 0.985f + bj[7]), main, 0.014f)
 
-        // the burst's frame: throb, wobble, squash, and a pop when a new shape lands
-        val pop = 0.075f * exp(-tau / 0.07f)
-        val sc = 1f + 0.02f * sin(t * 2.1f * 2 * PI.toFloat()) + pop
-        val turn = (3.5f * sin(t * 0.7f * 2 * PI.toFloat()) + floatArrayOf(0f, 7f, -6f)[shape] - 14f * exp(-tau / 0.09f)) * DEG
-        val sq = 1f + 0.03f * sin(t * 2.1f * 2 * PI.toFloat() + 1.2f)
+        // ---- flying shards: little debris kicked off the burst, each on its own clock
+        for (i in 0 until 7) {
+            val per = 1.3f + 0.9f * hash(i * 3 + 1)
+            val ph = (t / per + hash(i * 5 + 2)) % 1f
+            val cyc = floor(t / per + hash(i * 5 + 2)).toInt()
+            val a = TAU * hash(i * 7 + cyc * 13)
+            val r = 0.46f + 0.2f * easeOut(ph)
+            val x = 0.5f + r * cos(a); val y = 0.5f + r * sin(a)
+            val s = 0.016f * (1f - ph) * (0.6f + 0.6f * hash(i + cyc))
+            val rot = a + ph * 7f
+            if (s < 0.002f) continue
+            out.poly(floatArrayOf(x + s * cos(rot), y + s * sin(rot), x + s * 0.7f * cos(rot + 2.3f), y + s * 0.7f * sin(rot + 2.3f), x + s * 0.5f * cos(rot + 4.1f), y + s * 0.5f * sin(rot + 4.1f)),
+                if (i % 2 == 0) main else lk.fill)
+        }
+
+        // ---- little events: a "!" pops out, a puff of smoke, a twinkle, zip lines
+        val ev = 1.15f
+        val e0 = floor(t / ev).toInt()
+        for (back in 0..1) {
+            val e = e0 - back
+            val age = t - e * ev - 0.3f * hash(e * 3 + 1)
+            if (age < 0f || age > 1.6f) continue
+            val inS = popOut(age / 0.25f); val outS = 1f - easeIn((age - 1.25f) / 0.35f)
+            val s = inS * outS
+            if (s <= 0.01f) continue
+            val a = TAU * hash(e * 11 + 5)
+            val r = 0.5f + 0.06f * hash(e * 7 + 2)
+            val x = 0.5f + r * cos(a); val y = 0.5f + r * sin(a)
+            when ((hash(e * 19 + 4) * 4f).toInt()) {
+                0 -> { // "!" on a puff
+                    puff(out, lk, x, y, 0.04f * s, e)
+                    out.line(x, y - 0.024f * s, x, y + 0.006f * s, 0.011f * s, main)
+                    out.circle(x, y + 0.019f * s, 0.006f * s, main)
+                }
+                1 -> { // a puff drifting and growing
+                    val g = 1f + 0.5f * easeOut(age / 1.6f)
+                    puff(out, lk, x + 0.02f * age * cos(a), y + 0.02f * age * sin(a), 0.035f * s * g, e)
+                }
+                2 -> { // a twinkle star
+                    val pts = FloatArray(16)
+                    for (q in 0 until 8) { val rr = if (q % 2 == 0) 0.032f * s else 0.008f * s; val aa = q * PI.toFloat() / 4 + age * 2f; pts[2 * q] = x + rr * cos(aa); pts[2 * q + 1] = y + rr * sin(aa) }
+                    out.poly(pts, lk.fill); out.poly(pts, main, 0.004f * s)
+                }
+                else -> { // zip lines
+                    val nx = -sin(a); val ny = cos(a)
+                    for (q in -1..1) {
+                        val l = 0.05f * s
+                        val bx = x + nx * q * 0.016f; val by = y + ny * q * 0.016f
+                        out.line(bx - cos(a) * l * (1f - 0.3f * q * q), by - sin(a) * l * (1f - 0.3f * q * q), bx + cos(a) * l * 0.4f, by + sin(a) * l * 0.4f, 0.006f, main)
+                    }
+                }
+            }
+        }
+
+        // ---- the burst's frame: throb, breathe, wobble, squash; it winds up before each new shape and lands with a kick
+        val wind = easeIn((tau - (HOLD - 0.09f)) / 0.09f)
+        val kick = exp(-tau / 0.075f)
+        val sc = 1f + 0.02f * sin(t * 2.1f * TAU) + 0.012f * sin(t * 0.27f * TAU) - 0.06f * wind + 0.07f * kick * cos(tau * 28f)
+        val turn = (3.5f * sin(t * 0.7f * TAU) + 2f * sin(t * 0.11f * TAU + 1f) + floatArrayOf(0f, 7f, -6f)[shape] + 5f * wind - 12f * exp(-tau / 0.1f)) * DEG
+        val sq = 1f + 0.03f * sin(t * 2.1f * TAU + 1.2f) + 0.05f * kick
         val ct = cos(turn); val st = sin(turn)
         val ax = sc * sq; val ay = sc / sq
         fun bx(u: Float, v: Float) = 0.5f + (u * ax) * ct - (v * ay) * st
         fun by(u: Float, v: Float) = 0.5f + (u * ax) * st + (v * ay) * ct
 
-        // burst outline polygon
-        val pts = ArrayList<Float>(200)
-        fun add(r: Float, deg: Float) { val a = deg * DEG; val u = r * cos(a); val v = r * sin(a); pts.add(bx(u, v)); pts.add(by(u, v)) }
+        // a shockwave ring as the shape lands
+        if (tau < 0.32f) {
+            val k = easeOut(tau / 0.32f)
+            out.circle(0.5f, 0.5f, 0.44f + 0.2f * k, Colors.alpha(main, 1f - k), 0.012f * (1f - k) + 0.002f)
+        }
+
+        // burst outline polygon (with a misregistered print ghost behind it)
+        val pts = FloatArray(4 * SLOTS * 2); var np = 0
+        fun add(r: Float, deg: Float) { val a = deg * DEG; val u = r * cos(a); val v = r * sin(a); pts[np++] = bx(u, v); pts[np++] = by(u, v) }
         for (k in 0 until SLOTS) {
             val th = k * PITCH
             val rv = RV * (1f + 0.035f * (hash(k * 5 + 1) - 0.5f))
@@ -200,46 +306,57 @@ object Kapow : SigilScheme {
             if (tip[k] > 0f) add(tip[k], th + 1.2f * (hash(k * 9 + 2) - 0.5f))
             else { add(RV, th - PITCH / 4); add(RV, th); add(RV, th + PITCH / 4) }
         }
-        val poly = pts.toFloatArray()
-        out.poly(poly, fill)
+        val poly = pts.copyOf(np)
+        val ma = t * 0.6f
+        val mis = FloatArray(poly.size) { poly[it] + if (it % 2 == 0) 0.0045f * cos(ma) else 0.0045f * sin(ma) }
+        out.poly(mis, lk.misC, OUTLINE * 0.7f)
+        out.poly(poly, lk.fill)
         out.poly(poly, main, OUTLINE)
-        // Ben-Day dots on the body ring (ink on ink)
+        // Ben-Day dots on the body ring (ink on ink), swelling in a wave
         for (ring in 0 until 2) {
             val r = 0.145f + ring * 0.033f
             val n = 18 + ring * 6
             for (i in 0 until n) {
                 val a = (i + 0.5f * ring) * 360f / n
                 val u = r * cos(a * DEG); val v = r * sin(a * DEG)
-                out.circle(bx(u, v), by(u, v), 0.0085f * sc, main)
+                out.circle(bx(u, v), by(u, v), (0.0075f + 0.0022f * sin(t * 3.1f - a * DEG * 2f + ring)) * sc, main)
             }
         }
-        // the core: flash yellow, a turning white star, speed sparks
-        out.oval(0.5f, 0.5f, RC * ax, RC * ay, core, turn / DEG)
+        // the core: flash yellow (one even tone right up to its edge: the reader measures it), two counter-turning stars
+        out.oval(0.5f, 0.5f, RC * ax, RC * ay, lk.core, turn / DEG)
         val spin = t * 40f
         val star = FloatArray(32)
         for (i in 0 until 16) {
-            val r = if (i % 2 == 0) 0.088f else 0.045f
+            val r = (if (i % 2 == 0) 0.086f else 0.045f) * (1f + 0.06f * sin(t * 4.3f))
             val a = (spin + i * 22.5f) * DEG
             star[2 * i] = bx(r * cos(a), r * sin(a)); star[2 * i + 1] = by(r * cos(a), r * sin(a))
         }
-        out.poly(star, flash)
-        out.oval(0.5f, 0.5f, 0.03f * ax, 0.03f * ay, core, turn / DEG)
+        out.poly(star, lk.flash)
+        val star2 = FloatArray(16)
+        for (i in 0 until 8) {
+            val r = if (i % 2 == 0) 0.05f else 0.02f
+            val a = (-spin * 1.6f + i * 45f) * DEG
+            star2[2 * i] = bx(r * cos(a), r * sin(a)); star2[2 * i + 1] = by(r * cos(a), r * sin(a))
+        }
+        out.poly(star2, lk.core2)
+        out.oval(0.5f, 0.5f, 0.024f * ax, 0.024f * ay, lk.core, turn / DEG)
 
-        // ransom-note word for this shape, popping in at its corner
+        // ---- the ransom-note word for this shape pops in at its corner and shrinks away before the next
         val word = arrayOf("ZAP!", "POW!", "BAM!")[shape]
         val corner = floatArrayOf(225f, 45f, 315f)[shape]
-        val grow = min(1f, tau / 0.12f)
-        val wsize = 0.088f * (0.6f + 0.4f * grow + 0.18f * sin(min(1f, tau / 0.25f) * PI.toFloat()))
-        val scraps = intArrayOf(main, fill, if (dark) Colors.mix(p, WHITE, 0.15f) else WHITE, core)
-        val inks = intArrayOf(if (dark) p else WHITE, main, main, main)
-        val dxw = cos(corner * DEG); val dyw = sin(corner * DEG)
-        for ((i, ch) in word.withIndex()) {
-            val along = (i - 1.5f) * 0.078f * (if (-dyw < 0f) -1f else 1f)
-            val r = 0.5f + 0.01f * sin(t * 6f + i)
-            val x = 0.5f + dxw * r - dyw * along; val y = 0.5f + dyw * r + dxw * along
-            val tw = (hash(i * 11 + shape * 3) - 0.5f) * 36f + 4f * sin(t * 5f + i)
-            val k = (i + shape) % 4
-            letter(out, ch, x, y, wsize, tw, scraps[k], inks[k], main)
+        val wsize = 0.088f * popOut(tau / 0.22f) * (1f - easeIn((tau - (HOLD - 0.12f)) / 0.12f))
+        if (wsize > 0.004f) {
+            val scraps = intArrayOf(main, lk.fill, lk.scrapW, lk.core)
+            val inks = intArrayOf(lk.scrapInk, main, main, main)
+            val dxw = cos(corner * DEG); val dyw = sin(corner * DEG)
+            for ((i, ch) in word.withIndex()) {
+                val along = (i - 1.5f) * 0.078f * (if (-dyw < 0f) -1f else 1f)
+                val r = 0.5f + 0.01f * sin(t * 6f + i)
+                val x = 0.5f + dxw * r - dyw * along; val y = 0.5f + dyw * r + dxw * along
+                val tw = (hash(i * 11 + shape * 3) - 0.5f) * 36f + 4f * sin(t * 5f + i) + 6f * (hash(boil * 3 + i) - 0.5f)
+                val k = (i + shape) % 4
+                letter(out, ch, x, y, wsize * (1f + 0.05f * sin(t * 7f + i * 1.7f)), tw, scraps[k], inks[k], main)
+            }
         }
     }
 
@@ -471,11 +588,15 @@ object Kapow : SigilScheme {
             for (j in 0 until SLOTS) { val s = base[j] + base[(j + 1) % SLOTS]; if (s < best) { best = s; d0 = j } }
             var g = -1; var gb = Float.MAX_VALUE
             for (j in 0 until SLOTS) if (j != d0 && j != (d0 + 1) % SLOTS && base[j] < gb) { gb = base[j]; g = j }
-            val gapT = 0.42f * medB
+            // relative to the gaps' own level (the paper reference can sit a little off under glare or gamma)
+            val low = sb[0]
+            val spread = medB - low
+            if (spread < 0.3f) { dbg { "gaps flat" }; return -1 }
+            val gapT = low + 0.42f * spread
             if (base[d0] > gapT || base[(d0 + 1) % SLOTS] > gapT || gb > gapT) { dbg { "gaps unclear" }; return -1 }
             var others = Float.MAX_VALUE
             for (j in 0 until SLOTS) if (j != d0 && j != (d0 + 1) % SLOTS && j != g) others = min(others, base[j])
-            if (others < 0.6f * medB) { dbg { "extra gap" }; return -1 }
+            if (others < low + 0.62f * spread) { dbg { "extra gap" }; return -1 }
             val off = ((g - d0) % SLOTS + SLOTS) % SLOTS
             val shape: Int; val mir: Boolean
             when (off) {

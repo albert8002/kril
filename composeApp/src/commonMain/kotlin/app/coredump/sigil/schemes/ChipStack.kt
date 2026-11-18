@@ -83,6 +83,7 @@ object ChipStack : SigilScheme {
         val goldDeep = tone(33f, 0.85f, lv(0.52f))
         val goldHi = tone(48f, 0.35f, lv(1.0f))
         val bulb = tone(52f, 0.18f, lv(1.0f))
+        val goldFelt = tone(43f, 0.6f, lv(0.24f))   // gold printed on the felt: decoration only
         val body = arrayOf(
             tone(42f, 0.10f, lv(1.0f)), tone(44f, 0.62f, lv(0.84f)), tone(352f, 0.20f, lv(0.97f)), tone(40f, 0.12f, lv(1.0f)),
             tone(160f, 0.16f, lv(0.95f)), tone(44f, 0.62f, lv(0.84f)), tone(42f, 0.10f, lv(1.0f)),
@@ -108,39 +109,119 @@ object ChipStack : SigilScheme {
     private fun smooth(e0: Float, e1: Float, x: Float): Float { val k = ((x - e0) / (e1 - e0)).coerceIn(0f, 1f); return k * k * (3 - 2 * k) }
     private fun rad(d: Float) = d * (PI.toFloat() / 180f)
 
+    /** A stable pseudo-random number in [0, 1) for (n, salt): events are seeded by time windows, never by state. */
+    private fun hash(n: Int, salt: Int): Float {
+        var x = n * 374761393 + salt * 668265263
+        x = (x xor (x ushr 13)) * 1274126177
+        x = x xor (x ushr 16)
+        return (x and 0xFFFFFF) / 16777216f
+    }
+
+    /** In over [a], out after [b] (u in 0..1): an eased envelope for little events. */
+    private fun env(u: Float, a: Float = 0.18f, b: Float = 0.7f) = smooth(0f, a, u) * (1f - smooth(b, 1f, u))
+
+    /** A card suit (0 ♠, 1 ♥, 2 ♦, 3 ♣) of size [s] centred on (x, y). */
+    private fun suit(out: Scene, k: Int, x: Float, y: Float, s: Float, col: Int) {
+        when (k and 3) {
+            0 -> { out.poly(floatArrayOf(x, y - s, x + s, y + 0.15f * s, x - s, y + 0.15f * s), col); out.circle(x - 0.5f * s, y + 0.15f * s, 0.5f * s, col); out.circle(x + 0.5f * s, y + 0.15f * s, 0.5f * s, col); out.poly(floatArrayOf(x, y + 0.2f * s, x + 0.35f * s, y + s, x - 0.35f * s, y + s), col) }
+            1 -> { out.circle(x - 0.5f * s, y - 0.3f * s, 0.52f * s, col); out.circle(x + 0.5f * s, y - 0.3f * s, 0.52f * s, col); out.poly(floatArrayOf(x - s, y - 0.15f * s, x + s, y - 0.15f * s, x, y + s), col) }
+            2 -> out.poly(floatArrayOf(x, y - s, x + 0.7f * s, y, x, y + s, x - 0.7f * s, y), col)
+            else -> { out.circle(x, y - 0.45f * s, 0.42f * s, col); out.circle(x - 0.45f * s, y + 0.1f * s, 0.42f * s, col); out.circle(x + 0.45f * s, y + 0.1f * s, 0.42f * s, col); out.poly(floatArrayOf(x, y, x + 0.3f * s, y + s, x - 0.3f * s, y + s), col) }
+        }
+    }
+
     override fun draw(bits: BooleanArray, t: Float, ink: Ink, out: Scene) {
         val p = pal(ink)
         val dark = ink.dark
-        // felt: a soft pool of light behind the stack
-        out.glow(0.5f, 0.47f, 0.58f, Colors.alpha(ink.soft, 0.7f))
-
+        // ---- the felt: vignette, a pool of light, a wandering spotlight, fibres catching it, a printed betting line
+        val vin = if (dark) Colors.mix(ink.plate, 0xFF000000.toInt(), 0.5f) else ink.faint
+        for (c in 0 until 4) out.glow(if (c % 2 == 0) 0f else 1f, if (c < 2) 0f else 1f, 0.5f, Colors.alpha(vin, 0.9f))
+        out.glow(0.5f, 0.47f, 0.58f, Colors.alpha(ink.soft, 0.6f))
+        val spx = 0.5f + 0.24f * sin(t * 0.37f) ; val spy = 0.45f + 0.16f * sin(t * 0.23f + 1.1f)
+        out.glow(spx, spy, 0.36f, Colors.alpha(ink.soft, 0.55f))
+        for (i in 0 until 36) {
+            val fx = 0.06f + 0.88f * hash(i, 11); val fy = 0.06f + 0.88f * hash(i, 12)
+            val d = (fx - spx) * (fx - spx) + (fy - spy) * (fy - spy)
+            val lit = 0.25f + 0.75f * smooth(0.09f, 0f, d) * (0.6f + 0.4f * sin(t * (1.1f + hash(i, 13)) + i))
+            out.circle(fx, fy, 0.0032f, Colors.alpha(ink.soft, lit))
+        }
+        val betY = BY + 0.012f
+        out.oval(CX, betY, 0.37f, 0.098f, Colors.alpha(p.goldFelt, 0.9f), 0f, 0.0045f)
+        for (j in 0 until 2) {   // two gleams running round the printed line
+            val ph = t * (0.31f + 0.07f * j) + j * 3.1f
+            out.glow(CX + 0.37f * cos(ph), betY + 0.098f * sin(ph), 0.035f, Colors.alpha(p.goldFelt, 0.9f))
+        }
+        // dust motes rising through the light (behind the stack)
+        for (i in 0 until 14) {
+            val per = 7f + 5f * hash(i, 21)
+            val u = ((t + per * hash(i, 22)) / per) % 1f
+            val x = 0.1f + 0.8f * hash(i, 23) + 0.025f * sin(t * (0.8f + hash(i, 24)) + i)
+            val y = 0.92f - 0.84f * u
+            val near = smooth(0.12f, 0f, (x - spx) * (x - spx) + (y - spy) * (y - spy))
+            out.circle(x, y, 0.0035f + 0.002f * near, Colors.alpha(ink.soft, env(u) * (0.35f + 0.65f * near)))
+        }
         // jackpot coins drifting down behind the stack (faint)
-        for (i in 0 until 7) {
-            val ph = ((t * 0.075f + i * 0.143f) % 1f)
+        for (i in 0 until 5) {
+            val ph = ((t * 0.07f + i * 0.2f) % 1f)
             val x = 0.13f + ((i * 0.377f) % 1f) * 0.74f + 0.02f * sin(t * 1.3f + i)
             val y = 0.11f + ph * 0.8f
             val spin = cos(t * 2.4f + i * 1.7f)
-            val a = smooth(0f, 0.12f, ph) * (1f - smooth(0.85f, 1f, ph))
-            out.oval(x, y, 0.022f * max(0.12f, abs(spin)), 0.022f, Colors.alpha(ink.faint, a))
+            out.oval(x, y, 0.022f * max(0.12f, abs(spin)), 0.022f, Colors.alpha(ink.faint, env(ph, 0.12f, 0.85f)))
+        }
+        // events on the felt: a coin tossed and spinning down; a card suit drifting up
+        run {
+            val w = 2.4f; val tt = t + 0.7f; val n = floor(tt / w).toInt(); val u = tt / w - n
+            val side = if (hash(n, 31) < 0.5f) -1f else 1f
+            val x0 = CX + side * (0.33f + 0.03f * hash(n, 32))
+            val y0 = 0.32f + 0.36f * hash(n, 33)
+            val k = smooth(0f, 0.85f, u)
+            val x = x0 - side * 0.02f * k
+            val y = y0 - 0.16f * 4f * k * (1f - k)
+            val sp = cos(u * 23f)
+            val col = Colors.alpha(p.goldFelt, env(u, 0.12f, 0.75f))
+            out.glow(x, y0 + 0.02f, 0.03f * k, Colors.alpha(ink.soft, 0.5f * env(u)))
+            out.oval(x, y, 0.017f * max(0.15f, abs(sp)), 0.017f, col)
+        }
+        run {
+            val w = 3.3f; val tt = t + 1.9f; val n = floor(tt / w).toInt(); val u = tt / w - n
+            val c = (hash(n, 41) * 4).toInt()
+            val x = if (c % 2 == 0) 0.17f + 0.03f * hash(n, 42) else 0.83f - 0.03f * hash(n, 42)
+            val y = (if (c < 2) 0.25f else 0.84f) - 0.07f * smooth(0f, 1f, u)
+            suit(out, (hash(n, 43) * 4).toInt(), x, y, 0.016f * (0.8f + 0.2f * smooth(0f, 0.3f, u)), Colors.alpha(ink.soft, env(u, 0.2f, 0.6f)))
         }
 
-        // marquee band and its chasing bulbs
+        // ---- the marquee: gold band, a gleam running round it, bulbs in a smooth chasing wave (and a jackpot surge)
         val a = FO - FB / 2
-        out.rect(0.5f, 0.5f, 2 * a, 2 * a, p.gold, 0f, FRO - FB / 2, FB)
-        out.rect(0.5f, 0.5f, 2 * a, 2 * a, Colors.alpha(p.goldHi, 0.55f), 0f, FRO - FB / 2, 0.006f)
+        val rc = FRO - FB / 2
+        out.rect(0.5f, 0.5f, 2 * a, 2 * a, p.gold, 0f, rc, FB)
+        out.rect(0.5f, 0.5f, 2 * a, 2 * a, Colors.alpha(p.goldHi, 0.55f), 0f, rc, 0.006f)
+        val per = squareLen(a, rc)
+        run {
+            val g = squareAt(a, rc, per * ((t * 0.11f) % 1f))
+            out.glow(g[0], g[1], 0.03f, Colors.alpha(p.goldHi, 0.8f))
+        }
         val nb = 48
-        val per = squareLen(a, FRO - FB / 2)
-        val step = floor(t * 9f).toInt()
-        val flash = (t % 6f) > 5.2f
+        val surgeT = (t + 2.2f) % 7.3f
+        val surge = smooth(0f, 0.25f, surgeT) * (1f - smooth(0.6f, 1.1f, surgeT))
+        val flare = run {
+            val w = 1.6f; val n = floor(t / w).toInt(); val u = t / w - n
+            floatArrayOf((hash(n, 51) * nb).toInt().toFloat(), env(u, 0.15f, 0.55f))
+        }
         for (i in 0 until nb) {
-            val q = squareAt(a, FRO - FB / 2, per * i / nb)
-            val lit = flash && ((t * 8f).toInt() % 2 == 0) || (!flash && (i + step) % 3 == 0)
-            if (lit) {
-                out.glow(q[0], q[1], 0.021f, Colors.alpha(p.bulb, 0.85f))
-                out.circle(q[0], q[1], 0.0105f, p.bulb)
-            } else {
-                out.circle(q[0], q[1], 0.0095f, p.goldDeep)
-                out.circle(q[0] - 0.003f, q[1] - 0.003f, 0.003f, Colors.alpha(p.gold, 0.9f))
+            val q = BULBS[i]
+            val wv = 0.5f + 0.5f * fcos(360f * (i / 6f - t * 0.85f))
+            var lv = wv * wv * wv
+            lv = lv + (1f - lv) * surge * (0.6f + 0.4f * sin(t * 9f + i * 0.5f))
+            out.circle(q[0], q[1], 0.0095f, p.goldDeep)
+            out.circle(q[0] - 0.003f, q[1] - 0.003f, 0.003f, Colors.alpha(p.gold, 0.9f))
+            if (lv > 0.04f) out.circle(q[0], q[1], 0.0105f, Colors.alpha(p.bulb, lv))
+            if (lv > 0.45f) out.glow(q[0], q[1], 0.021f, Colors.alpha(p.bulb, 0.85f * lv))
+            if (i == flare[0].toInt() && flare[1] > 0.01f) {
+                val f = flare[1]
+                out.glow(q[0], q[1], 0.03f, Colors.alpha(p.goldHi, 0.8f * f))
+                val l = 0.034f * f
+                out.line(q[0] - l, q[1], q[0] + l, q[1], 0.003f, Colors.alpha(p.goldHi, f))
+                out.line(q[0], q[1] - l, q[0], q[1] + l, 0.003f, Colors.alpha(p.goldHi, f))
             }
         }
 
@@ -172,8 +253,8 @@ object ChipStack : SigilScheme {
             val bc = p.body[k]
             // band
             var n = 0
-            for (i in 0..12) { val th = rad(-90f + 15f * i); pts[n++] = CX + R * sin(th); pts[n++] = yk + GAP + RY * cos(th) }
-            for (i in 12 downTo 0) { val th = rad(-90f + 15f * i); pts[n++] = CX + R * sin(th); pts[n++] = yk1 + RY * cos(th) }
+            for (i in 0..12) { val th = -90f + 15f * i; pts[n++] = CX + R * fsin(th); pts[n++] = yk + GAP + RY * fcos(th) }
+            for (i in 12 downTo 0) { val th = -90f + 15f * i; pts[n++] = CX + R * fsin(th); pts[n++] = yk1 + RY * fcos(th) }
             out.poly(pts.copyOf(n), bc)
             // rim light along the top edge, a soft shade along the bottom, cylinder shading near the silhouette
             bandQuad(out, yk + GAP, yk + GAP + 0.0045f, -88f, 88f, Colors.mix(bc, if (dark) 0xFFFFFFFF.toInt() else ink.plate, if (dark) 0.45f else 0.12f))
@@ -240,6 +321,22 @@ object ChipStack : SigilScheme {
             out.line(CX - s, YF, CX + s, YF, 0.004f, col)
             out.line(CX, YF - s * 0.8f, CX, YF + s * 0.8f, 0.004f, col)
         }
+        // event: a chip "clinks" — a burst of gold sparks off the top face's rim, and a ring of light spreading
+        run {
+            val w = 2.9f; val tt = t + 1.3f; val n = floor(tt / w).toInt(); val u = tt / w - n
+            val e = env(u, 0.08f, 0.45f)
+            if (e > 0.01f) {
+                val ang = rad(-150f + 120f * hash(n, 61))           // somewhere on the back half of the rim
+                val bx = CX + R * 0.86f * cos(ang); val by = YF + RY * 0.86f * sin(ang)
+                val k = smooth(0f, 0.5f, u)
+                out.oval(bx, by, 0.05f * k, 0.016f * k, Colors.alpha(p.goldHi, 0.7f * e), 0f, 0.003f)
+                for (i in 0 until 6) {
+                    val d = rad(i * 60f + 25f * hash(n, 62))
+                    val r0 = 0.01f + 0.03f * k; val r1 = r0 + 0.018f * e
+                    out.line(bx + r0 * cos(d), by + 0.6f * r0 * sin(d) - 0.01f * k, bx + r1 * cos(d), by + 0.6f * r1 * sin(d) - 0.01f * k, 0.003f, Colors.alpha(p.goldHi, e))
+                }
+            }
+        }
     }
 
     /** A patch of a chip's front band between heights [ya] and [yb] (at the front centre) and angles [t0]..[t1]. */
@@ -248,8 +345,8 @@ object ChipStack : SigilScheme {
         val m = max(2, ((hi - lo) / 9f).toInt() + 1)
         val pts = FloatArray(4 * (m + 1))
         var n = 0
-        for (i in 0..m) { val th = rad(lo + (hi - lo) * i / m); pts[n++] = CX + R * sin(th); pts[n++] = ya + RY * cos(th) }
-        for (i in m downTo 0) { val th = rad(lo + (hi - lo) * i / m); pts[n++] = CX + R * sin(th); pts[n++] = yb + RY * cos(th) }
+        for (i in 0..m) { val th = lo + (hi - lo) * i / m; pts[n++] = CX + R * fsin(th); pts[n++] = ya + RY * fcos(th) }
+        for (i in m downTo 0) { val th = lo + (hi - lo) * i / m; pts[n++] = CX + R * fsin(th); pts[n++] = yb + RY * fcos(th) }
         out.poly(pts, col)
     }
 
@@ -260,26 +357,43 @@ object ChipStack : SigilScheme {
     internal fun squareAt(a: Float, rc: Float, s0: Float): FloatArray {
         val st = 2 * (a - rc); val ar = PI.toFloat() / 2 * rc
         val per = 4 * (st + ar)
-        var s = ((s0 % per) + per) % per
+        var s = s0 - per * floor(s0 / per)
         for (side in 0 until 4) {
-            val ang = side * PI.toFloat() / 2   // direction of travel: 0 = +x
-            val dx = cos(ang); val dy = sin(ang)
-            // start of this side
+            val dx = when (side) { 0 -> 1f; 2 -> -1f; else -> 0f }
+            val dy = when (side) { 1 -> 1f; 3 -> -1f; else -> 0f }
             val sx = when (side) { 0 -> -a + rc; 1 -> a; 2 -> a - rc; else -> -a }
             val sy = when (side) { 0 -> -a; 1 -> -a + rc; 2 -> a; else -> a - rc }
             if (s < st) return floatArrayOf(0.5f + sx + dx * s, 0.5f + sy + dy * s, dx, dy)
             s -= st
-            if (s < ar) {
-                // quarter turn round the corner centre
+            if (s < ar || side == 3) {
                 val ccx = sx + dx * st - dy * rc
                 val ccy = sy + dy * st + dx * rc
-                val start = ang - PI.toFloat() / 2
-                val phi = start + s / rc
-                return floatArrayOf(0.5f + ccx + rc * cos(phi), 0.5f + ccy + rc * sin(phi), -sin(phi), cos(phi))
+                val deg = side * 90f - 90f + min(s, ar) / rc * 57.29578f
+                val c = fcos(deg); val sn = fsin(deg)
+                return floatArrayOf(0.5f + ccx + rc * c, 0.5f + ccy + rc * sn, -sn, c)
             }
             s -= ar
         }
         return floatArrayOf(0.5f - a + rc, 0.5f - a, 1f, 0f)
+    }
+
+    /** Sine / cosine of an angle in degrees from a half-degree table (linear in between): cheap for drawing. */
+    private val SIN_T = FloatArray(722) { sin((it * 0.5f - 180f) * PI.toFloat() / 180f) }
+    internal fun fsin(deg: Float): Float {
+        var d = deg + 180f
+        d -= 360f * floor(d / 360f)
+        val v = d * 2f
+        // clamped: with huge angles the float wrap above can land a hair outside 0..360
+        val i = v.toInt().coerceIn(0, 719); val f = (v - i).coerceIn(0f, 1f)
+        return SIN_T[i] + (SIN_T[i + 1] - SIN_T[i]) * f
+    }
+    internal fun fcos(deg: Float): Float = fsin(deg + 90f)
+
+    /** The 48 bulb places round the marquee (a constant table). */
+    private val BULBS: Array<FloatArray> by lazy {
+        val a = FO - FB / 2; val rc = FRO - FB / 2
+        val per = squareLen(a, rc)
+        Array(48) { squareAt(a, rc, per * it / 48) }
     }
 
     override fun reader(): SchemeReader = ChipReader()
