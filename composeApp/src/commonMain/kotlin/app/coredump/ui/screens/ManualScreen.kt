@@ -104,7 +104,7 @@ fun ManualScreen(model: AppModel) {
                     "your room code never changes: send it, leave the app, come back. the host screen reconnects with the same code.",
                     "FRIENDS (main menu, also a tab here): add people by code alone (they get a friend request), see their rating, your record and streak against each, invite them to a 1v1 or a party, or join them, in one tap.",
                     "speed penalty (host setting): once one player answers, the other loses ${app.coredump.core.SpeedTax.PER_SECOND} points a second (at most ${app.coredump.core.SpeedTax.MAX}) until they answer or skip.",
-                    "RANKED tab: a random online opponent near your rating, fixed rules (5 prompts, 25 s, speed penalty on). wins raise your rating (Elo); friendly 1v1s count half.",
+                    "RANKED (its own menu entry): a random online opponent near your rating, fixed rules (5 prompts, 25 s, speed penalty on). wins raise your rating (Elo), losses lower it; 100 points per division, BIT · NIBBLE · BYTE · WORD · PAGE · BLOCK · SEGMENT · CORE. friendly 1v1s are not rated.",
                 )) TText("· $l", size = 12.sp, color = C.amber)
             }
             Spacer(Modifier.height(12.dp))

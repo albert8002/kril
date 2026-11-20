@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +53,9 @@ import app.coredump.ui.drawBox
 import app.coredump.ui.rememberHaptic
 import app.coredump.ui.styleFont
 
+/** Self-test only: scroll the theme screen to the very bottom. */
+internal object AppearanceProbe { var bottom by androidx.compose.runtime.mutableStateOf(false) }
+
 /** Pick a theme (style) and one of its palettes. The whole app re-themes immediately. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -56,7 +63,10 @@ fun AppearanceScreen(model: AppModel) {
     val s = model.settings
     val haptic = rememberHaptic()
     Frame(model, Th.say("chtheme", "Theme")) {
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
+        val scroll = rememberScrollState()
+        LaunchedEffect(AppearanceProbe.bottom) { if (AppearanceProbe.bottom) scroll.scrollTo(scroll.maxValue) }
+        Box(Modifier.weight(1f)) {
+        Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(16.dp)) {
             Panel(Th.say("THEME", "Style")) {
                 for (style in Style.entries) {
                     val on = style == Th.style
@@ -147,7 +157,10 @@ fun AppearanceScreen(model: AppModel) {
                     }
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            // room at the very bottom: someone lives there (an easter egg)
+            Spacer(Modifier.height(200.dp))
+        }
+        app.coredump.ui.BottomFriend(scroll, Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp))
         }
     }
 }

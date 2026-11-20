@@ -123,6 +123,7 @@ private fun jackpotLabel(it: Item): String = when (it.key) {
     "daily" -> dailyLabel(it.label, "DAILY SPIN")
     "solo" -> "SOLO TABLE"
     "duel" -> "HEAD TO HEAD"
+    "ranked" -> "HIGH STAKES"
     "party" -> "MELTDOWN TABLE"
     "friends" -> "HIGH ROLLERS"
     "stats" -> "WINNINGS"
@@ -134,7 +135,7 @@ private fun jackpotLabel(it: Item): String = when (it.key) {
 }
 
 private fun symbolFor(key: String): String = when (key) {
-    "daily" -> "7"; "solo" -> "◆"; "duel" -> "▲"; "party" -> "☢"; "friends" -> "♣"; "stats" -> "★"; "browse" -> "BAR"; "theme" -> "✦"; "settings" -> "■"; else -> "●"
+    "daily" -> "7"; "solo" -> "◆"; "duel" -> "▲"; "ranked" -> "♛"; "party" -> "☢"; "friends" -> "♣"; "stats" -> "★"; "browse" -> "BAR"; "theme" -> "✦"; "settings" -> "■"; else -> "●"
 }
 
 /** Frame with a ring of bulbs chasing around it. */

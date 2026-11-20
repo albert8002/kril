@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -95,6 +96,7 @@ private fun cardName(it: Item): String = when (it.key) {
     "daily" -> "THE SUN"
     "solo" -> "THE HERMIT"
     "duel" -> "THE RIVALS"
+    "ranked" -> "JUDGEMENT"
     "party" -> "THE TOWER"
     "friends" -> "THE LOVERS"
     "stats" -> "THE WHEEL"
@@ -177,6 +179,17 @@ private fun CardGlyph(key: String, modifier: Modifier) {
                 drawLine(g, p(0.7f, 0.7f), p(-0.7f, -0.7f), sw, StrokeCap.Round)
                 drawLine(g, p(-0.62f, 0.32f), p(-0.32f, 0.62f), sw, StrokeCap.Round)
                 drawLine(g, p(0.62f, 0.32f), p(0.32f, 0.62f), sw, StrokeCap.Round)
+            }
+            "ranked" -> {
+                // JUDGEMENT: the scales
+                drawLine(g, p(0f, -0.75f), p(0f, 0.7f), sw, StrokeCap.Round)
+                drawLine(g, p(-0.7f, -0.45f), p(0.7f, -0.45f), sw, StrokeCap.Round)
+                drawLine(g, p(-0.4f, 0.7f), p(0.4f, 0.7f), sw, StrokeCap.Round)
+                for (sx in listOf(-0.7f, 0.7f)) {
+                    drawLine(g, p(sx, -0.45f), p(sx - 0.22f, 0.1f), sw * 0.7f)
+                    drawLine(g, p(sx, -0.45f), p(sx + 0.22f, 0.1f), sw * 0.7f)
+                    drawArc(g, 0f, 180f, false, p(sx - 0.26f, -0.05f), Size(r * 0.52f, r * 0.3f), style = st)
+                }
             }
             "stats" -> {
                 drawCircle(g, r * 0.8f, c, style = st)

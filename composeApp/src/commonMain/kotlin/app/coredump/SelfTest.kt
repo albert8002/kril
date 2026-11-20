@@ -513,6 +513,41 @@ object SelfTest {
             model.home(); delay(1200)
             shot("menu_friends_oracle")
 
+            // easter eggs: every look's logo surprise, the terminal crash, the answer eggs, the friend at the bottom
+            for ((style, pal) in plan) {
+                model.setTheme(style, pal)
+                model.home(); delay(700)
+                app.coredump.ui.Eggs.play(app.coredump.ui.Eggs.Kind.LOGO)
+                delay(1500)
+                shot("egg_logo_${style.name.lowercase()}")
+                delay(300)
+                app.coredump.ui.Eggs.show?.let { app.coredump.ui.Eggs.done(it.id) }
+            }
+            model.setTheme(Style.TERMINAL, plan.first { it.first == Style.TERMINAL }.second)
+            model.home(); delay(600)
+            app.coredump.ui.Eggs.hold = 0.8f; delay(500); shot("egg_hold_terminal"); app.coredump.ui.Eggs.hold = 0f
+            app.coredump.ui.Eggs.play(app.coredump.ui.Eggs.Kind.GLITCH); delay(900); shot("egg_crash_terminal")
+            delay(2200)
+            val self = app.coredump.ui.Eggs.answer("Name a video game", "Core Dump")
+            delay(1300); shot("egg_self_terminal"); delay(2000)
+            val love = app.coredump.ui.Eggs.answer("Name a fruit", "<3")
+            delay(900); shot("egg_love_terminal"); delay(1500)
+            val notGame = app.coredump.ui.Eggs.answer("Name a TV game show", "core dump")
+            val notEgg = app.coredump.ui.Eggs.answer("Name a video game", "Tetris")
+            app.coredump.ui.Eggs.show?.let { app.coredump.ui.Eggs.done(it.id) }
+            log("EGGS self=$self love=$love gameShow=$notGame tetris=$notEgg found=${app.coredump.ui.Eggs.found}")
+            for (look in listOf(Style.ORACLE, Style.CHAT)) {
+                model.setTheme(look, plan.first { it.first == look }.second)
+                model.go(Screen.Appearance); delay(900)
+                app.coredump.ui.screens.AppearanceProbe.bottom = true
+                delay(1800)
+                shot("egg_bottom_${look.name.lowercase()}")
+                app.coredump.ui.screens.AppearanceProbe.bottom = false
+                model.back(); delay(400)
+            }
+            app.coredump.ui.Eggs.play(app.coredump.ui.Eggs.Kind.MILESTONE, "50 runs"); delay(1400); shot("egg_milestone_chat")
+            delay(2000)
+
             // ranked: two searchers on the real relay find each other (one hosts, one joins)
             var m1: app.coredump.game.RankedMatch? = null
             var m2: app.coredump.game.RankedMatch? = null
@@ -523,10 +558,25 @@ object SelfTest {
             while ((m1 == null || m2 == null) && iw < 40_000) { delay(500); iw += 500 }
             log("RANKED a=${m1?.let { "${if (it.host) "host" else "guest"} vs ${it.oppName}" }} b=${m2?.let { "${if (it.host) "host" else "guest"} vs ${it.oppName}" }} after ${iw}ms")
             mmA.cancel(); mmB.cancel()
-            app.coredump.ui.screens.LobbyProbe.tab = 3
-            model.go(Screen.Lobby); delay(1500)
-            shot("ranked_chat")
-            model.back(); delay(500)
+            // the Ranked screen, with a few matches on record (a copy of the settings is put back afterwards)
+            val keep = model.settings
+            val now0 = app.coredump.platform.Platform.epochMillis()
+            model.update { s -> s.copy(elo = 1137, peakElo = 1162, rankedGames = 9, rankedWins = 6, streak = 2, bestStreak = 4,
+                rankedLog = listOf(
+                    app.coredump.data.RankedResult("NOVA", 1120, 41, 33, 15, 1137, now0 - 60_000),
+                    app.coredump.data.RankedResult("BYTEME", 1180, 28, 30, -14, 1122, now0 - 3_600_000),
+                    app.coredump.data.RankedResult("KILO", 1090, 37, 22, 12, 1136, now0 - 7_200_000),
+                    app.coredump.data.RankedResult("ZED", 1150, 25, 39, -16, 1124, now0 - 90_000_000),
+                    app.coredump.data.RankedResult("ECHO", 1101, 44, 18, 17, 1140, now0 - 180_000_000),
+                )) }
+            for (look in listOf(Style.CHAT, Style.TERMINAL, Style.ORACLE)) {
+                model.setTheme(look, plan.first { it.first == look }.second)
+                model.go(Screen.Ranked); delay(1500)
+                shot("ranked_${look.name.lowercase()}")
+                if (look == Style.TERMINAL) { model.findRanked(); delay(2500); shot("ranked_queue"); model.cancelRanked() }
+                model.back(); delay(500)
+            }
+            model.update { keep }
 
             // stress: lookups across many lists (index cache must keep memory flat)
             val all = model.bank.all()

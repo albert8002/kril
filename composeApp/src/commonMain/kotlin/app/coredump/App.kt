@@ -29,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -97,7 +98,9 @@ fun App() {
         val d = LocalDensity.current
         CompositionLocalProvider(LocalDensity provides Density(d.density, d.fontScale * s.textScale)) {
             ThemedScreen(look, model.fx) {
-                Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+                Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)
+                    // the TERMINAL crash egg jolts the whole app
+                    .graphicsLayer { translationX = app.coredump.ui.Eggs.joltX; translationY = app.coredump.ui.Eggs.joltY }) {
                     AnimatedContent(
                         targetState = model.screen,
                         transitionSpec = {
@@ -155,6 +158,7 @@ fun App() {
                             Screen.Fetch -> app.coredump.ui.screens.FetchScreen(model)
                             Screen.Looks -> app.coredump.ui.screens.LooksScreen(model)
                             Screen.Meltdown -> app.coredump.ui.screens.MeltdownScreen(model)
+                            Screen.Ranked -> app.coredump.ui.screens.RankedScreen(model)
                             Screen.Friends -> app.coredump.ui.screens.FriendsScreen(model)
                             is Screen.Melt -> app.coredump.ui.screens.MeltScreen(model, screen.session)
                         }
@@ -183,6 +187,8 @@ fun App() {
                 }
                 // the score run: edge to edge, over the status bar, notch and keyboard areas too
                 app.coredump.ui.RunStageHost()
+                // easter eggs, over everything
+                app.coredump.ui.EggHost()
             }
         }
     }

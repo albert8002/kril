@@ -53,7 +53,7 @@ import app.coredump.ui.TText
 import app.coredump.ui.TermInput
 import app.coredump.ui.Th
 
-private enum class Tab(val label: String) { HOST("HOST"), JOIN("JOIN"), FRIENDS("FRIENDS"), RANKED("RANKED") }
+private enum class Tab(val label: String) { HOST("HOST"), JOIN("JOIN"), FRIENDS("FRIENDS") }
 
 /** Status of the invite being sent ([mode] "duel" or "party"), if any. */
 @Composable
@@ -82,44 +82,6 @@ private fun streakVs(games: List<app.coredump.data.RunRecord>): String {
     return "streak: $n ${if (dir > 0) (if (n == 1) "win" else "wins") else (if (n == 1) "loss" else "losses")}"
 }
 
-/** Ranked: my rating, the fixed rules, find a random opponent. */
-@Composable
-private fun RankedPane(model: AppModel) {
-    val s = model.settings
-    val mm = model.matchmaker
-    Panel(Th.say("RATING", "Your rating")) {
-        TText("${s.elo}", size = 34.sp, weight = FontWeight.Bold, color = C.hot)
-        TText("${s.rankedGames} ranked games · ${s.rankedWins} wins" + (if (s.rankedGames > 0) " (${s.rankedWins * 100 / s.rankedGames}%)" else ""),
-            size = 12.sp, color = C.amber)
-        TText("win streak ${s.streak} · best ${s.bestStreak}", size = 12.sp, color = C.dim)
-    }
-    Spacer(Modifier.height(14.dp))
-    Panel(Th.say("RULES", "Ranked rules (fixed)")) {
-        val c = app.coredump.game.Ranked.CONFIG
-        for (line in listOf(
-            "${c.rounds} prompts · ${c.secondsPerRound} s each · ${c.difficulty.label} typos · all topics",
-            "speed penalty on: once your opponent answers, you lose ${app.coredump.core.SpeedTax.PER_SECOND} points a second (at most ${app.coredump.core.SpeedTax.MAX}) until you answer or skip",
-            "a random online opponent near your rating; the search widens the longer you wait",
-            "win: rating up, loss: down (Elo, more for a stronger opponent). friendly 1v1s count half as much",
-        )) TText("· $line", size = 12.sp, color = C.amber)
-    }
-    Spacer(Modifier.height(14.dp))
-    if (mm == null) {
-        TButton(Th.say("QUEUE --ranked", "Find a match"), { model.findRanked() }, Modifier.fillMaxWidth(), primary = true, textSize = 16.sp)
-    } else {
-        val st by mm.status.collectAsState()
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (st.searching) { Spinner(C.hot); TText("  ", size = 12.sp) }
-            TText(st.text, size = 13.sp, color = if (st.error != null) C.blood else C.amber, weight = FontWeight.Bold)
-        }
-        st.error?.let { TText(it, size = 11.sp, color = C.blood) }
-        if (st.searching) TText("${st.waiting} other player${if (st.waiting == 1) "" else "s"} searching right now", size = 11.sp, color = C.dim)
-        Spacer(Modifier.height(10.dp))
-        TButton(if (st.searching) "Cancel" else "Search again", { if (st.searching) model.cancelRanked() else model.findRanked() },
-            Modifier.fillMaxWidth(), color = if (st.searching) C.blood else C.hot)
-    }
-}
-
 /** Self-test only: the tab the 1v1 screen opens on. */
 internal object LobbyProbe {
     var tab = 0
@@ -138,9 +100,11 @@ fun LobbyScreen(model: AppModel) {
                 Tab.HOST -> HostPane(model)
                 Tab.JOIN -> JoinPane(model)
                 Tab.FRIENDS -> FriendsPane(model) { tab = it }
-                Tab.RANKED -> RankedPane(model)
             }
             Spacer(Modifier.height(16.dp))
+            // ranked has its own place now
+            TLink(Th.say("ranked: ./run --ranked →", "Ranked matches have their own screen →"), { model.go(Screen.Ranked) }, color = C.hot)
+            Spacer(Modifier.height(10.dp))
             TText("online relay: messages pass through a free public MQTT server (room code = key). direct: same Wi-Fi, no internet.",
                 size = 10.sp, color = C.line)
         }

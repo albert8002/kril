@@ -38,6 +38,7 @@ import app.coredump.game.MatchSession
 import app.coredump.game.MatchState
 import app.coredump.game.Phase
 import app.coredump.platform.shareText
+import app.coredump.ui.logoEgg
 import app.coredump.ui.C
 import app.coredump.ui.TierBadge
 import app.coredump.ui.LocalDisplay
@@ -78,6 +79,7 @@ private fun comicLabel(key: String, fallback: String) = when (key) {
     "daily" -> "DAILY HIT"
     "solo" -> "SOLO"
     "duel" -> "1V1 BRAWL"
+    "ranked" -> "THE SHOWDOWN"
     "party" -> "FREE-FOR-ALL"
     "friends" -> "THE GANG"
     "stats" -> "SCORECARD"
@@ -93,7 +95,7 @@ fun ComicMenu(model: AppModel) {
     val items = menuItems(model)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp)) {
         Spacer(Modifier.height(26.dp))
-        Box(Modifier.graphicsLayer { rotationZ = -3f }) { RansomText("CORE DUMP", 38.sp, seed = 11) }
+        Box(Modifier.logoEgg().graphicsLayer { rotationZ = -3f }) { RansomText("CORE DUMP", 38.sp, seed = 11) }
         Spacer(Modifier.height(10.dp))
         Tape("NAME THE ANSWER NOBODY ELSE WILL")
         CrashBanner(model)

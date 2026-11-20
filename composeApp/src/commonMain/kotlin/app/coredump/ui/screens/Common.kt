@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.coredump.AppModel
+import app.coredump.ui.logoEgg
 import app.coredump.ui.C
 import app.coredump.ui.Divider
 import app.coredump.ui.DesktopTitleBar
@@ -133,9 +134,14 @@ fun Frame(model: AppModel, title: String, onBack: (() -> Unit)? = { model.back()
     }
 }
 
-/** The app name, drawn the way each theme would draw a masthead. */
+/** The app name, drawn the way each theme would draw a masthead. Tap it five times, or hold it… ([app.coredump.ui.Eggs]) */
 @Composable
 fun AppTitle(size: TextUnit = 40.sp) {
+    Box(Modifier.logoEgg()) { AppTitleInner(size) }
+}
+
+@Composable
+private fun AppTitleInner(size: TextUnit) {
     when (Th.style) {
         Style.TERMINAL -> GlitchTitle("CORE_DUMP", size)
         Style.PAPER -> Column {
@@ -292,19 +298,30 @@ fun GlitchTitle(text: String, size: TextUnit = 40.sp) {
             burst = false
         }
     }
-    Box {
-        if (burst) {
+    // easter egg: holding the logo glitches it harder and harder (Eggs.hold 0..1) until the screen crashes
+    val hold = app.coredump.ui.Eggs.hold
+    val held = hold > 0f
+    LaunchedEffect(held) {
+        if (!held) return@LaunchedEffect
+        while (true) { seed = Random.nextInt(); delay(40) }
+    }
+    val on = burst || held
+    Box(Modifier.graphicsLayer {
+        if (held) { translationX = (Random(seed).nextFloat() - 0.5f) * 16f * hold; scaleX = 1f + 0.06f * hold * Random(seed + 1).nextFloat() }
+    }) {
+        if (on) {
             val r = Random(seed)
-            TText(text, Modifier.offset(x = (-2 - r.nextInt(4)).dp, y = 1.dp), size = size, color = C.blood.copy(alpha = 0.7f), weight = FontWeight.Bold, glow = 0f)
-            TText(text, Modifier.offset(x = (2 + r.nextInt(4)).dp, y = (-1).dp), size = size, color = C.hot.copy(alpha = 0.45f), weight = FontWeight.Bold, glow = 0f)
+            val spread = 1f + 4f * hold
+            TText(text, Modifier.offset(x = ((-2 - r.nextInt(4)) * spread).dp, y = (1 + 3 * hold).dp), size = size, color = C.blood.copy(alpha = 0.7f), weight = FontWeight.Bold, glow = 0f)
+            TText(text, Modifier.offset(x = ((2 + r.nextInt(4)) * spread).dp, y = (-1 - 3 * hold).dp), size = size, color = C.hot.copy(alpha = 0.45f + 0.4f * hold), weight = FontWeight.Bold, glow = 0f)
         }
-        TText(if (burst) corrupt(text, seed) else text, size = size, weight = FontWeight.Bold, glow = 1.6f, color = C.amber)
+        TText(if (on) corrupt(text, seed, 0.18f + 0.7f * hold) else text, size = size, weight = FontWeight.Bold, glow = 1.6f + 3f * hold, color = C.amber)
     }
 }
 
-private fun corrupt(t: String, seed: Int): String {
+private fun corrupt(t: String, seed: Int, share: Float = 0.18f): String {
     val r = Random(seed)
-    return t.map { c -> if (c != ' ' && r.nextFloat() < 0.18f) "▓▒░#%&@$"[r.nextInt(8)] else c }.joinToString("")
+    return t.map { c -> if (c != ' ' && r.nextFloat() < share) "▓▒░#%&@$"[r.nextInt(8)] else c }.joinToString("")
 }
 
 fun fmtSeconds(s: Int): String = if (s == 0) "∞" else "${s}s"

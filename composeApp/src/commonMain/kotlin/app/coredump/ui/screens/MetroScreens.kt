@@ -153,6 +153,7 @@ private fun metroLabel(it: Item): String = when (it.key) {
     "daily" -> dailyLabel(it.label, "DAILY")
     "solo" -> "SOLO"
     "duel" -> "1V1 LINK"
+    "ranked" -> "RANKED EXPRESS"
     "party" -> "MELTDOWN LOOP"
     "friends" -> "FRIENDS LINE"
     "stats" -> "STATS"

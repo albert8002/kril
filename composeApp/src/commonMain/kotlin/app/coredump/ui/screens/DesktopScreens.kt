@@ -91,6 +91,7 @@ private fun deskLabel(it: Item): String = when (it.key) {
     "daily" -> dailyLabel(it.label, "Daily")
     "solo" -> "Solo"
     "duel" -> "1v1"
+    "ranked" -> "Ranked"
     "party" -> "Meltdown"
     "friends" -> "Friends"
     "stats" -> "Stats"
@@ -176,6 +177,16 @@ private fun DeskIcon(key: String, modifier: Modifier) {
                 for (r in 0..2) for (c in 0..3) drawRect(Color(0xFF555555), Offset(w * (0.2f + c * 0.16f), h * (0.42f + r * 0.15f)), Size(w * 0.09f, h * 0.08f))
             }
             "solo" -> monitor(w * 0.06f, h * 0.06f, w * 0.88f)
+            "ranked" -> {
+                // a gold cup on a bevelled plinth
+                val gold = Color(0xFFF2C230)
+                val cup = Path().apply { moveTo(w * 0.22f, h * 0.12f); lineTo(w * 0.78f, h * 0.12f); lineTo(w * 0.7f, h * 0.5f)
+                    lineTo(w * 0.56f, h * 0.6f); lineTo(w * 0.44f, h * 0.6f); lineTo(w * 0.3f, h * 0.5f); close() }
+                drawPath(cup, gold); drawPath(cup, Color.Black, style = Stroke(px))
+                drawRect(gold, Offset(w * 0.45f, h * 0.6f), Size(w * 0.1f, h * 0.14f))
+                drawRect(Color.White, Offset(w * 0.32f, h * 0.18f), Size(px * 2, h * 0.22f))
+                bevel(w * 0.26f, h * 0.74f, w * 0.74f, h * 0.9f, face)
+            }
             "party" -> {
                 val tri = Path().apply { moveTo(w * 0.5f, h * 0.08f); lineTo(w * 0.94f, h * 0.88f); lineTo(w * 0.06f, h * 0.88f); close() }
                 drawPath(tri, Color(0xFFF2C230))

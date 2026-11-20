@@ -44,6 +44,26 @@ object Ranked {
         return (mine + k * (score - expected)).roundToInt().coerceAtLeast(100)
     }
 
+    /**
+     * A ranked division: [name], its place in the ladder ([index], 0 = lowest) and its rating band [from] until
+     * [until] (Elo; [until] = Int.MAX_VALUE for the top one).
+     */
+    data class Division(val index: Int, val name: String, val from: Int, val until: Int) {
+        /** How far [elo] is through this band: 0..1 (1 in the top division). */
+        fun progress(elo: Int): Float = if (until == Int.MAX_VALUE) 1f else ((elo - from).toFloat() / (until - from)).coerceIn(0f, 1f)
+    }
+
+    /** The ladder, bottom to top: memory sizes, each 100 rating points wide (CORE: 1500 and up). */
+    val DIVISIONS: List<Division> = listOf("BIT", "NIBBLE", "BYTE", "WORD", "PAGE", "BLOCK", "SEGMENT", "CORE").let { names ->
+        names.mapIndexed { i, n ->
+            val from = if (i == 0) 0 else 800 + i * 100
+            Division(i, n, from, if (i == names.lastIndex) Int.MAX_VALUE else 900 + i * 100)
+        }
+    }
+
+    /** The division a rating falls in (start: 1000 = BYTE). */
+    fun division(elo: Int): Division = DIVISIONS.last { elo >= it.from }
+
     /** Rating difference accepted after waiting [ms]: 150, growing 60 per second, at most 1,500. */
     fun window(ms: Long): Int = (150 + 60 * (ms / 1000)).toInt().coerceAtMost(1500)
 }

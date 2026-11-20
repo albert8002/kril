@@ -122,10 +122,14 @@ class AnswerState {
     var onConfirm: (Boolean) -> Unit = {}
     /** Sound + theme touch when something is sent. */
     var onSent: () -> Unit = {}
+    /** The prompt's text (for the answer easter eggs). */
+    var prompt: String = ""
 
     fun send(v: String = text) {
         val t = v.trim()
         if (t.isEmpty()) return
+        // an easter egg answer ("core dump" for a game, "<3") plays its surprise and is not sent
+        if (app.coredump.ui.Eggs.answer(prompt, t)) { text = ""; return }
         onSent()
         onSubmit(t)
         text = ""
@@ -138,6 +142,7 @@ fun rememberAnswer(st: MatchState, onSubmit: (String) -> Unit, onConfirm: (Boole
     val fx = LocalFx.current
     a.onSubmit = onSubmit
     a.onConfirm = onConfirm
+    a.prompt = st.prompt
     a.onSent = { fx.sent(); Sfx.play(Cue.SUBMIT) }
     val motion = !LocalLook.current.reduceMotion
     LaunchedEffect(st.round, st.phase) { if (st.phase == Phase.TYPING) { delay(250); runCatching { a.focus.requestFocus() } } }

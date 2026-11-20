@@ -90,13 +90,17 @@ data class Settings(
     val reversed: Boolean = false,
     /** 1v1: once one player has answered, the other loses points for every second they still take. */
     val speedPenalty: Boolean = false,
-    /** My rating for ranked and friend 1v1 (Elo, starts at 1000). */
+    /** My ranked rating (Elo, starts at 1000). Only ranked matches move it; friendly 1v1s are not rated. */
     val elo: Int = 1000,
-    /** Ranked games played / won, current and best win streak (ranked and 1v1). */
+    /** Ranked games played / won, current and best ranked win streak. */
     val rankedGames: Int = 0,
     val rankedWins: Int = 0,
     val streak: Int = 0,
     val bestStreak: Int = 0,
+    /** The highest ranked rating I reached (Elo). */
+    val peakElo: Int = 1000,
+    /** My last ranked matches, newest first (at most [RankedResult.KEEP]). */
+    val rankedLog: List<RankedResult> = emptyList(),
     /** Friend requests waiting for my answer: code → name. */
     val requests: List<Friend> = emptyList(),
 ) {
@@ -163,6 +167,13 @@ object SettingsStore {
             rankedWins = o["rankedWins"]?.jsonPrimitive?.intOrNull ?: d.rankedWins,
             streak = o["streak"]?.jsonPrimitive?.intOrNull ?: d.streak,
             bestStreak = o["bestStreak"]?.jsonPrimitive?.intOrNull ?: d.bestStreak,
+            peakElo = o["peakElo"]?.jsonPrimitive?.intOrNull ?: maxOf(d.peakElo, o["elo"]?.jsonPrimitive?.intOrNull ?: d.elo),
+            rankedLog = (o["rankedLog"] as? JsonArray)?.mapNotNull { e ->
+                val r = e as? JsonObject ?: return@mapNotNull null
+                RankedResult(r["o"]?.jsonPrimitive?.contentOrNull ?: "?", r["oe"]?.jsonPrimitive?.intOrNull ?: 0,
+                    r["m"]?.jsonPrimitive?.intOrNull ?: 0, r["t"]?.jsonPrimitive?.intOrNull ?: 0,
+                    r["d"]?.jsonPrimitive?.intOrNull ?: 0, r["e"]?.jsonPrimitive?.intOrNull ?: 0, r["at"]?.jsonPrimitive?.longOrNull ?: 0L)
+            } ?: d.rankedLog,
             requests = (o["requests"] as? JsonArray)?.mapNotNull { e ->
                 val f = e as? JsonObject ?: return@mapNotNull null
                 val c = f["c"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
@@ -236,6 +247,10 @@ object SettingsStore {
             put("rankedWins", s.rankedWins)
             put("streak", s.streak)
             put("bestStreak", s.bestStreak)
+            put("peakElo", s.peakElo)
+            put("rankedLog", JsonArray(s.rankedLog.map { r -> buildJsonObject {
+                put("o", r.opp); put("oe", r.oppElo); put("m", r.mine); put("t", r.theirs); put("d", r.delta); put("e", r.after); put("at", r.at)
+            } }))
             put("requests", JsonArray(s.requests.map { f -> buildJsonObject { put("n", f.name); put("c", f.code); put("at", f.at) } }))
             put("friends", JsonArray(s.friends.map { f -> buildJsonObject { put("n", f.name); put("c", f.code); put("at", f.at); put("e", f.elo); put("s", f.streak) } }))
             put("scoreRuns", s.scoreRuns)
@@ -266,6 +281,16 @@ data class RunRecord(
     val oppCode: String? = null,
 )
 
+/**
+ * One ranked match as I saw it: [opp] and their rating [oppElo] (Elo), my and their points ([mine], [theirs]),
+ * how my rating moved ([delta], Elo points) and where it ended ([after]), when it ended ([at], epoch ms).
+ */
+data class RankedResult(val opp: String, val oppElo: Int, val mine: Int, val theirs: Int, val delta: Int, val after: Int, val at: Long) {
+    val won: Boolean get() = mine > theirs
+    val drawn: Boolean get() = mine == theirs
+    companion object { const val KEEP = 30 }
+}
+
 /** A friend: shown name, their room code (blank if unknown: added before codes were exchanged), when added. */
 /** A friend by room code; [elo] / [streak]: their rating and win streak as last seen (0 = unknown). */
 data class Friend(val name: String, val code: String, val at: Long, val elo: Int = 0, val streak: Int = 0)
@@ -283,6 +308,11 @@ object History {
     var runs: List<RunRecord> = emptyList(); private set
     val best: Int get() = runs.maxOfOrNull { it.points } ?: 0
     val games: Int get() = runs.size
+
+    /** Run counts worth a little party (count of runs on file). */
+    val MILESTONES = setOf(10, 25, 50, 100, 200, 300)
+    /** The milestone the last run reached (count), 0 = none; the summary screen celebrates it once and clears it. */
+    var milestone: Int = 0
 
     fun load() {
         runCatching {
@@ -334,7 +364,9 @@ object History {
         val d = if (daily != null && playedDaily(daily) == null) daily else null
         val rec = RunRecord(Platform.epochMillis(), if (daily != null && d == null) "solo" else mode,
             points, tiers, topics, d, opponent, oppPoints, oppCode)
+        val before = runs.size
         runs = (listOf(rec) + runs).take(KEEP_RUNS)
+        if (runs.size != before && runs.size in MILESTONES) milestone = runs.size
         save()
     }
 

@@ -43,6 +43,8 @@ sealed interface Screen {
     data object Looks : Screen
     /** MELTDOWN setup: bots, host a party, join one. */
     data object Meltdown : Screen
+    /** RANKED: my rated ladder (division, rating, history) and the queue for a random opponent. */
+    data object Ranked : Screen
     /** A MELTDOWN game in progress (or just over). */
     data class Melt(val session: app.coredump.game.MeltSession) : Screen
 }
@@ -248,6 +250,7 @@ class AppModel(val scope: CoroutineScope) {
         }
         if (cur is Screen.Summary || cur is Screen.Lobby) { closeLobbies() }
         if (cur is Screen.Meltdown) { closeParty() }
+        if (cur is Screen.Ranked) { cancelRanked() }
         if (stack.isEmpty()) return false
         screen = stack.removeAt(stack.size - 1)
         app.coredump.ui.Sfx.play(app.coredump.ui.Cue.NAV)
@@ -474,22 +477,33 @@ class AppModel(val scope: CoroutineScope) {
 
     // ------------------------------------------------------------------ rating, ranked
 
-    /** A 1v1 ended: rating (Elo) and win streak move; friends' cards get the other player's numbers. */
+    /**
+     * A 1v1 ended. Ranked: the ranked rating (Elo), ranked streak, peak and match log move. Friendly: nothing rated
+     * moves (ranked is its own thing); friends' cards get the other player's numbers either way.
+     */
     private fun onDuelEnd(mine: Int, theirs: Int, opp: String, ranked: Boolean) {
-        val score = when { mine > theirs -> 1.0; mine < theirs -> 0.0; else -> 0.5 }
         val oppElo = app.coredump.game.PeerBook.eloOf(opp) ?: 1000
-        val k = if (ranked) app.coredump.game.Ranked.K_RANKED else app.coredump.game.Ranked.K_FRIENDLY
-        val before = settings.elo
-        val after = app.coredump.game.Ranked.elo(before, oppElo, score, k)
         val code = app.coredump.game.PeerBook.codeOf(opp)
+        fun cards(s: app.coredump.data.Settings) =
+            s.friends.map { f -> if (code != null && f.code == code) f.copy(elo = oppElo, streak = app.coredump.game.PeerBook.streakOf(opp) ?: f.streak) else f }
+        if (!ranked) {
+            update { s -> s.copy(friends = cards(s)) }
+            return
+        }
+        val score = when { mine > theirs -> 1.0; mine < theirs -> 0.0; else -> 0.5 }
+        val before = settings.elo
+        val after = app.coredump.game.Ranked.elo(before, oppElo, score, app.coredump.game.Ranked.K_RANKED)
+        val d = after - before
+        val entry = app.coredump.data.RankedResult(opp, oppElo, mine, theirs, d, after, Platform.epochMillis())
         update { s ->
             val streak = if (score == 1.0) s.streak + 1 else 0
-            s.copy(elo = after, streak = streak, bestStreak = maxOf(s.bestStreak, streak),
-                rankedGames = s.rankedGames + if (ranked) 1 else 0, rankedWins = s.rankedWins + if (ranked && score == 1.0) 1 else 0,
-                friends = s.friends.map { f -> if (code != null && f.code == code) f.copy(elo = oppElo, streak = app.coredump.game.PeerBook.streakOf(opp) ?: f.streak) else f })
+            s.copy(elo = after, streak = streak, bestStreak = maxOf(s.bestStreak, streak), peakElo = maxOf(s.peakElo, after),
+                rankedGames = s.rankedGames + 1, rankedWins = s.rankedWins + if (score == 1.0) 1 else 0,
+                rankedLog = (listOf(entry) + s.rankedLog).take(app.coredump.data.RankedResult.KEEP), friends = cards(s))
         }
-        val d = after - before
-        toast = (if (ranked) "ranked · " else "") + "rating $after (${if (d >= 0) "+" else ""}$d)"
+        val div = app.coredump.game.Ranked.division(after)
+        val promoted = app.coredump.game.Ranked.division(before).index < div.index
+        toast = if (promoted) "promoted to ${div.name} · rating $after (+$d)" else "ranked · rating $after (${if (d >= 0) "+" else ""}$d)"
     }
 
     var matchmaker by mutableStateOf<app.coredump.game.Matchmaker?>(null)

@@ -103,6 +103,7 @@ private fun abyssLabel(it: Item): String = when (it.key) {
     "daily" -> dailyLabel(it.label, "TODAY'S DESCENT")
     "solo" -> "FREE DIVE"
     "duel" -> "BUDDY DIVE"
+    "ranked" -> "THE TRENCH"
     "party" -> "PRESSURE PARTY"
     "friends" -> "DIVE BUDDIES"
     "stats" -> "DIVE LOG"

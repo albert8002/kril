@@ -448,6 +448,8 @@ fun MeltScreen(model: AppModel, session: MeltSession) {
     fun send(text: String) {
         val t = text.trim()
         if (t.isEmpty()) return
+        // an easter egg answer ("core dump" for a game, "<3") plays its surprise and is not sent
+        if (app.coredump.ui.Eggs.answer(st.prompt, t)) { input = ""; return }
         if (myTurn) {
             Sfx.play(Cue.SUBMIT)
             session.submit(t)

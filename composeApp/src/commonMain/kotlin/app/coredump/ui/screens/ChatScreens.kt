@@ -79,6 +79,7 @@ import app.coredump.game.MatchSession
 import app.coredump.game.MatchState
 import app.coredump.game.Phase
 import app.coredump.platform.shareText
+import app.coredump.ui.logoEgg
 import app.coredump.ui.C
 import app.coredump.ui.LocalLook
 import app.coredump.ui.Panel
@@ -107,6 +108,7 @@ private fun chatTitle(it: Item): String = when (it.key) {
     "daily" -> dailyLabel(it.label, "Daily drop")
     "solo" -> "Solo practice"
     "duel" -> "1v1 with a friend"
+    "ranked" -> "Ranked match"
     "party" -> "Meltdown group game"
     "friends" -> "Friends"
     "stats" -> "Your stats"
@@ -118,7 +120,7 @@ private fun chatTitle(it: Item): String = when (it.key) {
 }
 
 private fun chatInitial(key: String): String = when (key) {
-    "daily" -> "D"; "solo" -> "S"; "duel" -> "1v1"; "party" -> "☢"; "friends" -> "♥"; "stats" -> "%"; "browse" -> "≡"; "theme" -> "Aa"; "settings" -> "⋯"; "manual" -> "?"; else -> "•"
+    "daily" -> "D"; "solo" -> "S"; "duel" -> "1v1"; "ranked" -> "★"; "party" -> "☢"; "friends" -> "♥"; "stats" -> "%"; "browse" -> "≡"; "theme" -> "Aa"; "settings" -> "⋯"; "manual" -> "?"; else -> "•"
 }
 
 @Composable
@@ -136,7 +138,7 @@ fun ChatMenu(model: AppModel) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Row(Modifier.fillMaxWidth().padding(start = 18.dp, end = 18.dp, top = 22.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                TText("Chats", size = 32.sp, weight = FontWeight.Bold)
+                TText("Chats", Modifier.logoEgg(), size = 32.sp, weight = FontWeight.Bold)
                 TText("Core Dump · name the answer nobody else will", size = 12.sp, color = C.dim, maxLines = 1)
             }
             Avatar(model.settings.handle.take(1).uppercase().ifEmpty { "?" }, C.hot, 40.dp)

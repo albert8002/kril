@@ -57,6 +57,13 @@ fun SummaryScreen(model: AppModel, session: MatchSession) {
     LaunchedEffect(session) {
         delay(350)
         app.coredump.ui.Sfx.play(app.coredump.ui.Cue.RANK, totalsOf(session.state.value).rank.ordinal)
+        // a little party at 10, 25, 50 … runs
+        val m = app.coredump.data.History.milestone
+        if (m > 0) {
+            app.coredump.data.History.milestone = 0
+            delay(1400)
+            app.coredump.ui.Eggs.play(app.coredump.ui.Eggs.Kind.MILESTONE, "$m runs")
+        }
     }
     when (Th.style) {
         Style.TERMINAL -> TerminalSummary(model, session)

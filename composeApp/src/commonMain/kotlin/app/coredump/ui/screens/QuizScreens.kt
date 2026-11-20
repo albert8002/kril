@@ -42,6 +42,7 @@ import app.coredump.game.MatchState
 import app.coredump.game.Phase
 import app.coredump.platform.Platform
 import app.coredump.platform.shareText
+import app.coredump.ui.logoEgg
 import app.coredump.ui.C
 import app.coredump.ui.RankBadge
 import app.coredump.ui.LocalLook
@@ -116,7 +117,7 @@ fun QuizMenu(model: AppModel) {
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                TText("Hi, $handle 👋", size = 21.sp, weight = FontWeight.Bold, maxLines = 1)
+                TText("Hi, $handle 👋", Modifier.logoEgg(), size = 21.sp, weight = FontWeight.Bold, maxLines = 1)
                 TText("Ready for today's quiz?", size = 13.sp, color = C.dim)
             }
             TText("🔥 $streakDays", Modifier.box(Th.style, C.line, C.panel, pill = true).padding(horizontal = 12.dp, vertical = 7.dp),
@@ -149,8 +150,9 @@ fun QuizMenu(model: AppModel) {
         Spacer(Modifier.height(10.dp))
         val grid = listOf(
             Triple("solo", "🎯", "Solo"), Triple("duel", "⚔️", "1v1"),
-            Triple("party", "☢️", "Meltdown"), Triple("friends", "👥", "Friends"),
-            Triple("stats", "📊", "Stats"), Triple("browse", "📚", "Lists"),
+            Triple("ranked", "🏆", "Ranked"), Triple("party", "☢️", "Meltdown"),
+            Triple("friends", "👥", "Friends"), Triple("stats", "📊", "Stats"),
+            Triple("browse", "📚", "Lists"),
         )
         for (row in grid.chunked(2)) {
             Row(Modifier.fillMaxWidth()) {
