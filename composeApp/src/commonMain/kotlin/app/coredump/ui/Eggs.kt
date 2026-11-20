@@ -209,10 +209,10 @@ private fun EggShow(show: Eggs.Show) {
         delay(show.kind.ms)
         Eggs.done(show.id)
     }
-    val ink = Ink(C.bg, C.panel, C.amber, C.hot, C.white, C.dim, C.blood, C.line)
+    val ink = EggInk(C.bg, C.panel, C.amber, C.hot, C.white, C.dim, C.blood, C.line)
     Canvas(Modifier.fillMaxSize().pointerInput(show.id) { detectTapGestures { Eggs.done(show.id) } }) {
         val p = (t * 1000f / show.kind.ms).coerceIn(0f, 1f)
-        val txt = Txt(tm, font, cache, this)
+        val txt = EggTxt(tm, font, cache, this)
         when (show.kind) {
             Eggs.Kind.LOGO -> logoEgg(show.style, t, p, show.seed, ink, txt)
             Eggs.Kind.GLITCH -> crash(t, p, show.seed, ink, txt)
@@ -223,10 +223,10 @@ private fun EggShow(show: Eggs.Show) {
     }
 }
 
-private class Ink(val bg: Color, val panel: Color, val amber: Color, val hot: Color, val white: Color, val dim: Color, val blood: Color, val line: Color)
+private class EggInk(val bg: Color, val panel: Color, val amber: Color, val hot: Color, val white: Color, val dim: Color, val blood: Color, val line: Color)
 
 /** Text for the egg canvases: laid out once per text and size, drawn centred. */
-private class Txt(val tm: TextMeasurer, val font: FontFamily, val cache: HashMap<String, TextLayoutResult>, val d: DrawScope) {
+private class EggTxt(val tm: TextMeasurer, val font: FontFamily, val cache: HashMap<String, TextLayoutResult>, val d: DrawScope) {
     fun lay(s: String, px: Float, bold: Boolean = true): TextLayoutResult = cache.getOrPut("$s|${px.toInt()}|$bold") {
         tm.measure(s, TextStyle(fontFamily = font, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             fontSize = with(d) { px.toSp() }))
@@ -254,7 +254,7 @@ private fun h(i: Int, salt: Int): Float {
 
 // ------------------------------------------------------------------------------------------------ the logo eggs
 
-private fun DrawScope.logoEgg(style: Style, t: Float, p: Float, seed: Int, k: Ink, txt: Txt) {
+private fun DrawScope.logoEgg(style: Style, t: Float, p: Float, seed: Int, k: EggInk, txt: EggTxt) {
     val w = size.width; val hgt = size.height; val c = Offset(w / 2, hgt / 2); val u = min(w, hgt) / 100f
     val e = env(p)
     when (style) {
@@ -552,7 +552,7 @@ private fun DrawScope.heart(c: Offset, s: Float, col: Color) {
 private fun crashHard(p: Float): Float = if (p < 0.55f) 1f else ((0.75f - p) / 0.2f).coerceIn(0f, 1f)
 
 /** TERMINAL: the screen crashes — tearing bands, colour bars, the app jolts, "segmentation fault", reboot. */
-private fun DrawScope.crash(t: Float, p: Float, seed: Int, k: Ink, txt: Txt) {
+private fun DrawScope.crash(t: Float, p: Float, seed: Int, k: EggInk, txt: EggTxt) {
     val w = size.width; val hgt = size.height; val u = min(w, hgt) / 100f
     val hard = crashHard(p)
     val frame = (t * 24f).toInt()
@@ -585,7 +585,7 @@ private fun DrawScope.crash(t: Float, p: Float, seed: Int, k: Ink, txt: Txt) {
 }
 
 /** "Name a game" → "core dump": the app takes a bow — its core bursts into a ring of light. */
-private fun DrawScope.selfBow(t: Float, p: Float, seed: Int, k: Ink, txt: Txt) {
+private fun DrawScope.selfBow(t: Float, p: Float, seed: Int, k: EggInk, txt: EggTxt) {
     val w = size.width; val hgt = size.height; val c = Offset(w / 2, hgt * 0.42f); val u = min(w, hgt) / 100f
     val e = env(p, 0.1f, 0.2f)
     drawRect(k.bg.copy(alpha = 0.62f * e))
@@ -609,7 +609,7 @@ private fun DrawScope.selfBow(t: Float, p: Float, seed: Int, k: Ink, txt: Txt) {
 }
 
 /** "<3": love, right back. */
-private fun DrawScope.love(t: Float, p: Float, seed: Int, k: Ink, txt: Txt) {
+private fun DrawScope.love(t: Float, p: Float, seed: Int, k: EggInk, txt: EggTxt) {
     val u = min(size.width, size.height) / 100f
     hearts(t, p, seed, u, Color(0xFFFF4D6D))
     val c = Offset(size.width / 2, size.height * 0.45f)
@@ -620,7 +620,7 @@ private fun DrawScope.love(t: Float, p: Float, seed: Int, k: Ink, txt: Txt) {
 }
 
 /** A milestone ("50 runs"): confetti and a thank-you. */
-private fun DrawScope.milestone(t: Float, p: Float, seed: Int, note: String, k: Ink, txt: Txt) {
+private fun DrawScope.milestone(t: Float, p: Float, seed: Int, note: String, k: EggInk, txt: EggTxt) {
     val w = size.width; val hgt = size.height; val u = min(w, hgt) / 100f
     drawRect(Color.Black.copy(alpha = 0.3f * env(p)))
     confetti(t, p, seed, u)

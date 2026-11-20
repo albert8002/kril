@@ -494,7 +494,7 @@ class AppModel(val scope: CoroutineScope) {
         val before = settings.elo
         val after = app.coredump.game.Ranked.elo(before, oppElo, score, app.coredump.game.Ranked.K_RANKED)
         val d = after - before
-        val entry = app.coredump.data.RankedResult(opp, oppElo, mine, theirs, d, after, Platform.epochMillis())
+        val entry = app.coredump.data.RankedResult(opp, oppElo, mine, theirs, d, after, app.coredump.platform.Platform.epochMillis())
         update { s ->
             val streak = if (score == 1.0) s.streak + 1 else 0
             s.copy(elo = after, streak = streak, bestStreak = maxOf(s.bestStreak, streak), peakElo = maxOf(s.peakElo, after),
