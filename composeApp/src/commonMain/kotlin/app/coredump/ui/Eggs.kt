@@ -231,9 +231,11 @@ private class EggTxt(val tm: TextMeasurer, val font: FontFamily, val cache: Hash
         tm.measure(s, TextStyle(fontFamily = font, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             fontSize = with(d) { px.toSp() }))
     }
-    /** [s] centred on [c], in [color]. */
+    /** [s] centred on [c], in [color]; shrunk to fit 92 % of the screen's width when it is wider. */
     fun center(s: String, c: Offset, px: Float, color: Color, alpha: Float = 1f, bold: Boolean = true) {
-        val l = lay(s, px, bold)
+        var l = lay(s, px, bold)
+        val room = d.size.width * 0.92f
+        if (l.size.width > room) l = lay(s, (px * room / l.size.width).coerceAtLeast(6f), bold)
         d.drawText(l, color, Offset(c.x - l.size.width / 2f, c.y - l.size.height / 2f), alpha.coerceIn(0f, 1f))
     }
     fun at(s: String, topLeft: Offset, px: Float, color: Color, alpha: Float = 1f, bold: Boolean = false) {
@@ -344,8 +346,8 @@ private fun DrawScope.logoEgg(style: Style, t: Float, p: Float, seed: Int, k: Eg
             for (x in -8..7) for (y in 0..6) px(x, y, if (y == 0 || y == 6 || x == -8 || x == 7) dark else wood)
             for (x in -1..0) for (y in 1..2) px(x, y, gold)
             val open = ((p - 0.15f) / 0.2f).coerceIn(0f, 1f)
-            val lid = (-5 - (open * 6).toInt())
-            for (x in -8..7) for (y in 0..4) px(x, lid + y, if (y == 0 || y == 4 || x == -8 || x == 7) dark else wood)
+            val lid = (-3 - (open * 6).toInt())
+            for (x in -8..7) for (y in 0..2) px(x, lid + y, if (y == 0 || y == 2 || x == -8 || x == 7) dark else wood)
             if (open > 0f) {
                 for (i in 0 until 14) {
                     val a = i * 2f * PI.toFloat() / 14f + t
@@ -605,7 +607,8 @@ private fun DrawScope.selfBow(t: Float, p: Float, seed: Int, k: EggInk, txt: Egg
     if (burst > 0f) drawCircle(k.hot.copy(alpha = (1f - burst) * 0.6f), u * 16f * (1f + burst * 4f), c, style = Stroke(u * 1.2f * (1f - burst) + 1f))
     val a = ((p - 0.3f) * 5f).coerceIn(0f, 1f) * e
     txt.center("CORE DUMP? that's me!", Offset(w / 2, hgt * 0.68f), u * 6.4f, k.hot, a)
-    txt.center("flattered ♥ but no points for self-promotion", Offset(w / 2, hgt * 0.75f), u * 3.6f, k.amber, a, bold = false)
+    txt.center("flattered ♥", Offset(w / 2, hgt * 0.75f), u * 4.4f, k.amber, a)
+    txt.center("but no points for self-promotion", Offset(w / 2, hgt * 0.8f), u * 3.6f, k.amber, a, bold = false)
 }
 
 /** "<3": love, right back. */
