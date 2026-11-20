@@ -1,0 +1,55 @@
+11:SNAP relay broker.hivemq.com tcp -> OK ({"k":"ping"})
+12:SNAP relay broker.hivemq.com wss -> ConnAck(returnCode=0)
+13:SNAP relay broker.emqx.io tcp -> OK ({"k":"ping"})
+14:SNAP relay broker.emqx.io wss -> ConnAck(returnCode=0)
+15:SNAP relay test.mosquitto.org tcp -> OK ({"k":"ping"})
+16:SNAP relay test.mosquitto.org wss -> ConnAck(returnCode=0)
+17:SNAP restored 247 wikidata + 6 wikipedia prompts, 417 state rows
+18:SNAP verify wd.dog 'Kai Ken' -> Kai Ken (27 sitelinks)
+19:SNAP verify wd.dog 'Shikoku Ken' -> Shikoku Ken (30 sitelinks)
+20:SNAP verify wd.dog 'banana' -> rejected
+21:SNAP verify wd.cheese 'Tête de Moine' -> Tête de Moine (26 sitelinks)
+22:SNAP verify wd.cheese 'toaster' -> rejected
+23:SNAP wikidata todo 4/281
+24:SNAP wikidata  wg.rodent                      FAIL0 65004ms HttpTimeoutException: request timed out
+25:SNAP wikidata  wg.raptor                      FAIL0 65002ms HttpTimeoutException: request timed out
+26:SNAP wikidata  wg.parrot                      FAIL0 65002ms HttpTimeoutException: request timed out
+27:SNAP wikidata  wg.shark                       FAIL0 65003ms HttpTimeoutException: request timed out
+28:SNAP wikidata  wg.raptor                      FAIL1 65003ms HttpTimeoutException: request timed out
+29:SNAP wikidata  wg.parrot                      FAIL1 65002ms HttpTimeoutException: request timed out
+30:SNAP wikidata  wg.rodent                      FAIL1 65003ms HttpTimeoutException: request timed out
+31:SNAP wikidata  wg.shark                       FAIL1 65003ms HttpTimeoutException: request timed out
+32:SNAP pool  wx.mu.by.singer.us                   553 fam=600  7583ms  top: Michael Jackson, Marilyn Monroe, Corbin Bleu, Elvis Presley, Marlene Dietrich
+33:SNAP pool  wx.fd.by.chef.us                      67 fam=  3  1514ms  top: Anthony Bourdain, Danny Kaye, Seth Rollins, Kelis, David Burtka
+34:SNAP pool  wx.sp.by.tennisplayer.us             599 fam= 38  13221ms  top: Serena Williams, Andre Agassi, Martina Navratilova, Venus Williams, Anna Kournikova
+35:SNAP pool  wx.bk.by.poet.us                     594 fam=166  39872ms  top: Edgar Allan Poe, Ernest Hemingway, Madonna, Bob Dylan, Thomas Mann
+36:SNAP pool  wx.sc.by.physicist.us                600 fam=210  53636ms  top: Albert Einstein, Thomas Edison, Nikola Tesla, Enrico Fermi, Alexander Graham Bell
+37:SNAP pool  wx.tv.by.comedian.us                 592 fam=293  3705ms  top: Jackie Chan, Robin Williams, Woody Allen, Tom Hanks, Jim Carrey
+38:SNAP pool  wx.pc.by.model.us                    583 fam=342  18218ms  top: Corbin Bleu, Selena Gomez, Ariana Grande, Whitney Houston, Nicole Kidman
+39:SNAP pool  wx.ge.s.eutown50k                    891 fam=900  44915ms  top: Paris, London, Rome, Moscow, Berlin
+40:SNAP pool  wx.an2.s.marsupial                   260 fam=  8  6147ms  top: Thylacine, Tasmanian devil, Didelphis virginiana, numbat, water opossum
+41:SNAP pool  wx.na.s.africapark                   307 fam= 22  20754ms  top: Virunga National Park, Serengeti National Park, Garamba National Park, Niokolo-Koba National Park, Comoé National Park
+42:SNAP pool  wx.gm.s.pre1990                      383 fam= 12  2464ms  top: Super Mario Bros., Pong, Space Invaders, Super Mario Bros. 3, Spacewar!
+43:SNAP pool  wx.ho.s.horror1980s                  301 fam= 21  2810ms  top: Blue Velvet, The Name of the Rose, A Nightmare on Elm Street, Friday the 13th, The Fly
+44:SNAP pool  wx.lm.s.supertall                    189 fam= 36  5379ms  top: Burj Khalifa, Empire State Building, Willis Tower, Petronas Towers, Taipei 101
+45:SNAP pool  wx.hi.s.ww1                          227 fam=  9  1277ms  top: Battle of Verdun, Battle of the Somme, First Battle of the Marne, Battle of Tannenberg, Third Battle of Ypres
+46:SNAP pool  wx.br.s.carde                        141 fam= 11  1230ms  top: Volkswagen, BMW, Audi AG, Porsche, Opel
+47:SNAP pool  wx.tc.s.apple                        328 fam= 45  3995ms  top: iPhone, macOS, Mac, USB, iPod
+48:SNAP pool  wx.wo.s.biglanguage                  140 fam=110  20935ms  top: English, German, French, Spanish, Russian
+49:SNAP pool  wx.an.bat                            799 fam= 27  22035ms  top: common pipistrelle, Plecotus auritus, Greater Horseshoe Bat, serotine bat, Myotis nattereri
+50:SNAP pool  wx.job.singersongwriter              768 fam=476  18149ms  top: John Lennon, Taylor Swift, Selena Gomez, Freddie Mercury, Bob Marley
+51:SNAP pool  wx.pl.castle                          37 fam= 37  2678ms  top: Château de Montsoreau, Neuschwanstein Castle, Tower of London, Bastille, Windsor Castle
+52:SNAP pool  wx.my.saint                          136 fam=136  11748ms  top: Augustine of Hippo, Constantine the Great, Justinian I, Hildegard of Bingen, Gregory I
+53:SNAP pool  wx.ev.hat                             46 fam=  6  315ms  top: mitre, top hat, sombrero, ushanka, papal tiara
+54:SNAP pool  wx.nx.activist                       133 fam=142  3415ms  top: Lech Wałęsa, Marlon Brando, Malala Yousafzai, Brigitte Bardot, Emma Watson
+55:SNAP pool  wx.bd.infection                      175 fam=130  3376ms  top: COVID-19, HIV/AIDS, malaria, tuberculosis, influenza
+56:SNAP pool  wx.th.carmodel                       197 fam= 35  10521ms  top: Ford Model T, Bugatti Veyron, Volkswagen Beetle, Citroën 2CV, Tata Nano
+57:SNAP pool  wx.mv.by.actor.uk                    589 fam=484  50545ms  top: Charlie Chaplin, Alfred Hitchcock, John Lennon, Audrey Hepburn, Elizabeth Taylor
+58:SNAP pool  wx.mu.by.singer.uk                   587 fam=224  34220ms  top: Charlie Chaplin, John Lennon, Freddie Mercury, Audrey Hepburn, Paul McCartney
+59:SNAP pool  wx.fd.by.chef.uk                      23 fam=  2  1446ms  top: Gordon Ramsay, Jamie Oliver, Elizabeth David, Michel Roux, Heston Blumenthal
+60:SNAP pool  wx.sp.by.tennisplayer.uk             333 fam=  7  1193ms  top: George VI, Andy Murray, Emma Raducanu, Virginia Wade, Fred Perry
+61:SNAP pool  wx.bk.by.poet.uk                     595 fam= 94  18660ms  top: Oscar Wilde, James Joyce, J. R. R. Tolkien, John Lennon, Freddie Mercury
+62:SNAP pool  wx.sc.by.physicist.uk                403 fam= 74  12279ms  top: Tim Berners-Lee, Arthur C. Clarke, Paul Dirac, Joseph John Thomson, Max Born
+63:SNAP pool  wx.tv.by.comedian.uk               FAIL 65002ms request timed out
+64:SNAP pool summary: 417 templates; sample ok=30 small=1 fail=1
+65:SNAP SUMMARY wikidata 247/281 prompts (124148 answers), wikipedia 6/8 prompts (1392 answers), 936s; index=[live_wikidata.json, live_wikipedia.json]
