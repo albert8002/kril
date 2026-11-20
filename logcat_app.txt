@@ -1,0 +1,919 @@
+11-20 23:22:08.234 V/SplashScreenExceptionList(  517): SplashScreen checking exception for package app.coredump (target sdk:35) -> false
+11-20 23:22:08.288 V/WindowManagerShell(  826): Transition requested: android.os.BinderProxy@419ab39 TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.coredump/.MainActivity } baseActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} topActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} origActivity=null realActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} numActivities=1 lastActiveTime=45517 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@82f757e} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{f759adf app.coredump.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-20 23:22:08.745 D/CoreBackPreview(  517): Window{c02edd3 u0 Splash Screen app.coredump}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@716e3cb, mPriority=0, mIsAnimationCallback=false}
+11-20 23:22:09.690 V/GraphicsEnvironment( 3592): ANGLE GameManagerService for app.coredump: false
+11-20 23:22:09.690 V/GraphicsEnvironment( 3592): app.coredump is not listed in per-application setting
+11-20 23:22:10.024 D/CarrierSvcBindHelper( 1041): onPackageAdded: app.coredump
+11-20 23:22:10.041 D/ImsResolver( 1041): maybeAddedImsService, packageName: app.coredump
+11-20 23:22:10.063 D/CarrierSvcBindHelper( 1041): onPackageModified: app.coredump
+11-20 23:22:10.075 D/ImsResolver( 1041): maybeAddedImsService, packageName: app.coredump
+11-20 23:22:10.229 W/InputManager-JNI(  517): Input channel object 'df574ef app.coredump/app.coredump.MainActivity (client)' was disposed without first being removed with the input manager!
+11-20 23:22:10.596 D/CoreBackPreview(  517): Window{7412014 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1918df5, mPriority=0, mIsAnimationCallback=false}
+11-20 23:22:10.636 V/WindowManager(  517): Sent Transition #7 createdAt=11-20 23:22:08.220 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.coredump/.MainActivity } baseActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} topActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} origActivity=null realActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} numActivities=1 lastActiveTime=45517 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{85d1b5c Task{82667f4 #8 type=standard A=10192:app.coredump}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{322de65 app.coredump.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-20 23:22:11.649 I/WindowManager(  517): finishDrawing of relaunch: Window{7412014 u0 app.coredump/app.coredump.MainActivity} 2694ms
+11-20 23:22:11.659 I/ActivityTaskManager(  517): Displayed app.coredump/.MainActivity for user 0: +3s469ms
+11-20 23:22:11.678 W/InputManager-JNI(  517): Input channel object 'c02edd3 Splash Screen app.coredump (client)' was disposed without first being removed with the input manager!
+11-20 23:22:11.681 D/CoreBackPreview(  517): Window{c02edd3 u0 Splash Screen app.coredump EXITING}: Setting back callback null
+11-20 23:22:15.750 D/ProfileInstaller( 3592): Installing profile for app.coredump
+11-20 23:22:19.930 I/SafetyLabelChangedBroadcastReceiver(  828): received broadcast packageName: app.coredump, current user: UserHandle{0}, packageChangeEvent: NEW_INSTALL, intent user: UserHandle{0}
+11-20 23:22:23.201 I/AiAiEcho( 1627): AppFetcherImpl onPackageChanged app.coredump.
+11-20 23:22:33.674 I/ImeTracker( 3592): app.coredump:92ef80c7: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:22:33.678 I/ImeTracker( 3592): app.coredump:92ef80c7: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:22:33.819 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:22:38.545 I/FontLog ( 1394): Package app.coredump has no metadata [CONTEXT service_id=132 ]
+11-20 23:22:39.103 I/BlockstoreStorage( 1446): Clearing Blockstore Data for package app.coredump [CONTEXT service_id=258 ]
+11-20 23:22:42.550 I/ImeTracker( 3592): app.coredump:dfc35829: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:22:42.551 I/ImeTracker( 3592): app.coredump:dfc35829: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:22:42.553 I/ImeTracker( 3592): app.coredump:3db78489: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:22:42.553 I/ImeTracker( 3592): app.coredump:3db78489: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:22:42.553 I/ImeTracker( 3592): app.coredump:3db78489: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:22:42.553 I/ImeTracker(  517): app.coredump:3db78489: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:22:45.330 I/ImeTracker( 3592): app.coredump:48e5083b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:22:45.330 I/ImeTracker( 3592): app.coredump:48e5083b: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:22:45.338 I/ImeTracker( 3592): app.coredump:618e56a3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:22:45.338 I/ImeTracker( 3592): app.coredump:618e56a3: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:22:47.445 I/app.coredump( 3592): Compiler allocated 5144KB to compile void app.coredump.ui.RunsKt.world(androidx.compose.ui.graphics.drawscope.DrawScope, app.coredump.ui.Style, app.coredump.ui.Frame, app.coredump.ui.Ink, java.util.List, androidx.compose.ui.text.TextMeasurer, app.coredump.ui.RunKit)
+11-20 23:22:57.504 I/ImeTracker( 3592): app.coredump:8b9569c9: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:22:57.533 I/ImeTracker( 3592): app.coredump:8b9569c9: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:22:57.775 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:23:00.421 I/ImeTracker( 3592): app.coredump:c958b8e9: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:23:00.421 I/ImeTracker( 3592): app.coredump:c958b8e9: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:00.421 I/ImeTracker( 3592): app.coredump:e75049c2: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:23:00.421 I/ImeTracker( 3592): app.coredump:e75049c2: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:00.421 I/ImeTracker(  517): app.coredump:e75049c2: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:23:00.421 I/ImeTracker( 3592): app.coredump:e75049c2: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:23:02.143 I/ImeTracker( 3592): app.coredump:9fbaf028: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:23:02.143 I/ImeTracker( 3592): app.coredump:9fbaf028: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:23:02.184 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:23:03.546 I/ImeTracker( 3592): app.coredump:eab02a36: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:23:03.546 I/ImeTracker( 3592): app.coredump:eab02a36: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:03.547 I/ImeTracker( 3592): app.coredump:653e0356: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:23:03.547 I/ImeTracker( 3592): app.coredump:653e0356: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:03.547 I/ImeTracker( 3592): app.coredump:653e0356: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:23:03.551 I/ImeTracker(  517): app.coredump:653e0356: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:23:04.273 I/ImeTracker( 3592): app.coredump:6e3967d9: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:23:04.273 I/ImeTracker( 3592): app.coredump:6e3967d9: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:04.275 I/ImeTracker( 3592): app.coredump:4d657008: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:23:04.275 I/ImeTracker( 3592): app.coredump:4d657008: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:23:17.363 I/app.coredump( 3592): JIT allocated 80KB for compiled code of void app.coredump.ui.ComponentsKt.Panel-t6yy7ic(java.lang.String, androidx.compose.ui.Modifier, long, long, kotlin.jvm.functions.Function3, androidx.compose.runtime.Composer, int, int)
+11-20 23:23:17.363 I/app.coredump( 3592): Compiler allocated 7544KB to compile void app.coredump.ui.ComponentsKt.Panel-t6yy7ic(java.lang.String, androidx.compose.ui.Modifier, long, long, kotlin.jvm.functions.Function3, androidx.compose.runtime.Composer, int, int)
+11-20 23:23:19.981 I/app.coredump( 3592): Compiler allocated 4333KB to compile void app.coredump.ui.ComponentsKt.TButton-LUweHsE(java.lang.String, kotlin.jvm.functions.Function0, androidx.compose.ui.Modifier, boolean, boolean, long, long, androidx.compose.runtime.Composer, int, int)
+11-20 23:23:27.485 I/ImeTracker( 3592): app.coredump:dcae19b1: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:23:27.485 I/ImeTracker( 3592): app.coredump:dcae19b1: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:23:27.518 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:23:28.459 I/app.coredump( 3592): Compiler allocated 4284KB to compile void app.coredump.ui.screens.GazetteScreensKt.GazettePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-20 23:23:28.511 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:23:30.984 I/ImeTracker( 3592): app.coredump:109328d3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:23:30.984 I/ImeTracker( 3592): app.coredump:109328d3: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:30.990 I/ImeTracker( 3592): app.coredump:379bf188: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:23:30.990 I/ImeTracker( 3592): app.coredump:379bf188: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:30.990 I/ImeTracker( 3592): app.coredump:379bf188: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:23:30.993 I/ImeTracker(  517): app.coredump:379bf188: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:23:33.180 I/app.coredump( 3592): Compiler allocated 5144KB to compile void app.coredump.ui.RunsKt.world(androidx.compose.ui.graphics.drawscope.DrawScope, app.coredump.ui.Style, app.coredump.ui.Frame, app.coredump.ui.Ink, java.util.List, androidx.compose.ui.text.TextMeasurer, app.coredump.ui.RunKit)
+11-20 23:23:48.751 I/ImeTracker( 3592): app.coredump:d69949a1: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:23:48.752 I/ImeTracker( 3592): app.coredump:d69949a1: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:23:48.847 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:23:51.678 I/ImeTracker( 3592): app.coredump:1c989e3e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:23:51.678 I/ImeTracker( 3592): app.coredump:1c989e3e: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:51.684 I/ImeTracker( 3592): app.coredump:2e87be85: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:23:51.684 I/ImeTracker( 3592): app.coredump:2e87be85: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:51.684 I/ImeTracker( 3592): app.coredump:2e87be85: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:23:51.685 I/ImeTracker(  517): app.coredump:2e87be85: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:23:53.238 I/ImeTracker( 3592): app.coredump:4bd98db1: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:23:53.241 I/ImeTracker( 3592): app.coredump:4bd98db1: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:23:53.268 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:23:54.627 I/ImeTracker( 3592): app.coredump:22ee41d8: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:23:54.627 I/ImeTracker( 3592): app.coredump:22ee41d8: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:54.653 I/ImeTracker( 3592): app.coredump:95f25f74: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:23:54.654 I/ImeTracker( 3592): app.coredump:95f25f74: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:54.654 I/ImeTracker( 3592): app.coredump:95f25f74: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:23:54.659 I/ImeTracker(  517): app.coredump:95f25f74: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:23:55.198 I/ImeTracker( 3592): app.coredump:fbcfa3f7: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:23:55.198 I/ImeTracker( 3592): app.coredump:fbcfa3f7: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:23:55.242 I/ImeTracker( 3592): app.coredump:9f04e212: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:23:55.242 I/ImeTracker( 3592): app.coredump:9f04e212: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:24:18.014 I/ImeTracker( 3592): app.coredump:6513bed6: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:24:18.015 I/ImeTracker( 3592): app.coredump:6513bed6: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:24:18.063 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:24:18.540 I/app.coredump( 3592): JIT allocated 56KB for compiled code of void app.coredump.ui.screens.ArcadeScreensKt.ArcadePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-20 23:24:18.540 I/app.coredump( 3592): Compiler allocated 5032KB to compile void app.coredump.ui.screens.ArcadeScreensKt.ArcadePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-20 23:24:27.023 I/ImeTracker( 3592): app.coredump:d8b92fd4: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:24:27.024 I/ImeTracker( 3592): app.coredump:d8b92fd4: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:24:27.026 I/ImeTracker( 3592): app.coredump:930b8bda: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:24:27.027 I/ImeTracker( 3592): app.coredump:930b8bda: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:24:27.027 I/ImeTracker( 3592): app.coredump:930b8bda: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:24:27.028 I/ImeTracker(  517): app.coredump:930b8bda: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:24:29.502 I/ImeTracker( 3592): app.coredump:cbc828a0: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:24:29.503 I/ImeTracker( 3592): app.coredump:cbc828a0: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:24:29.525 I/ImeTracker( 3592): app.coredump:e1230fd8: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:24:29.525 I/ImeTracker( 3592): app.coredump:e1230fd8: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:24:41.711 I/ImeTracker( 3592): app.coredump:6b4b7cdf: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:24:41.711 I/ImeTracker( 3592): app.coredump:6b4b7cdf: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:24:41.763 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:24:44.640 I/ImeTracker( 3592): app.coredump:d8bb17e5: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:24:44.640 I/ImeTracker( 3592): app.coredump:d8bb17e5: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:24:44.641 I/ImeTracker( 3592): app.coredump:dde48282: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:24:44.642 I/ImeTracker( 3592): app.coredump:dde48282: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:24:44.642 I/ImeTracker(  517): app.coredump:dde48282: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:24:44.642 I/ImeTracker( 3592): app.coredump:dde48282: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:24:46.277 I/ImeTracker( 3592): app.coredump:421859b4: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:24:46.277 I/ImeTracker( 3592): app.coredump:421859b4: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:24:46.341 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:24:47.662 I/ImeTracker( 3592): app.coredump:75b34415: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:24:47.665 I/ImeTracker( 3592): app.coredump:75b34415: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:24:47.672 I/ImeTracker( 3592): app.coredump:885bc278: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:24:47.672 I/ImeTracker( 3592): app.coredump:885bc278: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:24:47.672 I/ImeTracker( 3592): app.coredump:885bc278: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:24:47.673 I/ImeTracker(  517): app.coredump:885bc278: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:24:48.274 I/ImeTracker( 3592): app.coredump:ffb4ed22: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:24:48.275 I/ImeTracker( 3592): app.coredump:ffb4ed22: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:24:48.278 I/ImeTracker( 3592): app.coredump:3c5e0f88: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:24:48.279 I/ImeTracker( 3592): app.coredump:3c5e0f88: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:24:51.958 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:25:11.096 I/ImeTracker( 3592): app.coredump:cf1a53a8: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:25:11.096 I/ImeTracker( 3592): app.coredump:cf1a53a8: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:25:11.147 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:25:19.644 I/ImeTracker( 3592): app.coredump:f4449bca: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:25:19.644 I/ImeTracker( 3592): app.coredump:f4449bca: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:25:19.644 I/ImeTracker( 3592): app.coredump:dac14016: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:25:19.645 I/ImeTracker( 3592): app.coredump:dac14016: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:25:19.645 I/ImeTracker(  517): app.coredump:dac14016: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:25:19.645 I/ImeTracker( 3592): app.coredump:dac14016: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:25:22.077 I/ImeTracker( 3592): app.coredump:160aa599: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:25:22.080 I/ImeTracker( 3592): app.coredump:160aa599: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:25:22.081 I/ImeTracker( 3592): app.coredump:1beb050a: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:25:22.081 I/ImeTracker( 3592): app.coredump:1beb050a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:25:34.099 I/ImeTracker( 3592): app.coredump:1a56c392: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:25:34.100 I/ImeTracker( 3592): app.coredump:1a56c392: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:25:34.116 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:25:37.096 I/ImeTracker( 3592): app.coredump:4edb8c5e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:25:37.097 I/ImeTracker( 3592): app.coredump:4edb8c5e: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:25:37.097 I/ImeTracker( 3592): app.coredump:4ce3586d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:25:37.098 I/ImeTracker( 3592): app.coredump:4ce3586d: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:25:37.098 I/ImeTracker(  517): app.coredump:4ce3586d: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:25:37.098 I/ImeTracker( 3592): app.coredump:4ce3586d: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:25:38.643 I/ImeTracker( 3592): app.coredump:933e08cb: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:25:38.644 I/ImeTracker( 3592): app.coredump:933e08cb: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:25:38.665 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:25:40.045 I/ImeTracker( 3592): app.coredump:96c4eba4: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:25:40.052 I/ImeTracker( 3592): app.coredump:96c4eba4: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:25:40.052 I/ImeTracker( 3592): app.coredump:16155d98: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:25:40.052 I/ImeTracker( 3592): app.coredump:16155d98: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:25:40.053 I/ImeTracker( 3592): app.coredump:16155d98: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:25:40.053 I/ImeTracker(  517): app.coredump:16155d98: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:25:40.529 I/ImeTracker( 3592): app.coredump:b6f4b819: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:25:40.530 I/ImeTracker( 3592): app.coredump:b6f4b819: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:25:40.530 I/ImeTracker( 3592): app.coredump:23feb619: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:25:40.530 I/ImeTracker( 3592): app.coredump:23feb619: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:26:03.245 I/ImeTracker( 3592): app.coredump:e0854299: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:26:03.245 I/ImeTracker( 3592): app.coredump:e0854299: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:26:03.292 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:26:11.974 I/ImeTracker( 3592): app.coredump:2f79fbb4: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:26:11.974 I/ImeTracker( 3592): app.coredump:2f79fbb4: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:26:11.975 I/ImeTracker( 3592): app.coredump:5b24caa1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:26:11.975 I/ImeTracker( 3592): app.coredump:5b24caa1: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:26:11.975 I/ImeTracker(  517): app.coredump:5b24caa1: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:26:11.975 I/ImeTracker( 3592): app.coredump:5b24caa1: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:26:14.421 I/ImeTracker( 3592): app.coredump:5e90f056: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:26:14.421 I/ImeTracker( 3592): app.coredump:5e90f056: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:26:14.422 I/ImeTracker( 3592): app.coredump:830f0d81: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:26:14.422 I/ImeTracker( 3592): app.coredump:830f0d81: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:26:21.247 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:26:26.490 I/ImeTracker( 3592): app.coredump:f45e0a3f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:26:26.490 I/ImeTracker( 3592): app.coredump:f45e0a3f: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:26:26.612 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:26:29.433 I/ImeTracker( 3592): app.coredump:bcb97c1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:26:29.433 I/ImeTracker( 3592): app.coredump:bcb97c1: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:26:29.434 I/ImeTracker( 3592): app.coredump:dd700fdd: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:26:29.434 I/ImeTracker( 3592): app.coredump:dd700fdd: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:26:29.434 I/ImeTracker( 3592): app.coredump:dd700fdd: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:26:29.435 I/ImeTracker(  517): app.coredump:dd700fdd: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:26:31.030 I/ImeTracker( 3592): app.coredump:edc44dc8: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:26:31.030 I/ImeTracker( 3592): app.coredump:edc44dc8: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:26:31.095 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:26:32.497 I/ImeTracker( 3592): app.coredump:e33ea71b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:26:32.497 I/ImeTracker( 3592): app.coredump:e33ea71b: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:26:32.498 I/ImeTracker( 3592): app.coredump:4e0f20df: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:26:32.498 I/ImeTracker( 3592): app.coredump:4e0f20df: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:26:32.498 I/ImeTracker( 3592): app.coredump:4e0f20df: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:26:32.498 I/ImeTracker(  517): app.coredump:4e0f20df: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:26:32.902 I/ImeTracker( 3592): app.coredump:fd803c58: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:26:32.921 I/ImeTracker( 3592): app.coredump:fd803c58: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:26:32.921 I/ImeTracker( 3592): app.coredump:631998b1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:26:32.921 I/ImeTracker( 3592): app.coredump:631998b1: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:26:55.736 I/ImeTracker( 3592): app.coredump:bcf11cc: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:26:55.736 I/ImeTracker( 3592): app.coredump:bcf11cc: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:26:55.744 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:27:04.370 I/ImeTracker( 3592): app.coredump:8b411ff3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:27:04.371 I/ImeTracker( 3592): app.coredump:8b411ff3: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:27:04.371 I/ImeTracker( 3592): app.coredump:85af9fb1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:27:04.371 I/ImeTracker( 3592): app.coredump:85af9fb1: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:27:04.372 I/ImeTracker(  517): app.coredump:85af9fb1: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:27:04.372 I/ImeTracker( 3592): app.coredump:85af9fb1: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:27:06.700 I/ImeTracker( 3592): app.coredump:a6099da3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:27:06.700 I/ImeTracker( 3592): app.coredump:a6099da3: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:27:06.700 I/ImeTracker( 3592): app.coredump:3266c934: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:27:06.700 I/ImeTracker( 3592): app.coredump:3266c934: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:27:18.739 I/ImeTracker( 3592): app.coredump:324d1d3f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:27:18.739 I/ImeTracker( 3592): app.coredump:324d1d3f: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:27:18.766 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:27:21.573 I/ImeTracker( 3592): app.coredump:ba5fa39f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:27:21.577 I/ImeTracker( 3592): app.coredump:ba5fa39f: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:27:21.578 I/ImeTracker( 3592): app.coredump:cd713667: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:27:21.578 I/ImeTracker( 3592): app.coredump:cd713667: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:27:21.579 I/ImeTracker(  517): app.coredump:cd713667: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:27:21.579 I/ImeTracker( 3592): app.coredump:cd713667: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:27:23.131 I/ImeTracker( 3592): app.coredump:f3925110: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:27:23.133 I/ImeTracker( 3592): app.coredump:f3925110: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:27:23.158 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:27:24.658 I/ImeTracker( 3592): app.coredump:8cad7072: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:27:24.658 I/ImeTracker( 3592): app.coredump:8cad7072: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:27:24.658 I/ImeTracker( 3592): app.coredump:66c7f86f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:27:24.658 I/ImeTracker( 3592): app.coredump:66c7f86f: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:27:24.658 I/ImeTracker(  517): app.coredump:66c7f86f: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:27:24.658 I/ImeTracker( 3592): app.coredump:66c7f86f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:27:25.211 I/ImeTracker( 3592): app.coredump:a1781256: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:27:25.211 I/ImeTracker( 3592): app.coredump:a1781256: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:27:25.212 I/ImeTracker( 3592): app.coredump:37bd7de9: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:27:25.212 I/ImeTracker( 3592): app.coredump:37bd7de9: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:27:47.918 I/ImeTracker( 3592): app.coredump:5d962d69: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:27:47.919 I/ImeTracker( 3592): app.coredump:5d962d69: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:27:48.121 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:27:51.271 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:27:56.794 I/ImeTracker( 3592): app.coredump:5c96b07b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:27:56.794 I/ImeTracker( 3592): app.coredump:5c96b07b: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:27:56.795 I/ImeTracker( 3592): app.coredump:15a47031: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:27:56.795 I/ImeTracker( 3592): app.coredump:15a47031: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:27:56.795 I/ImeTracker( 3592): app.coredump:15a47031: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:27:56.798 I/ImeTracker(  517): app.coredump:15a47031: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:27:59.158 I/ImeTracker( 3592): app.coredump:d1c58b3e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:27:59.158 I/ImeTracker( 3592): app.coredump:d1c58b3e: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:27:59.159 I/ImeTracker( 3592): app.coredump:89f64ec0: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:27:59.159 I/ImeTracker( 3592): app.coredump:89f64ec0: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:28:11.081 I/ImeTracker( 3592): app.coredump:bb1e2634: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:28:11.082 I/ImeTracker( 3592): app.coredump:bb1e2634: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:28:11.160 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:28:14.036 I/ImeTracker( 3592): app.coredump:1aa99ae7: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:28:14.036 I/ImeTracker( 3592): app.coredump:1aa99ae7: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:28:14.036 I/ImeTracker( 3592): app.coredump:3145f1a8: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:28:14.036 I/ImeTracker( 3592): app.coredump:3145f1a8: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:28:14.036 I/ImeTracker( 3592): app.coredump:3145f1a8: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:28:14.036 I/ImeTracker(  517): app.coredump:3145f1a8: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:28:15.544 I/ImeTracker( 3592): app.coredump:3973a8c0: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:28:15.544 I/ImeTracker( 3592): app.coredump:3973a8c0: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:28:15.614 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:28:17.189 I/ImeTracker( 3592): app.coredump:fd0ea552: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:28:17.189 I/ImeTracker( 3592): app.coredump:fd0ea552: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:28:17.189 I/ImeTracker( 3592): app.coredump:2256b757: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:28:17.189 I/ImeTracker( 3592): app.coredump:2256b757: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:28:17.191 I/ImeTracker( 3592): app.coredump:2256b757: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:28:17.191 I/ImeTracker(  517): app.coredump:2256b757: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:28:17.617 I/ImeTracker( 3592): app.coredump:90d98132: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:28:17.617 I/ImeTracker( 3592): app.coredump:90d98132: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:28:17.617 I/ImeTracker( 3592): app.coredump:cd56de8b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:28:17.617 I/ImeTracker( 3592): app.coredump:cd56de8b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:28:40.431 I/ImeTracker( 3592): app.coredump:8bd49557: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:28:40.432 I/ImeTracker( 3592): app.coredump:8bd49557: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:28:40.492 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:28:49.178 I/ImeTracker( 3592): app.coredump:b13a6aaa: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:28:49.178 I/ImeTracker( 3592): app.coredump:b13a6aaa: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:28:49.178 I/ImeTracker( 3592): app.coredump:841e2107: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:28:49.179 I/ImeTracker( 3592): app.coredump:841e2107: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:28:49.179 I/ImeTracker(  517): app.coredump:841e2107: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:28:49.179 I/ImeTracker( 3592): app.coredump:841e2107: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:28:51.452 I/ImeTracker( 3592): app.coredump:811cd28: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:28:51.452 I/ImeTracker( 3592): app.coredump:811cd28: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:28:51.453 I/ImeTracker( 3592): app.coredump:a1f94210: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:28:51.453 I/ImeTracker( 3592): app.coredump:a1f94210: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:29:03.578 I/ImeTracker( 3592): app.coredump:981b9572: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:29:03.579 I/ImeTracker( 3592): app.coredump:981b9572: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:29:03.584 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:29:06.505 I/ImeTracker( 3592): app.coredump:165a55f1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:29:06.505 I/ImeTracker( 3592): app.coredump:165a55f1: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:29:06.509 I/ImeTracker( 3592): app.coredump:70968e09: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:29:06.509 I/ImeTracker( 3592): app.coredump:70968e09: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:29:06.509 I/ImeTracker( 3592): app.coredump:70968e09: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:29:06.515 I/ImeTracker(  517): app.coredump:70968e09: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:29:08.028 I/ImeTracker( 3592): app.coredump:36f76dc2: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:29:08.028 I/ImeTracker( 3592): app.coredump:36f76dc2: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:29:08.037 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:29:09.455 I/ImeTracker( 3592): app.coredump:c9f11f1e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:29:09.455 I/ImeTracker( 3592): app.coredump:c9f11f1e: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:29:09.471 I/ImeTracker( 3592): app.coredump:f899be7c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:29:09.472 I/ImeTracker( 3592): app.coredump:f899be7c: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:29:09.472 I/ImeTracker( 3592): app.coredump:f899be7c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:29:09.502 I/ImeTracker(  517): app.coredump:f899be7c: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:29:09.939 I/ImeTracker( 3592): app.coredump:4de5a27e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:29:09.940 I/ImeTracker( 3592): app.coredump:4de5a27e: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:29:09.940 I/ImeTracker( 3592): app.coredump:bcc6ad24: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:29:09.940 I/ImeTracker( 3592): app.coredump:bcc6ad24: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:29:19.544 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:29:32.803 I/ImeTracker( 3592): app.coredump:7653f12a: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:29:32.804 I/ImeTracker( 3592): app.coredump:7653f12a: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:29:32.903 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:29:41.373 I/ImeTracker( 3592): app.coredump:531aef49: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:29:41.373 I/ImeTracker( 3592): app.coredump:531aef49: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:29:41.373 I/ImeTracker( 3592): app.coredump:f04dd56c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:29:41.374 I/ImeTracker( 3592): app.coredump:f04dd56c: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:29:41.374 I/ImeTracker( 3592): app.coredump:f04dd56c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:29:41.376 I/ImeTracker(  517): app.coredump:f04dd56c: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:29:53.957 I/ImeTracker( 3592): app.coredump:4fad3e8f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:29:53.958 I/ImeTracker( 3592): app.coredump:4fad3e8f: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:29:53.980 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:29:56.846 I/ImeTracker( 3592): app.coredump:7036bb0c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:29:56.846 I/ImeTracker( 3592): app.coredump:7036bb0c: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:29:56.846 I/ImeTracker( 3592): app.coredump:2f62af0: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:29:56.846 I/ImeTracker( 3592): app.coredump:2f62af0: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:29:56.846 I/ImeTracker( 3592): app.coredump:2f62af0: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:29:56.851 I/ImeTracker(  517): app.coredump:2f62af0: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:29:58.360 I/ImeTracker( 3592): app.coredump:d16f30f1: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:29:58.360 I/ImeTracker( 3592): app.coredump:d16f30f1: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:29:58.363 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:29:59.809 I/ImeTracker( 3592): app.coredump:26f6c79b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:29:59.809 I/ImeTracker( 3592): app.coredump:26f6c79b: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:29:59.812 I/ImeTracker( 3592): app.coredump:b11209e2: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:29:59.812 I/ImeTracker( 3592): app.coredump:b11209e2: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:29:59.812 I/ImeTracker(  517): app.coredump:b11209e2: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:29:59.812 I/ImeTracker( 3592): app.coredump:b11209e2: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:30:00.224 I/ImeTracker( 3592): app.coredump:67e26bdb: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:30:00.226 I/ImeTracker( 3592): app.coredump:67e26bdb: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:30:00.226 I/ImeTracker( 3592): app.coredump:3241664c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:30:00.226 I/ImeTracker( 3592): app.coredump:3241664c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:30:23.015 I/ImeTracker( 3592): app.coredump:a5fb2487: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:30:23.016 I/ImeTracker( 3592): app.coredump:a5fb2487: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:30:23.041 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:30:31.550 I/ImeTracker( 3592): app.coredump:bd34a480: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:30:31.557 I/ImeTracker( 3592): app.coredump:bd34a480: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:30:31.557 I/ImeTracker( 3592): app.coredump:e359ea95: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:30:31.558 I/ImeTracker( 3592): app.coredump:e359ea95: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:30:31.558 I/ImeTracker( 3592): app.coredump:e359ea95: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:30:31.558 I/ImeTracker(  517): app.coredump:e359ea95: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:30:33.901 I/ImeTracker( 3592): app.coredump:28a90adb: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:30:33.903 I/ImeTracker( 3592): app.coredump:28a90adb: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:30:33.903 I/ImeTracker( 3592): app.coredump:6c7757c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:30:33.904 I/ImeTracker( 3592): app.coredump:6c7757c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:30:46.030 I/ImeTracker( 3592): app.coredump:f2fb118c: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:30:46.031 I/ImeTracker( 3592): app.coredump:f2fb118c: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:30:46.055 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:30:46.664 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:30:48.858 I/ImeTracker( 3592): app.coredump:d42465b9: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:30:48.858 I/ImeTracker( 3592): app.coredump:d42465b9: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:30:48.859 I/ImeTracker( 3592): app.coredump:3adfc548: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:30:48.859 I/ImeTracker( 3592): app.coredump:3adfc548: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:30:48.859 I/ImeTracker(  517): app.coredump:3adfc548: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:30:48.859 I/ImeTracker( 3592): app.coredump:3adfc548: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:30:50.457 I/ImeTracker( 3592): app.coredump:d76f7ccb: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:30:50.457 I/ImeTracker( 3592): app.coredump:d76f7ccb: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:30:50.463 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:30:51.789 I/ImeTracker( 3592): app.coredump:b3255698: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:30:51.789 I/ImeTracker( 3592): app.coredump:b3255698: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:30:51.790 I/ImeTracker( 3592): app.coredump:c9654047: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:30:51.790 I/ImeTracker( 3592): app.coredump:c9654047: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:30:51.790 I/ImeTracker(  517): app.coredump:c9654047: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:30:51.790 I/ImeTracker( 3592): app.coredump:c9654047: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:30:52.291 I/ImeTracker( 3592): app.coredump:dc05cb9e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:30:52.292 I/ImeTracker( 3592): app.coredump:dc05cb9e: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:30:52.300 I/ImeTracker( 3592): app.coredump:37881b69: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:30:52.300 I/ImeTracker( 3592): app.coredump:37881b69: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:31:14.918 I/ImeTracker( 3592): app.coredump:abe818ed: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:31:14.919 I/ImeTracker( 3592): app.coredump:abe818ed: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:31:14.957 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:31:23.502 I/ImeTracker( 3592): app.coredump:f7836fae: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:31:23.506 I/ImeTracker( 3592): app.coredump:f7836fae: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:31:23.507 I/ImeTracker( 3592): app.coredump:43ac36ad: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:31:23.507 I/ImeTracker( 3592): app.coredump:43ac36ad: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:31:23.508 I/ImeTracker( 3592): app.coredump:43ac36ad: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:31:23.517 I/ImeTracker(  517): app.coredump:43ac36ad: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:31:25.793 I/ImeTracker( 3592): app.coredump:2b465c25: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:31:25.793 I/ImeTracker( 3592): app.coredump:2b465c25: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:31:25.794 I/ImeTracker( 3592): app.coredump:7714bdd7: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:31:25.794 I/ImeTracker( 3592): app.coredump:7714bdd7: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:31:37.761 I/ImeTracker( 3592): app.coredump:252c640f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:31:37.763 I/ImeTracker( 3592): app.coredump:252c640f: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:31:37.796 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:31:40.602 I/ImeTracker( 3592): app.coredump:98d12519: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:31:40.602 I/ImeTracker( 3592): app.coredump:98d12519: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:31:40.603 I/ImeTracker( 3592): app.coredump:b215b807: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:31:40.603 I/ImeTracker( 3592): app.coredump:b215b807: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:31:40.603 I/ImeTracker( 3592): app.coredump:b215b807: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:31:40.604 I/ImeTracker(  517): app.coredump:b215b807: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:31:42.142 I/ImeTracker( 3592): app.coredump:6e256b94: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:31:42.142 I/ImeTracker( 3592): app.coredump:6e256b94: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:31:42.146 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:31:43.644 I/ImeTracker( 3592): app.coredump:b0ba1b1d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:31:43.648 I/ImeTracker( 3592): app.coredump:b0ba1b1d: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:31:43.648 I/ImeTracker( 3592): app.coredump:538227be: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:31:43.650 I/ImeTracker( 3592): app.coredump:538227be: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:31:43.650 I/ImeTracker(  517): app.coredump:538227be: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:31:43.650 I/ImeTracker( 3592): app.coredump:538227be: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:31:44.179 I/ImeTracker( 3592): app.coredump:4bc5cd3c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:31:44.179 I/ImeTracker( 3592): app.coredump:4bc5cd3c: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:31:44.193 I/ImeTracker( 3592): app.coredump:7c742aa: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:31:44.193 I/ImeTracker( 3592): app.coredump:7c742aa: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:32:06.787 I/ImeTracker( 3592): app.coredump:c72307ca: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:32:06.788 I/ImeTracker( 3592): app.coredump:c72307ca: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:32:06.878 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:32:15.422 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:32:15.509 I/ImeTracker( 3592): app.coredump:8665aa05: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:32:15.509 I/ImeTracker( 3592): app.coredump:8665aa05: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:32:15.510 I/ImeTracker( 3592): app.coredump:e5ef0d3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:32:15.510 I/ImeTracker( 3592): app.coredump:e5ef0d3: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:32:15.512 I/ImeTracker(  517): app.coredump:e5ef0d3: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:32:15.512 I/ImeTracker( 3592): app.coredump:e5ef0d3: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:32:17.883 I/ImeTracker( 3592): app.coredump:db96573f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:32:17.883 I/ImeTracker( 3592): app.coredump:db96573f: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:32:17.887 I/ImeTracker( 3592): app.coredump:59df4e22: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:32:17.889 I/ImeTracker( 3592): app.coredump:59df4e22: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:32:29.992 I/ImeTracker( 3592): app.coredump:7e567b44: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:32:29.992 I/ImeTracker( 3592): app.coredump:7e567b44: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:32:29.998 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:32:32.906 I/ImeTracker( 3592): app.coredump:967dbf9d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:32:32.907 I/ImeTracker( 3592): app.coredump:967dbf9d: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:32:32.931 I/ImeTracker( 3592): app.coredump:682e747: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:32:32.932 I/ImeTracker( 3592): app.coredump:682e747: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:32:32.932 I/ImeTracker( 3592): app.coredump:682e747: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:32:32.935 I/ImeTracker(  517): app.coredump:682e747: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:32:34.490 I/ImeTracker( 3592): app.coredump:12ffd7d4: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:32:34.490 I/ImeTracker( 3592): app.coredump:12ffd7d4: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:32:34.563 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:32:35.841 I/ImeTracker( 3592): app.coredump:9d2642f8: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:32:35.842 I/ImeTracker( 3592): app.coredump:9d2642f8: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:32:35.844 I/ImeTracker( 3592): app.coredump:300f34fd: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:32:35.844 I/ImeTracker( 3592): app.coredump:300f34fd: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:32:35.844 I/ImeTracker(  517): app.coredump:300f34fd: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:32:35.845 I/ImeTracker( 3592): app.coredump:300f34fd: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:32:36.365 I/ImeTracker( 3592): app.coredump:7b268821: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:32:36.365 I/ImeTracker( 3592): app.coredump:7b268821: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:32:36.365 I/ImeTracker( 3592): app.coredump:d44b0b9e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:32:36.365 I/ImeTracker( 3592): app.coredump:d44b0b9e: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:33:36.370 I/ImeTracker( 3592): app.coredump:a5cabfb6: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:33:36.370 I/ImeTracker( 3592): app.coredump:a5cabfb6: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:33:36.477 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:33:39.375 I/ImeTracker( 3592): app.coredump:48dcd6e0: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:33:39.375 I/ImeTracker( 3592): app.coredump:48dcd6e0: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:33:39.375 I/ImeTracker( 3592): app.coredump:74ec7ad: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:33:39.375 I/ImeTracker( 3592): app.coredump:74ec7ad: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:33:39.375 I/ImeTracker(  517): app.coredump:74ec7ad: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:33:39.375 I/ImeTracker( 3592): app.coredump:74ec7ad: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:33:44.553 I/ImeTracker( 3592): app.coredump:43170e8a: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:33:44.555 I/ImeTracker( 3592): app.coredump:43170e8a: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:33:44.618 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:33:45.210 I/app.coredump( 3592): Compiler allocated 4266KB to compile void app.coredump.ui.screens.GazetteScreensKt.GazettePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-20 23:33:47.488 I/ImeTracker( 3592): app.coredump:5804fe16: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:33:47.489 I/ImeTracker( 3592): app.coredump:5804fe16: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:33:47.489 I/ImeTracker( 3592): app.coredump:d90e4dcf: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:33:47.492 I/ImeTracker( 3592): app.coredump:d90e4dcf: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:33:47.493 I/ImeTracker(  517): app.coredump:d90e4dcf: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:33:47.493 I/ImeTracker( 3592): app.coredump:d90e4dcf: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:33:52.772 I/ImeTracker( 3592): app.coredump:c5d36207: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:33:52.772 I/ImeTracker( 3592): app.coredump:c5d36207: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:33:52.851 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:33:53.004 I/app.coredump( 3592): JIT allocated 57KB for compiled code of void app.coredump.ui.screens.ArcadeScreensKt.ArcadePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-20 23:33:53.007 I/app.coredump( 3592): Compiler allocated 5019KB to compile void app.coredump.ui.screens.ArcadeScreensKt.ArcadePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-20 23:33:55.713 I/ImeTracker( 3592): app.coredump:19cac93b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:33:55.713 I/ImeTracker( 3592): app.coredump:19cac93b: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:33:55.714 I/ImeTracker( 3592): app.coredump:8f1b25e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:33:55.714 I/ImeTracker( 3592): app.coredump:8f1b25e: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:33:55.714 I/ImeTracker( 3592): app.coredump:8f1b25e: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:33:55.714 I/ImeTracker(  517): app.coredump:8f1b25e: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:33:56.094 I/app.coredump( 3592): Compiler allocated 5760KB to compile void app.coredump.ui.screens.QuizScreensKt.QuizMenu(app.coredump.AppModel, androidx.compose.runtime.Composer, int)
+11-20 23:34:00.825 I/ImeTracker( 3592): app.coredump:99a069e3: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:00.825 I/ImeTracker( 3592): app.coredump:99a069e3: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:34:00.929 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:34:03.757 I/ImeTracker( 3592): app.coredump:3f9f217e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:34:03.759 I/ImeTracker( 3592): app.coredump:3f9f217e: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:03.760 I/ImeTracker( 3592): app.coredump:db1a36e0: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:03.760 I/ImeTracker( 3592): app.coredump:db1a36e0: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:03.760 I/ImeTracker( 3592): app.coredump:db1a36e0: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:34:03.760 I/ImeTracker(  517): app.coredump:db1a36e0: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:34:08.888 I/ImeTracker( 3592): app.coredump:dd25821c: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:08.888 I/ImeTracker( 3592): app.coredump:dd25821c: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:34:08.959 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:34:10.184 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:34:11.844 I/ImeTracker( 3592): app.coredump:69bc5f5a: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:34:11.846 I/ImeTracker( 3592): app.coredump:69bc5f5a: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:11.846 I/ImeTracker( 3592): app.coredump:9aa29b62: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:11.847 I/ImeTracker( 3592): app.coredump:9aa29b62: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:11.847 I/ImeTracker(  517): app.coredump:9aa29b62: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:34:11.847 I/ImeTracker( 3592): app.coredump:9aa29b62: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:34:17.044 I/ImeTracker( 3592): app.coredump:57bbf276: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:17.045 I/ImeTracker( 3592): app.coredump:57bbf276: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:34:17.129 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:34:20.008 I/ImeTracker( 3592): app.coredump:76430a15: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:34:20.009 I/ImeTracker( 3592): app.coredump:76430a15: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:20.010 I/ImeTracker( 3592): app.coredump:eed8f5ad: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:20.010 I/ImeTracker( 3592): app.coredump:eed8f5ad: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:20.011 I/ImeTracker( 3592): app.coredump:eed8f5ad: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:34:20.011 I/ImeTracker(  517): app.coredump:eed8f5ad: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:34:25.157 I/ImeTracker( 3592): app.coredump:e3c46940: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:25.158 I/ImeTracker( 3592): app.coredump:e3c46940: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:34:25.357 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:34:28.277 I/ImeTracker( 3592): app.coredump:75e470cf: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:34:28.278 I/ImeTracker( 3592): app.coredump:75e470cf: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:28.279 I/ImeTracker( 3592): app.coredump:517c9a45: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:28.279 I/ImeTracker( 3592): app.coredump:517c9a45: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:28.279 I/ImeTracker( 3592): app.coredump:517c9a45: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:34:28.279 I/ImeTracker(  517): app.coredump:517c9a45: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:34:33.359 I/ImeTracker( 3592): app.coredump:8f9650a: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:33.359 I/ImeTracker( 3592): app.coredump:8f9650a: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:34:33.399 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:34:36.294 I/ImeTracker( 3592): app.coredump:f059ce5b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:34:36.297 I/ImeTracker( 3592): app.coredump:f059ce5b: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:36.297 I/ImeTracker( 3592): app.coredump:ca77c0d8: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:36.298 I/ImeTracker( 3592): app.coredump:ca77c0d8: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:36.298 I/ImeTracker( 3592): app.coredump:ca77c0d8: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:34:36.298 I/ImeTracker(  517): app.coredump:ca77c0d8: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:34:41.467 I/ImeTracker( 3592): app.coredump:3fb7a1be: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:41.469 I/ImeTracker( 3592): app.coredump:3fb7a1be: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:34:41.507 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:34:44.387 I/ImeTracker( 3592): app.coredump:cb4c90be: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:34:44.387 I/ImeTracker( 3592): app.coredump:cb4c90be: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:44.397 I/ImeTracker( 3592): app.coredump:b61669a6: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:44.397 I/ImeTracker( 3592): app.coredump:b61669a6: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:44.397 I/ImeTracker( 3592): app.coredump:b61669a6: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:34:44.402 I/ImeTracker(  517): app.coredump:b61669a6: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:34:49.637 I/ImeTracker( 3592): app.coredump:f807f742: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:49.637 I/ImeTracker( 3592): app.coredump:f807f742: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:34:49.698 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:34:52.496 I/ImeTracker( 3592): app.coredump:2a30ced7: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:34:52.500 I/ImeTracker( 3592): app.coredump:2a30ced7: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:52.500 I/ImeTracker( 3592): app.coredump:814c471: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:52.500 I/ImeTracker( 3592): app.coredump:814c471: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:34:52.500 I/ImeTracker(  517): app.coredump:814c471: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:34:52.500 I/ImeTracker( 3592): app.coredump:814c471: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:34:57.728 I/ImeTracker( 3592): app.coredump:2bc48bbe: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:34:57.729 I/ImeTracker( 3592): app.coredump:2bc48bbe: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:34:57.788 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:35:00.681 I/ImeTracker( 3592): app.coredump:8c463dd3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:35:00.682 I/ImeTracker( 3592): app.coredump:8c463dd3: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:00.684 I/ImeTracker( 3592): app.coredump:c609c8db: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:00.685 I/ImeTracker( 3592): app.coredump:c609c8db: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:00.685 I/ImeTracker( 3592): app.coredump:c609c8db: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:35:00.685 I/ImeTracker(  517): app.coredump:c609c8db: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:35:05.837 I/ImeTracker( 3592): app.coredump:cf43e680: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:05.837 I/ImeTracker( 3592): app.coredump:cf43e680: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:35:05.886 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:35:08.738 I/ImeTracker( 3592): app.coredump:7dc01d4a: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:35:08.738 I/ImeTracker( 3592): app.coredump:7dc01d4a: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:08.739 I/ImeTracker( 3592): app.coredump:a66ccd9b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:08.739 I/ImeTracker( 3592): app.coredump:a66ccd9b: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:08.757 I/ImeTracker(  517): app.coredump:a66ccd9b: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:35:08.758 I/ImeTracker( 3592): app.coredump:a66ccd9b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:35:09.363 I/ImeTracker( 3592): app.coredump:4f4ca44c: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:09.364 I/ImeTracker( 3592): app.coredump:4f4ca44c: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:35:09.465 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:35:11.691 I/ImeTracker( 3592): app.coredump:4248add6: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:35:11.691 I/ImeTracker( 3592): app.coredump:4248add6: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:11.692 I/ImeTracker( 3592): app.coredump:526bf9fc: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:11.692 I/ImeTracker( 3592): app.coredump:526bf9fc: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:11.692 I/ImeTracker(  517): app.coredump:526bf9fc: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:35:11.692 I/ImeTracker( 3592): app.coredump:526bf9fc: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:35:14.691 I/app.coredump( 3592): Compiler allocated 5142KB to compile void app.coredump.ui.RunsKt.world(androidx.compose.ui.graphics.drawscope.DrawScope, app.coredump.ui.Style, app.coredump.ui.Frame, app.coredump.ui.Ink, java.util.List, androidx.compose.ui.text.TextMeasurer, app.coredump.ui.RunKit)
+11-20 23:35:18.159 I/ImeTracker( 3592): app.coredump:226217ce: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:18.160 I/ImeTracker( 3592): app.coredump:226217ce: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:35:18.260 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:35:20.327 I/ImeTracker( 3592): app.coredump:d901beda: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:35:20.328 I/ImeTracker( 3592): app.coredump:d901beda: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:20.328 I/ImeTracker( 3592): app.coredump:512106c6: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:20.329 I/ImeTracker( 3592): app.coredump:512106c6: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:20.329 I/ImeTracker(  517): app.coredump:512106c6: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:35:20.329 I/ImeTracker( 3592): app.coredump:512106c6: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:35:33.304 I/ImeTracker( 3592): app.coredump:d7946fe3: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:33.305 I/ImeTracker( 3592): app.coredump:d7946fe3: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:35:33.379 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:35:36.866 I/ImeTracker( 3592): app.coredump:5609bde9: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:35:36.867 I/ImeTracker( 3592): app.coredump:5609bde9: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:36.868 I/ImeTracker( 3592): app.coredump:3113529a: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:36.868 I/ImeTracker( 3592): app.coredump:3113529a: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:36.869 I/ImeTracker(  517): app.coredump:3113529a: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:35:36.869 I/ImeTracker( 3592): app.coredump:3113529a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:35:37.561 I/ImeTracker( 3592): app.coredump:882f643c: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:37.561 I/ImeTracker( 3592): app.coredump:882f643c: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:35:37.666 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:35:38.936 I/ImeTracker( 3592): app.coredump:63db3c40: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:35:38.936 I/ImeTracker( 3592): app.coredump:63db3c40: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:38.936 I/ImeTracker( 3592): app.coredump:766c6300: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:38.938 I/ImeTracker( 3592): app.coredump:766c6300: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:38.938 I/ImeTracker( 3592): app.coredump:766c6300: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:35:38.939 I/ImeTracker(  517): app.coredump:766c6300: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:35:42.387 I/ImeTracker( 3592): app.coredump:8e2f444f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:42.389 I/ImeTracker( 3592): app.coredump:8e2f444f: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:35:42.422 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:35:43.594 I/ImeTracker( 3592): app.coredump:eb8c15ba: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:35:43.595 I/ImeTracker( 3592): app.coredump:eb8c15ba: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:43.595 I/ImeTracker( 3592): app.coredump:7b29d34: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:43.595 I/ImeTracker( 3592): app.coredump:7b29d34: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:43.596 I/ImeTracker( 3592): app.coredump:7b29d34: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:35:43.596 I/ImeTracker(  517): app.coredump:7b29d34: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:35:47.097 I/ImeTracker( 3592): app.coredump:4ce3bd4e: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:47.098 I/ImeTracker( 3592): app.coredump:4ce3bd4e: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:35:47.105 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:35:48.316 I/ImeTracker( 3592): app.coredump:83b7c93f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:35:48.316 I/ImeTracker( 3592): app.coredump:83b7c93f: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:48.318 I/ImeTracker( 3592): app.coredump:26f02212: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:48.319 I/ImeTracker( 3592): app.coredump:26f02212: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:48.319 I/ImeTracker(  517): app.coredump:26f02212: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:35:48.319 I/ImeTracker( 3592): app.coredump:26f02212: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:35:51.828 I/ImeTracker( 3592): app.coredump:968f88e1: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:51.830 I/ImeTracker( 3592): app.coredump:968f88e1: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:35:51.921 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:35:53.074 I/ImeTracker( 3592): app.coredump:af91a478: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:35:53.075 I/ImeTracker( 3592): app.coredump:af91a478: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:53.079 I/ImeTracker( 3592): app.coredump:b40caec5: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:35:53.079 I/ImeTracker( 3592): app.coredump:b40caec5: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:35:53.079 I/ImeTracker(  517): app.coredump:b40caec5: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:35:53.089 I/ImeTracker( 3592): app.coredump:b40caec5: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:36:08.608 I/app.coredump( 3592): Compiler allocated 4261KB to compile kotlin.Unit app.coredump.ui.screens.MeltdownScreenKt.MeltScreen$lambda$20$0(boolean, java.lang.String, app.coredump.AppModel, app.coredump.game.MeltSession, app.coredump.game.MeltPlayer, androidx.compose.animation.core.Animatable, int, java.lang.String, androidx.compose.runtime.State, androidx.compose.ui.focus.FocusRequester, boolean, androidx.compose.runtime.MutableState, androidx.compose.runtime.MutableState, androidx.compose.runtime.MutableState, androidx.compose.runtime.MutableState, androidx.compose.foundation.layout.ColumnScope, androidx.compose.runtime.Composer, int)
+11-20 23:37:19.763 I/ImeTracker( 3592): app.coredump:1a17d33: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:37:19.764 I/ImeTracker( 3592): app.coredump:1a17d33: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:37:19.821 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:37:40.531 I/ImeTracker( 3592): app.coredump:ca6be1cd: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:37:40.531 I/ImeTracker( 3592): app.coredump:ca6be1cd: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:37:40.532 I/ImeTracker( 3592): app.coredump:275087b5: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:37:40.532 I/ImeTracker( 3592): app.coredump:275087b5: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:37:40.532 I/ImeTracker( 3592): app.coredump:275087b5: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:37:40.535 I/ImeTracker(  517): app.coredump:275087b5: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:39:03.479 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:39:16.586 I/ImeTracker( 3592): app.coredump:720c6ce5: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:39:16.590 I/ImeTracker( 3592): app.coredump:720c6ce5: onFailed at PHASE_CLIENT_REQUEST_IME_SHOW
+11-20 23:39:16.653 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{6becb1d ActivityRecord{a30bb06 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:39:24.982 I/ImeTracker( 3592): app.coredump:87f522c6: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+11-20 23:39:24.983 I/ImeTracker( 3592): app.coredump:87f522c6: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:39:24.983 I/ImeTracker( 3592): app.coredump:d2d15fc: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:39:24.983 I/ImeTracker( 3592): app.coredump:d2d15fc: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:39:24.983 I/ImeTracker(  517): app.coredump:d2d15fc: setFinished on previously finished token at PHASE_CLIENT_APPLY_ANIMATION with STATUS_CANCEL
+11-20 23:39:24.983 I/ImeTracker( 3592): app.coredump:d2d15fc: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:39:46.786 I/app.coredump( 3592): Compiler allocated 5737KB to compile void app.coredump.ui.EggsKt.logoEgg(androidx.compose.ui.graphics.drawscope.DrawScope, app.coredump.ui.Style, float, float, int, app.coredump.ui.EggInk, app.coredump.ui.EggTxt)
+11-20 23:40:11.209 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:41:26.166 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:41:30.023 I/app.coredump( 3592): Method exceeds compiler instruction limit: 24366 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-20 23:42:02.459 D/AndroidRuntime(11553): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-20 23:42:02.514 I/AndroidRuntime(11553): Using default boot image
+11-20 23:42:02.514 I/AndroidRuntime(11553): Leaving lock profiling enabled
+11-20 23:42:03.032 D/AndroidRuntime(11553): Calling main entry com.android.commands.monkey.Monkey
+11-20 23:42:03.033 W/Monkey  (11553): args: [-p, app.coredump, --pct-syskeys, 0, --pct-appswitch, 0, --pct-anyevent, 0, --pct-nav, 5, --pct-majornav, 5, --throttle, 100, -s, 11, -v, 1500]
+11-20 23:42:03.106 I/Monkey  (11553): :AllowPackage: app.coredump
+11-20 23:42:03.116 I/Monkey  (11553):     // Allowing start of Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] cmp=app.coredump/.MainActivity } in package app.coredump
+11-20 23:42:03.126 V/WindowManagerShell(  826): Transition requested: android.os.BinderProxy@e61f60a TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.coredump/.MainActivity } baseActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} topActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} origActivity=null realActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} numActivities=2 lastActiveTime=1240357 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@e68fe7b} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=ActivityInfo{e600498 app.coredump.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-20 23:42:03.460 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1b344b1, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:03.609 V/WindowManagerShell(  826): onTransitionReady android.os.BinderProxy@e61f60a: {id=8 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{c41787d u0 app.coredump/.MainActivity)/@0x27f0757 sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{a30bb06 u0 app.coredump/.MainActivity)/@0x89cd244 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:42:03.610 V/WindowManagerShell(  826): Transition doesn't have explicit remote, search filters for match for {id=8 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{c41787d u0 app.coredump/.MainActivity)/@0x27f0757 sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{a30bb06 u0 app.coredump/.MainActivity)/@0x89cd244 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:42:03.610 V/WindowManagerShell(  826): start default transition animation, info = {id=8 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{c41787d u0 app.coredump/.MainActivity)/@0x27f0757 sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{a30bb06 u0 app.coredump/.MainActivity)/@0x89cd244 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:42:03.610 I/ActivityTaskManager(  517): Displayed app.coredump/.MainActivity for user 0: +487ms
+11-20 23:42:03.610 V/WindowManager(  517): Sent Transition #8 createdAt=11-20 23:42:03.118 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.coredump/.MainActivity } baseActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} topActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} origActivity=null realActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} numActivities=2 lastActiveTime=1240357 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{85d1b5c Task{82667f4 #8 type=standard A=10192:app.coredump}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=ActivityInfo{a55896e app.coredump.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-20 23:42:03.610 V/WindowManager(  517):     info={id=8 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{c41787d u0 app.coredump/.MainActivity)/@0xf113b3 sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{a30bb06 u0 app.coredump/.MainActivity)/@0xf04bd22 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:42:04.687 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{c41787d u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1b344b1, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{acdd83b u0 app.coredump/app.coredump.MainActivity}
+11-20 23:42:04.691 I/ImeTracker(  517): app.coredump:5f9e81f9: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+11-20 23:42:04.691 I/ImeTracker(  517): app.coredump:5f9e81f9: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-20 23:42:07.025 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{c41787d u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1b344b1, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{acdd83b u0 app.coredump/app.coredump.MainActivity}
+11-20 23:42:09.605 W/InputDispatcher(  517): Waiting because no window has focus but ActivityRecord{c41787d u0 app.coredump/.MainActivity t8} may eventually add a window when it finishes starting up. Will wait for 5000ms
+11-20 23:42:09.632 I/ImeTracker( 3592): app.coredump:428a9a81: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:09.651 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{8449372 ActivityRecord{c41787d u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:42:09.800 I/ImeTracker( 3592): app.coredump:664ff718: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:09.838 I/ImeTracker( 3592): app.coredump:6eb3c360: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:09.844 I/ImeTracker( 3592): app.coredump:664ff718: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:10.299 I/ImeTracker(  517): app.coredump:cbb61830: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_SAME_WINDOW_FOCUSED_WITHOUT_EDITOR
+11-20 23:42:10.302 I/ImeTracker(  517): app.coredump:cbb61830: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-20 23:42:10.567 I/ImeTracker(  517): app.coredump:428a9a81: onCancelled at PHASE_WM_SHOW_IME_RUNNER
+11-20 23:42:10.681 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@fc5b9ca, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:10.727 I/ImeTracker( 3592): app.coredump:6eb3c360: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:10.995 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@499346e, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:11.257 I/ImeTracker( 3592): app.coredump:52f9bb4b: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:11.446 I/ImeTracker( 3592): app.coredump:790ffc1: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:42:11.651 I/ImeTracker( 3592): app.coredump:c096415e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:11.667 I/ImeTracker( 3592): app.coredump:9ac3a44e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:11.672 I/ImeTracker( 3592): app.coredump:c096415e: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:12.214 W/InputDispatcher(  517): Dispatching key to acdd83b app.coredump/app.coredump.MainActivity even though there are other unprocessed events
+11-20 23:42:12.334 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d73b13d, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:12.726 W/InputDispatcher(  517): Dispatching key to acdd83b app.coredump/app.coredump.MainActivity even though there are other unprocessed events
+11-20 23:42:13.470 W/InputDispatcher(  517): Dispatching key to acdd83b app.coredump/app.coredump.MainActivity even though there are other unprocessed events
+11-20 23:42:13.584 I/ImeTracker( 3592): app.coredump:52f9bb4b: onShown
+11-20 23:42:13.973 W/InputDispatcher(  517): Dispatching key to acdd83b app.coredump/app.coredump.MainActivity even though there are other unprocessed events
+11-20 23:42:14.910 W/InputDispatcher(  517): Dispatching key to acdd83b app.coredump/app.coredump.MainActivity even though there are other unprocessed events
+11-20 23:42:14.942 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2727ms processing KeyEvent(deviceId=-1, eventTime=1248923000000, source=KEYBOARD, displayId=-1, action=DOWN, flags=0x00000008, keyCode=MENU(82), scanCode=0, metaState=0x00000000, repeatCount=0), policyFlags=0x6b000000
+11-20 23:42:14.973 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2247ms processing KeyEvent(deviceId=-1, eventTime=1249452000000, source=KEYBOARD, displayId=-1, action=UP, flags=0x00000008, keyCode=MENU(82), scanCode=0, metaState=0x00000000, repeatCount=0), policyFlags=0x6b000000
+11-20 23:42:14.973 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2036ms processing MotionEvent(deviceId=-1, eventTime=1250168000000, source=TRACKBALL, displayId=0, action=MOVE, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=1.0, yPrecision=1.0, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (2.0, 3.0)]), policyFlags=0x6b000000
+11-20 23:42:14.973 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2035ms processing MotionEvent(deviceId=-1, eventTime=1250170000000, source=TRACKBALL, displayId=0, action=MOVE, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=1.0, yPrecision=1.0, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (-3.0, -2.0)]), policyFlags=0x6b000000
+11-20 23:42:14.973 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2035ms processing MotionEvent(deviceId=-1, eventTime=1250170000000, source=TRACKBALL, displayId=0, action=MOVE, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=1.0, yPrecision=1.0, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (-2.0, -4.0)]), policyFlags=0x6b000000
+11-20 23:42:14.973 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2035ms processing MotionEvent(deviceId=-1, eventTime=1250170000000, source=TRACKBALL, displayId=0, action=MOVE, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=1.0, yPrecision=1.0, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (-1.0, 1.0)]), policyFlags=0x6b000000
+11-20 23:42:14.973 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2035ms processing MotionEvent(deviceId=-1, eventTime=1250170000000, source=TRACKBALL, displayId=0, action=MOVE, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=1.0, yPrecision=1.0, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (4.0, -5.0)]), policyFlags=0x6b000000
+11-20 23:42:14.973 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2035ms processing MotionEvent(deviceId=-1, eventTime=1250170000000, source=TRACKBALL, displayId=0, action=MOVE, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=1.0, yPrecision=1.0, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (4.0, 2.0)]), policyFlags=0x6b000000
+11-20 23:42:14.973 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2035ms processing MotionEvent(deviceId=-1, eventTime=1250170000000, source=TRACKBALL, displayId=0, action=MOVE, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=1.0, yPrecision=1.0, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (3.0, -5.0)]), policyFlags=0x6b000000
+11-20 23:42:14.973 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2035ms processing MotionEvent(deviceId=-1, eventTime=1250170000000, source=TRACKBALL, displayId=0, action=MOVE, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=1.0, yPrecision=1.0, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (-1.0, 2.0)]), policyFlags=0x6b000000
+11-20 23:42:14.973 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2035ms processing MotionEvent(deviceId=-1, eventTime=1250170000000, source=TRACKBALL, displayId=0, action=MOVE, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=1.0, yPrecision=1.0, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (-3.0, 2.0)]), policyFlags=0x6b000000
+11-20 23:42:14.973 I/InputDispatcher(  517): acdd83b app.coredump/app.coredump.MainActivity (server) spent 2035ms processing MotionEvent(deviceId=-1, eventTime=1250170000000, source=TRACKBALL, displayId=0, action=MOVE, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=1.0, yPrecision=1.0, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (-2.0, -4.0)]), policyFlags=0x6b000000
+11-20 23:42:14.977 I/ImeTracker(  517): app.coredump:790ffc1: onCancelled at PHASE_WM_SHOW_IME_RUNNER
+11-20 23:42:15.157 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@3d08fde, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:15.206 W/InputDispatcher(  517): Waiting because no window has focus but ActivityRecord{c41787d u0 app.coredump/.MainActivity t8} may eventually add a window when it finishes starting up. Will wait for 5000ms
+11-20 23:42:15.251 I/ImeTracker( 3592): app.coredump:21742f89: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:15.252 I/ImeTracker(  517): app.coredump:21742f89: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-20 23:42:15.254 I/ImeTracker( 3592): app.coredump:9ac3a44e: onHidden
+11-20 23:42:17.452 W/InputDispatcher(  517): Waiting because no window has focus but ActivityRecord{c41787d u0 app.coredump/.MainActivity t8} may eventually add a window when it finishes starting up. Will wait for 5000ms
+11-20 23:42:17.667 W/InputDispatcher(  517): Dispatching key to acdd83b app.coredump/app.coredump.MainActivity even though there are other unprocessed events
+11-20 23:42:17.760 I/ImeTracker(  517): app.coredump:f90e290c: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_SAME_WINDOW_FOCUSED_WITHOUT_EDITOR
+11-20 23:42:17.760 I/ImeTracker(  517): app.coredump:f90e290c: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-20 23:42:17.901 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{c41787d u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@3d08fde, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{acdd83b u0 app.coredump/app.coredump.MainActivity}
+11-20 23:42:19.268 I/ImeTracker( 3592): app.coredump:eb40f97: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:19.496 I/ImeTracker( 3592): app.coredump:aef9c8d0: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:42:19.896 I/ImeTracker( 3592): app.coredump:d9bb701c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:19.908 I/ImeTracker( 3592): app.coredump:eb5850e3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:19.918 I/ImeTracker( 3592): app.coredump:d9bb701c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:19.935 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@4638da3, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:20.096 I/ImeTracker(  517): app.coredump:aef9c8d0: onCancelled at PHASE_WM_SHOW_IME_RUNNER
+11-20 23:42:20.123 I/ImeTracker( 3592): app.coredump:ee1d296a: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:20.171 I/ImeTracker( 3592): app.coredump:eb40f97: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+11-20 23:42:20.307 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@84e9594, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:20.308 I/ImeTracker( 3592): app.coredump:e55995c4: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:42:20.384 I/ImeTracker( 3592): app.coredump:eb5850e3: onHidden
+11-20 23:42:20.695 I/ImeTracker(  517): app.coredump:ee1d296a: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-20 23:42:20.912 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{c41787d u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@84e9594, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{acdd83b u0 app.coredump/app.coredump.MainActivity}
+11-20 23:42:21.030 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@a544548, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:21.064 I/ImeTracker( 3592): app.coredump:cab9a70b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:21.064 I/ImeTracker( 3592): app.coredump:d975c7: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:21.065 I/ImeTracker( 3592): app.coredump:e55995c4: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+11-20 23:42:21.097 I/ImeTracker( 3592): app.coredump:bd56ea94: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:21.101 I/ImeTracker(  517): app.coredump:bd56ea94: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-20 23:42:21.106 I/ImeTracker( 3592): app.coredump:cab9a70b: onHidden
+11-20 23:42:21.173 I/ImeTracker( 3592): app.coredump:d975c7: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:21.179 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ab58ed5, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:22.151 W/InputDispatcher(  517): Dispatching key to acdd83b app.coredump/app.coredump.MainActivity even though there are other unprocessed events
+11-20 23:42:22.769 W/InputDispatcher(  517): Dispatching key to acdd83b app.coredump/app.coredump.MainActivity even though there are other unprocessed events
+11-20 23:42:22.963 I/ImeTracker( 3592): app.coredump:cc905bf3: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:23.121 I/ImeTracker( 3592): app.coredump:dfd3c059: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:42:23.286 W/InputDispatcher(  517): Dispatching key to acdd83b app.coredump/app.coredump.MainActivity even though there are other unprocessed events
+11-20 23:42:23.410 I/ImeTracker(  517): app.coredump:cc905bf3: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-20 23:42:23.672 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@9d1bbec, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:23.884 I/ImeTracker( 3592): app.coredump:7e7cde90: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:23.885 I/ImeTracker( 3592): app.coredump:1cae875a: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:23.888 I/ImeTracker( 3592): app.coredump:dfd3c059: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+11-20 23:42:24.050 I/ImeTracker( 3592): app.coredump:eb1a9732: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:24.051 I/ImeTracker(  517): app.coredump:eb1a9732: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-20 23:42:24.051 I/ImeTracker( 3592): app.coredump:7e7cde90: onHidden
+11-20 23:42:24.184 I/ImeTracker( 3592): app.coredump:1cae875a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:24.196 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@2959c84, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:24.444 I/ImeTracker( 3592): app.coredump:fb06db01: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:24.444 I/ImeTracker( 3592): app.coredump:fb06db01: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:25.964 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{c41787d u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@2959c84, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{acdd83b u0 app.coredump/app.coredump.MainActivity}
+11-20 23:42:26.350 I/ImeTracker( 3592): app.coredump:a05a397e: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:26.481 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{c41787d u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@2959c84, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{acdd83b u0 app.coredump/app.coredump.MainActivity}
+11-20 23:42:26.571 I/ImeTracker( 3592): app.coredump:2cad17d3: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:42:26.635 I/ImeTracker( 3592): app.coredump:d66103ab: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:26.639 I/ImeTracker( 3592): app.coredump:7c5e3158: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:26.646 I/ImeTracker( 3592): app.coredump:d66103ab: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:26.704 I/ImeTracker(  517): app.coredump:7a1588a5: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_SOFT_INPUT_BY_BACK_KEY
+11-20 23:42:26.750 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{c41787d u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@2959c84, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{acdd83b u0 app.coredump/app.coredump.MainActivity}
+11-20 23:42:26.975 I/ImeTracker( 3592): app.coredump:2cad17d3: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:26.975 I/ImeTracker( 3592): app.coredump:a05a397e: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+11-20 23:42:26.976 I/ImeTracker( 3592): app.coredump:7a1588a5: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:26.977 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@6905a, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:26.984 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@99c4f81, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:27.084 I/ImeTracker( 3592): app.coredump:2c0105d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:27.084 I/ImeTracker(  517): app.coredump:2c0105d: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-20 23:42:27.084 I/ImeTracker( 3592): app.coredump:7c5e3158: onHidden
+11-20 23:42:27.990 I/ImeTracker( 3592): app.coredump:38f43080: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:28.163 I/ImeTracker( 3592): app.coredump:2205aa06: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:42:28.496 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ba1b47b, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:28.583 I/ImeTracker( 3592): app.coredump:2205aa06: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:28.735 I/ImeTracker( 3592): app.coredump:38f43080: onShown
+11-20 23:42:29.244 I/ImeTracker( 3592): app.coredump:16ca788c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:29.262 I/ImeTracker( 3592): app.coredump:33619c57: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:29.313 I/ImeTracker( 3592): app.coredump:5d8b73a5: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:29.313 I/ImeTracker(  517): app.coredump:5d8b73a5: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-20 23:42:29.313 I/ImeTracker( 3592): app.coredump:16ca788c: onHidden
+11-20 23:42:29.569 I/ImeTracker( 3592): app.coredump:33619c57: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:29.571 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@4c23274, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:31.604 I/ImeTracker(  517): app.coredump:6e0f5e67: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_SAME_WINDOW_FOCUSED_WITHOUT_EDITOR
+11-20 23:42:31.604 I/ImeTracker(  517): app.coredump:6e0f5e67: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-20 23:42:32.284 I/ImeTracker( 3592): app.coredump:ee779c42: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:32.372 I/ImeTracker( 3592): app.coredump:ec3e4000: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:42:32.657 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1b696ed, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:32.979 I/ImeTracker( 3592): app.coredump:ec3e4000: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:33.122 I/ImeTracker( 3592): app.coredump:ee779c42: onShown
+11-20 23:42:34.147 I/ImeTracker( 3592): app.coredump:73915b1f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:34.148 I/ImeTracker( 3592): app.coredump:73915b1f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:34.232 I/ImeTracker( 3592): app.coredump:2e45f798: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:42:34.314 I/ImeTracker( 3592): app.coredump:2e45f798: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:36.786 I/AndroidRuntime(11553): VM exiting with result code 0.
+11-20 23:42:37.298 D/AndroidRuntime(11899): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-20 23:42:37.312 I/AndroidRuntime(11899): Using default boot image
+11-20 23:42:37.314 I/AndroidRuntime(11899): Leaving lock profiling enabled
+11-20 23:42:37.503 D/AndroidRuntime(11899): Calling main entry com.android.commands.monkey.Monkey
+11-20 23:42:37.503 W/Monkey  (11899): args: [-p, app.coredump, --pct-syskeys, 0, --pct-appswitch, 0, --pct-anyevent, 0, --pct-nav, 5, --pct-majornav, 5, --throttle, 100, -s, 22, -v, 1500]
+11-20 23:42:37.518 I/Monkey  (11899): :AllowPackage: app.coredump
+11-20 23:42:37.666 I/Monkey  (11899):     // Allowing start of Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] cmp=app.coredump/.MainActivity } in package app.coredump
+11-20 23:42:37.674 V/WindowManagerShell(  826): Transition requested: android.os.BinderProxy@eb2b61d TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.coredump/.MainActivity } baseActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} topActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} origActivity=null realActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} numActivities=3 lastActiveTime=1274906 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@d029092} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=ActivityInfo{5103a63 app.coredump.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-20 23:42:37.973 I/InputDispatcher(  517): Not sending touch event to acdd83b app.coredump/app.coredump.MainActivity because it is paused
+11-20 23:42:38.130 W/InputDispatcher(  517): Waiting because no window has focus but ActivityRecord{e7d9315 u0 app.coredump/.MainActivity t8} may eventually add a window when it finishes starting up. Will wait for 5000ms
+11-20 23:42:38.330 D/CoreBackPreview(  517): Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@a298af6, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:38.435 V/WindowManagerShell(  826): onTransitionReady android.os.BinderProxy@eb2b61d: {id=9 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{e7d9315 u0 app.coredump/.MainActivity)/@0x5453660 sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{c41787d u0 app.coredump/.MainActivity)/@0x3499719 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:42:38.436 V/WindowManagerShell(  826): Transition doesn't have explicit remote, search filters for match for {id=9 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{e7d9315 u0 app.coredump/.MainActivity)/@0x5453660 sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{c41787d u0 app.coredump/.MainActivity)/@0x3499719 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:42:38.436 V/WindowManagerShell(  826): start default transition animation, info = {id=9 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{e7d9315 u0 app.coredump/.MainActivity)/@0x5453660 sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{c41787d u0 app.coredump/.MainActivity)/@0x3499719 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:42:38.440 I/ActivityTaskManager(  517): Displayed app.coredump/.MainActivity for user 0: +763ms
+11-20 23:42:38.440 V/WindowManager(  517): Sent Transition #9 createdAt=11-20 23:42:37.667 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.coredump/.MainActivity } baseActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} topActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} origActivity=null realActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} numActivities=3 lastActiveTime=1274906 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{85d1b5c Task{82667f4 #8 type=standard A=10192:app.coredump}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=ActivityInfo{f5be393 app.coredump.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-20 23:42:38.440 V/WindowManager(  517):     info={id=9 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{e7d9315 u0 app.coredump/.MainActivity)/@0x28e0fcd sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{c41787d u0 app.coredump/.MainActivity)/@0xf113b3 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:42:40.000 D/CoreBackPreview(  517): Window{acdd83b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@78dbc9, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:40.000 D/CoreBackPreview(  517): Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ce302ce, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:40.006 I/ImeTracker(  517): app.coredump:136993: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+11-20 23:42:40.354 I/ImeTracker( 3592): app.coredump:136993: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+11-20 23:42:40.355 I/ImeTracker( 3592): app.coredump:efaeff8b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:40.355 I/ImeTracker( 3592): app.coredump:efaeff8b: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:42:40.372 D/CoreBackPreview(  517): Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@337e3e7, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:44.336 I/ImeTracker( 3592): app.coredump:bb544393: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:42:44.409 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{586362a ActivityRecord{e7d9315 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:42:44.482 I/ImeTracker( 3592): app.coredump:6e5f1870: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:42:44.604 D/CoreBackPreview(  517): Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@6b211c4, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:44.848 I/ImeTracker(  517): app.coredump:bb544393: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-20 23:42:45.064 I/ImeTracker( 3592): app.coredump:6e5f1870: onShown
+11-20 23:42:45.844 I/ImeTracker(  517): app.coredump:4bfcd8bb: onRequestShow at ORIGIN_SERVER_START_INPUT reason ATTACH_NEW_INPUT
+11-20 23:42:47.012 I/ImeTracker( 3592): app.coredump:4bfcd8bb: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:42:55.011 W/InputDispatcher(  517): Waiting because no window has focus but ActivityRecord{e7d9315 u0 app.coredump/.MainActivity t8} may eventually add a window when it finishes starting up. Will wait for 5000ms
+11-20 23:42:58.426 I/AndroidRuntime( 1016): VM exiting with result code 0, cleanup skipped.
+11-20 23:42:59.892 D/CoreBackPreview(  517): Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ee841c, mPriority=0, mIsAnimationCallback=false}
+11-20 23:42:59.892 D/CoreBackPreview(  517): Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b76f825, mPriority=0, mIsAnimationCallback=false}
+11-20 23:43:03.609 I/ImeTracker( 3592): app.coredump:b76d3fed: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:03.614 I/ImeTracker( 3592): app.coredump:b76d3fed: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:03.622 I/ImeTracker( 3592): app.coredump:8d2938a2: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:43:03.885 I/ImeTracker( 3592): app.coredump:8d2938a2: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:04.850 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{e7d9315 u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b76f825, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}
+11-20 23:43:08.671 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{e7d9315 u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b76f825, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}
+11-20 23:43:09.190 I/ImeTracker( 3592): app.coredump:fcf2fddf: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:09.195 I/ImeTracker( 3592): app.coredump:fcf2fddf: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:09.453 I/ImeTracker( 3592): app.coredump:a2d35c53: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:43:09.767 I/ImeTracker( 3592): app.coredump:a2d35c53: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:13.394 D/CoreBackPreview(  517): Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@bab366e, mPriority=0, mIsAnimationCallback=false}
+11-20 23:43:13.395 D/CoreBackPreview(  517): Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@98fe10f, mPriority=0, mIsAnimationCallback=false}
+11-20 23:43:13.998 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{e7d9315 u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@98fe10f, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}
+11-20 23:43:15.144 W/InputDispatcher(  517): Dispatching key to f1191b8 app.coredump/app.coredump.MainActivity even though there are other unprocessed events
+11-20 23:43:15.404 I/AndroidRuntime(11899): VM exiting with result code 0.
+11-20 23:43:16.031 D/AndroidRuntime(12063): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-20 23:43:16.062 I/AndroidRuntime(12063): Using default boot image
+11-20 23:43:16.062 I/AndroidRuntime(12063): Leaving lock profiling enabled
+11-20 23:43:17.064 D/AndroidRuntime(12063): Calling main entry com.android.commands.monkey.Monkey
+11-20 23:43:17.065 W/Monkey  (12063): args: [-p, app.coredump, --pct-syskeys, 0, --pct-appswitch, 0, --pct-anyevent, 0, --pct-nav, 5, --pct-majornav, 5, --throttle, 100, -s, 33, -v, 1500]
+11-20 23:43:17.120 I/Monkey  (12063): :AllowPackage: app.coredump
+11-20 23:43:17.269 I/Monkey  (12063):     // Allowing start of Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] cmp=app.coredump/.MainActivity } in package app.coredump
+11-20 23:43:17.329 V/WindowManagerShell(  826): Transition requested: android.os.BinderProxy@f4fa135 TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.coredump/.MainActivity } baseActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} topActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} origActivity=null realActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} numActivities=4 lastActiveTime=1314505 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@c03f9ca} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=ActivityInfo{9173b app.coredump.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-20 23:43:17.504 I/InputDispatcher(  517): Waiting because f1191b8 app.coredump/app.coredump.MainActivity is paused
+11-20 23:43:17.504 I/InputDispatcher(  517): Waiting because f1191b8 app.coredump/app.coredump.MainActivity is paused
+11-20 23:43:17.510 I/InputDispatcher(  517): Waiting because f1191b8 app.coredump/app.coredump.MainActivity is paused
+11-20 23:43:17.544 I/InputDispatcher(  517): Waiting because f1191b8 app.coredump/app.coredump.MainActivity is paused
+11-20 23:43:17.653 W/InputDispatcher(  517): Waiting because no window has focus but ActivityRecord{388d182 u0 app.coredump/.MainActivity t8} may eventually add a window when it finishes starting up. Will wait for 5000ms
+11-20 23:43:17.714 D/CoreBackPreview(  517): Window{d15c0c9 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@8f312ef, mPriority=0, mIsAnimationCallback=false}
+11-20 23:43:18.000 I/ActivityTaskManager(  517): Displayed app.coredump/.MainActivity for user 0: +728ms
+11-20 23:43:18.000 V/WindowManager(  517): Sent Transition #10 createdAt=11-20 23:43:17.270 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.coredump/.MainActivity } baseActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} topActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} origActivity=null realActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} numActivities=4 lastActiveTime=1314505 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{85d1b5c Task{82667f4 #8 type=standard A=10192:app.coredump}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=ActivityInfo{a3851e8 app.coredump.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-20 23:43:18.000 V/WindowManager(  517):     info={id=10 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{388d182 u0 app.coredump/.MainActivity)/@0xb7b0eda sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{e7d9315 u0 app.coredump/.MainActivity)/@0x28e0fcd sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:43:18.002 V/WindowManagerShell(  826): onTransitionReady android.os.BinderProxy@f4fa135: {id=10 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{388d182 u0 app.coredump/.MainActivity)/@0x8e61bb1 sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{e7d9315 u0 app.coredump/.MainActivity)/@0x24fe896 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:43:18.039 V/WindowManagerShell(  826): Transition doesn't have explicit remote, search filters for match for {id=10 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{388d182 u0 app.coredump/.MainActivity)/@0x8e61bb1 sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{e7d9315 u0 app.coredump/.MainActivity)/@0x24fe896 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:43:18.039 V/WindowManagerShell(  826): start default transition animation, info = {id=10 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=FILLS_TASK leash=Surface(name=ActivityRecord{388d182 u0 app.coredump/.MainActivity)/@0x8e61bb1 sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1080, 2400) d=-1->0 r=-1->0:-1},{null m=TO_BACK f=FILLS_TASK leash=Surface(name=ActivityRecord{e7d9315 u0 app.coredump/.MainActivity)/@0x24fe896 sb=Rect(0, 0 - 1080, 2400) eb=Rect(0, 0 - 1080, 2400) d=0}]}
+11-20 23:43:18.859 D/CoreBackPreview(  517): Window{f1191b8 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@34a494, mPriority=0, mIsAnimationCallback=false}
+11-20 23:43:18.861 I/ImeTracker(  517): app.coredump:b9471ab7: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+11-20 23:43:18.863 D/CoreBackPreview(  517): Window{d15c0c9 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@21c9f32, mPriority=0, mIsAnimationCallback=false}
+11-20 23:43:19.165 I/ImeTracker( 3592): app.coredump:b9471ab7: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+11-20 23:43:19.169 I/ImeTracker( 3592): app.coredump:ebe610a9: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:19.169 I/ImeTracker( 3592): app.coredump:ebe610a9: onFailed at PHASE_CLIENT_VIEW_SERVED
+11-20 23:43:19.179 D/CoreBackPreview(  517): Window{d15c0c9 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@c51ceeb, mPriority=0, mIsAnimationCallback=false}
+11-20 23:43:23.271 I/ImeTracker( 3592): app.coredump:b16791e: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:23.302 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{da30093 ActivityRecord{388d182 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:43:23.371 I/ImeTracker( 3592): app.coredump:2d0f3f79: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:43:23.635 D/CoreBackPreview(  517): Window{d15c0c9 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@eecc6af, mPriority=0, mIsAnimationCallback=false}
+11-20 23:43:23.753 I/ImeTracker(  517): app.coredump:b16791e: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-20 23:43:24.016 I/ImeTracker( 3592): app.coredump:cd8f53c9: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:24.021 I/ImeTracker( 3592): app.coredump:cd8f53c9: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:24.022 I/ImeTracker( 3592): app.coredump:2d0f3f79: onShown
+11-20 23:43:24.114 I/ImeTracker( 3592): app.coredump:a64ad802: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:43:24.198 I/ImeTracker( 3592): app.coredump:a64ad802: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:25.947 I/ImeTracker( 3592): app.coredump:6b24c8d9: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:25.948 I/ImeTracker( 3592): app.coredump:6b24c8d9: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:26.060 I/ImeTracker( 3592): app.coredump:ea58e24c: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:43:26.403 I/ImeTracker( 3592): app.coredump:ea58e24c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:30.604 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{388d182 u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@eecc6af, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{d15c0c9 u0 app.coredump/app.coredump.MainActivity}
+11-20 23:43:30.671 I/ImeTracker(  517): app.coredump:d093fe1b: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_SOFT_INPUT_BY_BACK_KEY
+11-20 23:43:30.787 D/CoreBackPreview(  517): Window{d15c0c9 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@291aaec, mPriority=0, mIsAnimationCallback=false}
+11-20 23:43:30.920 I/ImeTracker( 3592): app.coredump:c56f6818: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:30.921 I/ImeTracker( 3592): app.coredump:c56f6818: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:31.058 I/ImeTracker( 3592): app.coredump:8ed171c1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:31.063 I/ImeTracker(  517): app.coredump:8ed171c1: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-20 23:43:31.063 I/ImeTracker( 3592): app.coredump:d093fe1b: onHidden
+11-20 23:43:31.852 I/ImeTracker( 3592): app.coredump:21910a59: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:31.909 D/ContentCapturePerUserService(  517): Notified activity assist data for activity: Token{da30093 ActivityRecord{388d182 u0 app.coredump/.MainActivity t8}} without a session Id
+11-20 23:43:32.031 I/ImeTracker( 3592): app.coredump:586e9a7f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-20 23:43:32.407 D/CoreBackPreview(  517): Window{d15c0c9 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@565deab, mPriority=0, mIsAnimationCallback=false}
+11-20 23:43:32.801 I/ImeTracker(  517): app.coredump:dac09717: onRequestShow at ORIGIN_SERVER_START_INPUT reason ATTACH_NEW_INPUT
+11-20 23:43:32.811 I/ImeTracker(  517): app.coredump:21910a59: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-20 23:43:33.071 I/ImeTracker( 3592): app.coredump:586e9a7f: onShown
+11-20 23:43:33.147 I/ImeTracker( 3592): app.coredump:dac09717: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:34.042 I/ImeTracker(  517): app.coredump:bbd7515b: onRequestShow at ORIGIN_SERVER_START_INPUT reason ATTACH_NEW_INPUT
+11-20 23:43:34.459 I/ImeTracker(  517): app.coredump:b8c89a05: onRequestShow at ORIGIN_SERVER_START_INPUT reason ATTACH_NEW_INPUT
+11-20 23:43:34.523 I/ImeTracker( 3592): app.coredump:bbd7515b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:34.899 I/ImeTracker( 3592): app.coredump:b8c89a05: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:38.863 I/ImeTracker( 3592): app.coredump:abccbe7c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:38.866 I/ImeTracker( 3592): app.coredump:39e06ee8: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:39.060 I/ImeTracker( 3592): app.coredump:2d4e3ef: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-20 23:43:39.060 I/ImeTracker(  517): app.coredump:2d4e3ef: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-20 23:43:39.060 I/ImeTracker( 3592): app.coredump:abccbe7c: onHidden
+11-20 23:43:39.146 I/ImeTracker( 3592): app.coredump:39e06ee8: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-20 23:43:39.329 D/CoreBackPreview(  517): Window{d15c0c9 u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d37ab81, mPriority=0, mIsAnimationCallback=false}
+11-20 23:43:42.262 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{388d182 u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d37ab81, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{d15c0c9 u0 app.coredump/app.coredump.MainActivity}
+11-20 23:43:43.021 D/CoreBackPreview(  517): startBackNavigation currentTask=Task{82667f4 #8 type=standard A=10192:app.coredump}, topRunningActivity=ActivityRecord{388d182 u0 app.coredump/.MainActivity t8}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d37ab81, mPriority=0, mIsAnimationCallback=false}, currentFocus=Window{d15c0c9 u0 app.coredump/app.coredump.MainActivity}
+11-20 23:43:43.127 I/InputDispatcher(  517): Channel [Gesture Monitor] edge-swipe (server) is stealing touch from [d15c0c9 app.coredump/app.coredump.MainActivity (server), [Gesture Monitor] swipe-up (server)]
+11-20 23:43:45.618 I/AndroidRuntime(12063): VM exiting with result code 0.

@@ -1,0 +1,392 @@
+11-20 23:22:11.648 I/System.out( 3592): SELFTEST START
+11-20 23:22:28.756 I/System.out( 3592): SELFTEST READY prompts=546 answers=151663
+11-20 23:22:28.762 I/System.out( 3592): SELFTEST CUSTOM star=true ring=true label=BASIC rank=ROOKIE
+11-20 23:22:30.028 I/System.out( 3592): SELFTEST SHOT menu_terminal
+11-20 23:22:32.982 I/System.out( 3592): SELFTEST PACE menu_terminal frames=10 p50=99ms p95=166ms max=166ms late=9 (100%)
+11-20 23:22:36.771 I/System.out( 3592): SELFTEST SUGGEST 'Sous' -> null
+11-20 23:22:36.771 I/System.out( 3592): SELFTEST SHOT play_terminal
+11-20 23:22:38.872 I/System.out( 3592): SELFTEST SHOT touch_terminal
+11-20 23:22:42.971 I/System.out( 3592): SELFTEST SHOT confirm_terminal
+11-20 23:22:45.364 I/System.out( 3592): SELFTEST RUN TERMINAL points=27
+11-20 23:22:45.370 I/System.out( 3592): SELFTEST SHOT run_terminal
+11-20 23:22:49.284 I/System.out( 3592): SELFTEST PACE run_terminal frames=18 p50=116ms p95=183ms max=183ms late=17 (100%)
+11-20 23:22:52.259 I/System.out( 3592): SELFTEST SHOT reveal_terminal
+11-20 23:22:54.111 I/System.out( 3592): SELFTEST ANSWERS TERMINAL groups=5 names=62 list=62
+11-20 23:22:55.157 I/System.out( 3592): SELFTEST SHOT answers_terminal
+11-20 23:23:00.227 I/System.out( 3592): SELFTEST PACE play_terminal frames=15 p50=116ms p95=166ms max=166ms late=14 (100%)
+11-20 23:23:07.950 I/System.out( 3592): SELFTEST SHOT summary_terminal
+11-20 23:23:11.156 I/System.out( 3592): SELFTEST SHOT appearance_terminal
+11-20 23:23:15.059 I/System.out( 3592): SELFTEST SHOT config_terminal
+11-20 23:23:18.023 I/System.out( 3592): SELFTEST SHOT fetch_terminal
+11-20 23:23:21.028 I/System.out( 3592): SELFTEST SHOT looks_terminal
+11-20 23:23:24.056 I/System.out( 3592): SELFTEST SHOT menu_paper
+11-20 23:23:26.990 I/System.out( 3592): SELFTEST PACE menu_paper frames=23 p50=49ms p95=83ms max=99ms late=16 (72%)
+11-20 23:23:30.745 I/System.out( 3592): SELFTEST SUGGEST 'Button' -> null
+11-20 23:23:30.746 I/System.out( 3592): SELFTEST SHOT play_paper
+11-20 23:23:32.792 I/System.out( 3592): SELFTEST SHOT touch_paper
+11-20 23:23:37.019 I/System.out( 3592): SELFTEST RUN PAPER points=7
+11-20 23:23:37.019 I/System.out( 3592): SELFTEST SHOT run_paper
+11-20 23:23:40.823 I/System.out( 3592): SELFTEST PACE run_paper frames=60 p50=33ms p95=83ms max=83ms late=33 (55%)
+11-20 23:23:43.781 I/System.out( 3592): SELFTEST SHOT reveal_paper
+11-20 23:23:45.583 I/System.out( 3592): SELFTEST ANSWERS PAPER groups=5 names=63 list=63
+11-20 23:23:46.514 I/System.out( 3592): SELFTEST SHOT answers_paper
+11-20 23:23:51.563 I/System.out( 3592): SELFTEST PACE play_paper frames=21 p50=83ms p95=99ms max=99ms late=20 (100%)
+11-20 23:23:58.934 I/System.out( 3592): SELFTEST SHOT summary_paper
+11-20 23:24:01.941 I/System.out( 3592): SELFTEST SHOT appearance_paper
+11-20 23:24:05.743 I/System.out( 3592): SELFTEST SHOT config_paper
+11-20 23:24:08.543 I/System.out( 3592): SELFTEST SHOT fetch_paper
+11-20 23:24:11.567 I/System.out( 3592): SELFTEST SHOT looks_paper
+11-20 23:24:14.651 I/System.out( 3592): SELFTEST SHOT menu_neon
+11-20 23:24:17.526 I/System.out( 3592): SELFTEST PACE menu_neon frames=28 p50=16ms p95=83ms max=99ms late=11 (40%)
+11-20 23:24:21.310 I/System.out( 3592): SELFTEST SUGGEST 'Guinea' -> null
+11-20 23:24:21.310 I/System.out( 3592): SELFTEST SHOT play_neon
+11-20 23:24:23.411 I/System.out( 3592): SELFTEST SHOT touch_neon
+11-20 23:24:27.458 I/System.out( 3592): SELFTEST SHOT confirm_neon
+11-20 23:24:29.765 I/System.out( 3592): SELFTEST RUN NEON points=27
+11-20 23:24:29.765 I/System.out( 3592): SELFTEST SHOT run_neon
+11-20 23:24:33.667 I/System.out( 3592): SELFTEST PACE run_neon frames=38 p50=49ms p95=83ms max=83ms late=37 (100%)
+11-20 23:24:36.647 I/System.out( 3592): SELFTEST SHOT reveal_neon
+11-20 23:24:38.504 I/System.out( 3592): SELFTEST ANSWERS NEON groups=5 names=47 list=47
+11-20 23:24:39.461 I/System.out( 3592): SELFTEST SHOT answers_neon
+11-20 23:24:44.525 I/System.out( 3592): SELFTEST PACE play_neon frames=25 p50=66ms p95=99ms max=116ms late=19 (79%)
+11-20 23:24:51.956 I/System.out( 3592): SELFTEST SHOT summary_neon
+11-20 23:24:55.056 I/System.out( 3592): SELFTEST SHOT appearance_neon
+11-20 23:24:58.874 I/System.out( 3592): SELFTEST SHOT config_neon
+11-20 23:25:01.758 I/System.out( 3592): SELFTEST SHOT fetch_neon
+11-20 23:25:04.829 I/System.out( 3592): SELFTEST SHOT looks_neon
+11-20 23:25:07.839 I/System.out( 3592): SELFTEST SHOT menu_clean
+11-20 23:25:10.717 I/System.out( 3592): SELFTEST PACE menu_clean frames=41 p50=16ms p95=66ms max=66ms late=11 (27%)
+11-20 23:25:14.357 I/System.out( 3592): SELFTEST SUGGEST 'Game' -> null
+11-20 23:25:14.358 I/System.out( 3592): SELFTEST SHOT play_clean
+11-20 23:25:16.382 I/System.out( 3592): SELFTEST SHOT touch_clean
+11-20 23:25:20.175 I/System.out( 3592): SELFTEST SHOT confirm_clean
+11-20 23:25:22.427 I/System.out( 3592): SELFTEST RUN CLEAN points=7
+11-20 23:25:22.427 I/System.out( 3592): SELFTEST SHOT run_clean
+11-20 23:25:26.260 I/System.out( 3592): SELFTEST PACE run_clean frames=41 p50=49ms p95=99ms max=99ms late=37 (92%)
+11-20 23:25:29.191 I/System.out( 3592): SELFTEST SHOT reveal_clean
+11-20 23:25:31.028 I/System.out( 3592): SELFTEST ANSWERS CLEAN groups=5 names=127 list=127
+11-20 23:25:31.947 I/System.out( 3592): SELFTEST SHOT answers_clean
+11-20 23:25:37.063 I/System.out( 3592): SELFTEST PACE play_clean frames=42 p50=33ms p95=66ms max=83ms late=24 (58%)
+11-20 23:25:44.347 I/System.out( 3592): SELFTEST SHOT summary_clean
+11-20 23:25:47.360 I/System.out( 3592): SELFTEST SHOT appearance_clean
+11-20 23:25:51.163 I/System.out( 3592): SELFTEST SHOT config_clean
+11-20 23:25:53.966 I/System.out( 3592): SELFTEST SHOT fetch_clean
+11-20 23:25:56.968 I/System.out( 3592): SELFTEST SHOT looks_clean
+11-20 23:26:02.906 I/System.out( 3592): SELFTEST PACE menu_pixel frames=18 p50=49ms p95=116ms max=116ms late=15 (88%)
+11-20 23:26:06.674 I/System.out( 3592): SELFTEST SUGGEST 'German' -> null
+11-20 23:26:06.674 I/System.out( 3592): SELFTEST SHOT play_pixel
+11-20 23:26:08.736 I/System.out( 3592): SELFTEST SHOT touch_pixel
+11-20 23:26:12.514 I/System.out( 3592): SELFTEST SHOT confirm_pixel
+11-20 23:26:14.787 I/System.out( 3592): SELFTEST RUN PIXEL points=7
+11-20 23:26:14.787 I/System.out( 3592): SELFTEST SHOT run_pixel
+11-20 23:26:18.632 I/System.out( 3592): SELFTEST PACE run_pixel frames=34 p50=66ms p95=83ms max=83ms late=33 (100%)
+11-20 23:26:21.557 I/System.out( 3592): SELFTEST SHOT reveal_pixel
+11-20 23:26:23.408 I/System.out( 3592): SELFTEST ANSWERS PIXEL groups=5 names=600 list=600
+11-20 23:26:24.314 I/System.out( 3592): SELFTEST SHOT answers_pixel
+11-20 23:26:29.342 I/System.out( 3592): SELFTEST PACE play_pixel frames=43 p50=33ms p95=83ms max=99ms late=22 (52%)
+11-20 23:26:36.727 I/System.out( 3592): SELFTEST SHOT summary_pixel
+11-20 23:26:39.747 I/System.out( 3592): SELFTEST SHOT appearance_pixel
+11-20 23:26:43.551 I/System.out( 3592): SELFTEST SHOT config_pixel
+11-20 23:26:46.377 I/System.out( 3592): SELFTEST SHOT fetch_pixel
+11-20 23:26:49.458 I/System.out( 3592): SELFTEST SHOT looks_pixel
+11-20 23:26:52.502 I/System.out( 3592): SELFTEST SHOT menu_comic
+11-20 23:26:55.340 I/System.out( 3592): SELFTEST PACE menu_comic frames=38 p50=16ms p95=49ms max=66ms late=14 (37%)
+11-20 23:26:58.996 I/System.out( 3592): SELFTEST SUGGEST 'Chao' -> null
+11-20 23:26:58.996 I/System.out( 3592): SELFTEST SHOT play_comic
+11-20 23:27:01.024 I/System.out( 3592): SELFTEST SHOT touch_comic
+11-20 23:27:04.831 I/System.out( 3592): SELFTEST SHOT confirm_comic
+11-20 23:27:07.078 I/System.out( 3592): SELFTEST RUN COMIC points=7
+11-20 23:27:07.078 I/System.out( 3592): SELFTEST SHOT run_comic
+11-20 23:27:10.979 I/System.out( 3592): SELFTEST PACE run_comic frames=45 p50=49ms p95=66ms max=66ms late=43 (97%)
+11-20 23:27:13.881 I/System.out( 3592): SELFTEST SHOT reveal_comic
+11-20 23:27:15.682 I/System.out( 3592): SELFTEST ANSWERS COMIC groups=5 names=134 list=134
+11-20 23:27:16.583 I/System.out( 3592): SELFTEST SHOT answers_comic
+11-20 23:27:21.545 I/System.out( 3592): SELFTEST PACE play_comic frames=28 p50=49ms p95=66ms max=66ms late=26 (96%)
+11-20 23:27:28.972 I/System.out( 3592): SELFTEST SHOT summary_comic
+11-20 23:27:32.001 I/System.out( 3592): SELFTEST SHOT appearance_comic
+11-20 23:27:35.803 I/System.out( 3592): SELFTEST SHOT config_comic
+11-20 23:27:38.604 I/System.out( 3592): SELFTEST SHOT fetch_comic
+11-20 23:27:41.627 I/System.out( 3592): SELFTEST SHOT looks_comic
+11-20 23:27:44.677 I/System.out( 3592): SELFTEST SHOT menu_abyss
+11-20 23:27:47.510 I/System.out( 3592): SELFTEST PACE menu_abyss frames=35 p50=16ms p95=66ms max=83ms late=12 (35%)
+11-20 23:27:51.221 I/System.out( 3592): SELFTEST SUGGEST 'Listen' -> null
+11-20 23:27:51.266 I/System.out( 3592): SELFTEST SHOT play_abyss
+11-20 23:27:53.341 I/System.out( 3592): SELFTEST SHOT touch_abyss
+11-20 23:27:57.203 I/System.out( 3592): SELFTEST SHOT confirm_abyss
+11-20 23:27:59.475 I/System.out( 3592): SELFTEST RUN ABYSS points=7
+11-20 23:27:59.475 I/System.out( 3592): SELFTEST SHOT run_abyss
+11-20 23:28:03.284 I/System.out( 3592): SELFTEST PACE run_abyss frames=36 p50=49ms p95=83ms max=116ms late=33 (94%)
+11-20 23:28:06.188 I/System.out( 3592): SELFTEST SHOT reveal_abyss
+11-20 23:28:08.028 I/System.out( 3592): SELFTEST ANSWERS ABYSS groups=5 names=116 list=116
+11-20 23:28:08.937 I/System.out( 3592): SELFTEST SHOT answers_abyss
+11-20 23:28:13.951 I/System.out( 3592): SELFTEST PACE play_abyss frames=28 p50=49ms p95=99ms max=166ms late=21 (77%)
+11-20 23:28:21.383 I/System.out( 3592): SELFTEST SHOT summary_abyss
+11-20 23:28:24.428 I/System.out( 3592): SELFTEST SHOT appearance_abyss
+11-20 23:28:28.289 I/System.out( 3592): SELFTEST SHOT config_abyss
+11-20 23:28:31.123 I/System.out( 3592): SELFTEST SHOT fetch_abyss
+11-20 23:28:34.145 I/System.out( 3592): SELFTEST SHOT looks_abyss
+11-20 23:28:37.299 I/System.out( 3592): SELFTEST SHOT menu_metro
+11-20 23:28:40.105 I/System.out( 3592): SELFTEST PACE menu_metro frames=61 p50=16ms p95=16ms max=16ms late=0 (0%)
+11-20 23:28:43.699 I/System.out( 3592): SELFTEST SUGGEST 'Playing' -> null
+11-20 23:28:43.699 I/System.out( 3592): SELFTEST SHOT play_metro
+11-20 23:28:45.794 I/System.out( 3592): SELFTEST SHOT touch_metro
+11-20 23:28:49.586 I/System.out( 3592): SELFTEST SHOT confirm_metro
+11-20 23:28:51.826 I/System.out( 3592): SELFTEST RUN METRO points=7
+11-20 23:28:51.827 I/System.out( 3592): SELFTEST SHOT run_metro
+11-20 23:28:55.682 I/System.out( 3592): SELFTEST PACE run_metro frames=44 p50=49ms p95=66ms max=83ms late=37 (86%)
+11-20 23:28:58.623 I/System.out( 3592): SELFTEST SHOT reveal_metro
+11-20 23:29:00.464 I/System.out( 3592): SELFTEST ANSWERS METRO groups=5 names=68 list=68
+11-20 23:29:01.424 I/System.out( 3592): SELFTEST SHOT answers_metro
+11-20 23:29:06.409 I/System.out( 3592): SELFTEST PACE play_metro frames=49 p50=16ms p95=66ms max=66ms late=22 (45%)
+11-20 23:29:13.722 I/System.out( 3592): SELFTEST SHOT summary_metro
+11-20 23:29:16.742 I/System.out( 3592): SELFTEST SHOT appearance_metro
+11-20 23:29:20.544 I/System.out( 3592): SELFTEST SHOT config_metro
+11-20 23:29:23.345 I/System.out( 3592): SELFTEST SHOT fetch_metro
+11-20 23:29:26.361 I/System.out( 3592): SELFTEST SHOT looks_metro
+11-20 23:29:29.451 I/System.out( 3592): SELFTEST SHOT menu_jackpot
+11-20 23:29:32.355 I/System.out( 3592): SELFTEST PACE menu_jackpot frames=14 p50=83ms p95=99ms max=99ms late=13 (100%)
+11-20 23:29:35.937 I/System.out( 3592): SELFTEST SUGGEST 'Order' -> null
+11-20 23:29:35.938 I/System.out( 3592): SELFTEST SHOT play_jackpot
+11-20 23:29:38.010 I/System.out( 3592): SELFTEST SHOT touch_jackpot
+11-20 23:29:42.235 I/System.out( 3592): SELFTEST RUN JACKPOT points=7
+11-20 23:29:42.236 I/System.out( 3592): SELFTEST SHOT run_jackpot
+11-20 23:29:46.123 I/System.out( 3592): SELFTEST PACE run_jackpot frames=44 p50=49ms p95=83ms max=99ms late=38 (88%)
+11-20 23:29:49.065 I/System.out( 3592): SELFTEST SHOT reveal_jackpot
+11-20 23:29:50.866 I/System.out( 3592): SELFTEST ANSWERS JACKPOT groups=5 names=102 list=102
+11-20 23:29:51.771 I/System.out( 3592): SELFTEST SHOT answers_jackpot
+11-20 23:29:56.773 I/System.out( 3592): SELFTEST PACE play_jackpot frames=85 p50=16ms p95=16ms max=99ms late=2 (2%)
+11-20 23:30:04.079 I/System.out( 3592): SELFTEST SHOT summary_jackpot
+11-20 23:30:07.106 I/System.out( 3592): SELFTEST SHOT appearance_jackpot
+11-20 23:30:10.925 I/System.out( 3592): SELFTEST SHOT config_jackpot
+11-20 23:30:13.726 I/System.out( 3592): SELFTEST SHOT fetch_jackpot
+11-20 23:30:16.769 I/System.out( 3592): SELFTEST SHOT looks_jackpot
+11-20 23:30:19.807 I/System.out( 3592): SELFTEST SHOT menu_chat
+11-20 23:30:22.641 I/System.out( 3592): SELFTEST PACE menu_chat frames=38 p50=16ms p95=50ms max=66ms late=13 (35%)
+11-20 23:30:26.216 I/System.out( 3592): SELFTEST SUGGEST 'Mamma' -> null
+11-20 23:30:26.216 I/System.out( 3592): SELFTEST SHOT play_chat
+11-20 23:30:28.271 I/System.out( 3592): SELFTEST SHOT touch_chat
+11-20 23:30:32.023 I/System.out( 3592): SELFTEST SHOT confirm_chat
+11-20 23:30:34.231 I/System.out( 3592): SELFTEST RUN CHAT points=7
+11-20 23:30:34.232 I/System.out( 3592): SELFTEST SHOT run_chat
+11-20 23:30:38.135 I/System.out( 3592): SELFTEST PACE run_chat frames=43 p50=49ms p95=66ms max=83ms late=38 (90%)
+11-20 23:30:41.080 I/System.out( 3592): SELFTEST SHOT reveal_chat
+11-20 23:30:42.898 I/System.out( 3592): SELFTEST ANSWERS CHAT groups=5 names=85 list=85
+11-20 23:30:43.847 I/System.out( 3592): SELFTEST SHOT answers_chat
+11-20 23:30:48.822 I/System.out( 3592): SELFTEST PACE play_chat frames=91 p50=16ms p95=16ms max=33ms late=1 (1%)
+11-20 23:30:56.070 I/System.out( 3592): SELFTEST SHOT summary_chat
+11-20 23:30:59.105 I/System.out( 3592): SELFTEST SHOT appearance_chat
+11-20 23:31:02.913 I/System.out( 3592): SELFTEST SHOT config_chat
+11-20 23:31:05.713 I/System.out( 3592): SELFTEST SHOT fetch_chat
+11-20 23:31:08.716 I/System.out( 3592): SELFTEST SHOT looks_chat
+11-20 23:31:11.759 I/System.out( 3592): SELFTEST SHOT menu_desktop
+11-20 23:31:14.572 I/System.out( 3592): SELFTEST PACE menu_desktop frames=61 p50=16ms p95=16ms max=16ms late=0 (0%)
+11-20 23:31:18.144 I/System.out( 3592): SELFTEST SUGGEST 'American' -> null
+11-20 23:31:18.145 I/System.out( 3592): SELFTEST SHOT play_desktop
+11-20 23:31:20.217 I/System.out( 3592): SELFTEST SHOT touch_desktop
+11-20 23:31:23.961 I/System.out( 3592): SELFTEST SHOT confirm_desktop
+11-20 23:31:26.177 I/System.out( 3592): SELFTEST RUN DESKTOP points=7
+11-20 23:31:26.177 I/System.out( 3592): SELFTEST SHOT run_desktop
+11-20 23:31:30.011 I/System.out( 3592): SELFTEST PACE run_desktop frames=44 p50=49ms p95=83ms max=99ms late=39 (90%)
+11-20 23:31:32.920 I/System.out( 3592): SELFTEST SHOT reveal_desktop
+11-20 23:31:34.724 I/System.out( 3592): SELFTEST ANSWERS DESKTOP groups=5 names=44 list=44
+11-20 23:31:35.637 I/System.out( 3592): SELFTEST SHOT answers_desktop
+11-20 23:31:40.558 I/System.out( 3592): SELFTEST PACE play_desktop frames=91 p50=16ms p95=16ms max=16ms late=0 (0%)
+11-20 23:31:47.937 I/System.out( 3592): SELFTEST SHOT summary_desktop
+11-20 23:31:50.940 I/System.out( 3592): SELFTEST SHOT appearance_desktop
+11-20 23:31:54.741 I/System.out( 3592): SELFTEST SHOT config_desktop
+11-20 23:31:57.543 I/System.out( 3592): SELFTEST SHOT fetch_desktop
+11-20 23:32:00.625 I/System.out( 3592): SELFTEST SHOT looks_desktop
+11-20 23:32:03.659 I/System.out( 3592): SELFTEST SHOT menu_oracle
+11-20 23:32:06.472 I/System.out( 3592): SELFTEST PACE menu_oracle frames=48 p50=16ms p95=49ms max=49ms late=11 (23%)
+11-20 23:32:10.110 I/System.out( 3592): SELFTEST SUGGEST 'Listen' -> null
+11-20 23:32:10.111 I/System.out( 3592): SELFTEST SHOT play_oracle
+11-20 23:32:12.144 I/System.out( 3592): SELFTEST SHOT touch_oracle
+11-20 23:32:15.947 I/System.out( 3592): SELFTEST SHOT confirm_oracle
+11-20 23:32:18.303 I/System.out( 3592): SELFTEST RUN ORACLE points=7
+11-20 23:32:18.303 I/System.out( 3592): SELFTEST SHOT run_oracle
+11-20 23:32:22.226 I/System.out( 3592): SELFTEST PACE run_oracle frames=26 p50=83ms p95=100ms max=100ms late=25 (100%)
+11-20 23:32:25.139 I/System.out( 3592): SELFTEST SHOT reveal_oracle
+11-20 23:32:26.942 I/System.out( 3592): SELFTEST ANSWERS ORACLE groups=5 names=100 list=100
+11-20 23:32:27.851 I/System.out( 3592): SELFTEST SHOT answers_oracle
+11-20 23:32:32.840 I/System.out( 3592): SELFTEST PACE play_oracle frames=43 p50=33ms p95=66ms max=116ms late=21 (50%)
+11-20 23:32:40.102 I/System.out( 3592): SELFTEST SHOT summary_oracle
+11-20 23:32:43.166 I/System.out( 3592): SELFTEST SHOT appearance_oracle
+11-20 23:32:47.032 I/System.out( 3592): SELFTEST SHOT config_oracle
+11-20 23:32:49.849 I/System.out( 3592): SELFTEST SHOT fetch_oracle
+11-20 23:32:52.928 I/System.out( 3592): SELFTEST SHOT looks_oracle
+11-20 23:32:55.984 I/System.out( 3592): SELFTEST SHOT menu_terminal_green
+11-20 23:32:59.107 I/System.out( 3592): SELFTEST SHOT menu_paper_night
+11-20 23:33:02.135 I/System.out( 3592): SELFTEST SHOT menu_neon_outrun
+11-20 23:33:05.183 I/System.out( 3592): SELFTEST SHOT menu_clean_dark
+11-20 23:33:08.215 I/System.out( 3592): SELFTEST SHOT menu_pixel_color
+11-20 23:33:11.236 I/System.out( 3592): SELFTEST SHOT menu_comic_pop
+11-20 23:33:14.304 I/System.out( 3592): SELFTEST SHOT menu_abyss_jelly
+11-20 23:33:17.366 I/System.out( 3592): SELFTEST SHOT menu_metro_platform
+11-20 23:33:20.399 I/System.out( 3592): SELFTEST SHOT menu_jackpot_velvet
+11-20 23:33:23.458 I/System.out( 3592): SELFTEST SHOT menu_chat_midnight
+11-20 23:33:26.462 I/System.out( 3592): SELFTEST SHOT menu_desktop_storm
+11-20 23:33:29.475 I/System.out( 3592): SELFTEST SHOT menu_oracle_parchment
+11-20 23:33:32.916 I/System.out( 3592): SELFTEST SHOT hyper_menu_terminal
+11-20 23:33:35.972 I/System.out( 3592): SELFTEST PACE hyper_menu_terminal frames=17 p50=83ms p95=99ms max=99ms late=13 (81%)
+11-20 23:33:39.184 I/System.out( 3592): SELFTEST PACE hyper_play_terminal frames=18 p50=83ms p95=116ms max=116ms late=17 (100%)
+11-20 23:33:41.085 I/System.out( 3592): SELFTEST SHOT hyper_menu_paper
+11-20 23:33:44.153 I/System.out( 3592): SELFTEST PACE hyper_menu_paper frames=46 p50=16ms p95=66ms max=83ms late=13 (28%)
+11-20 23:33:47.338 I/System.out( 3592): SELFTEST PACE hyper_play_paper frames=22 p50=66ms p95=83ms max=99ms late=21 (100%)
+11-20 23:33:49.237 I/System.out( 3592): SELFTEST SHOT hyper_menu_neon
+11-20 23:33:52.317 I/System.out( 3592): SELFTEST PACE hyper_menu_neon frames=12 p50=99ms p95=199ms max=199ms late=10 (90%)
+11-20 23:33:55.554 I/System.out( 3592): SELFTEST PACE hyper_play_neon frames=36 p50=33ms p95=83ms max=99ms late=19 (54%)
+11-20 23:33:57.440 I/System.out( 3592): SELFTEST SHOT hyper_menu_clean
+11-20 23:34:00.473 I/System.out( 3592): SELFTEST PACE hyper_menu_clean frames=40 p50=16ms p95=66ms max=83ms late=19 (48%)
+11-20 23:34:03.635 I/System.out( 3592): SELFTEST PACE hyper_play_clean frames=41 p50=33ms p95=66ms max=83ms late=24 (60%)
+11-20 23:34:05.483 I/System.out( 3592): SELFTEST SHOT hyper_menu_pixel
+11-20 23:34:08.530 I/System.out( 3592): SELFTEST PACE hyper_menu_pixel frames=19 p50=66ms p95=99ms max=99ms late=18 (100%)
+11-20 23:34:11.725 I/System.out( 3592): SELFTEST PACE hyper_play_pixel frames=26 p50=66ms p95=66ms max=133ms late=23 (92%)
+11-20 23:34:13.583 I/System.out( 3592): SELFTEST SHOT hyper_menu_comic
+11-20 23:34:16.683 I/System.out( 3592): SELFTEST PACE hyper_menu_comic frames=16 p50=83ms p95=99ms max=99ms late=15 (100%)
+11-20 23:34:19.862 I/System.out( 3592): SELFTEST PACE hyper_play_comic frames=25 p50=66ms p95=83ms max=83ms late=24 (100%)
+11-20 23:34:21.714 I/System.out( 3592): SELFTEST SHOT hyper_menu_abyss
+11-20 23:34:24.807 I/System.out( 3592): SELFTEST PACE hyper_menu_abyss frames=43 p50=16ms p95=66ms max=66ms late=15 (35%)
+11-20 23:34:28.104 I/System.out( 3592): SELFTEST PACE hyper_play_abyss frames=27 p50=49ms p95=116ms max=133ms late=18 (69%)
+11-20 23:34:30.005 I/System.out( 3592): SELFTEST SHOT hyper_menu_metro
+11-20 23:34:33.022 I/System.out( 3592): SELFTEST PACE hyper_menu_metro frames=50 p50=16ms p95=49ms max=66ms late=17 (34%)
+11-20 23:34:36.155 I/System.out( 3592): SELFTEST PACE hyper_play_metro frames=40 p50=33ms p95=116ms max=116ms late=20 (51%)
+11-20 23:34:37.971 I/System.out( 3592): SELFTEST SHOT hyper_menu_jackpot
+11-20 23:34:41.060 I/System.out( 3592): SELFTEST PACE hyper_menu_jackpot frames=15 p50=99ms p95=116ms max=116ms late=14 (100%)
+11-20 23:34:44.222 I/System.out( 3592): SELFTEST PACE hyper_play_jackpot frames=26 p50=66ms p95=83ms max=116ms late=20 (80%)
+11-20 23:34:46.214 I/System.out( 3592): SELFTEST SHOT hyper_menu_chat
+11-20 23:34:49.276 I/System.out( 3592): SELFTEST PACE hyper_menu_chat frames=45 p50=16ms p95=50ms max=83ms late=17 (38%)
+11-20 23:34:52.424 I/System.out( 3592): SELFTEST PACE hyper_play_chat frames=43 p50=33ms p95=83ms max=99ms late=26 (61%)
+11-20 23:34:54.292 I/System.out( 3592): SELFTEST SHOT hyper_menu_desktop
+11-20 23:34:57.356 I/System.out( 3592): SELFTEST PACE hyper_menu_desktop frames=33 p50=33ms p95=83ms max=133ms late=20 (62%)
+11-20 23:35:00.534 I/System.out( 3592): SELFTEST PACE hyper_play_desktop frames=24 p50=66ms p95=83ms max=99ms late=21 (91%)
+11-20 23:35:02.443 I/System.out( 3592): SELFTEST SHOT hyper_menu_oracle
+11-20 23:35:05.472 I/System.out( 3592): SELFTEST PACE hyper_menu_oracle frames=52 p50=16ms p95=49ms max=66ms late=13 (25%)
+11-20 23:35:08.629 I/System.out( 3592): SELFTEST PACE hyper_play_oracle frames=51 p50=16ms p95=66ms max=83ms late=22 (44%)
+11-20 23:35:12.262 I/System.out( 3592): SELFTEST RUN hyper points=85
+11-20 23:35:12.262 I/System.out( 3592): SELFTEST SHOT hyper_run_abyss
+11-20 23:35:20.241 I/System.out( 3592): SELFTEST RUN oracle flight from=114 points=100
+11-20 23:35:22.515 I/System.out( 3592): SELFTEST SHOT oracle_fly_1
+11-20 23:35:24.021 I/System.out( 3592): SELFTEST SHOT oracle_fly_2
+11-20 23:35:25.175 I/System.out( 3592): SELFTEST SHOT oracle_fly_3
+11-20 23:35:26.489 I/System.out( 3592): SELFTEST SHOT oracle_fly_4
+11-20 23:35:28.708 I/System.out( 3592): SELFTEST SHOT oracle_fly_5
+11-20 23:35:34.923 I/System.out( 3592): SELFTEST SHOT daily_terminal
+11-20 23:35:39.700 I/System.out( 3592): SELFTEST SHOT quit_paper
+11-20 23:35:44.464 I/System.out( 3592): SELFTEST SHOT quit_chat
+11-20 23:35:49.177 I/System.out( 3592): SELFTEST SHOT quit_desktop
+11-20 23:35:53.957 I/System.out( 3592): SELFTEST SHOT quit_metro
+11-20 23:35:57.772 I/System.out( 3592): SELFTEST SHOT friends_terminal
+11-20 23:36:02.029 I/System.out( 3592): SELFTEST SHOT meltdown_setup_terminal
+11-20 23:36:08.481 I/System.out( 3592): SELFTEST MELT TERMINAL phase=TURN players=6 prompt='Name a war, battle or revolution'
+11-20 23:36:08.481 I/System.out( 3592): SELFTEST SHOT meltdown_terminal
+11-20 23:36:17.335 I/System.out( 3592): SELFTEST MELT event blast: MELTDOWN — MALLOC loses a heart
+11-20 23:36:18.051 I/System.out( 3592): SELFTEST SHOT meltdown_terminal_turns
+11-20 23:36:25.327 I/System.out( 3592): SELFTEST MELT event miss: STACK: Meiji Restoration ✗
+11-20 23:36:29.732 I/System.out( 3592): SELFTEST MELT event blast: MELTDOWN — STACK loses a heart
+11-20 23:36:34.167 I/System.out( 3592): SELFTEST MELT played answered=0 blasts=2 heat=0.19730002 round=3
+11-20 23:36:34.167 I/System.out( 3592): SELFTEST SHOT meltdown_terminal_late
+11-20 23:36:42.737 I/System.out( 3592): SELFTEST MELT ABYSS phase=TURN players=6 prompt='Name a king, queen, emperor or president'
+11-20 23:36:42.737 I/System.out( 3592): SELFTEST SHOT meltdown_abyss
+11-20 23:36:51.461 I/System.out( 3592): SELFTEST MELT COMIC phase=TURN players=6 prompt='Name a river, lake or sea'
+11-20 23:36:51.471 I/System.out( 3592): SELFTEST SHOT meltdown_comic
+11-20 23:37:00.041 I/System.out( 3592): SELFTEST MELT ORACLE phase=TURN players=6 prompt='Name something you find in a home'
+11-20 23:37:00.042 I/System.out( 3592): SELFTEST SHOT meltdown_oracle
+11-20 23:37:11.317 I/System.out( 3592): SELFTEST PARTY host open=true status=open · waiting for players
+11-20 23:37:12.569 I/System.out( 3592): SELFTEST PARTY seated=[ANON, GUESTBOT] guest=seated · waiting for the host to start
+11-20 23:37:17.602 I/System.out( 3592): SELFTEST PARTY host phase=TURN guest phase=TURN guest players=3 prompt='Name a famous athlete'
+11-20 23:37:17.604 I/System.out( 3592): SELFTEST SHOT party_metro
+11-20 23:37:40.437 I/System.out( 3592): SELFTEST PARTY after guestAnswers=2 hostSeq=78 guestSeq=77 used=2 event='CRON: Stéphane Sarrazin ✗'
+11-20 23:37:43.454 I/System.out( 3592): SELFTEST PACE sigil_terminal frames=12 p50=116ms p95=133ms max=133ms late=11 (100%)
+11-20 23:37:46.859 I/System.out( 3592): SELFTEST SIGIL TERMINAL/amber 735x735 frames=12 clean=ok 3304ms (particles) camera=ok 3304ms (particles)
+11-20 23:37:46.860 I/System.out( 3592): SELFTEST SHOT sigil_terminal
+11-20 23:37:50.631 I/System.out( 3592): SELFTEST PACE sigil_paper frames=34 p50=16ms p95=83ms max=116ms late=14 (42%)
+11-20 23:37:52.386 I/System.out( 3592): SELFTEST SIGIL PAPER/newsprint 735x735 frames=7 clean=ok 1668ms (tape) camera=ok 1668ms (tape)
+11-20 23:37:52.391 I/System.out( 3592): SELFTEST SHOT sigil_paper
+11-20 23:37:56.280 I/System.out( 3592): SELFTEST PACE sigil_neon frames=24 p50=49ms p95=116ms max=116ms late=12 (52%)
+11-20 23:37:59.978 I/System.out( 3592): SELFTEST SIGIL NEON/synthwave 735x735 frames=16 clean=ok 3369ms (sun) camera=ok 3604ms (sun)
+11-20 23:37:59.978 I/System.out( 3592): SELFTEST SHOT sigil_neon
+11-20 23:38:03.758 I/System.out( 3592): SELFTEST PACE sigil_clean frames=18 p50=83ms p95=99ms max=99ms late=15 (88%)
+11-20 23:38:07.075 I/System.out( 3592): SELFTEST SIGIL CLEAN/light 735x735 frames=18 clean=ok 3238ms (buzzer) camera=ok 3238ms (buzzer)
+11-20 23:38:07.075 I/System.out( 3592): SELFTEST SHOT sigil_clean
+11-20 23:38:11.019 I/System.out( 3592): SELFTEST PACE sigil_pixel frames=17 p50=83ms p95=116ms max=116ms late=15 (93%)
+11-20 23:38:11.212 I/System.out( 3592): SELFTEST SIGIL PIXEL/dmg 735x735 frames=1 clean=ok 101ms (runes) camera=ok 101ms (runes)
+11-20 23:38:11.212 I/System.out( 3592): SELFTEST SHOT sigil_pixel
+11-20 23:38:15.053 I/System.out( 3592): SELFTEST PACE sigil_comic frames=21 p50=66ms p95=116ms max=116ms late=13 (65%)
+11-20 23:38:16.122 I/System.out( 3592): SELFTEST SIGIL COMIC/rebel 735x735 frames=6 clean=ok 1001ms (kapow) camera=ok 1001ms (kapow)
+11-20 23:38:16.122 I/System.out( 3592): SELFTEST SHOT sigil_comic
+11-20 23:38:19.937 I/System.out( 3592): SELFTEST PACE sigil_abyss frames=21 p50=66ms p95=149ms max=149ms late=11 (55%)
+11-20 23:38:22.721 I/System.out( 3592): SELFTEST SIGIL ABYSS/trench 735x735 frames=11 clean=ok 2723ms (sonar) camera=ok 2723ms (sonar)
+11-20 23:38:22.721 I/System.out( 3592): SELFTEST SHOT sigil_abyss
+11-20 23:38:26.617 I/System.out( 3592): SELFTEST PACE sigil_metro frames=23 p50=66ms p95=83ms max=83ms late=17 (77%)
+11-20 23:38:26.970 I/System.out( 3592): SELFTEST SIGIL METRO/board 735x735 frames=2 clean=ok 300ms (train) camera=ok 91ms (train)
+11-20 23:38:26.970 I/System.out( 3592): SELFTEST SHOT sigil_metro
+11-20 23:38:30.808 I/System.out( 3592): SELFTEST PACE sigil_jackpot frames=28 p50=16ms p95=116ms max=133ms late=11 (40%)
+11-20 23:38:40.849 I/System.out( 3592): SELFTEST SIGIL JACKPOT/felt 735x735 frames=41 clean=ok 9935ms (chips) camera=ok 2842ms (chips)
+11-20 23:38:40.851 I/System.out( 3592): SELFTEST SHOT sigil_jackpot
+11-20 23:38:44.663 I/System.out( 3592): SELFTEST PACE sigil_chat frames=29 p50=49ms p95=66ms max=66ms late=23 (82%)
+11-20 23:38:44.826 I/System.out( 3592): SELFTEST SIGIL CHAT/daylight 735x735 frames=1 clean=ok 74ms (voice) camera=ok 74ms (voice)
+11-20 23:38:44.826 I/System.out( 3592): SELFTEST SHOT sigil_chat
+11-20 23:38:48.628 I/System.out( 3592): SELFTEST PACE sigil_desktop frames=25 p50=49ms p95=66ms max=116ms late=19 (79%)
+11-20 23:38:48.869 I/System.out( 3592): SELFTEST SIGIL DESKTOP/classic 735x735 frames=1 clean=ok 99ms (defrag) camera=ok 99ms (defrag)
+11-20 23:38:48.869 I/System.out( 3592): SELFTEST SHOT sigil_desktop
+11-20 23:38:52.620 I/System.out( 3592): SELFTEST PACE sigil_oracle frames=25 p50=49ms p95=116ms max=116ms late=14 (58%)
+11-20 23:38:52.875 I/System.out( 3592): SELFTEST SIGIL ORACLE/midnight 735x735 frames=1 clean=ok 156ms (constellation) camera=ok 156ms (constellation)
+11-20 23:38:52.875 I/System.out( 3592): SELFTEST SHOT sigil_oracle
+11-20 23:38:54.744 I/System.out( 3592): SELFTEST SIGIL SUMMARY clean=12/12 camera=12/12
+11-20 23:38:54.745 I/System.out( 3592): SELFTEST PACE SUMMARY late%: menu_terminal=100 run_terminal=100 play_terminal=100 play_paper=100 run_neon=100 run_pixel=100 menu_jackpot=100 run_oracle=100 hyper_play_terminal=100 hyper_play_paper=100 hyper_menu_pixel=100 hyper_menu_comic=100 hyper_play_comic=100 hyper_menu_jackpot=100 sigil_terminal=100 run_comic=97 play_comic=96 run_abyss=94 sigil_pixel=93 run_clean=92 hyper_play_pixel=92 hyper_play_desktop=91 run_chat=90 run_desktop=90 hyper_menu_neon=90 menu_pixel=88 run_jackpot=88 sigil_clean=88 run_metro=86 sigil_chat=82 hyper_menu_terminal=81 hyper_play_jackpot=80 play_neon=79 sigil_desktop=79 play_abyss=77 sigil_metro=77 menu_paper=72 hyper_play_abyss=69 sigil_comic=65 hyper_menu_desktop=62 hyper_play_chat=61 hyper_play_clean=60 play_clean=58 sigil_oracle=58 run_paper=55 sigil_abyss=55 hyper_play_neon=54 play_pixel=52 sigil_neon=52 hyper_play_metro=51 play_oracle=50 hyper_menu_clean=48 play_metro=45 hyper_play_oracle=44 sigil_paper=42 menu_neon=40 sigil_jackpot=40 hyper_menu_chat=38 menu_comic=37 menu_abyss=35 menu_chat=35 hyper_menu_abyss=35 hyper_menu_metro=34 hyper_menu_paper=28 menu_clean=27 hyper_menu_oracle=25 menu_oracle=23 play_jackpot=2 play_chat=1 menu_metro=0 menu_desktop=0 play_desktop=0
+11-20 23:38:56.700 I/System.out( 3592): SELFTEST INVITE popup=1 status=SEEN after 1000ms
+11-20 23:38:57.601 I/System.out( 3592): SELFTEST SHOT invite_popup_paper
+11-20 23:38:59.652 I/System.out( 3592): SELFTEST INVITE answer status=DECLINED after 250ms
+11-20 23:39:08.957 I/System.out( 3592): SELFTEST INVITE party/lobby screen=Meltdown popup=1 mode=party after 6000ms
+11-20 23:39:09.865 I/System.out( 3592): SELFTEST SHOT invite_party_lobby
+11-20 23:39:22.067 I/System.out( 3592): SELFTEST INVITE party/game screen=Melt popup=1 mode=party after 3250ms
+11-20 23:39:23.023 I/System.out( 3592): SELFTEST SHOT invite_party_game
+11-20 23:39:30.068 I/System.out( 3592): SELFTEST FRIEND popup=1 requests=1 after 4000ms
+11-20 23:39:30.993 I/System.out( 3592): SELFTEST SHOT friend_request_chat
+11-20 23:39:33.065 I/System.out( 3592): SELFTEST FRIEND answer status=ACCEPTED name='ANON' friends=[ALEX:0, TESTFRIEND:1111]
+11-20 23:39:34.577 I/System.out( 3592): SELFTEST SHOT friends_chat
+11-20 23:39:38.153 I/System.out( 3592): SELFTEST SHOT menu_friends_oracle
+11-20 23:39:42.344 I/System.out( 3592): SELFTEST SHOT egg_logo_terminal
+11-20 23:39:46.831 I/System.out( 3592): SELFTEST SHOT egg_logo_paper
+11-20 23:39:51.222 I/System.out( 3592): SELFTEST SHOT egg_logo_neon
+11-20 23:39:55.614 I/System.out( 3592): SELFTEST SHOT egg_logo_clean
+11-20 23:40:00.028 I/System.out( 3592): SELFTEST SHOT egg_logo_pixel
+11-20 23:40:04.563 I/System.out( 3592): SELFTEST SHOT egg_logo_comic
+11-20 23:40:09.050 I/System.out( 3592): SELFTEST SHOT egg_logo_abyss
+11-20 23:40:13.486 I/System.out( 3592): SELFTEST SHOT egg_logo_metro
+11-20 23:40:17.882 I/System.out( 3592): SELFTEST SHOT egg_logo_jackpot
+11-20 23:40:22.306 I/System.out( 3592): SELFTEST SHOT egg_logo_chat
+11-20 23:40:26.651 I/System.out( 3592): SELFTEST SHOT egg_logo_desktop
+11-20 23:40:31.053 I/System.out( 3592): SELFTEST SHOT egg_logo_oracle
+11-20 23:40:34.380 I/System.out( 3592): SELFTEST SHOT egg_hold_terminal
+11-20 23:40:37.188 I/System.out( 3592): SELFTEST SHOT egg_crash_terminal
+11-20 23:40:42.733 I/System.out( 3592): SELFTEST SHOT egg_self_terminal
+11-20 23:40:47.550 I/System.out( 3592): SELFTEST SHOT egg_love_terminal
+11-20 23:40:51.008 I/System.out( 3592): SELFTEST EGGS self=true love=true gameShow=false tetris=false found=16
+11-20 23:40:53.728 I/System.out( 3592): SELFTEST SHOT egg_bottom_oracle
+11-20 23:40:58.724 I/System.out( 3592): SELFTEST SHOT egg_bottom_chat
+11-20 23:41:02.424 I/System.out( 3592): SELFTEST SHOT egg_milestone_chat
+11-20 23:41:09.957 I/System.out( 3592): SELFTEST RANKED a=host vs TEST-B b=guest vs TEST-A after 3500ms
+11-20 23:41:11.536 I/System.out( 3592): SELFTEST SHOT ranked_chat
+11-20 23:41:15.359 I/System.out( 3592): SELFTEST SHOT ranked_terminal
+11-20 23:41:19.668 I/System.out( 3592): SELFTEST SHOT ranked_queue
+11-20 23:41:23.606 I/System.out( 3592): SELFTEST SHOT ranked_oracle
+11-20 23:41:25.936 I/System.out( 3592): SELFTEST stress 0
+11-20 23:41:26.855 I/System.out( 3592): SELFTEST stress 100
+11-20 23:41:27.621 I/System.out( 3592): SELFTEST stress 200
+11-20 23:41:28.556 I/System.out( 3592): SELFTEST stress 300
+11-20 23:41:29.138 I/System.out( 3592): SELFTEST stress 400
+11-20 23:41:29.744 I/System.out( 3592): SELFTEST stress 500
+11-20 23:41:30.484 I/System.out( 3592): SELFTEST stress done
+11-20 23:41:30.486 I/System.out( 3592): SELFTEST VERIFY 'Name a dog breed' 'Labrador' -> LOCAL(Labrador Retriever) (2ms)
+11-20 23:41:31.044 I/System.out( 3592): SELFTEST VERIFY 'Name a dog breed' 'Kai Ken' -> FOUND(Kai Ken, 27) HEISENBUG · not on the list · found online · 27 Wikipedias · 93 views/day · 22 mentions · fame 45% (557ms)
+11-20 23:41:34.845 I/System.out( 3592): SELFTEST VERIFY 'Name a dog breed' 'banana' -> MISSING (3800ms)
+11-20 23:41:34.851 I/System.out( 3592): SELFTEST VERIFY 'Name a cheese' 'Tete de Moine' -> LOCAL(Tête de Moine) (6ms)
+11-20 23:41:35.977 I/System.out( 3592): SELFTEST VERIFY 'Name a cheese' 'toaster' -> MISSING (1125ms)
+11-20 23:41:39.116 I/System.out( 3592): SELFTEST SHOT fetch_running
+11-20 23:41:49.409 I/System.out( 3592): SELFTEST COLLECT added=2 library=28 failed=2 topics=[TV, GAMING] msg=+2 new lists
+11-20 23:41:50.249 I/System.out( 3592): SELFTEST SHOT fetch_done
+11-20 23:41:55.284 I/System.out( 3592): SELFTEST DISCARD geo.country gone=true back=true
+11-20 23:41:58.365 I/System.out( 3592): SELFTEST DISCARD wx.an.bat gone=true back=true
+11-20 23:41:59.196 I/System.out( 3592): SELFTEST SHOT menu_after_collect
+11-20 23:42:01.035 I/System.out( 3592): SELFTEST DONE ok

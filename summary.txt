@@ -1,0 +1,9 @@
+Physical size: 1080x2400
+23:22:08 install: Success
+23:22:11 launched self-test
+23:42:01 self-test finished
+23:42:37 seed 11: ok
+23:43:15 seed 22: ok
+23:43:45 seed 33: ok
+fatal exceptions: 0
+gc lines: 96
