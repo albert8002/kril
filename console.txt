@@ -1,0 +1,400 @@
+SELFTEST START
+SELFTEST READY prompts=546 answers=151663
+SELFTEST CUSTOM star=true ring=true label=BASIC rank=ROOKIE
+SELFTEST SHOT menu_terminal
+SELFTEST PACE menu_terminal frames=61 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SUGGEST 'Burger' -> null
+SELFTEST SHOT play_terminal
+SELFTEST SHOT touch_terminal
+SELFTEST SHOT confirm_terminal
+SELFTEST RUN TERMINAL points=7
+SELFTEST SHOT run_terminal
+SELFTEST PACE run_terminal frames=120 p50=16ms p95=16ms max=33ms late=1 (0%)
+SELFTEST SHOT reveal_terminal
+SELFTEST ANSWERS TERMINAL groups=5 names=78 list=78
+SELFTEST SHOT answers_terminal
+SELFTEST PACE play_terminal frames=87 p50=16ms p95=16ms max=88ms late=2 (2%)
+SELFTEST SHOT summary_terminal
+SELFTEST SHOT appearance_terminal
+SELFTEST SHOT config_terminal
+SELFTEST SHOT fetch_terminal
+SELFTEST SHOT looks_terminal
+SELFTEST SHOT menu_paper
+SELFTEST PACE menu_paper frames=61 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT play_paper
+SELFTEST SHOT touch_paper
+SELFTEST SHOT confirm_paper
+SELFTEST RUN PAPER points=7
+SELFTEST SHOT run_paper
+SELFTEST PACE run_paper frames=115 p50=16ms p95=16ms max=88ms late=3 (2%)
+SELFTEST SHOT reveal_paper
+SELFTEST ANSWERS PAPER groups=5 names=60 list=60
+SELFTEST SHOT answers_paper
+SELFTEST PACE play_paper frames=86 p50=16ms p95=16ms max=67ms late=4 (4%)
+SELFTEST SHOT summary_paper
+SELFTEST SHOT appearance_paper
+SELFTEST SHOT config_paper
+SELFTEST SHOT fetch_paper
+SELFTEST SHOT looks_paper
+SELFTEST SHOT menu_neon
+SELFTEST PACE menu_neon frames=57 p50=16ms p95=16ms max=71ms late=2 (3%)
+SELFTEST SHOT play_neon
+SELFTEST SHOT touch_neon
+SELFTEST SHOT confirm_neon
+SELFTEST RUN NEON points=57
+SELFTEST SHOT run_neon
+SELFTEST PACE run_neon frames=119 p50=16ms p95=16ms max=39ms late=2 (1%)
+SELFTEST SHOT reveal_neon
+SELFTEST ANSWERS NEON groups=5 names=69 list=69
+SELFTEST SHOT answers_neon
+SELFTEST PACE play_neon frames=86 p50=16ms p95=16ms max=39ms late=2 (2%)
+SELFTEST SHOT summary_neon
+SELFTEST SHOT appearance_neon
+SELFTEST SHOT config_neon
+SELFTEST SHOT fetch_neon
+SELFTEST SHOT looks_neon
+SELFTEST SHOT menu_clean
+SELFTEST PACE menu_clean frames=61 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SUGGEST 'Have' -> null
+SELFTEST SHOT play_clean
+SELFTEST SHOT touch_clean
+SELFTEST RUN CLEAN points=7
+SELFTEST SHOT run_clean
+SELFTEST PACE run_clean frames=118 p50=16ms p95=16ms max=60ms late=1 (0%)
+SELFTEST SHOT reveal_clean
+SELFTEST ANSWERS CLEAN groups=5 names=113 list=113
+SELFTEST SHOT answers_clean
+SELFTEST PACE play_clean frames=91 p50=16ms p95=16ms max=21ms late=0 (0%)
+SELFTEST SHOT summary_clean
+SELFTEST SHOT appearance_clean
+SELFTEST SHOT config_clean
+SELFTEST SHOT fetch_clean
+SELFTEST SHOT looks_clean
+SELFTEST SHOT menu_pixel
+SELFTEST PACE menu_pixel frames=61 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SUGGEST 'Gift' -> null
+SELFTEST SHOT play_pixel
+SELFTEST SHOT touch_pixel
+SELFTEST SHOT confirm_pixel
+SELFTEST RUN PIXEL points=7
+SELFTEST SHOT run_pixel
+SELFTEST PACE run_pixel frames=121 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT reveal_pixel
+SELFTEST ANSWERS PIXEL groups=5 names=148 list=148
+SELFTEST SHOT answers_pixel
+SELFTEST PACE play_pixel frames=86 p50=16ms p95=16ms max=51ms late=4 (4%)
+SELFTEST SHOT summary_pixel
+SELFTEST SHOT appearance_pixel
+SELFTEST SHOT config_pixel
+SELFTEST SHOT fetch_pixel
+SELFTEST SHOT looks_pixel
+SELFTEST SHOT menu_comic
+SELFTEST PACE menu_comic frames=56 p50=16ms p95=16ms max=91ms late=1 (1%)
+SELFTEST SUGGEST 'Süzme' -> null
+SELFTEST SHOT play_comic
+SELFTEST SHOT touch_comic
+SELFTEST SHOT confirm_comic
+SELFTEST RUN COMIC points=7
+SELFTEST SHOT run_comic
+SELFTEST PACE run_comic frames=120 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT reveal_comic
+SELFTEST ANSWERS COMIC groups=5 names=244 list=244
+SELFTEST SHOT answers_comic
+SELFTEST PACE play_comic frames=91 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT summary_comic
+SELFTEST SHOT appearance_comic
+SELFTEST SHOT config_comic
+SELFTEST SHOT fetch_comic
+SELFTEST SHOT looks_comic
+SELFTEST SHOT menu_abyss
+SELFTEST PACE menu_abyss frames=61 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SUGGEST 'Display' -> null
+SELFTEST SHOT play_abyss
+SELFTEST SHOT touch_abyss
+SELFTEST SHOT confirm_abyss
+SELFTEST RUN ABYSS points=7
+SELFTEST SHOT run_abyss
+SELFTEST PACE run_abyss frames=121 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT reveal_abyss
+SELFTEST ANSWERS ABYSS groups=6 names=141 list=141
+SELFTEST SHOT answers_abyss
+SELFTEST PACE play_abyss frames=90 p50=16ms p95=16ms max=34ms late=1 (1%)
+SELFTEST SHOT summary_abyss
+SELFTEST SHOT appearance_abyss
+SELFTEST SHOT config_abyss
+SELFTEST SHOT fetch_abyss
+SELFTEST SHOT looks_abyss
+SELFTEST SHOT menu_metro
+SELFTEST PACE menu_metro frames=61 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SUGGEST 'Check' -> null
+SELFTEST SHOT play_metro
+SELFTEST SHOT touch_metro
+SELFTEST SHOT confirm_metro
+SELFTEST RUN METRO points=7
+SELFTEST SHOT run_metro
+SELFTEST PACE run_metro frames=121 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT reveal_metro
+SELFTEST ANSWERS METRO groups=5 names=107 list=107
+SELFTEST SHOT answers_metro
+SELFTEST PACE play_metro frames=91 p50=16ms p95=16ms max=33ms late=1 (1%)
+SELFTEST SHOT summary_metro
+SELFTEST SHOT appearance_metro
+SELFTEST SHOT config_metro
+SELFTEST SHOT fetch_metro
+SELFTEST SHOT looks_metro
+SELFTEST SHOT menu_jackpot
+SELFTEST PACE menu_jackpot frames=61 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SUGGEST 'Water' -> null
+SELFTEST SHOT play_jackpot
+SELFTEST SHOT touch_jackpot
+SELFTEST SHOT confirm_jackpot
+SELFTEST RUN JACKPOT points=7
+SELFTEST SHOT run_jackpot
+SELFTEST PACE run_jackpot frames=121 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT reveal_jackpot
+SELFTEST ANSWERS JACKPOT groups=5 names=66 list=66
+SELFTEST SHOT answers_jackpot
+SELFTEST PACE play_jackpot frames=91 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT summary_jackpot
+SELFTEST SHOT appearance_jackpot
+SELFTEST SHOT config_jackpot
+SELFTEST SHOT fetch_jackpot
+SELFTEST SHOT looks_jackpot
+SELFTEST SHOT menu_chat
+SELFTEST PACE menu_chat frames=60 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SUGGEST 'electric' -> null
+SELFTEST SHOT play_chat
+SELFTEST SHOT touch_chat
+SELFTEST SHOT confirm_chat
+SELFTEST RUN CHAT points=7
+SELFTEST SHOT run_chat
+SELFTEST PACE run_chat frames=114 p50=16ms p95=27ms max=40ms late=6 (5%)
+SELFTEST SHOT reveal_chat
+SELFTEST ANSWERS CHAT groups=5 names=172 list=172
+SELFTEST SHOT answers_chat
+SELFTEST PACE play_chat frames=87 p50=16ms p95=16ms max=56ms late=4 (4%)
+SELFTEST SHOT summary_chat
+SELFTEST SHOT appearance_chat
+SELFTEST SHOT config_chat
+SELFTEST SHOT fetch_chat
+SELFTEST SHOT looks_chat
+SELFTEST SHOT menu_desktop
+SELFTEST PACE menu_desktop frames=61 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SUGGEST 'French' -> null
+SELFTEST SHOT play_desktop
+SELFTEST SHOT touch_desktop
+SELFTEST SHOT confirm_desktop
+SELFTEST RUN DESKTOP points=27
+SELFTEST SHOT run_desktop
+SELFTEST PACE run_desktop frames=102 p50=16ms p95=16ms max=167ms late=3 (2%)
+SELFTEST SHOT reveal_desktop
+SELFTEST ANSWERS DESKTOP groups=5 names=61 list=61
+SELFTEST SHOT answers_desktop
+SELFTEST PACE play_desktop frames=90 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT summary_desktop
+SELFTEST SHOT appearance_desktop
+SELFTEST SHOT config_desktop
+SELFTEST SHOT fetch_desktop
+SELFTEST SHOT looks_desktop
+SELFTEST SHOT menu_oracle
+SELFTEST PACE menu_oracle frames=61 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SUGGEST 'Count' -> null
+SELFTEST SHOT play_oracle
+SELFTEST SHOT touch_oracle
+SELFTEST SHOT confirm_oracle
+SELFTEST RUN ORACLE points=7
+SELFTEST SHOT run_oracle
+SELFTEST PACE run_oracle frames=121 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT reveal_oracle
+SELFTEST ANSWERS ORACLE groups=5 names=88 list=88
+SELFTEST SHOT answers_oracle
+SELFTEST PACE play_oracle frames=89 p50=16ms p95=16ms max=45ms late=1 (1%)
+SELFTEST SHOT summary_oracle
+SELFTEST SHOT appearance_oracle
+SELFTEST SHOT config_oracle
+SELFTEST SHOT fetch_oracle
+SELFTEST SHOT looks_oracle
+SELFTEST SHOT menu_terminal_green
+SELFTEST SHOT menu_paper_night
+SELFTEST SHOT menu_neon_outrun
+SELFTEST SHOT menu_clean_dark
+SELFTEST SHOT menu_pixel_color
+SELFTEST SHOT menu_comic_pop
+SELFTEST SHOT menu_abyss_jelly
+SELFTEST SHOT menu_metro_platform
+SELFTEST SHOT menu_jackpot_velvet
+SELFTEST SHOT menu_chat_midnight
+SELFTEST SHOT menu_desktop_storm
+SELFTEST SHOT menu_oracle_parchment
+SELFTEST SHOT hyper_menu_terminal
+SELFTEST PACE hyper_menu_terminal frames=73 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST PACE hyper_play_terminal frames=89 p50=16ms p95=16ms max=42ms late=1 (1%)
+SELFTEST SHOT hyper_menu_paper
+SELFTEST PACE hyper_menu_paper frames=72 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST PACE hyper_play_paper frames=91 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT hyper_menu_neon
+SELFTEST PACE hyper_menu_neon frames=70 p50=16ms p95=16ms max=36ms late=1 (1%)
+SELFTEST PACE hyper_play_neon frames=91 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT hyper_menu_clean
+SELFTEST PACE hyper_menu_clean frames=73 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST PACE hyper_play_clean frames=91 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT hyper_menu_pixel
+SELFTEST PACE hyper_menu_pixel frames=68 p50=16ms p95=16ms max=100ms late=1 (1%)
+SELFTEST PACE hyper_play_pixel frames=90 p50=16ms p95=16ms max=38ms late=2 (2%)
+SELFTEST SHOT hyper_menu_comic
+SELFTEST PACE hyper_menu_comic frames=73 p50=16ms p95=16ms max=33ms late=1 (1%)
+SELFTEST PACE hyper_play_comic frames=90 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT hyper_menu_abyss
+SELFTEST PACE hyper_menu_abyss frames=73 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST PACE hyper_play_abyss frames=85 p50=16ms p95=16ms max=90ms late=1 (1%)
+SELFTEST SHOT hyper_menu_metro
+SELFTEST PACE hyper_menu_metro frames=73 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST PACE hyper_play_metro frames=91 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT hyper_menu_jackpot
+SELFTEST PACE hyper_menu_jackpot frames=73 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST PACE hyper_play_jackpot frames=91 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT hyper_menu_chat
+SELFTEST PACE hyper_menu_chat frames=73 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST PACE hyper_play_chat frames=91 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT hyper_menu_desktop
+SELFTEST PACE hyper_menu_desktop frames=70 p50=16ms p95=16ms max=61ms late=1 (1%)
+SELFTEST PACE hyper_play_desktop frames=90 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SHOT hyper_menu_oracle
+SELFTEST PACE hyper_menu_oracle frames=69 p50=16ms p95=16ms max=85ms late=1 (1%)
+SELFTEST PACE hyper_play_oracle frames=90 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST RUN hyper points=85
+SELFTEST SHOT hyper_run_abyss
+SELFTEST RUN oracle flight from=114 points=85
+SELFTEST SHOT oracle_fly_1
+SELFTEST SHOT oracle_fly_2
+SELFTEST SHOT oracle_fly_3
+SELFTEST SHOT oracle_fly_4
+SELFTEST SHOT oracle_fly_5
+SELFTEST SHOT daily_terminal
+SELFTEST SHOT quit_paper
+SELFTEST SHOT quit_chat
+SELFTEST SHOT quit_desktop
+SELFTEST SHOT quit_metro
+SELFTEST SHOT friends_terminal
+SELFTEST SHOT meltdown_setup_terminal
+SELFTEST MELT TERMINAL phase=TURN players=6 prompt='Name a famous scientist'
+SELFTEST SHOT meltdown_terminal
+SELFTEST MELT event ok: ANON: Albert Einstein
+SELFTEST MELT event ok: SUDO: Emilio G. Segrè
+SELFTEST SHOT meltdown_terminal_turns
+SELFTEST MELT event ok: DAEMON: Stephen Hawking
+SELFTEST MELT event dup: KERNEL: Emilio G. Segrè — already said
+SELFTEST MELT event ok: KERNEL: Olga Ladyzhenskaya
+SELFTEST MELT event ok: PANIC: Andrey Kolmogorov
+SELFTEST MELT event ok: SEGV: Svante August Arrhenius
+SELFTEST MELT event ok: ANON: Leonardo da Vinci
+SELFTEST MELT event dup: SUDO: Stephen Hawking — already said
+SELFTEST MELT event blast: MELTDOWN — SUDO loses a heart
+SELFTEST MELT played answered=2 blasts=1 heat=1.0 round=1
+SELFTEST SHOT meltdown_terminal_late
+SELFTEST MELT ABYSS phase=TURN players=6 prompt='Name a rock, mineral, gem or metal'
+SELFTEST SHOT meltdown_abyss
+SELFTEST MELT COMIC phase=TURN players=6 prompt='Name a famous scientist'
+SELFTEST SHOT meltdown_comic
+SELFTEST MELT ORACLE phase=TURN players=6 prompt='Name an animal'
+SELFTEST SHOT meltdown_oracle
+SELFTEST PARTY host open=true status=open · waiting for players
+SELFTEST PARTY seated=[ANON, GUESTBOT] guest=waiting for host… (1 · relay 1/3)
+SELFTEST PARTY host phase=TURN guest phase=TURN guest players=3 prompt='Name a famous scientist'
+SELFTEST SHOT party_metro
+SELFTEST PARTY after guestAnswers=2 hostSeq=98 guestSeq=97 used=7 event='ANON: Galileo Galilei'
+SELFTEST PACE sigil_terminal frames=70 p50=16ms p95=16ms max=39ms late=3 (4%)
+SELFTEST SIGIL TERMINAL/amber 840x840 frames=15 clean=ok 2847ms (particles) camera=ok 2847ms (particles)
+SELFTEST SHOT sigil_terminal
+SELFTEST PACE sigil_paper frames=64 p50=16ms p95=22ms max=127ms late=3 (4%)
+SELFTEST SIGIL PAPER/newsprint 840x840 frames=5 clean=ok 1212ms (tape) camera=ok 1212ms (tape)
+SELFTEST SHOT sigil_paper
+SELFTEST PACE sigil_neon frames=70 p50=16ms p95=16ms max=47ms late=1 (1%)
+SELFTEST SIGIL NEON/synthwave 840x840 frames=18 clean=ok 3345ms (sun) camera=ok 3173ms (sun)
+SELFTEST SHOT sigil_neon
+SELFTEST PACE sigil_clean frames=71 p50=16ms p95=16ms max=49ms late=1 (1%)
+SELFTEST SIGIL CLEAN/light 840x840 frames=16 clean=ok 3245ms (buzzer) camera=ok 3245ms (buzzer)
+SELFTEST SHOT sigil_clean
+SELFTEST PACE sigil_pixel frames=70 p50=16ms p95=16ms max=35ms late=3 (4%)
+SELFTEST SIGIL PIXEL/dmg 840x840 frames=1 clean=ok 11ms (runes) camera=ok 11ms (runes)
+SELFTEST SHOT sigil_pixel
+SELFTEST PACE sigil_comic frames=70 p50=16ms p95=16ms max=36ms late=3 (4%)
+SELFTEST SIGIL COMIC/rebel 840x840 frames=4 clean=ok 1145ms (kapow) camera=ok 1145ms (kapow)
+SELFTEST SHOT sigil_comic
+SELFTEST PACE sigil_abyss frames=71 p50=16ms p95=16ms max=38ms late=2 (2%)
+SELFTEST SIGIL ABYSS/trench 840x840 frames=19 clean=ok 5052ms (sonar) camera=ok 5052ms (sonar)
+SELFTEST SHOT sigil_abyss
+SELFTEST PACE sigil_metro frames=64 p50=16ms p95=35ms max=71ms late=5 (7%)
+SELFTEST SIGIL METRO/board 840x840 frames=1 clean=ok 5ms (train) camera=ok 5ms (train)
+SELFTEST SHOT sigil_metro
+SELFTEST PACE sigil_jackpot frames=57 p50=16ms p95=34ms max=207ms late=3 (5%)
+SELFTEST SIGIL JACKPOT/felt 840x840 frames=47 clean=ok 7106ms (chips) camera=ok 2748ms (chips)
+SELFTEST SHOT sigil_jackpot
+SELFTEST PACE sigil_chat frames=66 p50=16ms p95=25ms max=74ms late=3 (4%)
+SELFTEST SIGIL CHAT/daylight 840x840 frames=1 clean=ok 2ms (voice) camera=ok 2ms (voice)
+SELFTEST SHOT sigil_chat
+SELFTEST PACE sigil_desktop frames=71 p50=16ms p95=16ms max=62ms late=1 (1%)
+SELFTEST SIGIL DESKTOP/classic 840x840 frames=1 clean=ok 9ms (defrag) camera=ok 9ms (defrag)
+SELFTEST SHOT sigil_desktop
+SELFTEST PACE sigil_oracle frames=73 p50=16ms p95=16ms max=16ms late=0 (0%)
+SELFTEST SIGIL ORACLE/midnight 840x840 frames=1 clean=ok 10ms (constellation) camera=ok 10ms (constellation)
+SELFTEST SHOT sigil_oracle
+SELFTEST SIGIL SUMMARY clean=12/12 camera=12/12
+SELFTEST PACE SUMMARY late%: sigil_metro=7 run_chat=5 sigil_jackpot=5 play_paper=4 play_pixel=4 play_chat=4 sigil_terminal=4 sigil_paper=4 sigil_pixel=4 sigil_comic=4 sigil_chat=4 menu_neon=3 play_terminal=2 run_paper=2 play_neon=2 run_desktop=2 hyper_play_pixel=2 sigil_abyss=2 run_neon=1 menu_comic=1 play_abyss=1 play_metro=1 play_oracle=1 hyper_play_terminal=1 hyper_menu_neon=1 hyper_menu_pixel=1 hyper_menu_comic=1 hyper_play_abyss=1 hyper_menu_desktop=1 hyper_menu_oracle=1 sigil_neon=1 sigil_clean=1 sigil_desktop=1 menu_terminal=0 run_terminal=0 menu_paper=0 menu_clean=0 run_clean=0 play_clean=0 menu_pixel=0 run_pixel=0 run_comic=0 play_comic=0 menu_abyss=0 run_abyss=0 menu_metro=0 run_metro=0 menu_jackpot=0 run_jackpot=0 play_jackpot=0 menu_chat=0 menu_desktop=0 play_desktop=0 menu_oracle=0 run_oracle=0 hyper_menu_terminal=0 hyper_menu_paper=0 hyper_play_paper=0 hyper_play_neon=0 hyper_menu_clean=0 hyper_play_clean=0 hyper_play_comic=0 hyper_menu_abyss=0 hyper_menu_metro=0 hyper_play_metro=0 hyper_menu_jackpot=0 hyper_play_jackpot=0 hyper_menu_chat=0 hyper_play_chat=0 hyper_play_desktop=0 hyper_play_oracle=0 sigil_oracle=0
+SELFTEST INVITE popup=1 status=SENDING after 1000ms
+SELFTEST SHOT invite_popup_paper
+SELFTEST INVITE answer status=DECLINED after 250ms
+SELFTEST INVITE party/lobby screen=Meltdown popup=1 mode=party after 7000ms
+SELFTEST SHOT invite_party_lobby
+SELFTEST INVITE party/game screen=Melt popup=1 mode=party after 1000ms
+SELFTEST SHOT invite_party_game
+SELFTEST FRIEND popup=1 requests=1 after 1250ms
+SELFTEST SHOT friend_request_chat
+SELFTEST FRIEND answer status=ACCEPTED name='ANON' friends=[ALEX:0, TESTFRIEND:1111]
+SELFTEST SHOT friends_chat
+SELFTEST SHOT menu_friends_oracle
+SELFTEST SHOT egg_logo_terminal
+SELFTEST SHOT egg_logo_paper
+SELFTEST SHOT egg_logo_neon
+SELFTEST SHOT egg_logo_clean
+SELFTEST SHOT egg_logo_pixel
+SELFTEST SHOT egg_logo_comic
+SELFTEST SHOT egg_logo_abyss
+SELFTEST SHOT egg_logo_metro
+SELFTEST SHOT egg_logo_jackpot
+SELFTEST SHOT egg_logo_chat
+SELFTEST SHOT egg_logo_desktop
+SELFTEST SHOT egg_logo_oracle
+SELFTEST SHOT egg_hold_terminal
+SELFTEST SHOT egg_crash_terminal
+SELFTEST SHOT egg_self_terminal
+SELFTEST SHOT egg_love_terminal
+SELFTEST EGGS self=true love=true gameShow=false tetris=false found=16
+SELFTEST SHOT egg_bottom_oracle
+SELFTEST SHOT egg_bottom_chat
+SELFTEST SHOT egg_milestone_chat
+SELFTEST RANKED a=guest vs TEST-B b=host vs TEST-A after 9500ms
+SELFTEST SHOT ranked_chat
+SELFTEST SHOT ranked_terminal
+SELFTEST SHOT ranked_queue
+SELFTEST SHOT ranked_oracle
+SELFTEST stress 0
+SELFTEST stress 100
+SELFTEST stress 200
+SELFTEST stress 300
+SELFTEST stress 400
+SELFTEST stress 500
+SELFTEST stress done
+SELFTEST VERIFY 'Name a dog breed' 'Labrador' -> LOCAL(Labrador Retriever) (6ms)
+SELFTEST VERIFY 'Name a dog breed' 'Kai Ken' -> FOUND(Kai Ken, 27) HEISENBUG · not on the list · found online · 27 Wikipedias · 93 views/day · 22 mentions · fame 45% (753ms)
+SELFTEST VERIFY 'Name a dog breed' 'banana' -> MISSING (442ms)
+SELFTEST VERIFY 'Name a cheese' 'Tete de Moine' -> LOCAL(Tête de Moine) (9ms)
+SELFTEST VERIFY 'Name a cheese' 'toaster' -> MISSING (446ms)
+SELFTEST SHOT fetch_running
+SELFTEST COLLECT added=4 library=34 failed=0 topics=[TV, GAMING] msg=+4 new lists
+SELFTEST SHOT fetch_done
+SELFTEST DISCARD geo.country gone=true back=true
+SELFTEST DISCARD wx.an.bat gone=true back=true
+SELFTEST SHOT menu_after_collect
+SELFTEST DONE ok
+app.coredump.ios: 27738
