@@ -120,6 +120,7 @@ class QuestionBank(private val scope: CoroutineScope) {
     private val rescoreLock = Mutex()
 
     private val http = HttpClient {
+        install(app.coredump.net.WebSafe)
         install(HttpTimeout) {
             requestTimeoutMillis = 70_000
             connectTimeoutMillis = 15_000

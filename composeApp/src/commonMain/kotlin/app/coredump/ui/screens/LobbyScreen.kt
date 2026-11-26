@@ -114,7 +114,8 @@ fun LobbyScreen(model: AppModel) {
 @Composable
 private fun HostPane(model: AppModel) {
     var mode by remember { mutableStateOf(model.hostLobby?.mode ?: LinkMode.RELAY) }
-    Choice(LinkMode.entries, mode, { it.label }) { mode = it }
+    // the web app has no raw sockets: online relay only
+    if (app.coredump.net.lanSupported) Choice(LinkMode.entries, mode, { it.label }) { mode = it }
     TText(
         if (mode == LinkMode.RELAY) "works anywhere with internet (Wi-Fi or mobile data). recommended."
         else "same Wi-Fi only. blocked on many campus/hotel networks and inside LiveContainer.",
@@ -269,6 +270,24 @@ private fun FriendsPane(model: AppModel, goTab: (Tab) -> Unit) {
             enabled = fcode.isNotBlank(), primary = true)
         TText("the code is enough. they get a pop-up (or find it under requests) and their name comes back when they accept.",
             size = 10.sp, color = C.dim)
+    }
+    // with an account: add players by their account name too
+    Spacer(Modifier.height(14.dp))
+    var byName by remember { mutableStateOf("") }
+    Panel(Th.say("ADD BY NAME", "Add a friend by name")) {
+        if (model.account.signedIn) {
+            TermInput(byName, { byName = app.coredump.Account.cleanHandle(it) }, Modifier.fillMaxWidth(), prompt = "name", placeholder = "their account name",
+                size = 15.sp, onSubmit = { if (byName.length >= 2) model.account.addByName(byName) { byName = "" } })
+            Spacer(Modifier.height(8.dp))
+            TButton(if (model.account.busy) "looking…" else "Find and send request", { model.account.addByName(byName) { byName = "" } },
+                Modifier.fillMaxWidth(), enabled = byName.length >= 2 && !model.account.busy)
+            TText("works for players with an account. your friends list syncs to your other devices.", size = 10.sp, color = C.dim)
+        } else {
+            TText("with an account you can add friends by their name, and your friends list follows you to every device.",
+                size = 11.sp, color = C.dim)
+            Spacer(Modifier.height(6.dp))
+            TLink(Th.say("sign in / make an account →", "Sign in or make an account →"), { model.go(Screen.Account) }, color = C.hot)
+        }
     }
     if (s.requests.isNotEmpty()) {
         Spacer(Modifier.height(14.dp))

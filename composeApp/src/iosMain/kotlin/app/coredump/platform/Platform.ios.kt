@@ -40,6 +40,7 @@ import platform.posix.sockaddr_in
 
 actual object Platform {
     actual val name: String = "iOS ${UIDevice.currentDevice.systemVersion}"
+    actual val web: Boolean = false
 
     actual fun epochMillis(): Long = (NSDate().timeIntervalSince1970 * 1000.0).toLong()
 

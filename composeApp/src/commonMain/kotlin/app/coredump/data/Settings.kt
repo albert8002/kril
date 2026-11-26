@@ -115,7 +115,11 @@ object SettingsStore {
     private val json = Json { ignoreUnknownKeys = true }
 
     fun load(): Settings = runCatching {
-        val o = json.parseToJsonElement(Platform.readText(FILE) ?: return Settings()).jsonObject
+        fromJson(json.parseToJsonElement(Platform.readText(FILE) ?: return Settings()).jsonObject)
+    }.getOrElse { Settings() }
+
+    /** Settings from their stored form (unknown or missing keys: defaults). */
+    fun fromJson(o: JsonObject): Settings = runCatching {
         val d = Settings()
         fun s(k: String) = o[k]?.jsonPrimitive?.contentOrNull
         fun i(k: String) = o[k]?.jsonPrimitive?.intOrNull
@@ -202,7 +206,12 @@ object SettingsStore {
     }.getOrElse { Settings() }
 
     fun save(s: Settings) {
-        val o = buildJsonObject {
+        runCatching { Platform.writeText(FILE, toJson(s).toString()) }
+    }
+
+    /** The stored form of [s]. */
+    fun toJson(s: Settings): JsonObject {
+        return buildJsonObject {
             put("handle", s.handle)
             put("rounds", s.rounds)
             put("seconds", s.seconds)
@@ -263,7 +272,6 @@ object SettingsStore {
                 })
             })
         }
-        runCatching { Platform.writeText(FILE, o.toString()) }
     }
 }
 
@@ -317,6 +325,12 @@ object History {
     fun load() {
         runCatching {
             val o = json.parseToJsonElement(Platform.readText(FILE) ?: return).jsonObject
+            read(o)
+        }
+    }
+
+    private fun read(o: JsonObject) {
+        run {
             recent = o["recent"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty()
             seen = o["seen"]?.jsonObject?.mapNotNull { (k, v) -> v.jsonPrimitive.contentOrNull?.toLongOrNull()?.let { k to it } }?.toMap().orEmpty()
             runs = o["runs"]?.jsonArray?.mapNotNull { el ->
@@ -371,9 +385,14 @@ object History {
     }
 
     private fun save() {
-        val o = buildJsonObject {
+        runCatching { Platform.writeText(FILE, toJson().toString()) }
+    }
+
+    /** The stored form; [seenSince] (epoch ms): only prompts shown since then (the account copy keeps a week). */
+    fun toJson(seenSince: Long = 0L): JsonObject {
+        return buildJsonObject {
             put("recent", JsonArray(recent.map { JsonPrimitive(it) }))
-            put("seen", buildJsonObject { for ((k, v) in seen) put(k, v) })
+            put("seen", buildJsonObject { for ((k, v) in seen) if (v >= seenSince) put(k, v) })
             put("runs", JsonArray(runs.map { r ->
                 buildJsonObject {
                     put("at", r.at); put("m", r.mode); put("p", r.points)
@@ -386,6 +405,36 @@ object History {
                 }
             }))
         }
-        runCatching { Platform.writeText(FILE, o.toString()) }
+    }
+
+    /**
+     * Adds another device's history (the account copy): runs of both (one copy each), prompts shown on either (the
+     * newer time), recently played ids of both. A daily played on both devices counts once (the earlier run).
+     * Returns true when anything was added.
+     */
+    fun merge(o: JsonObject): Boolean {
+        val mine = Triple(recent, seen, runs)
+        val ok = runCatching { read(o) }.isSuccess
+        val other = Triple(recent, seen, runs)
+        recent = mine.first; seen = mine.second; runs = mine.third
+        if (!ok) return false
+        fun key(r: RunRecord) = "${r.at}|${r.mode}|${r.points}"
+        val have = runs.map { key(it) }.toHashSet()
+        val added = other.third.filter { key(it) !in have }
+        val now = Platform.epochMillis()
+        val seenAll = HashMap(seen)
+        for ((k, v) in other.second) if ((seenAll[k] ?: 0L) < v) seenAll[k] = v
+        val seenKeep = seenAll.filterValues { now - it < 30L * 24 * 3600 * 1000 }
+            .let { m -> if (m.size > 3000) m.entries.sortedByDescending { it.value }.take(3000).associate { it.key to it.value } else m }
+        val recentAll = (recent + other.first).distinct().take(KEEP_IDS)
+        if (added.isEmpty() && seenKeep == seen && recentAll == recent) return false
+        val dailies = HashSet<Int>()
+        runs = (runs + added).sortedByDescending { it.at }.asReversed()
+            .map { r -> if (r.daily != null && !dailies.add(r.daily)) r.copy(daily = null, mode = "solo") else r }
+            .asReversed().take(KEEP_RUNS)
+        seen = seenKeep
+        recent = recentAll
+        save()
+        return true
     }
 }

@@ -126,6 +126,8 @@ fun RankedScreen(model: AppModel) {
                 }
             }
             Spacer(Modifier.height(14.dp))
+            AccountLadder(model)
+            Spacer(Modifier.height(14.dp))
             Panel(Th.say("RULES", "Ranked rules (fixed)")) {
                 val c = Ranked.CONFIG
                 for (line in listOf(
@@ -269,4 +271,35 @@ private fun MatchRow(r: RankedResult, now: Long) {
 private fun ago(ms: Long): String {
     val m = ms / 60_000
     return when { m < 1 -> "just now"; m < 60 -> "${m} min ago"; m < 60 * 24 -> "${m / 60} h ago"; else -> "${m / (60 * 24)} d ago" }
+}
+
+/** Signed in: the server's ladder (top ratings). Signed out: what an account changes for ranked. */
+@Composable
+private fun AccountLadder(model: AppModel) {
+    val acc = model.account
+    if (!acc.configured) return
+    Panel(Th.say("LADDER", "Ladder")) {
+        if (!acc.signedIn) {
+            TText("signed out: this rating lives on this device only. with an account it is kept on the server and moves " +
+                "only when both players report the same result; matches between two accounts are rated there.", size = 11.sp, color = C.dim)
+            Spacer(Modifier.height(6.dp))
+            app.coredump.ui.TLink(Th.say("sign in / make an account →", "Sign in or make an account →"), { model.go(app.coredump.Screen.Account) }, color = C.hot)
+            return@Panel
+        }
+        androidx.compose.runtime.LaunchedEffect(Unit) { if (acc.ladder == null) acc.loadLadder() }
+        val top = acc.ladder
+        acc.ladderNote?.let { TText(it, size = 11.sp, color = C.dim) }
+        if (top != null && top.isEmpty()) TText("no rated matches yet. be the first.", size = 11.sp, color = C.dim)
+        val me = acc.profile?.id
+        top?.take(20)?.forEachIndexed { i, p ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                TText("${i + 1}.".padEnd(4), size = 12.sp, color = C.dim)
+                TText(p.handle, Modifier.weight(1f), size = 13.sp, weight = if (p.id == me) FontWeight.Bold else FontWeight.Normal,
+                    color = if (p.id == me) C.hot else C.amber)
+                TText("${Ranked.division(p.elo).name} ${p.elo}", size = 12.sp, color = C.dim)
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        app.coredump.ui.TLink("refresh", { acc.loadLadder() }, color = C.dim)
+    }
 }

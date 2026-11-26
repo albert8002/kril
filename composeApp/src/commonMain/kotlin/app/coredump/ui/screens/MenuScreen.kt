@@ -95,7 +95,8 @@ fun menuItems(model: AppModel): List<Item> {
         Item("stats", "STATS", "cat /proc/self", "Runs, tiers, streaks", null) { model.go(Screen.Stats) },
         Item("browse", "BROWSE LISTS", "ls -la /var/lists", "Every list and its answers", null) { model.go(Screen.Browse) },
         Item("theme", "THEME", "chtheme", "${style.label.lowercase().replaceFirstChar { it.uppercase() }} · ${Th.pal.name.lowercase()}", null) { model.go(Screen.Appearance) },
-        Item("settings", "SETTINGS", "vim ~/.coredumprc", "Sources, defaults, crash reports", null) { model.go(Screen.Config) },
+        Item("settings", "SETTINGS", "vim ~/.coredumprc",
+            if (model.account.signedIn) "Account · sources, defaults, crash reports" else "Account, sources, defaults, crash reports", null) { model.go(Screen.Config) },
         Item("manual", "MANUAL", "man coredump", "How scoring works", null) { model.go(Screen.Manual) },
     )
 }

@@ -85,7 +85,7 @@ fun BootScreen(model: AppModel) {
         ready = true
         fx.glitch()
         delay(1400)
-        if (model.screen == Screen.Boot) model.go(Screen.Menu, push = false)
+        if (model.screen == Screen.Boot) model.bootDone()
     }
 
     if (!Th.terminal) {
@@ -93,7 +93,7 @@ fun BootScreen(model: AppModel) {
         Box(
             Modifier.fillMaxSize()
                 .clickable(remember { MutableInteractionSource() }, null) {
-                    if (ready && model.screen == Screen.Boot) model.go(Screen.Menu, push = false)
+                    if (ready && model.screen == Screen.Boot) model.bootDone()
                 }
                 .padding(28.dp),
             contentAlignment = Alignment.Center,
@@ -128,7 +128,7 @@ fun BootScreen(model: AppModel) {
     Box(
         Modifier.fillMaxSize()
             .clickable(remember { MutableInteractionSource() }, null) {
-                if (ready && model.screen == Screen.Boot) model.go(Screen.Menu, push = false)
+                if (ready && model.screen == Screen.Boot) model.bootDone()
             }
             .graphicsLayer {
                 val p = power.value

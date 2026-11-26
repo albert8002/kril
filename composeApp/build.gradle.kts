@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -21,7 +22,25 @@ kotlin {
         }
     }
 
+    // the web app (GitHub Pages): Compose in the browser
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser {
+            commonWebpackConfig { outputFileName = "composeApp.js" }
+        }
+        binaries.executable()
+    }
+
+    // keeps iosMain etc. while adding nonWebMain (Android + iOS: raw sockets for direct Wi-Fi and MQTT over TCP)
+    applyDefaultHierarchyTemplate()
+
     sourceSets {
+        val nonWebMain by creating {
+            dependsOn(commonMain.get())
+            dependencies { implementation(libs.ktor.network) }
+        }
+        androidMain.get().dependsOn(nonWebMain)
+        iosMain.get().dependsOn(nonWebMain)
         all {
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
             languageSettings.optIn("kotlinx.cinterop.BetaInteropApi")
@@ -35,7 +54,6 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.ktor.client.core)
-            implementation(libs.ktor.network)
             implementation(libs.ktor.client.websockets)
         }
         androidMain.dependencies {
@@ -47,6 +65,9 @@ kotlin {
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+        }
+        wasmJsMain.dependencies {
+            implementation(libs.ktor.client.js)
         }
     }
 }

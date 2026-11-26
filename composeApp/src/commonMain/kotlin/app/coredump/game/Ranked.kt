@@ -68,8 +68,13 @@ object Ranked {
     fun window(ms: Long): Int = (150 + 60 * (ms / 1000)).toInt().coerceAtMost(1500)
 }
 
-/** Who I was matched with: [host] = I host in my room; else I join [oppCode] on relay [broker]. */
-data class RankedMatch(val host: Boolean, val oppName: String, val oppCode: String, val broker: Int, val oppElo: Int)
+/**
+ * Who I was matched with: [host] = I host in my room; else I join [oppCode] on relay [broker].
+ * [oppUid]: their account (blank = none); [matchId]: the same on both sides (the proposer's and the accepter's queue
+ * ids), so the server can pair the two reports of the result.
+ */
+data class RankedMatch(val host: Boolean, val oppName: String, val oppCode: String, val broker: Int, val oppElo: Int,
+                       val oppUid: String = "", val matchId: String = "")
 
 class Matchmaker(
     private val scope: CoroutineScope,
@@ -77,11 +82,13 @@ class Matchmaker(
     private val myCode: String,
     private val myBroker: Int,
     private val myElo: Int,
+    /** My account id (blank when signed out): sent along, so a match between two accounts is rated by the server. */
+    private val myUid: String = "",
     private val onMatch: (RankedMatch) -> Unit,
 ) {
     data class Status(val text: String = "connecting…", val waiting: Int = 0, val searching: Boolean = true, val error: String? = null)
 
-    private class Seeker(val id: String, val name: String, val code: String, val broker: Int, val elo: Int, var seen: Long)
+    private class Seeker(val id: String, val name: String, val code: String, val broker: Int, val elo: Int, var seen: Long, val uid: String = "")
 
     private val json = Json { ignoreUnknownKeys = true }
     private val id = Meltdown.newId() + Meltdown.newId()
@@ -120,7 +127,7 @@ class Matchmaker(
             // announce myself every 2 s and look for a fair opponent
             launch {
                 while (!done) {
-                    l.send(body("seek") { put("n", myName); put("code", myCode); put("b", myBroker.toString()); put("e", myElo.toString()) })
+                    l.send(body("seek") { put("n", myName); put("code", myCode); put("b", myBroker.toString()); put("e", myElo.toString()); put("u", myUid) })
                     tick(since)
                     delay(2_000)
                 }
@@ -134,20 +141,20 @@ class Matchmaker(
                         val s = seekers[from]
                         if (s != null) s.seen = Platform.epochMillis()
                         else seekers[from] = Seeker(from, o["n"].orEmpty().ifBlank { "PLAYER" }.take(16), o["code"].orEmpty(),
-                            o["b"]?.toIntOrNull() ?: 0, o["e"]?.toIntOrNull() ?: 1000, Platform.epochMillis())
+                            o["b"]?.toIntOrNull() ?: 0, o["e"]?.toIntOrNull() ?: 1000, Platform.epochMillis(), o["u"].orEmpty())
                     }
                     "propose" -> if (o["to"] == id && (proposedTo == null || proposedTo == from)) {
                         // first proposal wins: accept and join them
                         val code = o["code"].orEmpty()
                         if (code.isBlank()) continue
-                        repeat(2) { l.send(body("accept") { put("to", from); put("n", myName); put("e", myElo.toString()) }) }
+                        repeat(2) { l.send(body("accept") { put("to", from); put("n", myName); put("e", myElo.toString()); put("u", myUid) }) }
                         finish(RankedMatch(false, o["n"].orEmpty().ifBlank { "PLAYER" }.take(16), code, o["b"]?.toIntOrNull() ?: 0,
-                            o["e"]?.toIntOrNull() ?: 1000))
+                            o["e"]?.toIntOrNull() ?: 1000, oppUid = o["u"].orEmpty(), matchId = "$from.$id"))
                     }
                     "accept" -> if (o["to"] == id && proposedTo == from) {
                         val s = seekers[from]
                         finish(RankedMatch(true, o["n"].orEmpty().ifBlank { s?.name ?: "PLAYER" }.take(16), s?.code.orEmpty(), myBroker,
-                            o["e"]?.toIntOrNull() ?: s?.elo ?: 1000))
+                            o["e"]?.toIntOrNull() ?: s?.elo ?: 1000, oppUid = o["u"].orEmpty().ifBlank { s?.uid.orEmpty() }, matchId = "$id.$from"))
                     }
                     "bye" -> { seekers.remove(from); if (proposedTo == from) proposedTo = null }
                 }
@@ -164,11 +171,13 @@ class Matchmaker(
         if (proposedTo != null && now - proposedAt > 4_000) proposedTo = null
         if (proposedTo != null) return
         // the fairest opponent in the window; only the smaller id proposes (so two never propose to each other)
+        // the first 15 s: someone who is signed in too (or out too): a match between two accounts is rated on the server
         val best = seekers.values.filter { it.id > id && abs(it.elo - myElo) <= Ranked.window(waited) }
+            .filter { waited > 15_000 || it.uid.isNotBlank() == myUid.isNotBlank() }
             .minByOrNull { abs(it.elo - myElo) } ?: return
         proposedTo = best.id
         proposedAt = now
-        link?.send(body("propose") { put("to", best.id); put("n", myName); put("code", myCode); put("b", myBroker.toString()); put("e", myElo.toString()) })
+        link?.send(body("propose") { put("to", best.id); put("n", myName); put("code", myCode); put("b", myBroker.toString()); put("e", myElo.toString()); put("u", myUid) })
     }
 
     private fun finish(m: RankedMatch) {

@@ -161,6 +161,7 @@ fun App() {
                             Screen.Ranked -> app.coredump.ui.screens.RankedScreen(model)
                             Screen.Friends -> app.coredump.ui.screens.FriendsScreen(model)
                             is Screen.Melt -> app.coredump.ui.screens.MeltScreen(model, screen.session)
+                            Screen.Account -> app.coredump.ui.screens.AccountScreen(model)
                         }
                     }
 

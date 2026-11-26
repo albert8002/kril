@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 /** Small platform layer: storage, clock, network address. */
 expect object Platform {
     val name: String
+    /** The web app (browser): no raw sockets, no custom request headers, storage in the browser. */
+    val web: Boolean
     fun epochMillis(): Long
     fun readText(file: String): String?
     fun writeText(file: String, text: String)

@@ -62,6 +62,24 @@ fun ConfigScreen(model: AppModel) {
 
     Frame(model, Th.say("vim ~/.coredumprc", "Settings")) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
+            Panel(Th.say("ACCOUNT", "Account")) {
+                val acc = model.account
+                when {
+                    !acc.configured -> TText("accounts aren't switched on for this build yet. everything is kept on this device.", size = 11.sp, color = C.dim)
+                    acc.signedIn -> {
+                        KV("signed in", acc.email)
+                        acc.syncNote?.let { TText(it, size = 10.sp, color = if (it.startsWith("sync failed")) C.blood else C.dim) }
+                    }
+                    else -> TText("not signed in. an account keeps your stats, looks, friends and ranked rating on every device and in the web app.",
+                        size = 11.sp, color = C.dim)
+                }
+                if (acc.configured) {
+                    Spacer(Modifier.height(8.dp))
+                    TButton(if (acc.signedIn) Th.say("ACCOUNT", "Account") else Th.say("SIGN IN / NEW ACCOUNT", "Sign in or make an account"),
+                        { model.go(Screen.Account) }, Modifier.fillMaxWidth(), textSize = 12.sp)
+                }
+            }
+            Spacer(Modifier.height(14.dp))
             Panel(Th.say("IDENTITY", "Name")) {
                 TermInput(
                     handle,

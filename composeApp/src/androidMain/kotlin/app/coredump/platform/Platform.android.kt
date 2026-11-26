@@ -29,6 +29,7 @@ object AndroidContext {
 
 actual object Platform {
     actual val name: String = "Android ${android.os.Build.VERSION.RELEASE}"
+    actual val web: Boolean = false
 
     actual fun epochMillis(): Long = System.currentTimeMillis()
 

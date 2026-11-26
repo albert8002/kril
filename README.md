@@ -36,3 +36,24 @@ Push to `main` → GitHub Actions builds `CoreDump.apk` and `CoreDump-unsigned.i
 - IPA: unsigned → sideload with AltStore / SideStore / Sideloadly (they sign with your Apple ID).
 
 Local: `./gradlew :composeApp:assembleRelease` (Android); `cd iosApp && xcodegen generate` then open in Xcode (iOS).
+
+## Web app
+The same game in the browser: https://albert8002.github.io/kril/ (built by CI on every push, branch `gh-pages`).
+- First time only: Settings → Pages → Build and deployment → Source "Deploy from a branch" → `gh-pages` / `/ (root)`.
+- Needs a current browser (Chrome / Edge 119+, Firefox 120+, Safari 18.2+). Online 1v1, ranked and MELTDOWN work;
+  direct Wi-Fi does not (browsers have no raw sockets). Scanning uses the camera (allow it when asked).
+- Local: `./gradlew :composeApp:wasmJsBrowserDevelopmentRun`.
+
+## Accounts (optional)
+Sign-in with e-mail + password (Supabase). An account syncs settings, looks, run history and friends between
+phones and the web app, lets friends be added by name, and keeps the ranked rating on the server: a match between
+two accounts is rated only when both players report the same result (and at most 10 rated games per pair per day).
+
+Set up once:
+1. Make a free project at https://supabase.com.
+2. SQL Editor → New query → paste `supabase/schema.sql` → Run.
+3. Authentication → URL Configuration: Site URL `https://albert8002.github.io/kril/` (e-mail links open the web app).
+4. Project Settings → API: copy the Project URL and the `anon` / publishable key, then either
+   - put them in `composeApp/src/commonMain/composeResources/files/cloud.json`, or
+   - add repository variables `SUPABASE_URL` and `SUPABASE_ANON_KEY` (Settings → Secrets and variables → Actions → Variables).
+   The key is public by design; what each account may read or write is enforced by the database rules in the script.

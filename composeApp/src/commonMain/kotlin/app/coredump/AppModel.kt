@@ -47,6 +47,8 @@ sealed interface Screen {
     data object Ranked : Screen
     /** A MELTDOWN game in progress (or just over). */
     data class Melt(val session: app.coredump.game.MeltSession) : Screen
+    /** The account: sign in, make one, sync, sign out. */
+    data object Account : Screen
 }
 
 /** Daily run number: days since 2026-01-01 UTC (epoch day 20454). */
@@ -56,6 +58,8 @@ fun dailyNumber(epochMs: Long): Int = (epochMs / 86_400_000L - 20454L).toInt().c
 class AppModel(val scope: CoroutineScope) {
     val fx = Fx()
     val bank = QuestionBank(scope)
+    /** The optional account: sign-in, sync between devices, the ranked rating on the server. */
+    val account = Account(this)
     var settings by mutableStateOf(SettingsStore.load())
         private set
     var screen by mutableStateOf<Screen>(Screen.Boot)
@@ -116,6 +120,7 @@ class AppModel(val scope: CoroutineScope) {
             if (!SelfTest.enabled && bank.rescoreDue(settings.rescoredAt, app.coredump.platform.Platform.epochMillis())) rescoreNow(quiet = true)
         }
         app.coredump.game.PeerBook.onDuelEnd = { mine, theirs, opp, ranked -> onDuelEnd(mine, theirs, opp, ranked) }
+        account.start()
     }
 
     // ------------------------------------------------------------------ rescoring
@@ -225,6 +230,15 @@ class AppModel(val scope: CoroutineScope) {
         fx.glitch()
     }
 
+    /** The boot screen is done: the menu (the web app's first visit: the sign-in screen over it). */
+    fun bootDone() {
+        go(Screen.Menu, push = false)
+        if (account.recovery && account.signedIn) { go(Screen.Account); return }
+        if (app.coredump.platform.Platform.web && !SelfTest.enabled && account.configured && !account.signedIn && account.firstVisit()) {
+            go(Screen.Account)
+        }
+    }
+
     fun home() {
         stack.clear()
         app.coredump.ui.Sfx.play(app.coredump.ui.Cue.NAV)
@@ -260,7 +274,15 @@ class AppModel(val scope: CoroutineScope) {
 
     fun update(f: (Settings) -> Settings) {
         val old = settings
-        settings = f(settings)
+        applySettings(old, f(settings))
+        account.changed(old, settings)
+    }
+
+    /** Settings merged from the account (another device): applied like a local change, but not marked as one. */
+    fun applyFromCloud(s: Settings) = applySettings(settings, s)
+
+    private fun applySettings(old: Settings, new: Settings) {
+        settings = new
         SettingsStore.save(settings)
         if (old.useWikidata != settings.useWikidata || old.useWikipedia != settings.useWikipedia ||
             old.remoteUrls != settings.remoteUrls) bank.sync(settings, force = false)
@@ -490,6 +512,15 @@ class AppModel(val scope: CoroutineScope) {
             update { s -> s.copy(friends = cards(s)) }
             return
         }
+        val match = rankedNow
+        rankedNow = null
+        if (account.signedIn) {
+            // signed in: the rating is the server's, moved once both players reported the same result
+            update { s -> s.copy(friends = cards(s)) }
+            if (match == null || match.oppUid.isBlank()) { toast = "not rated: $opp plays without an account"; return }
+            account.reportRanked(match.matchId, match.oppUid, opp, mine, theirs)
+            return
+        }
         val score = when { mine > theirs -> 1.0; mine < theirs -> 0.0; else -> 0.5 }
         val before = settings.elo
         val after = app.coredump.game.Ranked.elo(before, oppElo, score, app.coredump.game.Ranked.K_RANKED)
@@ -508,13 +539,16 @@ class AppModel(val scope: CoroutineScope) {
 
     var matchmaker by mutableStateOf<app.coredump.game.Matchmaker?>(null)
         private set
+    /** The ranked match being played (its id and the opponent's account, for the server's rating). */
+    private var rankedNow: app.coredump.game.RankedMatch? = null
 
     /** Looks for a random online opponent near my rating (fixed ranked rules). */
     fun findRanked() {
         closeLobbies()
         closeParty()
         matchmaker?.cancel()
-        val mm = app.coredump.game.Matchmaker(scope, settings.handle.ifBlank { "ANON" }.take(16), myRoom(), settings.roomBroker, settings.elo) { m ->
+        val mm = app.coredump.game.Matchmaker(scope, settings.handle.ifBlank { "ANON" }.take(16), myRoom(), settings.roomBroker, settings.elo,
+            myUid = app.coredump.net.Cloud.session?.uid.orEmpty()) { m ->
             onRankedMatch(m)
         }
         matchmaker = mm
@@ -527,6 +561,7 @@ class AppModel(val scope: CoroutineScope) {
     }
 
     private fun onRankedMatch(m: app.coredump.game.RankedMatch) {
+        rankedNow = m
         app.coredump.game.PeerBook.noteStats(m.oppName, m.oppElo, 0)
         app.coredump.ui.Sfx.play(app.coredump.ui.Cue.RANK)
         if (m.host) {

@@ -122,7 +122,12 @@ jobs:
         run: |
           set -o pipefail
           chmod +x gradlew
-          ./gradlew :composeApp:compileReleaseKotlinAndroid --stacktrace 2>&1 | tee build.log
+          A=0; W=0
+          ./gradlew :composeApp:compileReleaseKotlinAndroid --stacktrace 2>&1 | tee build.log || A=1
+          echo "=== web (wasmJs) ===" | tee -a build.log
+          ./gradlew :composeApp:compileKotlinWasmJs --stacktrace 2>&1 | tee -a build.log || W=1
+          echo "android=$A web=$W" | tee -a build.log
+          exit $((A + W))
       - name: Publish compile log
         if: always()
         run: bash .github/publish-log.sh compile "${{ job.status }}" "${{ github.token }}"
@@ -142,6 +147,11 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
+      - name: Account server config
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: bash .github/cloud-config.sh
       - name: Build APK
         run: |
           set -o pipefail
@@ -210,6 +220,11 @@ jobs:
         with:
           path: ~/.konan
           key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+      - name: Account server config
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: bash .github/cloud-config.sh
       - name: Generate Xcode project
         run: |
           brew install xcodegen
@@ -259,6 +274,11 @@ jobs:
         with:
           path: ~/.konan
           key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+      - name: Account server config
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: bash .github/cloud-config.sh
       - name: Build for the simulator
         continue-on-error: true
         run: |
@@ -278,6 +298,54 @@ jobs:
         run: |
           mkdir -p sim-out && grep -nE "error:|BUILD FAILED|\*\* BUILD" build.log | head -100 > sim-out/build-errors.txt || true
           bash .github/publish-dir.sh sim "$GITHUB_WORKSPACE/sim-out" "${{ github.token }}"
+
+  web:
+    # The web app: built, published to GitHub Pages (branch gh-pages), then the self-test in headless Chrome.
+    needs: [ snapshot ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: live-packs
+          path: composeApp/src/commonMain/composeResources/files/packs/
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Account server config
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: bash .github/cloud-config.sh
+      - name: Build the web app
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew :composeApp:wasmJsBrowserDistribution --stacktrace 2>&1 | tee build.log
+          DIST=$(dirname "$(find composeApp/build/dist -name index.html -path '*productionExecutable*' | head -1)")
+          echo "dist: $DIST"; ls -la "$DIST"
+          rm -rf site && cp -r "$DIST" site
+          du -sh site
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CoreDump-web
+          path: site/
+      - name: Publish to GitHub Pages
+        run: bash .github/publish-site.sh site "${{ github.token }}"
+      - name: Self-test in headless Chrome
+        continue-on-error: true
+        timeout-minutes: 50
+        run: bash .github/web-test.sh "$GITHUB_WORKSPACE/site"
+      - name: Publish browser output
+        if: always()
+        run: bash .github/publish-dir.sh web "$GITHUB_WORKSPACE/web-out" "${{ github.token }}"
+      - name: Publish build log
+        if: always()
+        run: bash .github/publish-log.sh webbuild "${{ job.status }}" "${{ github.token }}"
 
   release:
     needs: [ android, ios ]

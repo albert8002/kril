@@ -908,6 +908,9 @@ fun TermInput(
     size: TextUnit = 18.sp,
     singleLine: Boolean = true,
     fieldModifier: Modifier = Modifier,
+    /** Dots instead of the letters (passwords). */
+    password: Boolean = false,
+    keyboardType: KeyboardType = if (password) KeyboardType.Password else KeyboardType.Text,
 ) {
     val style = Th.style
     val shown = when (style) {
@@ -959,10 +962,11 @@ fun TermInput(
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
                     autoCorrectEnabled = false,
-                    keyboardType = KeyboardType.Text,
+                    keyboardType = keyboardType,
                     imeAction = imeAction,
                 ),
                 keyboardActions = KeyboardActions(onDone = { onSubmit() }, onGo = { onSubmit() }, onSend = { onSubmit() }),
+                visualTransformation = if (password) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
                 modifier = fieldModifier.fillMaxWidth(),
             )
         }

@@ -6,13 +6,6 @@ import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.header
-import io.ktor.network.selector.SelectorManager
-import io.ktor.network.sockets.Socket
-import io.ktor.network.sockets.aSocket
-import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
-import io.ktor.utils.io.readAvailable
-import io.ktor.utils.io.writeFully
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
@@ -31,7 +24,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.random.Random
 
 /** Byte pipe to an MQTT broker. */
-private interface MqttTransport {
+internal interface MqttTransport {
     val packets: ReceiveChannel<Mqtt.Packet>
     suspend fun send(bytes: ByteArray)
     fun close()
@@ -71,52 +64,6 @@ private class WssTransport(
                 withTimeout(8_000) { client.webSocketSession(b.wss) { header("Sec-WebSocket-Protocol", "mqtt") } }
             } catch (e: Throwable) { client.close(); throw e }
             return WssTransport(client, ws, scope, "${b.host} · wss")
-        }
-    }
-}
-
-/** Plain MQTT over TCP 1883: fallback when WebSockets fail. Raw sockets need no ATS or local-network permission. */
-private class TcpTransport(
-    private val selector: SelectorManager,
-    private val socket: Socket,
-    scope: CoroutineScope,
-    override val label: String,
-) : MqttTransport {
-    override val packets = Channel<Mqtt.Packet>(Channel.UNLIMITED)
-    private val input = socket.openReadChannel()
-    private val output = socket.openWriteChannel(autoFlush = true)
-    private val decoder = Mqtt.Decoder()
-    private val lock = Mutex()
-    private val reader: Job = scope.launch(Dispatchers.Default) {
-        val buf = ByteArray(8192)
-        try {
-            while (isActive) {
-                val n = input.readAvailable(buf, 0, buf.size)
-                if (n < 0) break
-                if (n > 0) decoder.feed(buf.copyOf(n)).forEach { packets.send(it) }
-            }
-        } catch (_: Throwable) {
-        } finally { packets.close() }
-    }
-
-    override suspend fun send(bytes: ByteArray) {
-        lock.withLock { output.writeFully(bytes, 0, bytes.size); output.flush() }
-    }
-
-    override fun close() {
-        reader.cancel()
-        packets.close()
-        runCatching { socket.close() }
-        runCatching { selector.close() }
-    }
-
-    companion object {
-        suspend fun open(scope: CoroutineScope, b: Broker): TcpTransport {
-            val selector = SelectorManager(Dispatchers.Default)
-            val socket = try {
-                withTimeout(8_000) { aSocket(selector).tcp().connect(b.host, b.tcpPort) }
-            } catch (e: Throwable) { selector.close(); throw e }
-            return TcpTransport(selector, socket, scope, "${b.host} · tcp")
         }
     }
 }
@@ -191,9 +138,9 @@ class RelayLink private constructor(
             var last: Throwable? = null
             for (bi in order) {
                 val b = Brokers.all[bi]
-                for (useWss in listOf(true, false)) {
+                for (useWss in if (lanSupported) listOf(true, false) else listOf(true)) {
                     val t: MqttTransport = try {
-                        if (useWss) WssTransport.open(scope, b) else TcpTransport.open(scope, b)
+                        if (useWss) WssTransport.open(scope, b) else openTcpMqtt(scope, b)
                     } catch (e: Throwable) { last = e; continue }
                     try {
                         handshake(t, Brokers.topic(room, fromHost = !asHost))
@@ -218,9 +165,9 @@ class RelayLink private constructor(
             var last: Throwable? = null
             for (bi in order) {
                 val b = Brokers.all[bi]
-                for (useWss in listOf(true, false)) {
+                for (useWss in if (lanSupported) listOf(true, false) else listOf(true)) {
                     val t: MqttTransport = try {
-                        if (useWss) WssTransport.open(scope, b) else TcpTransport.open(scope, b)
+                        if (useWss) WssTransport.open(scope, b) else openTcpMqtt(scope, b)
                     } catch (e: Throwable) { last = e; continue }
                     try {
                         handshake(t, topic)
