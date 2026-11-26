@@ -1,0 +1,4 @@
+23:28:28 app: build/sim/Build/Products/Debug-iphonesimulator/CoreDump.app
+23:28:33 device: 40A21894-B2EA-46E8-86C3-96B6C28B749F
+23:31:52 installed
+23:53:57 self-test finished
