@@ -551,13 +551,24 @@ object SelfTest {
             // ranked: two searchers on the real relay find each other (one hosts, one joins)
             var m1: app.coredump.game.RankedMatch? = null
             var m2: app.coredump.game.RankedMatch? = null
-            val mmA = app.coredump.game.Matchmaker(model.scope, "TEST-A", app.coredump.net.JoinTicket.newRoom(), 0, 1000) { m1 = it }
-            val mmB = app.coredump.game.Matchmaker(model.scope, "TEST-B", app.coredump.net.JoinTicket.newRoom(), 0, 1040) { m2 = it }
+            val mmA = app.coredump.game.Matchmaker(model.scope, "TEST-A", app.coredump.net.JoinTicket.newRoom(), 0, 1000, myUid = "uid-a") { m1 = it }
+            val mmB = app.coredump.game.Matchmaker(model.scope, "TEST-B", app.coredump.net.JoinTicket.newRoom(), 0, 1040, myUid = "uid-b") { m2 = it }
             mmA.start(); mmB.start()
             iw = 0
             while ((m1 == null || m2 == null) && iw < 40_000) { delay(500); iw += 500 }
             log("RANKED a=${m1?.let { "${if (it.host) "host" else "guest"} vs ${it.oppName}" }} b=${m2?.let { "${if (it.host) "host" else "guest"} vs ${it.oppName}" }} after ${iw}ms")
             mmA.cancel(); mmB.cancel()
+            // both sides name the match the same and know each other's account (the server pairs the two reports)
+            log("RANKED ids same=${m1 != null && m1?.matchId == m2?.matchId && m1?.matchId?.isNotBlank() == true} " +
+                "uids=${m1?.oppUid == "uid-b" && m2?.oppUid == "uid-a"}")
+            // the account screen (signed out), two looks
+            for (look in listOf(Style.TERMINAL, Style.CLEAN)) {
+                model.setTheme(look, plan.first { it.first == look }.second)
+                model.go(Screen.Account); delay(1500)
+                shot("account_${look.name.lowercase()}")
+                model.back(); delay(400)
+            }
+            log("ACCOUNT configured=${model.account.configured} signedIn=${model.account.signedIn} web=${app.coredump.platform.Platform.web}")
             // the Ranked screen, with a few matches on record (a copy of the settings is put back afterwards)
             val keep = model.settings
             val now0 = app.coredump.platform.Platform.epochMillis()

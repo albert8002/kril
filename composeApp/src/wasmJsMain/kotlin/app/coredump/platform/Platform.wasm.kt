@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+
 package app.coredump.platform
 
 import androidx.compose.runtime.Composable
