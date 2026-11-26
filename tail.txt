@@ -1,0 +1,98 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+Configuration 'wasmJsNpmAggregated' was resolved during configuration time.
+This is a build performance and scalability issue.
+See https://github.com/gradle/gradle/issues/2298
+Run with --info for a stacktrace.
+Configuration 'wasmJsTestNpmAggregated' was resolved during configuration time.
+This is a build performance and scalability issue.
+See https://github.com/gradle/gradle/issues/2298
+Run with --info for a stacktrace.
+> Task :kotlinWasmKotlinNpmCachesSetup
+> Task :kotlinWasmNodeJsSetup
+> Task :kotlinWasmRestoreYarnLock SKIPPED
+> Task :kotlinWasmYarnSetup
+> Task :composeApp:wasmJsPackageJson
+> Task :composeApp:wasmJsTestPackageJson
+> Task :composeApp:wasmJsPublicPackageJson
+> Task :composeApp:wasmJsTestPublicPackageJson
+> Task :kotlinWasmPackageJsonUmbrella
+> Task :wasmRootPackageJson
+
+> Task :kotlinWasmNpmInstall
+(node:2657) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+warning Ignored scripts due to flag.
+
+> Task :kotlinWasmStoreYarnLock
+
+> Task :kotlinWasmToolingSetup
+(node:2672) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+warning Ignored scripts due to flag.
+
+> Task :composeApp:wasmJsResolveResourcesFromDependencies
+> Task :composeApp:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForCommonMain
+> Task :composeApp:prepareComposeResourcesTaskForCommonMain
+> Task :composeApp:convertXmlValueResourcesForWasmJsMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForWasmJsMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForWasmJsMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForWebMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForWebMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForWebMain NO-SOURCE
+> Task :composeApp:assembleWasmJsMainResources
+> Task :composeApp:wasmJsResolveSelfResourcesCopyHierarchicalMultiplatformResources
+> Task :composeApp:wasmJsAggregateResources
+> Task :composeApp:wasmJsProcessResources
+> Task :composeApp:kmpPartiallyResolvedDependenciesChecker
+> Task :composeApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :composeApp:generateResourceAccessorsForCommonMain
+> Task :composeApp:generateResourceAccessorsForWasmJsMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForWebMain NO-SOURCE
+> Task :composeApp:generateActualResourceCollectorsForWasmJsMain
+> Task :composeApp:generateComposeResClass
+> Task :composeApp:generateExpectResourceCollectorsForCommonMain
+> Task :composeApp:compileKotlinWasmJs FROM-CACHE
+> Task :composeApp:wasmJsMainClasses
+> Task :composeApp:compileProductionExecutableKotlinWasmJs FROM-CACHE
+> Task :composeApp:kotlinWasmBinaryenSetup
+> Task :composeApp:compileProductionExecutableKotlinWasmJsOptimize
+> Task :composeApp:unpackSkikoWasmRuntime
+> Task :composeApp:processSkikoRuntimeForKWasm
+> Task :composeApp:wasmJsProductionExecutableCompileSync
+
+> Task :composeApp:wasmJsBrowserProductionWebpack
+Critical dependency: the request of a dependency is an expression
+asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+This can impact web performance.
+Assets: 
+  composeApp.js (398 KiB)
+  bccfa839aa4b38489c76.wasm (8.02 MiB)
+  16ad3b5aed375c49945c.wasm (6.46 MiB)
+entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  main (398 KiB)
+      composeApp.js
+webpack performance recommendations: 
+You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
+For more info visit https://webpack.js.org/guides/code-splitting/
+asset bccfa839aa4b38489c76.wasm 8.02 MiB [emitted] [immutable] [from: kotlin/skiko.wasm] [big] (auxiliary name: main)
+asset 16ad3b5aed375c49945c.wasm 6.46 MiB [emitted] [immutable] [from: kotlin/CoreDump-composeApp.wasm] [big] (auxiliary name: main)
+asset composeApp.js 398 KiB [emitted] [minimized] [big] (name: main) 1 related asset
+runtime modules 4.38 KiB 7 modules
+built modules 670 KiB (javascript) 14.5 MiB (asset) [built]
+  javascript modules 670 KiB
+    ./kotlin/CoreDump-composeApp.mjs 258 bytes [built] [code generated]
+    ./kotlin/skiko.mjs 613 KiB [built] [code generated]
+    ./kotlin/CoreDump-composeApp.uninstantiated.mjs 56.1 KiB [built] [code generated] [3 warnings]
+    ./kotlin/ lazy strict namespace object 160 bytes [built] [code generated]
+  asset modules 14.5 MiB (asset) 84 bytes (javascript)
+    ./kotlin/skiko.wasm 8.02 MiB (asset) 42 bytes (javascript) [built] [code generated]
+    ./kotlin/CoreDump-composeApp.wasm 6.46 MiB (asset) 42 bytes (javascript) [built] [code generated]
+webpack 5.100.2 compiled with 4 warnings in 3393 ms
+
+> Task :composeApp:wasmJsBrowserDistribution
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1795735180792.json
+
+BUILD SUCCESSFUL in 2m 38s
+32 actionable tasks: 30 executed, 2 from cache
