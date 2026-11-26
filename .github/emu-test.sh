@@ -17,8 +17,14 @@ adb shell am start -W -n $PKG/.MainActivity --ez selftest true >/dev/null 2>&1
 log "launched self-test"
 seen=0
 end=$((SECONDS + 1800))
+memAt=0
 while [ $SECONDS -lt $end ]; do
   sleep 0.4
+  # memory once a minute (a process that vanishes without a crash was usually killed for memory)
+  if [ $SECONDS -ge $memAt ]; then
+    echo "$(date +%T) $(adb shell dumpsys meminfo $PKG 2>/dev/null | grep -E 'TOTAL PSS|TOTAL:' | head -1 | tr -s ' ')" >> "$OUT/memory.txt"
+    memAt=$((SECONDS + 60))
+  fi
   mapfile -t shots < <(grep -o "SELFTEST SHOT [A-Za-z0-9_]*" "$OUT/logcat_full.txt" | awk '{print $3}')
   while [ $seen -lt ${#shots[@]} ]; do
     adb exec-out screencap -p > "$OUT/shots/$(printf %02d $seen)_${shots[$seen]}.png" 2>/dev/null
@@ -40,6 +46,8 @@ adb shell run-as $PKG cat files/crash_last.txt > "$OUT/crash_last.txt" 2>/dev/nu
 adb shell run-as $PKG cat files/crash_notes.txt > "$OUT/crash_notes.txt" 2>/dev/null || true
 kill $LC 2>/dev/null
 grep -n -B2 -A60 "FATAL EXCEPTION\|Fatal signal\|OutOfMemoryError" "$OUT/logcat_full.txt" | head -1500 > "$OUT/crashes.txt"
+# why the process went away: low-memory kills, ANRs, process deaths
+grep -E "lmkd|lowmemorykiller|ANR in|am_anr|Process app.coredump|Killing [0-9]+:app.coredump|app.coredump.*(died|killed)" "$OUT/logcat_full.txt" | head -200 > "$OUT/kills.txt"
 echo "fatal exceptions: $(grep -c 'FATAL EXCEPTION' "$OUT/logcat_full.txt")" >> "$OUT/summary.txt"
 grep "app.coredump" "$OUT/logcat_full.txt" | grep -c "GC freed" | xargs -I{} echo "gc lines: {}" >> "$OUT/summary.txt"
 grep " $PKG\| System.out\|AndroidRuntime" "$OUT/logcat_full.txt" | tail -n 4000 > "$OUT/logcat_app.txt"
