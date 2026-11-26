@@ -1,0 +1,18 @@
+chrome: /usr/bin/google-chrome (Google Chrome 157.0.8103.78 )
+SELFTEST READY prompts=555 answers=154272
+SELFTEST SIGIL TERMINAL/amber 560x560 frames=16 clean=ok 3025ms (particles) camera=ok 3025ms (particles)
+SELFTEST SIGIL PAPER/newsprint 560x560 frames=21 clean=ok 2847ms (tape) camera=ok 2847ms (tape)
+SELFTEST SIGIL NEON/synthwave 560x560 frames=23 clean=ok 3085ms (sun) camera=ok 3711ms (sun)
+SELFTEST SIGIL CLEAN/light 560x560 frames=19 clean=ok 2939ms (buzzer) camera=ok 2939ms (buzzer)
+SELFTEST SIGIL PIXEL/dmg 560x560 frames=1 clean=ok 54ms (runes) camera=ok 54ms (runes)
+SELFTEST SIGIL COMIC/rebel 560x560 frames=11 clean=ok 1219ms (kapow) camera=ok 1219ms (kapow)
+SELFTEST SIGIL ABYSS/trench 560x560 frames=16 clean=ok 2499ms (sonar) camera=ok 2499ms (sonar)
+SELFTEST SIGIL METRO/board 560x560 frames=1 clean=ok 18ms (train) camera=ok 18ms (train)
+SELFTEST SIGIL JACKPOT/felt 560x560 frames=20 clean=ok 3781ms (chips) camera=ok 2298ms (chips)
+SELFTEST SIGIL CHAT/daylight 560x560 frames=1 clean=ok 10ms (voice) camera=ok 10ms (voice)
+SELFTEST SIGIL DESKTOP/classic 560x560 frames=1 clean=ok 86ms (defrag) camera=ok 86ms (defrag)
+SELFTEST SIGIL ORACLE/midnight 560x560 frames=2 clean=ok 73ms (constellation) camera=ok 275ms (constellation)
+SELFTEST SIGIL SUMMARY clean=12/12 camera=12/12
+SELFTEST EGGS self=true love=true gameShow=false tetris=false found=16
+SELFTEST DONE ok
+END done=true after 1377.362s shots=231
