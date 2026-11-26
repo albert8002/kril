@@ -1,0 +1,94 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+> Task :composeApp:preBuild UP-TO-DATE
+> Task :composeApp:preReleaseBuild UP-TO-DATE
+> Task :composeApp:mergeReleaseJniLibFolders
+> Task :composeApp:mergeReleaseNativeLibs
+> Task :composeApp:checkReleaseDuplicateClasses
+
+> Task :composeApp:stripReleaseDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so. Run with --info option to learn more.
+
+> Task :composeApp:buildKotlinToolingMetadata
+> Task :composeApp:extractReleaseNativeSymbolTables FROM-CACHE
+> Task :composeApp:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :composeApp:kmpPartiallyResolvedDependenciesChecker
+> Task :composeApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :composeApp:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForCommonMain
+> Task :composeApp:prepareComposeResourcesTaskForCommonMain
+> Task :composeApp:generateResourceAccessorsForCommonMain
+> Task :composeApp:convertXmlValueResourcesForNonWebMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForNonWebMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForNonWebMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForNonWebMain NO-SOURCE
+> Task :composeApp:generateActualResourceCollectorsForAndroidMain
+> Task :composeApp:generateComposeResClass
+> Task :composeApp:generateExpectResourceCollectorsForCommonMain
+> Task :composeApp:convertXmlValueResourcesForAndroidRelease NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidRelease NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidRelease NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidRelease NO-SOURCE
+> Task :composeApp:generateReleaseResValues FROM-CACHE
+> Task :composeApp:checkReleaseAarMetadata
+> Task :composeApp:mapReleaseSourceSetPaths
+> Task :composeApp:generateReleaseResources FROM-CACHE
+> Task :composeApp:mergeReleaseResources FROM-CACHE
+> Task :composeApp:packageReleaseResources FROM-CACHE
+> Task :composeApp:parseReleaseLocalResources FROM-CACHE
+> Task :composeApp:createReleaseCompatibleScreenManifests
+> Task :composeApp:extractDeepLinksRelease FROM-CACHE
+> Task :composeApp:processReleaseMainManifest FROM-CACHE
+> Task :composeApp:processReleaseManifest FROM-CACHE
+> Task :composeApp:processReleaseManifestForPackage FROM-CACHE
+> Task :composeApp:processReleaseResources FROM-CACHE
+> Task :composeApp:compileReleaseKotlinAndroid FROM-CACHE
+> Task :composeApp:javaPreCompileRelease FROM-CACHE
+> Task :composeApp:compileReleaseJavaWithJavac NO-SOURCE
+> Task :composeApp:dexBuilderRelease FROM-CACHE
+> Task :composeApp:desugarReleaseFileDependencies FROM-CACHE
+> Task :composeApp:mergeReleaseStartupProfile
+> Task :composeApp:mergeExtDexRelease FROM-CACHE
+> Task :composeApp:mergeDexRelease FROM-CACHE
+> Task :composeApp:mergeReleaseArtProfile
+> Task :composeApp:mergeReleaseGlobalSynthetics FROM-CACHE
+> Task :composeApp:compileReleaseArtProfile FROM-CACHE
+> Task :composeApp:mergeReleaseShaders
+> Task :composeApp:compileReleaseShaders NO-SOURCE
+> Task :composeApp:copyReleaseComposeResourcesToAndroidAssets
+> Task :composeApp:generateReleaseAssets UP-TO-DATE
+> Task :composeApp:releaseAssetsCopyForAGP NO-SOURCE
+> Task :composeApp:mergeReleaseAssets
+> Task :composeApp:extractReleaseVersionControlInfo
+> Task :composeApp:extractProguardFiles
+> Task :composeApp:compressReleaseAssets
+> Task :composeApp:generateReleaseLintVitalReportModel
+> Task :composeApp:processReleaseJavaRes
+> Task :composeApp:optimizeReleaseResources FROM-CACHE
+> Task :composeApp:collectReleaseDependencies
+> Task :composeApp:sdkReleaseDependencyData
+> Task :composeApp:mergeReleaseJavaResource
+> Task :composeApp:validateSigningRelease
+> Task :composeApp:writeReleaseAppMetadata
+> Task :composeApp:writeReleaseSigningConfigVersions
+> Task :composeApp:lintVitalAnalyzeRelease
+> Task :composeApp:lintVitalReportRelease
+> Task :composeApp:lintVitalRelease
+> Task :composeApp:packageRelease
+> Task :composeApp:createReleaseApkListingFileRedirect
+> Task :composeApp:assembleRelease
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1795735175338.json
+
+[Incubating] Problems report is available at: file:///home/runner/work/kril/kril/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 32s
+56 actionable tasks: 36 executed, 20 from cache
