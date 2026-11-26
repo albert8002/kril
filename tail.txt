@@ -1,0 +1,66 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+> Task :composeApp:kmpPartiallyResolvedDependenciesChecker
+> Task :composeApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :composeApp:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForCommonMain
+> Task :composeApp:prepareComposeResourcesTaskForCommonMain
+> Task :composeApp:generateResourceAccessorsForCommonMain
+> Task :composeApp:convertXmlValueResourcesForNonWebMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForNonWebMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForNonWebMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForNonWebMain NO-SOURCE
+> Task :composeApp:generateActualResourceCollectorsForAndroidMain
+> Task :composeApp:generateComposeResClass
+> Task :composeApp:generateExpectResourceCollectorsForCommonMain
+> Task :composeApp:convertXmlValueResourcesForAndroidRelease NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForAndroidRelease NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForAndroidRelease NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForAndroidRelease NO-SOURCE
+> Task :composeApp:preBuild UP-TO-DATE
+> Task :composeApp:preReleaseBuild UP-TO-DATE
+> Task :composeApp:checkReleaseAarMetadata
+> Task :composeApp:generateReleaseResValues FROM-CACHE
+> Task :composeApp:mapReleaseSourceSetPaths
+> Task :composeApp:generateReleaseResources FROM-CACHE
+> Task :composeApp:mergeReleaseResources FROM-CACHE
+> Task :composeApp:packageReleaseResources FROM-CACHE
+> Task :composeApp:parseReleaseLocalResources FROM-CACHE
+> Task :composeApp:createReleaseCompatibleScreenManifests
+> Task :composeApp:extractDeepLinksRelease FROM-CACHE
+> Task :composeApp:processReleaseMainManifest FROM-CACHE
+> Task :composeApp:processReleaseManifest FROM-CACHE
+> Task :composeApp:processReleaseManifestForPackage FROM-CACHE
+> Task :composeApp:processReleaseResources FROM-CACHE
+> Task :composeApp:compileReleaseKotlinAndroid FROM-CACHE
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1795734587633.json
+
+BUILD SUCCESSFUL in 13s
+21 actionable tasks: 10 executed, 11 from cache
+=== web (wasmJs) ===
+> Task :composeApp:kmpPartiallyResolvedDependenciesChecker
+> Task :composeApp:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :composeApp:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForCommonMain UP-TO-DATE
+> Task :composeApp:prepareComposeResourcesTaskForCommonMain UP-TO-DATE
+> Task :composeApp:generateResourceAccessorsForCommonMain UP-TO-DATE
+> Task :composeApp:convertXmlValueResourcesForWasmJsMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForWasmJsMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForWasmJsMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForWasmJsMain NO-SOURCE
+> Task :composeApp:convertXmlValueResourcesForWebMain NO-SOURCE
+> Task :composeApp:copyNonXmlValueResourcesForWebMain NO-SOURCE
+> Task :composeApp:prepareComposeResourcesTaskForWebMain NO-SOURCE
+> Task :composeApp:generateResourceAccessorsForWebMain NO-SOURCE
+> Task :composeApp:generateActualResourceCollectorsForWasmJsMain
+> Task :composeApp:generateComposeResClass UP-TO-DATE
+> Task :composeApp:generateExpectResourceCollectorsForCommonMain UP-TO-DATE
+> Task :composeApp:compileKotlinWasmJs FROM-CACHE
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1795734598001.json
+
+BUILD SUCCESSFUL in 1s
+8 actionable tasks: 2 executed, 1 from cache, 5 up-to-date
+android=0 web=0
