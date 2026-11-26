@@ -1,0 +1,77 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+> Task :snapshot:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :snapshot:syncSharedSources
+> Task :snapshot:compileKotlin FROM-CACHE
+> Task :snapshot:compileJava NO-SOURCE
+> Task :snapshot:processResources NO-SOURCE
+> Task :snapshot:classes UP-TO-DATE
+
+> Task :snapshot:run
+UA: CoreDumpTrivia/1.1 (https://github.com/albert8002/kril)  templates: 281 wikidata, 8 wikipedia
+SNAP relay broker.hivemq.com tcp -> OK ({"k":"ping"})
+SNAP relay broker.hivemq.com wss -> no CONNACK
+SNAP relay broker.emqx.io tcp -> OK ({"k":"ping"})
+SNAP relay broker.emqx.io wss -> ConnAck(returnCode=0)
+SNAP relay test.mosquitto.org tcp -> OK ({"k":"ping"})
+SNAP relay test.mosquitto.org wss -> ConnAck(returnCode=0)
+SNAP restored 247 wikidata + 6 wikipedia prompts, 417 state rows
+SNAP verify wd.dog 'Kai Ken' -> Kai Ken (27 sitelinks)
+SNAP verify wd.dog 'Shikoku Ken' -> Shikoku Ken (31 sitelinks)
+SNAP verify wd.dog 'banana' -> rejected
+SNAP verify wd.cheese 'Tête de Moine' -> Tête de Moine (26 sitelinks)
+SNAP verify wd.cheese 'toaster' -> rejected
+SNAP wikidata todo 4/281
+SNAP wikidata  wg.parrot                      FAIL0 65003ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.shark                       FAIL0 65000ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.raptor                      FAIL0 135094ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.rodent                      FAIL0 135107ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.parrot                      FAIL1 65003ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.shark                       FAIL1 65003ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.raptor                      FAIL1 65004ms HttpTimeoutException: request timed out
+SNAP wikidata  wg.rodent                      FAIL1 65003ms HttpTimeoutException: request timed out
+SNAP pool  wx.tc.s.microsoft                    325 fam= 71  920ms  top: Microsoft Windows, Minecraft, C#, Windows 7, Windows 10
+SNAP pool  wx.wo.figure                         101 fam= 28  309ms  top: metaphor, aphorism, tongue-twister, irony, euphemism
+SNAP pool  wx.an.mustelid                        71 fam= 38  445ms  top: Eurasian badger, Mustela nivalis, Eurasian otter, Mustela erminea, wolverine
+SNAP pool  wx.job.journalist                    779 fam=800  9454ms  top: Karl Marx, Mahatma Gandhi, Mark Twain, John F. Kennedy, Charles Dickens
+SNAP pool  wx.pl.cathedral                      210 fam= 15  795ms  top: Church of the Holy Sepulchre, Florence Cathedral, St Mark's Basilica, Alexander Nevsky Cathedral, Etchmiadzin Cathedral
+SNAP pool  wx.my.hindu                           63 fam= 29  358ms  top: Brahma, Ganesha, Indra, Hanuman, Parvati
+SNAP pool  wx.ev.cardgame                        42 fam=  4  337ms  top: contract bridge, blackjack, Magic: The Gathering, Uno, baccarat
+SNAP pool  wx.nx.engineer                       738 fam=416  3965ms  top: Leonardo da Vinci, George Washington, Galileo Galilei, Thomas Edison, Archimedes
+SNAP pool  wx.th.franchise                       74 fam= 23  556ms  top: Grand Theft Auto, The Legend of Zelda, Need for Speed, Mortal Kombat, Silent Hill
+SNAP pool  wx.mv.by.actor.de                    596 fam= 64  4708ms  top: Sandra Bullock, Charles Bukowski, Kirsten Dunst, Leni Riefenstahl, Steffi Graf
+SNAP pool  wx.mu.by.singer.it                   595 fam= 52  6425ms  top: Frank Sinatra, Sophia Loren, Giovanni Pierluigi da Palestrina, Amy Adams, Andrea Bocelli
+SNAP pool  wx.fd.by.chef.it                      12 fam=  0  653ms  top: Massimo Bottura, Antonio Carluccio, Gianfranco Chiarini, Andy Luotto, Francesco Bellissimo
+SNAP pool  wx.sp.by.tennisplayer.de             206 fam=  8  673ms  top: Steffi Graf, Boris Becker, Angelique Kerber, Sabine Lisicki, Tommy Haas
+SNAP pool  wx.bk.by.poet.de                     591 fam= 36  2073ms  top: Hermann Hesse, Martin Heidegger, Günter Grass, Herta Müller, Heinrich Böll
+SNAP pool  wx.sc.by.physicist.de                517 fam= 49  1503ms  top: Albert Einstein, Angela Merkel, Erwin Schrödinger, Maria Göppert Mayer, Philipp Lenard
+SNAP pool  wx.tv.s.hbo                          127 fam= 16  622ms  top: Game of Thrones, Sesame Street, The Sopranos, Sex and the City, The Last of Us
+SNAP pool  wx.pc.by.fashiondesigner.fr          112 fam= 12  654ms  top: Coco Chanel, Christian Dior, Yves Saint Laurent, Pierre Cardin, Jean-Paul Gaultier
+SNAP pool  wx.ge.s.city10m                       30 fam= 30  12778ms  top: Moscow, Beijing, Tokyo, Istanbul, Ho Chi Minh City
+SNAP pool  wx.an2.s.decapod                     510 fam=  8  3444ms  top: Coconut crab, Astacus astacus, Homarus gammarus, Japanese spider crabs, Nephrops norvegicus
+SNAP pool  wx.na.canyon                          59 fam=  2  432ms  top: Grand Canyon, Quebrada de Humahuaca, Darial Gorge, Samariá Gorge National Park, Ironbridge Gorge
+SNAP pool  wx.gm.s.nintendo                     563 fam= 14  2655ms  top: Super Mario Bros., Pokémon Go, The Legend of Zelda: Breath of the Wild, Super Mario 64, Super Mario Bros. 3
+SNAP pool  wx.lm.s.gothic                       114 fam= 10  889ms  top: Church of the Holy Sepulchre, Florence Cathedral, Tournai Cathedral, Wawel Cathedral, Lala Mustafa Pasha Mosque
+SNAP pool  wx.hi.s.pyramid                       67 fam=  6  308ms  top: Great Pyramid of Giza, Pyramid of Djoser, Pyramid of Khafre, Pyramid of Menkaure, Red Pyramid
+SNAP pool  wx.br.s.oldcompany                   157 fam= 50  1225ms  top: Nintendo, Juventus FC, Nokia, Nestlé, Dutch East India Company
+SNAP pool  wx.tc.s.oldlang                       96 fam= 17  408ms  top: C, SQL, Pascal, BASIC, Fortran
+SNAP pool  wx.wo.conlang                         99 fam= 17  280ms  top: Esperanto, Interlingue, Interlingua, Lingua Franca Nova, Ido
+SNAP pool  wx.an.cephalopod                     124 fam=  3  1871ms  top: common octopus, colossal squid, Vampire squid, common cuttlefish, European squid
+SNAP pool  wx.job.voiceactor                    765 fam=800  1645ms  top: Ronald Reagan, Corbin Bleu, Walt Disney, Madonna, Selena Gomez
+SNAP pool  wx.pl.church                         270 fam= 29  5641ms  top: Milan Cathedral, Church of the Holy Sepulchre, Cathedral of Santiago de Compostela, Saint Sophia Cathedral, Aachen Cathedral
+SNAP pool  wx.ev.boat                           149 fam=  9  749ms  top: canoe, raft, steamboat, gondola, junk
+SNAP pool  wx.nx.computer                       356 fam=145  2713ms  top: Bill Gates, Jimmy Wales, Steve Jobs, Alan Turing, Noam Chomsky
+SNAP pool  wx.th.comic                           29 fam=  4  301ms  top: The Adventures of Tintin, Asterix, Teenage Mutant Ninja Turtles, Lucky Luke, Persepolis
+SNAP pool  wx.mv.by.actor.it                    591 fam= 96  4695ms  top: Frank Sinatra, Robert De Niro, Sophia Loren, Martin Scorsese, Benedicta Boccoli
+SNAP pool  wx.mu.by.singer.es                   589 fam= 23  3313ms  top: Natalia Oreiro, Pedro Almodóvar, Enrique Iglesias, Montserrat Caballé, Julio Iglesias
+SNAP pool  wx.fd.noodle                          51 fam=  3  455ms  top: spaghetti, udon, soba, naengmyeon, laghman
+SNAP pool  wx.sp.by.tennisplayer.es             169 fam= 14  539ms  top: Rafael Nadal, Diego Forlán, Carlos Alcaraz, Garbiñe Muguruza, Pompeu Fabra
+SNAP pool  wx.bk.by.poet.ru                     419 fam= 20  2454ms  top: Aleksandr Solzhenitsyn, Valery Leontiev, Anna Politkovskaya, Dima Bilan, Yevgeny Yevtushenko
+SNAP pool  wx.sc.by.mathematician.uk            466 fam= 36  1588ms  top: John Maynard Keynes, Bertrand Russell, Ludwig Wittgenstein, Paul Dirac, Joseph John Thomson
+SNAP pool  wx.tv.s.netflix                      373 fam= 20  1011ms  top: Squid Game, Teletubbies, Stranger Things, Black Mirror, Wednesday
+SNAP pool  wx.pc.by.fashiondesigner.it           73 fam=  7  315ms  top: Giorgio Armani, Donatella Versace, Gianni Versace, Pierre Cardin, Valentino
+SNAP pool summary: 417 templates; sample ok=39 small=1 fail=0
+SNAP SUMMARY wikidata 247/281 prompts (124148 answers), wikipedia 6/8 prompts (1392 answers), 525s; index=[live_wikidata.json, live_wikipedia.json]
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1795734592236.json
+
+BUILD SUCCESSFUL in 9m 1s
+3 actionable tasks: 2 executed, 1 from cache
