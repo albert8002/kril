@@ -910,7 +910,8 @@ fun TermInput(
     fieldModifier: Modifier = Modifier,
     /** Dots instead of the letters (passwords). */
     password: Boolean = false,
-    keyboardType: KeyboardType = if (password) KeyboardType.Password else KeyboardType.Text,
+    /** null: Password for [password] fields, else Text (a default that reads another parameter breaks the iOS compiler). */
+    keyboardType: KeyboardType? = null,
 ) {
     val style = Th.style
     val shown = when (style) {
@@ -962,7 +963,7 @@ fun TermInput(
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
                     autoCorrectEnabled = false,
-                    keyboardType = keyboardType,
+                    keyboardType = keyboardType ?: if (password) KeyboardType.Password else KeyboardType.Text,
                     imeAction = imeAction,
                 ),
                 keyboardActions = KeyboardActions(onDone = { onSubmit() }, onGo = { onSubmit() }, onSend = { onSubmit() }),

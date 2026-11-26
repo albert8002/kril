@@ -108,6 +108,16 @@ fun ManualScreen(model: AppModel) {
                 )) TText("· $l", size = 12.sp, color = C.amber)
             }
             Spacer(Modifier.height(12.dp))
+            Panel(Th.say("ACCOUNT + WEB", "Account and web app")) {
+                for (l in listOf(
+                    "optional. SETTINGS → ACCOUNT: sign in or make one (name, e-mail, password).",
+                    "signed in, your settings, looks, runs and friends sync between your phones and the web app (albert8002.github.io/kril).",
+                    "friends can be added by account name as well as by code.",
+                    "ranked between two accounts is rated on the server, only when both players report the same result. your account rating starts at 1000.",
+                    "the web app plays like the phone app, online games included; direct Wi-Fi needs the phone app.",
+                )) TText("· $l", size = 12.sp, color = C.amber)
+            }
+            Spacer(Modifier.height(12.dp))
             Panel("MELTDOWN") {
                 for (l in listOf(
                     "battle royale for 2–8 players: bots offline, or friends online (HOST PARTY / JOIN PARTY, same code as 1v1).",
