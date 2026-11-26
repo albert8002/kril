@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0b0a07">
+    <meta name="description" content="CORE DUMP: the trivia game where the rarest answer scores most.">
+    <title>CORE DUMP</title>
+    <link type="text/css" rel="stylesheet" href="styles.css">
+    <script>
+        // WebAssembly GC is needed (Chrome / Edge 119+, Firefox 120+, Safari 18.2+)
+        window.addEventListener('error', function (e) {
+            var el = document.getElementById('boot');
+            if (el) el.textContent = 'CORE DUMP could not start in this browser. Try an up-to-date Chrome, Firefox, Edge or Safari (18.2 or newer).';
+        });
+    </script>
+    <script type="application/javascript" src="composeApp.js"></script>
+</head>
+<body>
+<div id="boot">CORE DUMP · loading…</div>
+</body>
+</html>
