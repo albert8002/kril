@@ -1,0 +1,63 @@
+1846-11-26 23:22:07.836 D/nativeloader( 3084): Configuring clns-6 for other apk /system/framework/org.apache.http.legacy.jar. target_sdk_version=33, uses_libraries=ALL, library_path=/product/app/PrebuiltGmail/lib/x86_64:/product/app/PrebuiltGmail/PrebuiltGmail.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gm
+1847---------- beginning of crash
+1848:11-26 23:22:07.837 F/libc    ( 1767): Fatal signal 4 (SIGILL), code 2 (ILL_ILLOPN), fault addr 0x75ac2bc1f573 in tid 2284 (BG Thread #3), pid 1767 (earchbox:search)
+1849-11-26 23:22:07.838 I/DeviceStatusMonitor( 1531): DeviceStatusMonitor.notifyIfNetworkChanged():179 notifyIfNetworkChanged: newState = NON_METERED, airplaneModeOn = false, notifyAnyway = false
+1850-11-26 23:22:07.839 I/NetworkInfoNotification( 1531): NetworkInfoNotification$Listener.onReceive():93 onNetworkAvailable: networkState = NON_METERED, isAirplaneModeOn = false
+1851-11-26 23:22:07.840 I/LatinImeEntryActivation( 1531): LatinImeActivationContentObserver.activeLanguagesHaveChanged():68 Active entries changed: [] -> {en-US}
+1852-11-26 23:22:07.840 I/SuperDelight( 1531): SuperDelightManager.syncBundledLanguageModels():734 syncBundledLanguageModels(): clearing bundled_delight selection
+1853-11-26 23:22:07.840 I/LmManager( 1531): LmManager.asyncUpdateEnabledLanguageModels():90 asyncUpdateEnabledLanguageModels()
+1854-11-26 23:22:07.840 I/SuperDelight( 1531): SuperDelightManager.initializeDelightSuperpacks():340 initializeDelightSuperpacks()
+1855-11-26 23:22:07.840 I/SuperDelight( 1531): SuperDelightManager.getDelightMetadataUriAndVersion():1011 getDelightMetadataUriAndVersion(): Phenotype : 2022101700 : https://www.gstatic.com/android/keyboard/dictionarypack/Omei-normal/metadata.json
+1856-11-26 23:22:07.841 W/PageIndicator(  829): Total number of pages invalid: 0. Assuming 1 page.
+1857-11-26 23:22:07.841 D/StatusBarIconController(  829): ignoring old pipeline callbacks, because the new mobile icons are enabled
+1858-11-26 23:22:07.842 D/ControlsListingControllerImpl(  829): ServiceConfig reloaded, count: 0
+1859-11-26 23:22:07.844 D/ApplicationLoaders( 3084): Returning zygote-cached class loader: /system_ext/framework/androidx.window.extensions.jar
+1860-11-26 23:22:07.844 D/ControlsListingControllerImpl(  829): ServiceConfig reloaded, count: 0
+1861-11-26 23:22:07.846 D/ControlsListingControllerImpl(  829): ServiceConfig reloaded, count: 0
+1862-11-26 23:22:07.846 D/StatusBarIconController(  829): ignoring old pipeline callbacks, because the new mobile icons are enabled
+1863-11-26 23:22:07.847 E/.apps.wallpaper( 2714): Invalid resource ID 0x00000000.
+1864-11-26 23:22:07.848 W/PageIndicator(  829): Total number of pages invalid: 0. Assuming 1 page.
+1865-11-26 23:22:07.848 W/PageIndicator(  829): Total number of pages invalid: 0. Assuming 1 page.
+1866-11-26 23:22:07.848 W/PageIndicator(  829): Total number of pages invalid: 0. Assuming 1 page.
+1867-11-26 23:22:07.849 D/StatusBarIconController(  829): ignoring old pipeline callbacks, because the new mobile icons are enabled
+1868-11-26 23:22:07.849 I/Choreographer(  829): Skipped 71 frames!  The application may be doing too much work on its main thread.
+1869-11-26 23:22:07.850 D/ApplicationLoaders( 3084): Returning zygote-cached class loader: /system_ext/framework/androidx.window.sidecar.jar
+1870-11-26 23:22:07.856 I/SuperDelight( 1531): SuperDelightManager.lambda$registerAndUpgradeSuperpacks$5():476 SuperDelightManager#registerAndUpgradeSuperpacks(delight): current -1, required 2022101700
+1871-11-26 23:22:07.856 I/SuperDelight( 1531): SuperDelightManager.initializeBundledDelightSuperpacks():376 initializeBundledDelightSuperpacks()
+1872-11-26 23:22:07.857 I/SP      ( 1531): Registering delight.2022101700, url: https://www.gstatic.com/android/keyboard/dictionarypack/Omei-normal/metadata.json, constraints: m:*:*:*, flags: *, requested: 2022101700, current: -1
+1873-11-26 23:22:07.857 I/SuperDelight( 1531): SuperDelightAppsSuperpacksManager.initializeDelightAppsSuperpacks():92 initializeDelightAppsSuperpacks()
+1874-11-26 23:22:07.858 I/SuperDelight( 1531): SuperDelightManager.initializeOverridesSuperpacks():402 initializeOverridesSuperpacks()
+1875-11-26 23:22:07.884 I/A       ( 1767): Updating Gservices keys
+1876-11-26 23:22:07.887 W/ActivityManager(  520): Slow operation: 59ms so far, now at startProcess: done starting proc!
+1877-11-26 23:22:07.892 W/JobScheduler(  520): Job didn't exist in JobStore: 956fa95 #u0a132/-151 com.google.android.googlequicksearchbox/com.google.android.apps.gsa.tasks.BackgroundTasksJobService
+1878-11-26 23:22:07.893 W/SearchServiceCore( 1767): Abort, client detached.
+1879-11-26 23:22:07.894 I/NetworkInfoNotification( 1531): NetworkInfoNotification$Listener.onReceive():93 onNetworkAvailable: networkState = NON_METERED, isAirplaneModeOn = false
+1880-11-26 23:22:07.894 W/ActivityManager(  520): Slow operation: 65ms so far, now at startProcess: asking zygote to start proc
+1881-11-26 23:22:07.894 D/CompatibilityChangeReporter(  520): Compat change id reported: 143937733; UID 10130; state: ENABLED
+1882-11-26 23:22:07.897 D/ConnectivityService(  520): Adding iface eth0 to network 101
+1883-11-26 23:22:07.897 E/Netd    (  334): no such netId 101
+1884-11-26 23:22:07.897 I/netd    (  334): networkAddInterface(101, eth0) -> ServiceSpecificException(64, "Machine is not on the network") <0.03ms>
+1885-11-26 23:22:07.897 W/ConnectivityService(  520): Exception adding interface: android.os.ServiceSpecificException: Machine is not on the network (code 64)
+1886-11-26 23:22:07.897 I/netd    (  334): interfaceSetMtu(eth0, 1500) <0.30ms>
+1887-11-26 23:22:07.897 E/Netd    (  334): no such netId 101
+1888-11-26 23:22:07.897 I/netd    (  334): networkAddRouteParcel(101, RouteInfoParcel{destination: 10.0.2.0/24, ifName: eth0, nextHop: , mtu: 0}) -> ServiceSpecificException(64, "Machine is not on the network") <0.01ms>
+1889-11-26 23:22:07.897 E/ConnectivityService(  520): Exception in networkAddRouteParcel for non-gateway: android.os.ServiceSpecificException: Machine is not on the network (code 64)
+1890-11-26 23:22:07.897 E/Netd    (  334): no such netId 101
+1891-11-26 23:22:07.897 I/netd    (  334): networkAddRouteParcel(101, RouteInfoParcel{destination: 0.0.0.0/0, ifName: eth0, nextHop: 10.0.2.2, mtu: 1500}) -> ServiceSpecificException(64, "Machine is not on the network") <0.01ms>
+1892-11-26 23:22:07.897 E/ConnectivityService(  520): Exception in networkAddRouteParcel for gateway: android.os.ServiceSpecificException: Machine is not on the network (code 64)
+1893-11-26 23:22:07.897 D/ConnectivityService(  520): Setting DNS servers for network 101 to [/10.0.2.3]
+1894-11-26 23:22:07.902 D/Zygote  (  335): Forked child process 3182
+1895-11-26 23:22:07.906 W/ActivityManager(  520): Slow operation: 76ms so far, now at startProcess: returned from zygote!
+1896-11-26 23:22:07.906 W/ActivityManager(  520): Slow operation: 77ms so far, now at startProcess: done updating battery stats
+1897-11-26 23:22:07.906 W/ActivityManager(  520): Slow operation: 77ms so far, now at startProcess: building log message
+1898-11-26 23:22:07.906 I/ActivityManager(  520): Start proc 3182:com.google.android.dialer/u0a130 for broadcast {com.google.android.dialer/com.android.dialer.theme.base.ThemeSettingReceiver}
+1899-11-26 23:22:07.906 W/ActivityManager(  520): Slow operation: 77ms so far, now at startProcess: starting to update pids map
+1900-11-26 23:22:07.906 W/ActivityManager(  520): Slow operation: 77ms so far, now at startProcess: done updating pids map
+1901-11-26 23:22:07.914 W/SearchServiceCore( 1767): Abort, client detached.
+1902-11-26 23:22:07.915 W/SearchServiceCore( 1767): Abort, client detached.
+1903-11-26 23:22:07.923 I/A       ( 1767): Executing HotwordSilentEnrollment for user profile: 0
+1904-11-26 23:22:07.925 W/SearchServiceCore( 1767): Abort, client detached.
+1905-11-26 23:22:07.925 W/SearchServiceCore( 1767): Abort, client detached.
+1906-11-26 23:22:07.925 W/SearchServiceCore( 1767): Abort, client detached.
+1907-11-26 23:22:07.926 W/SearchServiceCore( 1767): Abort, client detached.
+1908-11-26 23:22:07.928 W/SearchServiceCore( 1767): Abort, client detached.

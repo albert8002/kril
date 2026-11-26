@@ -1,0 +1,12 @@
+Physical size: 1080x2400
+23:22:04 install: Success
+23:22:08 launched self-test
+23:42:03 PROCESS DIED during self-test
+23:42:05 relaunch before seed 11
+23:42:20 seed 11: ok
+23:42:20 relaunch before seed 22
+23:42:35 seed 22: ok
+23:42:35 relaunch before seed 33
+23:42:50 seed 33: ok
+fatal exceptions: 0
+gc lines: 80

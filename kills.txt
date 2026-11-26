@@ -1,0 +1,38 @@
+11-26 23:23:57.495 I/init    (    0): processing action (persist.device_config.lmkd_native.thrashing_limit_critical=*) from (/system/etc/init/lmkd.rc:44)
+11-26 23:23:57.498 I/init    (    0): processing action (lmkd.reinit=1) from (/system/etc/init/lmkd.rc:10)
+11-26 23:23:57.500 I/init    (    0): starting service 'exec 23 (/system/bin/lmkd --reinit)'...
+11-26 23:23:57.516 I/init    (    0): ... started service 'exec 23 (/system/bin/lmkd --reinit)' has pid 6124
+11-26 23:23:57.354 I/lowmemorykiller(  132): lmkd data connection established
+11-26 23:23:57.407 I/lowmemorykiller(  132): Using psi monitors for memory pressure detection
+11-26 23:23:57.407 I/lowmemorykiller(  132): Properties reinitilized
+11-26 23:23:57.408 I/lowmemorykiller( 6124): lmkd updated properties successfully
+11-26 23:23:57.408 I/lowmemorykiller(  132): lmkd data connection dropped
+11-26 23:23:57.408 I/lowmemorykiller(  132): closing lmkd data connection
+11-26 23:23:57.593 I/init    (    0): Service 'exec 23 (/system/bin/lmkd --reinit)' (pid 6124) exited with status 0 oneshot service took 0.077000 seconds in background
+11-26 23:23:57.595 I/init    (    0): Sending signal 9 to service 'exec 23 (/system/bin/lmkd --reinit)' (pid 6124) process group...
+11-26 23:23:59.508 I/RescueParty(  520): Starting to observe: [android], updated namespace: lmkd_native
+11-26 23:23:59.709 I/init    (    0): processing action (persist.device_config.lmkd_native.thrashing_limit_critical=*) from (/system/etc/init/lmkd.rc:44)
+11-26 23:23:59.715 I/init    (    0): processing action (lmkd.reinit=1) from (/system/etc/init/lmkd.rc:10)
+11-26 23:23:59.718 I/init    (    0): starting service 'exec 24 (/system/bin/lmkd --reinit)'...
+11-26 23:23:59.732 I/init    (    0): ... started service 'exec 24 (/system/bin/lmkd --reinit)' has pid 6163
+11-26 23:23:59.562 I/lowmemorykiller(  132): lmkd data connection established
+11-26 23:23:59.594 I/lowmemorykiller(  132): Using psi monitors for memory pressure detection
+11-26 23:23:59.594 I/lowmemorykiller(  132): Properties reinitilized
+11-26 23:23:59.607 I/lowmemorykiller( 6163): lmkd updated properties successfully
+11-26 23:23:59.607 I/lowmemorykiller(  132): lmkd data connection dropped
+11-26 23:23:59.607 I/lowmemorykiller(  132): closing lmkd data connection
+11-26 23:23:59.792 I/init    (    0): Service 'exec 24 (/system/bin/lmkd --reinit)' (pid 6163) exited with status 0 oneshot service took 0.071000 seconds in background
+11-26 23:23:59.795 I/init    (    0): Sending signal 9 to service 'exec 24 (/system/bin/lmkd --reinit)' (pid 6163) process group...
+11-26 23:27:01.791 I/RescueParty(  520): Starting to observe: [android], updated namespace: lmkd_native
+11-26 23:27:01.990 I/init    (    0): processing action (persist.device_config.lmkd_native.thrashing_limit_critical=*) from (/system/etc/init/lmkd.rc:44)
+11-26 23:27:01.993 I/init    (    0): processing action (lmkd.reinit=1) from (/system/etc/init/lmkd.rc:10)
+11-26 23:27:01.995 I/init    (    0): starting service 'exec 25 (/system/bin/lmkd --reinit)'...
+11-26 23:27:02.012 I/init    (    0): ... started service 'exec 25 (/system/bin/lmkd --reinit)' has pid 7806
+11-26 23:27:01.848 I/lowmemorykiller(  132): lmkd data connection established
+11-26 23:27:01.883 I/lowmemorykiller(  132): Using psi monitors for memory pressure detection
+11-26 23:27:01.883 I/lowmemorykiller(  132): Properties reinitilized
+11-26 23:27:01.883 I/lowmemorykiller( 7806): lmkd updated properties successfully
+11-26 23:27:01.883 I/lowmemorykiller(  132): lmkd data connection dropped
+11-26 23:27:01.883 I/lowmemorykiller(  132): closing lmkd data connection
+11-26 23:27:02.069 I/init    (    0): Service 'exec 25 (/system/bin/lmkd --reinit)' (pid 7806) exited with status 0 oneshot service took 0.070000 seconds in background
+11-26 23:27:02.071 I/init    (    0): Sending signal 9 to service 'exec 25 (/system/bin/lmkd --reinit)' (pid 7806) process group...

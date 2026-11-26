@@ -1,0 +1,776 @@
+11-26 23:22:05.003 V/SplashScreenExceptionList(  520): SplashScreen checking exception for package app.coredump (target sdk:35) -> false
+11-26 23:22:05.042 V/WindowManagerShell(  829): Transition requested: android.os.BinderProxy@d7585a1 TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.coredump/.MainActivity } baseActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} topActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} origActivity=null realActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} numActivities=1 lastActiveTime=30930 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@54723c6} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{d54bf87 app.coredump.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-26 23:22:05.110 D/CoreBackPreview(  520): Window{8a1bf90 u0 Splash Screen app.coredump}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f4c5f9a, mPriority=0, mIsAnimationCallback=false}
+11-26 23:22:05.858 V/WindowManager(  520): Sent Transition #7 createdAt=11-26 23:22:04.914 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=8 displayId=0 isRunning=true baseIntent=Intent { flg=0x10000000 cmp=app.coredump/.MainActivity } baseActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} topActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} origActivity=null realActivity=ComponentInfo{app.coredump/app.coredump.MainActivity} numActivities=1 lastActiveTime=30930 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{3e00936 Task{cd546cf #8 type=standard A=10192:app.coredump}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 128 - 0, 0) topActivityInfo=ActivityInfo{ef69037 app.coredump.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isSleeping=false topActivityInSizeCompat=false topActivityEligibleForLetterboxEducation= false topActivityLetterboxed= false isFromDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 locusId=null displayAreaFeatureId=1 cameraCompatControlState=hidden}, remoteTransition = null, displayChange = null }
+11-26 23:22:06.171 V/GraphicsEnvironment( 2943): ANGLE GameManagerService for app.coredump: false
+11-26 23:22:06.171 V/GraphicsEnvironment( 2943): app.coredump is not listed in per-application setting
+11-26 23:22:06.243 I/SafetyLabelChangedBroadcastReceiver(  831): received broadcast packageName: app.coredump, current user: UserHandle{0}, packageChangeEvent: NEW_INSTALL, intent user: UserHandle{0}
+11-26 23:22:06.414 D/CarrierSvcBindHelper( 1044): onPackageAdded: app.coredump
+11-26 23:22:06.555 D/ImsResolver( 1044): maybeAddedImsService, packageName: app.coredump
+11-26 23:22:06.930 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e335149, mPriority=0, mIsAnimationCallback=false}
+11-26 23:22:08.010 I/ActivityTaskManager(  520): Displayed app.coredump/.MainActivity for user 0: +3s103ms
+11-26 23:22:08.050 W/InputManager-JNI(  520): Input channel object '8a1bf90 Splash Screen app.coredump (client)' was disposed without first being removed with the input manager!
+11-26 23:22:08.051 D/CoreBackPreview(  520): Window{8a1bf90 u0 Splash Screen app.coredump EXITING}: Setting back callback null
+11-26 23:22:08.121 I/ImeTracker(  520): app.coredump:77cd692c: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_UNSPECIFIED_WINDOW
+11-26 23:22:08.121 I/ImeTracker(  520): app.coredump:77cd692c: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:22:12.027 D/ProfileInstaller( 2943): Installing profile for app.coredump
+11-26 23:22:27.296 I/ImeTracker( 2943): app.coredump:eda94b80: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:27.377 D/ContentCapturePerUserService(  520): Notified activity assist data for activity: Token{57c685c ActivityRecord{2db44c4 u0 app.coredump/.MainActivity t8}} without a session Id
+11-26 23:22:27.449 I/ImeTracker( 2943): app.coredump:cc8ef89e: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:22:28.206 I/ImeTracker(  520): app.coredump:eda94b80: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:22:28.384 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@a059cbd, mPriority=0, mIsAnimationCallback=false}
+11-26 23:22:30.527 I/ImeTracker( 2943): app.coredump:cc8ef89e: onShown
+11-26 23:22:36.249 I/ImeTracker( 2943): app.coredump:cf2222fc: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:36.286 I/ImeTracker( 2943): app.coredump:8ef85240: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:36.341 I/ImeTracker( 2943): app.coredump:5ffdefeb: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:36.342 I/ImeTracker(  520): app.coredump:5ffdefeb: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:22:36.344 I/ImeTracker( 2943): app.coredump:cf2222fc: onHidden
+11-26 23:22:36.460 I/ImeTracker( 2943): app.coredump:8ef85240: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:22:36.464 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@3a76769, mPriority=0, mIsAnimationCallback=false}
+11-26 23:22:38.753 I/ImeTracker( 2943): app.coredump:ddcba3ae: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:38.753 I/ImeTracker( 2943): app.coredump:ddcba3ae: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:22:39.950 I/FontLog ( 1428): Package app.coredump has no metadata [CONTEXT service_id=132 ]
+11-26 23:22:39.954 I/BlockstoreStorage( 1469): Clearing Blockstore Data for package app.coredump [CONTEXT service_id=258 ]
+11-26 23:22:41.135 I/app.coredump( 2943): Compiler allocated 5144KB to compile void app.coredump.ui.RunsKt.world(androidx.compose.ui.graphics.drawscope.DrawScope, app.coredump.ui.Style, app.coredump.ui.Frame, app.coredump.ui.Ink, java.util.List, androidx.compose.ui.text.TextMeasurer, app.coredump.ui.RunKit)
+11-26 23:22:51.202 I/ImeTracker( 2943): app.coredump:e3220356: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:51.323 D/ContentCapturePerUserService(  520): Notified activity assist data for activity: Token{57c685c ActivityRecord{2db44c4 u0 app.coredump/.MainActivity t8}} without a session Id
+11-26 23:22:51.364 I/ImeTracker( 2943): app.coredump:fb3a220e: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:22:52.053 I/ImeTracker( 2943): app.coredump:fb3a220e: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:22:52.124 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e4be0d6, mPriority=0, mIsAnimationCallback=false}
+11-26 23:22:52.154 I/ImeTracker( 2943): app.coredump:e3220356: onShown
+11-26 23:22:54.457 I/ImeTracker( 2943): app.coredump:4c88f2d5: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:54.459 I/ImeTracker( 2943): app.coredump:fb81420d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:54.652 I/ImeTracker( 2943): app.coredump:b8f07924: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:54.653 I/ImeTracker(  520): app.coredump:b8f07924: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:22:54.655 I/ImeTracker( 2943): app.coredump:4c88f2d5: onHidden
+11-26 23:22:54.758 I/ImeTracker( 2943): app.coredump:fb81420d: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:22:54.762 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f2d94b4, mPriority=0, mIsAnimationCallback=false}
+11-26 23:22:56.347 I/ImeTracker( 2943): app.coredump:97625046: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:56.425 D/ContentCapturePerUserService(  520): Notified activity assist data for activity: Token{57c685c ActivityRecord{2db44c4 u0 app.coredump/.MainActivity t8}} without a session Id
+11-26 23:22:56.433 I/ImeTracker( 2943): app.coredump:31832e66: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:22:57.018 I/ImeTracker(  520): app.coredump:97625046: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:22:57.092 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@68fc76, mPriority=0, mIsAnimationCallback=false}
+11-26 23:22:57.368 I/ImeTracker( 2943): app.coredump:a132c6a6: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:57.369 I/ImeTracker( 2943): app.coredump:85040db7: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:57.414 I/ImeTracker( 2943): app.coredump:31832e66: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+11-26 23:22:57.511 I/ImeTracker( 2943): app.coredump:e64e81b7: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:57.513 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@8da47de, mPriority=0, mIsAnimationCallback=false}
+11-26 23:22:57.521 I/ImeTracker(  520): app.coredump:e64e81b7: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:22:57.521 I/ImeTracker( 2943): app.coredump:a132c6a6: onHidden
+11-26 23:22:57.618 I/ImeTracker( 2943): app.coredump:85040db7: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:22:58.116 I/ImeTracker( 2943): app.coredump:c93c66a4: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:22:58.117 I/ImeTracker( 2943): app.coredump:c93c66a4: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:23:10.906 I/app.coredump( 2943): JIT allocated 80KB for compiled code of void app.coredump.ui.ComponentsKt.Panel-t6yy7ic(java.lang.String, androidx.compose.ui.Modifier, long, long, kotlin.jvm.functions.Function3, androidx.compose.runtime.Composer, int, int)
+11-26 23:23:10.907 I/app.coredump( 2943): Compiler allocated 7544KB to compile void app.coredump.ui.ComponentsKt.Panel-t6yy7ic(java.lang.String, androidx.compose.ui.Modifier, long, long, kotlin.jvm.functions.Function3, androidx.compose.runtime.Composer, int, int)
+11-26 23:23:14.145 I/app.coredump( 2943): Compiler allocated 4333KB to compile void app.coredump.ui.ComponentsKt.TButton-LUweHsE(java.lang.String, kotlin.jvm.functions.Function0, androidx.compose.ui.Modifier, boolean, boolean, long, long, androidx.compose.runtime.Composer, int, int)
+11-26 23:23:21.110 I/ImeTracker( 2943): app.coredump:bc594fbc: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:21.181 I/ImeTracker( 2943): app.coredump:2ed319b0: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:23:21.404 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f0269fb, mPriority=0, mIsAnimationCallback=false}
+11-26 23:23:21.445 I/ImeTracker( 2943): app.coredump:bc594fbc: onShown
+11-26 23:23:21.511 I/ImeTracker( 2943): app.coredump:2ed319b0: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:23:21.966 I/app.coredump( 2943): Compiler allocated 4284KB to compile void app.coredump.ui.screens.GazetteScreensKt.GazettePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-26 23:23:26.455 I/app.coredump( 2943): Method exceeds compiler instruction limit: 25386 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-26 23:23:29.791 I/ImeTracker( 2943): app.coredump:fd1def3f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:29.792 I/ImeTracker( 2943): app.coredump:83ba3ef1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:29.897 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@967a650, mPriority=0, mIsAnimationCallback=false}
+11-26 23:23:29.942 I/ImeTracker( 2943): app.coredump:c4a0cb48: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:29.945 I/ImeTracker(  520): app.coredump:c4a0cb48: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:23:29.947 I/ImeTracker( 2943): app.coredump:fd1def3f: onHidden
+11-26 23:23:29.967 I/ImeTracker( 2943): app.coredump:83ba3ef1: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:23:32.187 I/ImeTracker( 2943): app.coredump:7566bd0c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:32.188 I/ImeTracker( 2943): app.coredump:7566bd0c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:23:44.330 I/ImeTracker( 2943): app.coredump:5f96d91e: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:44.396 I/ImeTracker( 2943): app.coredump:44d4c8fb: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:23:44.746 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@3c44c2a, mPriority=0, mIsAnimationCallback=false}
+11-26 23:23:44.966 I/ImeTracker(  520): app.coredump:5f96d91e: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:23:45.266 I/ImeTracker( 2943): app.coredump:44d4c8fb: onShown
+11-26 23:23:47.286 I/ImeTracker( 2943): app.coredump:131359cb: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:47.286 I/ImeTracker( 2943): app.coredump:38c8409a: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:47.443 I/ImeTracker( 2943): app.coredump:20c638ad: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:47.445 I/ImeTracker(  520): app.coredump:20c638ad: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:23:47.500 I/ImeTracker( 2943): app.coredump:131359cb: onHidden
+11-26 23:23:47.525 I/ImeTracker( 2943): app.coredump:38c8409a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:23:47.529 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ff24dea, mPriority=0, mIsAnimationCallback=false}
+11-26 23:23:48.673 I/ImeTracker( 2943): app.coredump:2e47cc19: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:48.778 I/ImeTracker( 2943): app.coredump:2aa3ca43: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:23:49.320 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b477ef8, mPriority=0, mIsAnimationCallback=false}
+11-26 23:23:49.570 I/ImeTracker( 2943): app.coredump:2aa3ca43: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:23:49.573 I/ImeTracker( 2943): app.coredump:2e47cc19: onShown
+11-26 23:23:50.246 I/ImeTracker( 2943): app.coredump:58fcece0: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:50.252 I/ImeTracker( 2943): app.coredump:734516dc: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:50.376 I/ImeTracker( 2943): app.coredump:1e9387af: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:50.377 I/ImeTracker(  520): app.coredump:1e9387af: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:23:50.379 I/ImeTracker( 2943): app.coredump:58fcece0: onHidden
+11-26 23:23:50.453 I/ImeTracker( 2943): app.coredump:734516dc: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:23:50.538 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@48b41fd, mPriority=0, mIsAnimationCallback=false}
+11-26 23:23:50.894 I/ImeTracker( 2943): app.coredump:3a5b8d80: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:23:50.894 I/ImeTracker( 2943): app.coredump:3a5b8d80: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:24:13.563 I/ImeTracker( 2943): app.coredump:6c8cd842: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:13.706 I/ImeTracker( 2943): app.coredump:89a34238: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:24:13.942 I/app.coredump( 2943): JIT allocated 56KB for compiled code of void app.coredump.ui.screens.ArcadeScreensKt.ArcadePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-26 23:24:13.943 I/app.coredump( 2943): Compiler allocated 5032KB to compile void app.coredump.ui.screens.ArcadeScreensKt.ArcadePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-26 23:24:13.972 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@70c36ad, mPriority=0, mIsAnimationCallback=false}
+11-26 23:24:14.042 I/ImeTracker( 2943): app.coredump:89a34238: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:24:14.049 I/ImeTracker( 2943): app.coredump:6c8cd842: onShown
+11-26 23:24:22.561 I/ImeTracker( 2943): app.coredump:3f33e31: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:22.570 I/ImeTracker( 2943): app.coredump:b52f0b07: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:22.757 I/ImeTracker( 2943): app.coredump:761cca46: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:22.760 I/ImeTracker(  520): app.coredump:761cca46: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:24:22.761 I/ImeTracker( 2943): app.coredump:3f33e31: onHidden
+11-26 23:24:22.836 I/ImeTracker( 2943): app.coredump:b52f0b07: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:24:22.841 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b1cbb6c, mPriority=0, mIsAnimationCallback=false}
+11-26 23:24:24.954 I/ImeTracker( 2943): app.coredump:37486972: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:24.955 I/ImeTracker( 2943): app.coredump:37486972: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:24:37.504 I/ImeTracker( 2943): app.coredump:d5bf14f8: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:37.702 I/ImeTracker( 2943): app.coredump:858eb1de: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:24:38.195 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@7e9bb0e, mPriority=0, mIsAnimationCallback=false}
+11-26 23:24:38.297 I/ImeTracker( 2943): app.coredump:858eb1de: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:24:38.379 I/ImeTracker( 2943): app.coredump:d5bf14f8: onShown
+11-26 23:24:40.282 I/ImeTracker( 2943): app.coredump:15f32f1f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:40.291 I/ImeTracker( 2943): app.coredump:e1141884: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:40.536 I/ImeTracker( 2943): app.coredump:1c9f1570: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:40.547 I/ImeTracker(  520): app.coredump:1c9f1570: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:24:40.554 I/ImeTracker( 2943): app.coredump:15f32f1f: onHidden
+11-26 23:24:40.633 I/ImeTracker( 2943): app.coredump:e1141884: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:24:40.634 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@a405db5, mPriority=0, mIsAnimationCallback=false}
+11-26 23:24:41.940 I/ImeTracker( 2943): app.coredump:57e38324: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:42.156 I/ImeTracker( 2943): app.coredump:f02cc475: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:24:42.348 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@cebf6f, mPriority=0, mIsAnimationCallback=false}
+11-26 23:24:42.644 I/ImeTracker( 2943): app.coredump:f02cc475: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:24:42.723 I/ImeTracker( 2943): app.coredump:57e38324: onShown
+11-26 23:24:43.290 I/ImeTracker( 2943): app.coredump:ccb8644d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:43.302 I/ImeTracker( 2943): app.coredump:ba72e98a: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:43.579 I/ImeTracker( 2943): app.coredump:4c0bd47d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:43.594 I/ImeTracker(  520): app.coredump:4c0bd47d: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:24:43.598 I/ImeTracker( 2943): app.coredump:ccb8644d: onHidden
+11-26 23:24:43.725 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f3db437, mPriority=0, mIsAnimationCallback=false}
+11-26 23:24:43.725 I/ImeTracker( 2943): app.coredump:ba72e98a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:24:43.841 I/ImeTracker( 2943): app.coredump:e14de466: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:24:43.841 I/ImeTracker( 2943): app.coredump:e14de466: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:24:53.489 I/app.coredump( 2943): Method exceeds compiler instruction limit: 25386 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-26 23:25:06.684 I/ImeTracker( 2943): app.coredump:491f27e4: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:06.727 I/ImeTracker( 2943): app.coredump:6a9423d9: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:25:06.849 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@9af85ee, mPriority=0, mIsAnimationCallback=false}
+11-26 23:25:06.975 I/ImeTracker( 2943): app.coredump:6a9423d9: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:25:07.008 I/ImeTracker( 2943): app.coredump:491f27e4: onShown
+11-26 23:25:15.380 I/ImeTracker( 2943): app.coredump:26f7414a: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:15.380 I/ImeTracker( 2943): app.coredump:fe1d5ad4: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:15.421 I/ImeTracker( 2943): app.coredump:7c3db6be: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:15.422 I/ImeTracker( 2943): app.coredump:26f7414a: onHidden
+11-26 23:25:15.548 I/ImeTracker( 2943): app.coredump:fe1d5ad4: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:25:15.549 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@36cac6f, mPriority=0, mIsAnimationCallback=false}
+11-26 23:25:15.550 I/ImeTracker( 2943): app.coredump:7c3db6be: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:25:17.677 I/ImeTracker( 2943): app.coredump:a0f4c41b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:17.677 I/ImeTracker( 2943): app.coredump:a0f4c41b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:25:29.517 I/ImeTracker( 2943): app.coredump:6f840ea4: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:29.528 I/ImeTracker( 2943): app.coredump:5c94be89: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:25:29.549 I/ImeTracker(  520): app.coredump:6f840ea4: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:25:29.551 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@cda542, mPriority=0, mIsAnimationCallback=false}
+11-26 23:25:29.707 I/ImeTracker( 2943): app.coredump:5c94be89: onShown
+11-26 23:25:32.455 I/ImeTracker( 2943): app.coredump:76aab876: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:32.455 I/ImeTracker( 2943): app.coredump:b617b604: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:32.572 I/ImeTracker( 2943): app.coredump:260b22fa: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:32.572 I/ImeTracker(  520): app.coredump:260b22fa: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:25:32.574 I/ImeTracker( 2943): app.coredump:76aab876: onHidden
+11-26 23:25:32.612 I/ImeTracker( 2943): app.coredump:b617b604: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:25:32.614 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@71de2f2, mPriority=0, mIsAnimationCallback=false}
+11-26 23:25:33.972 I/ImeTracker( 2943): app.coredump:42f78fa3: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:33.977 I/ImeTracker( 2943): app.coredump:209e6db2: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:25:33.994 I/ImeTracker(  520): app.coredump:42f78fa3: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:25:33.997 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@9a5c6d8, mPriority=0, mIsAnimationCallback=false}
+11-26 23:25:34.157 I/ImeTracker( 2943): app.coredump:209e6db2: onShown
+11-26 23:25:35.417 I/ImeTracker( 2943): app.coredump:93d8037: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:35.418 I/ImeTracker( 2943): app.coredump:c9a3c654: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:35.459 I/ImeTracker( 2943): app.coredump:c9a3c654: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:25:35.460 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@42a98f0, mPriority=0, mIsAnimationCallback=false}
+11-26 23:25:35.461 I/ImeTracker( 2943): app.coredump:ca68e419: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:35.461 I/ImeTracker(  520): app.coredump:ca68e419: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:25:35.462 I/ImeTracker( 2943): app.coredump:93d8037: onHidden
+11-26 23:25:35.903 I/ImeTracker( 2943): app.coredump:d7365aa1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:35.904 I/ImeTracker( 2943): app.coredump:d7365aa1: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:25:58.568 I/ImeTracker( 2943): app.coredump:91bf1c83: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:25:58.648 I/ImeTracker( 2943): app.coredump:7dd2131a: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:25:58.816 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@8a3b868, mPriority=0, mIsAnimationCallback=false}
+11-26 23:25:58.825 I/ImeTracker(  520): app.coredump:91bf1c83: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:25:58.964 I/ImeTracker( 2943): app.coredump:7dd2131a: onShown
+11-26 23:26:07.442 I/ImeTracker( 2943): app.coredump:a5e8078d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:07.443 I/ImeTracker( 2943): app.coredump:c03c66d6: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:07.543 I/ImeTracker( 2943): app.coredump:261c2d6d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:07.544 I/ImeTracker(  520): app.coredump:261c2d6d: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:26:07.544 I/ImeTracker( 2943): app.coredump:a5e8078d: onHidden
+11-26 23:26:07.594 I/ImeTracker( 2943): app.coredump:c03c66d6: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:26:07.635 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@2903175, mPriority=0, mIsAnimationCallback=false}
+11-26 23:26:09.772 I/ImeTracker( 2943): app.coredump:ffffd31b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:09.773 I/ImeTracker( 2943): app.coredump:ffffd31b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:26:19.548 I/app.coredump( 2943): Method exceeds compiler instruction limit: 25386 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-26 23:26:21.656 I/ImeTracker( 2943): app.coredump:1504d4a0: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:21.728 I/ImeTracker( 2943): app.coredump:809c3c34: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:26:21.890 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f79b6c5, mPriority=0, mIsAnimationCallback=false}
+11-26 23:26:22.034 I/ImeTracker( 2943): app.coredump:809c3c34: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:26:22.083 I/ImeTracker( 2943): app.coredump:1504d4a0: onShown
+11-26 23:26:24.624 I/ImeTracker( 2943): app.coredump:c25b43e7: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:24.624 I/ImeTracker( 2943): app.coredump:4b7f49a5: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:24.756 I/ImeTracker( 2943): app.coredump:360c7482: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:24.759 I/ImeTracker(  520): app.coredump:360c7482: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:26:24.762 I/ImeTracker( 2943): app.coredump:c25b43e7: onHidden
+11-26 23:26:24.790 I/ImeTracker( 2943): app.coredump:4b7f49a5: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:26:24.793 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@7231be, mPriority=0, mIsAnimationCallback=false}
+11-26 23:26:26.210 I/ImeTracker( 2943): app.coredump:26dad3d8: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:26.280 I/ImeTracker( 2943): app.coredump:247fd5b1: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:26:26.362 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f02da04, mPriority=0, mIsAnimationCallback=false}
+11-26 23:26:26.518 I/ImeTracker( 2943): app.coredump:247fd5b1: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:26:26.546 I/ImeTracker( 2943): app.coredump:26dad3d8: onShown
+11-26 23:26:27.596 I/ImeTracker( 2943): app.coredump:45cc8e02: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:27.596 I/ImeTracker( 2943): app.coredump:8078db4: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:27.676 I/ImeTracker( 2943): app.coredump:a0e5687f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:27.676 I/ImeTracker(  520): app.coredump:a0e5687f: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:26:27.678 I/ImeTracker( 2943): app.coredump:45cc8e02: onHidden
+11-26 23:26:27.780 I/ImeTracker( 2943): app.coredump:8078db4: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:26:27.830 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@12dfba5, mPriority=0, mIsAnimationCallback=false}
+11-26 23:26:28.070 I/ImeTracker( 2943): app.coredump:a22e0e75: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:28.070 I/ImeTracker( 2943): app.coredump:a22e0e75: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:26:50.623 I/ImeTracker( 2943): app.coredump:2dc3adc8: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:50.710 I/ImeTracker( 2943): app.coredump:10752ef0: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:26:50.794 I/ImeTracker(  520): app.coredump:2dc3adc8: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:26:50.813 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@c443bff, mPriority=0, mIsAnimationCallback=false}
+11-26 23:26:50.893 I/ImeTracker( 2943): app.coredump:10752ef0: onShown
+11-26 23:26:59.367 I/ImeTracker( 2943): app.coredump:2040951e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:59.367 I/ImeTracker( 2943): app.coredump:7442651: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:59.467 I/ImeTracker( 2943): app.coredump:9dfdf918: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:26:59.471 I/ImeTracker(  520): app.coredump:9dfdf918: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:26:59.471 I/ImeTracker( 2943): app.coredump:2040951e: onHidden
+11-26 23:26:59.575 I/ImeTracker( 2943): app.coredump:7442651: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:26:59.577 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@c509cfd, mPriority=0, mIsAnimationCallback=false}
+11-26 23:27:01.760 I/ImeTracker( 2943): app.coredump:f3a067c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:01.761 I/ImeTracker( 2943): app.coredump:f3a067c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:27:13.733 I/ImeTracker( 2943): app.coredump:a366605d: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:13.746 I/ImeTracker( 2943): app.coredump:9ded1deb: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:27:13.781 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@679517a, mPriority=0, mIsAnimationCallback=false}
+11-26 23:27:13.919 I/ImeTracker( 2943): app.coredump:9ded1deb: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:27:13.950 I/ImeTracker( 2943): app.coredump:a366605d: onShown
+11-26 23:27:16.796 I/ImeTracker( 2943): app.coredump:aa56adcc: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:16.805 I/ImeTracker( 2943): app.coredump:3b7b3453: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:16.843 I/ImeTracker( 2943): app.coredump:c7fb552b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:16.843 I/ImeTracker(  520): app.coredump:c7fb552b: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:27:16.843 I/ImeTracker( 2943): app.coredump:aa56adcc: onHidden
+11-26 23:27:16.971 I/ImeTracker( 2943): app.coredump:3b7b3453: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:27:17.101 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e02d1f6, mPriority=0, mIsAnimationCallback=false}
+11-26 23:27:18.306 I/ImeTracker( 2943): app.coredump:35c0deda: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:18.319 I/ImeTracker( 2943): app.coredump:41e6f45a: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:27:18.372 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@a5d27fc, mPriority=0, mIsAnimationCallback=false}
+11-26 23:27:18.538 I/ImeTracker(  520): app.coredump:35c0deda: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:27:18.598 I/ImeTracker( 2943): app.coredump:41e6f45a: onShown
+11-26 23:27:19.776 I/ImeTracker( 2943): app.coredump:2beaaa36: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:19.776 I/ImeTracker( 2943): app.coredump:2199d512: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:19.802 I/ImeTracker( 2943): app.coredump:35695f1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:19.804 I/ImeTracker(  520): app.coredump:35695f1: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:27:19.805 I/ImeTracker( 2943): app.coredump:2beaaa36: onHidden
+11-26 23:27:19.884 I/ImeTracker( 2943): app.coredump:2199d512: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:27:19.884 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@a91c3df, mPriority=0, mIsAnimationCallback=false}
+11-26 23:27:20.254 I/ImeTracker( 2943): app.coredump:b171d2d5: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:20.254 I/ImeTracker( 2943): app.coredump:b171d2d5: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:27:42.967 I/ImeTracker( 2943): app.coredump:d004cd9d: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:43.030 I/ImeTracker( 2943): app.coredump:2396a319: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:27:43.248 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@784545c, mPriority=0, mIsAnimationCallback=false}
+11-26 23:27:43.433 I/ImeTracker(  520): app.coredump:d004cd9d: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:27:43.562 I/ImeTracker( 2943): app.coredump:2396a319: onShown
+11-26 23:27:50.964 I/app.coredump( 2943): Method exceeds compiler instruction limit: 25386 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-26 23:27:51.814 I/ImeTracker( 2943): app.coredump:ec5afd2b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:51.818 I/ImeTracker( 2943): app.coredump:fe708fa9: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:51.833 I/ImeTracker( 2943): app.coredump:5d6cf8ab: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:51.833 I/ImeTracker(  520): app.coredump:5d6cf8ab: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:27:51.834 I/ImeTracker( 2943): app.coredump:ec5afd2b: onHidden
+11-26 23:27:51.934 I/ImeTracker( 2943): app.coredump:fe708fa9: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:27:51.935 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1c137de, mPriority=0, mIsAnimationCallback=false}
+11-26 23:27:54.092 I/ImeTracker( 2943): app.coredump:27ffce8e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:27:54.093 I/ImeTracker( 2943): app.coredump:27ffce8e: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:28:06.202 I/ImeTracker( 2943): app.coredump:1c33cd1: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:06.211 I/ImeTracker( 2943): app.coredump:ff6b3994: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:28:06.383 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@45b3845, mPriority=0, mIsAnimationCallback=false}
+11-26 23:28:06.537 I/ImeTracker( 2943): app.coredump:ff6b3994: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:28:06.622 I/ImeTracker( 2943): app.coredump:1c33cd1: onShown
+11-26 23:28:09.090 I/ImeTracker( 2943): app.coredump:be2f7969: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:09.091 I/ImeTracker( 2943): app.coredump:40868b24: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:09.168 I/ImeTracker( 2943): app.coredump:40868b24: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:28:09.169 I/ImeTracker( 2943): app.coredump:63385ef2: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:09.169 I/ImeTracker(  520): app.coredump:63385ef2: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:28:09.174 I/ImeTracker( 2943): app.coredump:be2f7969: onHidden
+11-26 23:28:09.260 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@84840ec, mPriority=0, mIsAnimationCallback=false}
+11-26 23:28:10.608 I/ImeTracker( 2943): app.coredump:5b5e0656: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:10.714 I/ImeTracker( 2943): app.coredump:9926cc5: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:28:10.839 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@52bdda2, mPriority=0, mIsAnimationCallback=false}
+11-26 23:28:11.001 I/ImeTracker( 2943): app.coredump:9926cc5: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:28:11.049 I/ImeTracker( 2943): app.coredump:5b5e0656: onShown
+11-26 23:28:12.173 I/ImeTracker( 2943): app.coredump:3d4483eb: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:12.180 I/ImeTracker( 2943): app.coredump:b8e6c249: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:12.261 I/ImeTracker( 2943): app.coredump:97cb0770: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:12.291 I/ImeTracker(  520): app.coredump:97cb0770: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:28:12.292 I/ImeTracker( 2943): app.coredump:3d4483eb: onHidden
+11-26 23:28:12.390 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@2c56cab, mPriority=0, mIsAnimationCallback=false}
+11-26 23:28:12.392 I/ImeTracker( 2943): app.coredump:b8e6c249: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:28:12.672 I/ImeTracker( 2943): app.coredump:6954aa79: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:12.673 I/ImeTracker( 2943): app.coredump:6954aa79: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:28:35.511 I/ImeTracker( 2943): app.coredump:a6c57d6f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:35.573 I/ImeTracker( 2943): app.coredump:309738f9: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:28:35.752 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@919e5dc, mPriority=0, mIsAnimationCallback=false}
+11-26 23:28:35.922 I/ImeTracker(  520): app.coredump:a6c57d6f: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:28:36.019 I/ImeTracker( 2943): app.coredump:309738f9: onShown
+11-26 23:28:44.266 I/ImeTracker( 2943): app.coredump:8ee2e891: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:44.267 I/ImeTracker( 2943): app.coredump:3fcbf4e8: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:44.387 I/ImeTracker( 2943): app.coredump:3fcbf4e8: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:28:44.393 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1b58355, mPriority=0, mIsAnimationCallback=false}
+11-26 23:28:44.404 I/ImeTracker( 2943): app.coredump:b4931acc: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:44.405 I/ImeTracker(  520): app.coredump:b4931acc: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:28:44.405 I/ImeTracker( 2943): app.coredump:8ee2e891: onHidden
+11-26 23:28:46.574 I/ImeTracker( 2943): app.coredump:45684ec8: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:46.574 I/ImeTracker( 2943): app.coredump:45684ec8: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:28:58.485 I/ImeTracker( 2943): app.coredump:79146ca2: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:28:58.504 I/ImeTracker( 2943): app.coredump:16264ac8: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:28:58.595 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1b5823c, mPriority=0, mIsAnimationCallback=false}
+11-26 23:28:58.689 I/ImeTracker( 2943): app.coredump:79146ca2: onShown
+11-26 23:28:58.725 I/ImeTracker( 2943): app.coredump:16264ac8: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:29:01.395 I/ImeTracker( 2943): app.coredump:6720c0d6: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:01.417 I/ImeTracker( 2943): app.coredump:94dacedd: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:01.447 I/ImeTracker( 2943): app.coredump:77959944: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:01.447 I/ImeTracker(  520): app.coredump:77959944: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:29:01.447 I/ImeTracker( 2943): app.coredump:6720c0d6: onHidden
+11-26 23:29:01.499 I/ImeTracker( 2943): app.coredump:94dacedd: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:29:01.558 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@77bf26c, mPriority=0, mIsAnimationCallback=false}
+11-26 23:29:02.940 I/ImeTracker( 2943): app.coredump:c92b7ab3: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:02.951 I/ImeTracker( 2943): app.coredump:48b4007d: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:29:03.054 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d02db22, mPriority=0, mIsAnimationCallback=false}
+11-26 23:29:03.229 I/ImeTracker(  520): app.coredump:c92b7ab3: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:29:03.290 I/ImeTracker( 2943): app.coredump:48b4007d: onShown
+11-26 23:29:04.332 I/ImeTracker( 2943): app.coredump:3cda128e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:04.360 I/ImeTracker( 2943): app.coredump:eea58729: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:04.382 I/ImeTracker( 2943): app.coredump:38ea34c7: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:04.406 I/ImeTracker( 2943): app.coredump:3cda128e: onHidden
+11-26 23:29:04.425 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@8acc2b, mPriority=0, mIsAnimationCallback=false}
+11-26 23:29:04.426 I/ImeTracker( 2943): app.coredump:eea58729: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:29:04.427 I/ImeTracker( 2943): app.coredump:38ea34c7: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:29:04.896 I/ImeTracker( 2943): app.coredump:3a7b942f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:04.896 I/ImeTracker( 2943): app.coredump:3a7b942f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:29:23.030 I/app.coredump( 2943): Method exceeds compiler instruction limit: 25386 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-26 23:29:27.485 I/ImeTracker( 2943): app.coredump:16d16a15: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:27.550 I/ImeTracker( 2943): app.coredump:92db8b63: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:29:27.686 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d088bc0, mPriority=0, mIsAnimationCallback=false}
+11-26 23:29:27.933 I/ImeTracker( 2943): app.coredump:92db8b63: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:29:27.976 I/ImeTracker( 2943): app.coredump:16d16a15: onShown
+11-26 23:29:36.119 I/ImeTracker( 2943): app.coredump:49d27363: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:36.120 I/ImeTracker( 2943): app.coredump:1e1e04f0: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:36.261 I/ImeTracker( 2943): app.coredump:a9be4d1d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:36.261 I/ImeTracker(  520): app.coredump:a9be4d1d: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:29:36.262 I/ImeTracker( 2943): app.coredump:49d27363: onHidden
+11-26 23:29:36.315 I/ImeTracker( 2943): app.coredump:1e1e04f0: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:29:36.316 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@64cd8a2, mPriority=0, mIsAnimationCallback=false}
+11-26 23:29:38.473 I/ImeTracker( 2943): app.coredump:c661b29c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:38.473 I/ImeTracker( 2943): app.coredump:c661b29c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:29:50.568 I/ImeTracker( 2943): app.coredump:dd87a138: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:50.578 I/ImeTracker( 2943): app.coredump:39968b71: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:29:50.709 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d316b4, mPriority=0, mIsAnimationCallback=false}
+11-26 23:29:50.860 I/ImeTracker( 2943): app.coredump:39968b71: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:29:50.909 I/ImeTracker( 2943): app.coredump:dd87a138: onShown
+11-26 23:29:53.483 I/ImeTracker( 2943): app.coredump:c31aa28e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:53.484 I/ImeTracker( 2943): app.coredump:6d24ceb7: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:53.523 I/ImeTracker( 2943): app.coredump:6d24ceb7: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:29:53.529 I/ImeTracker( 2943): app.coredump:25beb921: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:53.530 I/ImeTracker(  520): app.coredump:25beb921: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:29:53.560 I/ImeTracker( 2943): app.coredump:c31aa28e: onHidden
+11-26 23:29:53.654 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@912b077, mPriority=0, mIsAnimationCallback=false}
+11-26 23:29:55.054 I/ImeTracker( 2943): app.coredump:3a721da: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:55.058 I/ImeTracker( 2943): app.coredump:54dc01cc: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:29:55.139 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e46a4e, mPriority=0, mIsAnimationCallback=false}
+11-26 23:29:55.140 I/ImeTracker(  520): app.coredump:3a721da: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:29:55.328 I/ImeTracker( 2943): app.coredump:54dc01cc: onShown
+11-26 23:29:56.381 I/ImeTracker( 2943): app.coredump:b65a9660: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:56.401 I/ImeTracker( 2943): app.coredump:f9808de: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:56.412 I/ImeTracker( 2943): app.coredump:f9808de: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:29:56.412 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b7e3bd, mPriority=0, mIsAnimationCallback=false}
+11-26 23:29:56.427 I/ImeTracker( 2943): app.coredump:aa06d0b4: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:56.428 I/ImeTracker(  520): app.coredump:aa06d0b4: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:29:56.428 I/ImeTracker( 2943): app.coredump:b65a9660: onHidden
+11-26 23:29:56.888 I/ImeTracker( 2943): app.coredump:26d28669: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:29:56.888 I/ImeTracker( 2943): app.coredump:26d28669: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:30:19.479 I/ImeTracker( 2943): app.coredump:53187b9f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:19.496 I/ImeTracker( 2943): app.coredump:604d2a5f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:30:19.591 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@6022a55, mPriority=0, mIsAnimationCallback=false}
+11-26 23:30:19.667 I/ImeTracker( 2943): app.coredump:604d2a5f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:30:19.687 I/ImeTracker( 2943): app.coredump:53187b9f: onShown
+11-26 23:30:28.086 I/ImeTracker( 2943): app.coredump:1bd7a9b7: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:28.087 I/ImeTracker( 2943): app.coredump:df731cd4: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:28.236 I/ImeTracker( 2943): app.coredump:eba36b66: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:28.237 I/ImeTracker(  520): app.coredump:eba36b66: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:30:28.238 I/ImeTracker( 2943): app.coredump:1bd7a9b7: onHidden
+11-26 23:30:28.289 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ea352c5, mPriority=0, mIsAnimationCallback=false}
+11-26 23:30:28.290 I/ImeTracker( 2943): app.coredump:df731cd4: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:30:30.383 I/ImeTracker( 2943): app.coredump:b0fc5266: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:30.384 I/ImeTracker( 2943): app.coredump:b0fc5266: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:30:42.320 I/ImeTracker( 2943): app.coredump:5434a746: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:42.332 I/ImeTracker( 2943): app.coredump:4d82829d: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:30:42.377 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@db22540, mPriority=0, mIsAnimationCallback=false}
+11-26 23:30:42.423 I/ImeTracker(  520): app.coredump:5434a746: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:30:42.463 I/ImeTracker( 2943): app.coredump:4d82829d: onShown
+11-26 23:30:45.219 I/ImeTracker( 2943): app.coredump:4b8ea184: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:45.220 I/ImeTracker( 2943): app.coredump:6605a812: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:45.251 I/ImeTracker( 2943): app.coredump:81f4a6bb: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:45.251 I/ImeTracker(  520): app.coredump:81f4a6bb: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:30:45.251 I/ImeTracker( 2943): app.coredump:4b8ea184: onHidden
+11-26 23:30:45.254 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ebab8b3, mPriority=0, mIsAnimationCallback=false}
+11-26 23:30:45.303 I/ImeTracker( 2943): app.coredump:6605a812: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:30:46.771 I/ImeTracker( 2943): app.coredump:c2b1f74d: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:46.779 I/ImeTracker( 2943): app.coredump:bcd8ce98: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:30:46.797 I/ImeTracker(  520): app.coredump:c2b1f74d: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:30:46.808 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@32d0921, mPriority=0, mIsAnimationCallback=false}
+11-26 23:30:46.916 I/ImeTracker( 2943): app.coredump:bcd8ce98: onShown
+11-26 23:30:48.092 I/app.coredump( 2943): Method exceeds compiler instruction limit: 25386 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-26 23:30:48.139 I/ImeTracker( 2943): app.coredump:3b394434: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:48.139 I/ImeTracker( 2943): app.coredump:5e2a7fe4: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:48.150 I/ImeTracker( 2943): app.coredump:66ac20b3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:48.151 I/ImeTracker( 2943): app.coredump:3b394434: onHidden
+11-26 23:30:48.236 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@567131e, mPriority=0, mIsAnimationCallback=false}
+11-26 23:30:48.255 I/ImeTracker( 2943): app.coredump:5e2a7fe4: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:30:48.255 I/ImeTracker( 2943): app.coredump:66ac20b3: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:30:48.617 I/ImeTracker( 2943): app.coredump:80ad0aeb: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:30:48.617 I/ImeTracker( 2943): app.coredump:80ad0aeb: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:31:11.159 I/ImeTracker( 2943): app.coredump:8f4a71ad: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:11.218 I/ImeTracker( 2943): app.coredump:437c3aa9: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:31:11.309 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@9622dd7, mPriority=0, mIsAnimationCallback=false}
+11-26 23:31:11.394 I/ImeTracker( 2943): app.coredump:437c3aa9: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:31:11.469 I/ImeTracker( 2943): app.coredump:8f4a71ad: onShown
+11-26 23:31:14.323 I/ImeTracker( 2943): app.coredump:5584ab33: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:14.323 I/ImeTracker( 2943): app.coredump:c794ab6: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:14.374 I/ImeTracker( 2943): app.coredump:100cab37: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:14.374 I/ImeTracker(  520): app.coredump:100cab37: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:31:14.374 I/ImeTracker( 2943): app.coredump:5584ab33: onHidden
+11-26 23:31:14.416 I/ImeTracker( 2943): app.coredump:c794ab6: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:31:14.489 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1568406, mPriority=0, mIsAnimationCallback=false}
+11-26 23:31:32.183 I/ImeTracker( 2943): app.coredump:e236698a: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:32.187 I/ImeTracker( 2943): app.coredump:95cef97c: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:31:32.201 I/ImeTracker(  520): app.coredump:e236698a: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:31:32.208 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@3db63b7, mPriority=0, mIsAnimationCallback=false}
+11-26 23:31:32.314 I/ImeTracker( 2943): app.coredump:95cef97c: onShown
+11-26 23:31:35.064 I/ImeTracker( 2943): app.coredump:61d27012: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:35.064 I/ImeTracker( 2943): app.coredump:e9fae955: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:35.075 I/ImeTracker( 2943): app.coredump:e9fae955: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:31:35.076 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@43c1c1, mPriority=0, mIsAnimationCallback=false}
+11-26 23:31:35.096 I/ImeTracker( 2943): app.coredump:17c82564: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:35.096 I/ImeTracker(  520): app.coredump:17c82564: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:31:35.096 I/ImeTracker( 2943): app.coredump:61d27012: onHidden
+11-26 23:31:36.620 I/ImeTracker( 2943): app.coredump:fcc2460f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:36.631 I/ImeTracker( 2943): app.coredump:91a0206a: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:31:36.661 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@3b906ec, mPriority=0, mIsAnimationCallback=false}
+11-26 23:31:36.754 I/ImeTracker( 2943): app.coredump:91a0206a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:31:36.773 I/ImeTracker( 2943): app.coredump:fcc2460f: onShown
+11-26 23:31:37.977 I/ImeTracker( 2943): app.coredump:61dd06e6: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:37.977 I/ImeTracker( 2943): app.coredump:8300c3e3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:38.009 I/ImeTracker( 2943): app.coredump:6bb8fb01: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:38.012 I/ImeTracker(  520): app.coredump:6bb8fb01: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:31:38.015 I/ImeTracker( 2943): app.coredump:61dd06e6: onHidden
+11-26 23:31:38.019 I/ImeTracker( 2943): app.coredump:8300c3e3: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:31:38.027 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d9fdb6d, mPriority=0, mIsAnimationCallback=false}
+11-26 23:31:38.465 I/ImeTracker( 2943): app.coredump:1c8ebe35: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:31:38.466 I/ImeTracker( 2943): app.coredump:1c8ebe35: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:32:01.113 I/ImeTracker( 2943): app.coredump:eeeef170: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:01.165 I/ImeTracker( 2943): app.coredump:8a3c07de: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:32:01.279 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@af90795, mPriority=0, mIsAnimationCallback=false}
+11-26 23:32:01.377 I/ImeTracker( 2943): app.coredump:8a3c07de: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:32:01.419 I/ImeTracker( 2943): app.coredump:eeeef170: onShown
+11-26 23:32:09.284 I/ImeTracker( 2943): app.coredump:fc12662f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:09.287 I/ImeTracker( 2943): app.coredump:6a5fc848: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:09.341 I/ImeTracker( 2943): app.coredump:6a5fc848: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:32:09.343 I/ImeTracker( 2943): app.coredump:f1717122: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:09.343 I/ImeTracker(  520): app.coredump:f1717122: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:32:09.343 I/ImeTracker( 2943): app.coredump:fc12662f: onHidden
+11-26 23:32:09.413 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@22594f8, mPriority=0, mIsAnimationCallback=false}
+11-26 23:32:11.635 I/ImeTracker( 2943): app.coredump:f7d8e4e0: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:11.635 I/ImeTracker( 2943): app.coredump:f7d8e4e0: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:32:20.588 I/app.coredump( 2943): Method exceeds compiler instruction limit: 25386 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-26 23:32:23.608 I/ImeTracker( 2943): app.coredump:bccef720: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:23.615 I/ImeTracker( 2943): app.coredump:bd6799a2: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:32:23.729 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@91242e6, mPriority=0, mIsAnimationCallback=false}
+11-26 23:32:23.847 I/ImeTracker(  520): app.coredump:bccef720: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:32:23.935 I/ImeTracker( 2943): app.coredump:bd6799a2: onShown
+11-26 23:32:26.556 I/ImeTracker( 2943): app.coredump:d6b5d4f2: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:26.556 I/ImeTracker( 2943): app.coredump:6f9913: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:26.671 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@5c05170, mPriority=0, mIsAnimationCallback=false}
+11-26 23:32:26.672 I/ImeTracker( 2943): app.coredump:a610178d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:26.673 I/ImeTracker(  520): app.coredump:a610178d: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:32:26.673 I/ImeTracker( 2943): app.coredump:d6b5d4f2: onHidden
+11-26 23:32:26.690 I/ImeTracker( 2943): app.coredump:6f9913: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:32:28.134 I/ImeTracker( 2943): app.coredump:5f86b390: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:28.170 I/ImeTracker( 2943): app.coredump:d59fcc0c: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:32:28.242 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e9d5e07, mPriority=0, mIsAnimationCallback=false}
+11-26 23:32:28.337 I/ImeTracker(  520): app.coredump:5f86b390: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:32:28.397 I/ImeTracker( 2943): app.coredump:d59fcc0c: onShown
+11-26 23:32:29.481 I/ImeTracker( 2943): app.coredump:3bc0e75: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:29.481 I/ImeTracker( 2943): app.coredump:8ecef552: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:29.586 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@95a06ff, mPriority=0, mIsAnimationCallback=false}
+11-26 23:32:29.621 I/ImeTracker( 2943): app.coredump:8e381416: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:29.663 I/ImeTracker(  520): app.coredump:8e381416: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:32:29.665 I/ImeTracker( 2943): app.coredump:3bc0e75: onHidden
+11-26 23:32:29.674 I/ImeTracker( 2943): app.coredump:8ecef552: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:32:30.003 I/ImeTracker( 2943): app.coredump:9117ee87: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:32:30.004 I/ImeTracker( 2943): app.coredump:9117ee87: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:33:29.535 I/ImeTracker( 2943): app.coredump:d8f1128f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:29.681 I/ImeTracker( 2943): app.coredump:ef69bf86: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:33:29.888 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@dcdfffd, mPriority=0, mIsAnimationCallback=false}
+11-26 23:33:29.972 I/ImeTracker( 2943): app.coredump:ef69bf86: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:33:30.031 I/ImeTracker( 2943): app.coredump:d8f1128f: onShown
+11-26 23:33:32.544 I/ImeTracker( 2943): app.coredump:92ba3b0c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:32.544 I/ImeTracker( 2943): app.coredump:a2cbb132: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:32.678 I/ImeTracker( 2943): app.coredump:e61f391c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:32.678 I/ImeTracker(  520): app.coredump:e61f391c: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:33:32.681 I/ImeTracker( 2943): app.coredump:92ba3b0c: onHidden
+11-26 23:33:32.857 I/ImeTracker( 2943): app.coredump:a2cbb132: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:33:32.858 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@403e26d, mPriority=0, mIsAnimationCallback=false}
+11-26 23:33:37.727 I/ImeTracker( 2943): app.coredump:e2a3592b: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:37.828 I/ImeTracker( 2943): app.coredump:a75d2a2b: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:33:37.894 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f438ffa, mPriority=0, mIsAnimationCallback=false}
+11-26 23:33:38.242 I/ImeTracker( 2943): app.coredump:a75d2a2b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:33:38.288 I/ImeTracker( 2943): app.coredump:e2a3592b: onShown
+11-26 23:33:38.425 I/app.coredump( 2943): Compiler allocated 4266KB to compile void app.coredump.ui.screens.GazetteScreensKt.GazettePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-26 23:33:40.740 I/ImeTracker( 2943): app.coredump:4554e601: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:40.744 I/ImeTracker( 2943): app.coredump:5d63a1ab: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:40.855 I/ImeTracker( 2943): app.coredump:4b167fd1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:40.856 I/ImeTracker(  520): app.coredump:4b167fd1: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:33:40.856 I/ImeTracker( 2943): app.coredump:4554e601: onHidden
+11-26 23:33:40.908 I/ImeTracker( 2943): app.coredump:5d63a1ab: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:33:40.909 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@385020, mPriority=0, mIsAnimationCallback=false}
+11-26 23:33:45.992 I/ImeTracker( 2943): app.coredump:2d9fef82: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:46.047 I/ImeTracker( 2943): app.coredump:68f0685: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:33:46.293 I/app.coredump( 2943): JIT allocated 57KB for compiled code of void app.coredump.ui.screens.ArcadeScreensKt.ArcadePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-26 23:33:46.293 I/app.coredump( 2943): Compiler allocated 5019KB to compile void app.coredump.ui.screens.ArcadeScreensKt.ArcadePlay(app.coredump.AppModel, app.coredump.game.MatchSession, app.coredump.game.MatchState, app.coredump.ui.screens.AnswerState, androidx.compose.runtime.Composer, int)
+11-26 23:33:46.343 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b4c9b13, mPriority=0, mIsAnimationCallback=false}
+11-26 23:33:46.408 I/ImeTracker( 2943): app.coredump:68f0685: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:33:46.533 I/ImeTracker( 2943): app.coredump:2d9fef82: onShown
+11-26 23:33:48.942 I/ImeTracker( 2943): app.coredump:b0404efb: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:48.943 I/ImeTracker( 2943): app.coredump:ed1d3aa3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:49.082 I/ImeTracker( 2943): app.coredump:2b3193f2: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:49.082 I/ImeTracker(  520): app.coredump:2b3193f2: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:33:49.082 I/ImeTracker( 2943): app.coredump:b0404efb: onHidden
+11-26 23:33:49.141 I/ImeTracker( 2943): app.coredump:ed1d3aa3: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:33:49.151 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@962935a, mPriority=0, mIsAnimationCallback=false}
+11-26 23:33:49.465 I/app.coredump( 2943): Compiler allocated 5760KB to compile void app.coredump.ui.screens.QuizScreensKt.QuizMenu(app.coredump.AppModel, androidx.compose.runtime.Composer, int)
+11-26 23:33:54.036 I/ImeTracker( 2943): app.coredump:a413854b: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:54.088 I/ImeTracker( 2943): app.coredump:2289790c: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:33:54.243 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@c8e5e80, mPriority=0, mIsAnimationCallback=false}
+11-26 23:33:54.313 I/ImeTracker( 2943): app.coredump:2289790c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:33:54.314 I/ImeTracker( 2943): app.coredump:a413854b: onShown
+11-26 23:33:56.927 I/ImeTracker( 2943): app.coredump:d50b18e1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:56.947 I/ImeTracker( 2943): app.coredump:1884fef1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:56.993 I/ImeTracker( 2943): app.coredump:7dd1993e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:33:56.994 I/ImeTracker(  520): app.coredump:7dd1993e: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:33:56.995 I/ImeTracker( 2943): app.coredump:d50b18e1: onHidden
+11-26 23:33:57.056 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@5be09d6, mPriority=0, mIsAnimationCallback=false}
+11-26 23:33:57.057 I/ImeTracker( 2943): app.coredump:1884fef1: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:02.025 I/ImeTracker( 2943): app.coredump:b353fae6: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:02.074 I/ImeTracker( 2943): app.coredump:87867fcd: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:34:02.281 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@42b7312, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:02.351 I/ImeTracker( 2943): app.coredump:87867fcd: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:02.355 I/ImeTracker( 2943): app.coredump:b353fae6: onShown
+11-26 23:34:04.975 I/ImeTracker( 2943): app.coredump:3a847363: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:04.975 I/ImeTracker( 2943): app.coredump:54f2808e: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:05.065 I/ImeTracker( 2943): app.coredump:d37d97fd: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:05.069 I/ImeTracker(  520): app.coredump:d37d97fd: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:34:05.070 I/ImeTracker( 2943): app.coredump:3a847363: onHidden
+11-26 23:34:05.111 I/ImeTracker( 2943): app.coredump:54f2808e: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:05.128 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@28f7855, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:10.076 I/ImeTracker( 2943): app.coredump:6a5aab61: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:10.162 I/ImeTracker( 2943): app.coredump:b1046029: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:34:10.268 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@21d12d3, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:10.543 I/ImeTracker( 2943): app.coredump:b1046029: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:10.583 I/ImeTracker( 2943): app.coredump:6a5aab61: onShown
+11-26 23:34:13.001 I/ImeTracker( 2943): app.coredump:576d52c0: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:13.002 I/ImeTracker( 2943): app.coredump:fbfede33: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:13.048 I/ImeTracker( 2943): app.coredump:fbfede33: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:13.051 I/ImeTracker( 2943): app.coredump:f3c7c72f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:13.052 I/ImeTracker(  520): app.coredump:f3c7c72f: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:34:13.052 I/ImeTracker( 2943): app.coredump:576d52c0: onHidden
+11-26 23:34:13.121 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ccdef27, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:17.791 I/app.coredump( 2943): Method exceeds compiler instruction limit: 25386 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-26 23:34:18.143 I/ImeTracker( 2943): app.coredump:34e98a6a: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:18.260 I/ImeTracker( 2943): app.coredump:b340d8c0: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:34:18.410 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@c7bcc22, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:18.438 I/ImeTracker(  520): app.coredump:34e98a6a: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:34:18.665 I/ImeTracker( 2943): app.coredump:b340d8c0: onShown
+11-26 23:34:21.124 I/ImeTracker( 2943): app.coredump:a0db3860: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:21.128 I/ImeTracker( 2943): app.coredump:c78e4296: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:21.218 I/ImeTracker( 2943): app.coredump:f39b1e09: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:21.219 I/ImeTracker(  520): app.coredump:f39b1e09: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:34:21.221 I/ImeTracker( 2943): app.coredump:a0db3860: onHidden
+11-26 23:34:21.313 I/ImeTracker( 2943): app.coredump:c78e4296: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:21.326 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@5c73188, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:26.180 I/ImeTracker( 2943): app.coredump:8a0f8cc1: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:26.237 I/ImeTracker( 2943): app.coredump:fe751cb0: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:34:26.368 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f83e91e, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:26.464 I/ImeTracker( 2943): app.coredump:fe751cb0: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:26.505 I/ImeTracker( 2943): app.coredump:8a0f8cc1: onShown
+11-26 23:34:29.107 I/ImeTracker( 2943): app.coredump:6febc04: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:29.107 I/ImeTracker( 2943): app.coredump:7b79c71a: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:29.216 I/ImeTracker( 2943): app.coredump:7b79c71a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:29.217 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d0245f7, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:29.220 I/ImeTracker( 2943): app.coredump:b85762c2: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:29.221 I/ImeTracker(  520): app.coredump:b85762c2: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:34:29.222 I/ImeTracker( 2943): app.coredump:6febc04: onHidden
+11-26 23:34:34.210 I/ImeTracker( 2943): app.coredump:911acdff: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:34.319 I/ImeTracker( 2943): app.coredump:399a65a2: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:34:34.449 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@bda13e8, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:34.664 I/ImeTracker( 2943): app.coredump:399a65a2: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:34.719 I/ImeTracker( 2943): app.coredump:911acdff: onShown
+11-26 23:34:37.134 I/ImeTracker( 2943): app.coredump:96a77538: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:37.134 I/ImeTracker( 2943): app.coredump:fa138ecc: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:37.270 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@9284839, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:37.332 I/ImeTracker( 2943): app.coredump:b4c23b84: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:37.334 I/ImeTracker(  520): app.coredump:b4c23b84: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:34:37.334 I/ImeTracker( 2943): app.coredump:96a77538: onHidden
+11-26 23:34:37.340 I/ImeTracker( 2943): app.coredump:fa138ecc: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:42.161 I/ImeTracker( 2943): app.coredump:a7dacfd5: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:42.217 I/ImeTracker( 2943): app.coredump:11adc015: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:34:42.274 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@26dc571, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:42.388 I/ImeTracker( 2943): app.coredump:11adc015: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:42.420 I/ImeTracker( 2943): app.coredump:a7dacfd5: onShown
+11-26 23:34:45.046 I/ImeTracker( 2943): app.coredump:fbee8e3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:45.046 I/ImeTracker( 2943): app.coredump:ce72d9af: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:45.133 I/ImeTracker( 2943): app.coredump:5e026603: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:45.134 I/ImeTracker(  520): app.coredump:5e026603: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:34:45.137 I/ImeTracker( 2943): app.coredump:fbee8e3: onHidden
+11-26 23:34:45.158 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@82b743a, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:45.196 I/ImeTracker( 2943): app.coredump:ce72d9af: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:50.198 I/ImeTracker( 2943): app.coredump:5b7ce909: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:50.283 I/ImeTracker( 2943): app.coredump:9dcfdb09: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:34:50.439 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@756e3de, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:50.552 I/ImeTracker(  520): app.coredump:5b7ce909: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:34:50.658 I/ImeTracker( 2943): app.coredump:9dcfdb09: onShown
+11-26 23:34:53.151 I/ImeTracker( 2943): app.coredump:d490f109: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:53.151 I/ImeTracker( 2943): app.coredump:6ef5a904: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:53.296 I/ImeTracker( 2943): app.coredump:6d2a6458: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:53.296 I/ImeTracker(  520): app.coredump:6d2a6458: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:34:53.296 I/ImeTracker( 2943): app.coredump:d490f109: onHidden
+11-26 23:34:53.348 I/ImeTracker( 2943): app.coredump:6ef5a904: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:53.349 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@44ded24, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:58.275 I/ImeTracker( 2943): app.coredump:c3dec5bf: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:34:58.339 I/ImeTracker( 2943): app.coredump:f13c6db2: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:34:58.461 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@791979a, mPriority=0, mIsAnimationCallback=false}
+11-26 23:34:58.522 I/ImeTracker( 2943): app.coredump:f13c6db2: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:34:58.555 I/ImeTracker( 2943): app.coredump:c3dec5bf: onShown
+11-26 23:35:01.174 I/ImeTracker( 2943): app.coredump:aa816708: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:01.176 I/ImeTracker( 2943): app.coredump:6a09daae: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:01.249 I/ImeTracker( 2943): app.coredump:388ae1f1: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:01.250 I/ImeTracker(  520): app.coredump:388ae1f1: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:35:01.250 I/ImeTracker( 2943): app.coredump:aa816708: onHidden
+11-26 23:35:01.345 I/ImeTracker( 2943): app.coredump:6a09daae: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:01.360 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@dfd55f9, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:01.859 I/ImeTracker( 2943): app.coredump:661bd279: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:01.941 I/ImeTracker( 2943): app.coredump:b03ffaf3: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:35:02.152 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@13ae797, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:02.432 I/ImeTracker( 2943): app.coredump:b03ffaf3: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:02.435 I/ImeTracker( 2943): app.coredump:661bd279: onShown
+11-26 23:35:04.048 I/ImeTracker( 2943): app.coredump:7eb00d5d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:04.049 I/ImeTracker( 2943): app.coredump:dc686cca: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:04.144 I/ImeTracker( 2943): app.coredump:dc686cca: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:04.144 I/ImeTracker( 2943): app.coredump:97430ef0: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:04.145 I/ImeTracker(  520): app.coredump:97430ef0: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:35:04.145 I/ImeTracker( 2943): app.coredump:7eb00d5d: onHidden
+11-26 23:35:04.227 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@7edd925, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:06.776 I/app.coredump( 2943): Compiler allocated 5142KB to compile void app.coredump.ui.RunsKt.world(androidx.compose.ui.graphics.drawscope.DrawScope, app.coredump.ui.Style, app.coredump.ui.Frame, app.coredump.ui.Ink, java.util.List, androidx.compose.ui.text.TextMeasurer, app.coredump.ui.RunKit)
+11-26 23:35:10.431 I/ImeTracker( 2943): app.coredump:55985d84: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:10.488 I/ImeTracker( 2943): app.coredump:ce0e40b5: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:35:10.626 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f640320, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:10.688 I/ImeTracker(  520): app.coredump:55985d84: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:35:10.810 I/ImeTracker( 2943): app.coredump:ce0e40b5: onShown
+11-26 23:35:12.662 I/ImeTracker( 2943): app.coredump:a35fac03: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:12.663 I/ImeTracker( 2943): app.coredump:9df8bf05: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:12.744 I/ImeTracker( 2943): app.coredump:ab2e923f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:12.745 I/ImeTracker(  520): app.coredump:ab2e923f: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:35:12.745 I/ImeTracker( 2943): app.coredump:a35fac03: onHidden
+11-26 23:35:12.792 I/ImeTracker( 2943): app.coredump:9df8bf05: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:12.795 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e05e376, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:25.676 I/ImeTracker( 2943): app.coredump:30e198b3: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:25.761 I/ImeTracker( 2943): app.coredump:9f63c966: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:35:25.852 I/ImeTracker(  520): app.coredump:30e198b3: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:35:26.011 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@4936eb2, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:26.109 I/ImeTracker( 2943): app.coredump:9f63c966: onShown
+11-26 23:35:29.281 I/ImeTracker( 2943): app.coredump:7927e12d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:29.282 I/ImeTracker( 2943): app.coredump:436c4799: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:29.403 I/ImeTracker( 2943): app.coredump:68c334c0: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:29.404 I/ImeTracker(  520): app.coredump:68c334c0: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:35:29.405 I/ImeTracker( 2943): app.coredump:7927e12d: onHidden
+11-26 23:35:29.520 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@34c4275, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:29.521 I/ImeTracker( 2943): app.coredump:436c4799: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:30.061 I/ImeTracker( 2943): app.coredump:de4b5f77: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:30.167 I/ImeTracker( 2943): app.coredump:9026df66: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:35:30.306 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@4dcfdf3, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:30.451 I/ImeTracker( 2943): app.coredump:9026df66: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:30.505 I/ImeTracker( 2943): app.coredump:de4b5f77: onShown
+11-26 23:35:31.248 I/ImeTracker( 2943): app.coredump:87380668: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:31.254 I/ImeTracker( 2943): app.coredump:73a31df4: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:31.329 I/ImeTracker( 2943): app.coredump:e7d3528c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:31.340 I/ImeTracker(  520): app.coredump:e7d3528c: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:35:31.341 I/ImeTracker( 2943): app.coredump:87380668: onHidden
+11-26 23:35:31.492 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@3f19861, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:31.493 I/ImeTracker( 2943): app.coredump:73a31df4: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:34.676 I/ImeTracker( 2943): app.coredump:351b14aa: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:34.731 I/ImeTracker( 2943): app.coredump:d45868f1: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:35:34.842 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@cb4a13f, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:34.855 I/ImeTracker( 2943): app.coredump:d45868f1: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:34.888 I/ImeTracker( 2943): app.coredump:351b14aa: onShown
+11-26 23:35:35.920 I/ImeTracker( 2943): app.coredump:4e174654: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:35.921 I/ImeTracker( 2943): app.coredump:42677527: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:35.960 I/ImeTracker( 2943): app.coredump:e617f58a: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:35.961 I/ImeTracker(  520): app.coredump:e617f58a: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:35:35.962 I/ImeTracker( 2943): app.coredump:4e174654: onHidden
+11-26 23:35:36.062 I/ImeTracker( 2943): app.coredump:42677527: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:36.083 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@49de40d, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:39.434 I/ImeTracker( 2943): app.coredump:42ca52c2: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:39.444 I/ImeTracker( 2943): app.coredump:b8395778: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:35:39.515 I/ImeTracker(  520): app.coredump:42ca52c2: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:35:39.615 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@782484b, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:39.667 I/ImeTracker( 2943): app.coredump:b8395778: onShown
+11-26 23:35:40.633 I/ImeTracker( 2943): app.coredump:1c7af952: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:40.638 I/ImeTracker( 2943): app.coredump:cf03a459: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:40.696 I/ImeTracker( 2943): app.coredump:cf03a459: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:40.697 I/ImeTracker( 2943): app.coredump:e83faf49: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:40.697 I/ImeTracker(  520): app.coredump:e83faf49: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:35:40.698 I/ImeTracker( 2943): app.coredump:1c7af952: onHidden
+11-26 23:35:40.725 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@952b179, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:44.184 I/ImeTracker( 2943): app.coredump:6d419e21: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:44.246 I/ImeTracker( 2943): app.coredump:5509a13f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:35:44.331 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b81df17, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:44.476 I/ImeTracker( 2943): app.coredump:5509a13f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:44.478 I/ImeTracker( 2943): app.coredump:6d419e21: onShown
+11-26 23:35:45.426 I/ImeTracker( 2943): app.coredump:f244643d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:45.430 I/ImeTracker( 2943): app.coredump:b37d498f: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:45.519 I/ImeTracker( 2943): app.coredump:ef37dfe9: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:35:45.539 I/ImeTracker( 2943): app.coredump:f244643d: onHidden
+11-26 23:35:45.569 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@8c94ca5, mPriority=0, mIsAnimationCallback=false}
+11-26 23:35:45.667 I/ImeTracker( 2943): app.coredump:b37d498f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:35:45.671 I/ImeTracker( 2943): app.coredump:ef37dfe9: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:36:01.306 I/app.coredump( 2943): Compiler allocated 4266KB to compile kotlin.Unit app.coredump.ui.screens.MeltdownScreenKt.MeltScreen$lambda$20$0(boolean, java.lang.String, app.coredump.AppModel, app.coredump.game.MeltSession, app.coredump.game.MeltPlayer, androidx.compose.animation.core.Animatable, int, java.lang.String, androidx.compose.runtime.State, androidx.compose.ui.focus.FocusRequester, boolean, androidx.compose.runtime.MutableState, androidx.compose.runtime.MutableState, androidx.compose.runtime.MutableState, androidx.compose.runtime.MutableState, androidx.compose.foundation.layout.ColumnScope, androidx.compose.runtime.Composer, int)
+11-26 23:36:07.735 I/ImeTracker( 2943): app.coredump:60ce85b0: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:36:07.920 I/ImeTracker( 2943): app.coredump:5f53280a: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:36:08.173 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@5fd942a, mPriority=0, mIsAnimationCallback=false}
+11-26 23:36:08.255 I/ImeTracker( 2943): app.coredump:5f53280a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:36:08.328 I/ImeTracker( 2943): app.coredump:60ce85b0: onShown
+11-26 23:36:36.415 I/ImeTracker( 2943): app.coredump:567b982b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:36:36.416 I/ImeTracker( 2943): app.coredump:76de3a41: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:36:36.540 I/ImeTracker( 2943): app.coredump:9436008c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:36:36.540 I/ImeTracker(  520): app.coredump:9436008c: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:36:36.540 I/ImeTracker( 2943): app.coredump:567b982b: onHidden
+11-26 23:36:36.708 I/ImeTracker( 2943): app.coredump:76de3a41: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:36:36.711 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1e9e6e8, mPriority=0, mIsAnimationCallback=false}
+11-26 23:37:25.758 I/ImeTracker( 2943): app.coredump:a83bdf53: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT_BY_INSETS_API
+11-26 23:37:25.852 I/ImeTracker( 2943): app.coredump:458f4ff0: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+11-26 23:37:25.933 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@a5b0b92, mPriority=0, mIsAnimationCallback=false}
+11-26 23:37:26.008 I/ImeTracker(  520): app.coredump:a83bdf53: onFailed at PHASE_WM_SHOW_IME_RUNNER
+11-26 23:37:26.110 I/ImeTracker( 2943): app.coredump:458f4ff0: onShown
+11-26 23:37:33.747 I/ImeTracker( 2943): app.coredump:3338c7b5: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:37:33.747 I/ImeTracker( 2943): app.coredump:9855a059: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:37:33.886 I/ImeTracker( 2943): app.coredump:bcbba552: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+11-26 23:37:33.887 I/ImeTracker(  520): app.coredump:bcbba552: onCancelled at PHASE_SERVER_SHOULD_HIDE
+11-26 23:37:33.888 I/ImeTracker( 2943): app.coredump:3338c7b5: onHidden
+11-26 23:37:33.939 I/ImeTracker( 2943): app.coredump:9855a059: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+11-26 23:37:33.939 D/CoreBackPreview(  520): Window{f1a2d4b u0 app.coredump/app.coredump.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@29bb0b7, mPriority=0, mIsAnimationCallback=false}
+11-26 23:39:05.637 I/app.coredump( 2943): Method exceeds compiler instruction limit: 25386 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
+11-26 23:40:03.887 I/app.coredump( 2943): Compiler allocated 5747KB to compile void app.coredump.ui.EggsKt.logoEgg(androidx.compose.ui.graphics.drawscope.DrawScope, app.coredump.ui.Style, float, float, int, app.coredump.ui.EggInk, app.coredump.ui.EggTxt)
+11-26 23:40:14.874 I/app.coredump( 2943): Compiler allocated 5760KB to compile void app.coredump.ui.screens.QuizScreensKt.QuizMenu(app.coredump.AppModel, androidx.compose.runtime.Composer, int)
+11-26 23:40:23.030 I/app.coredump( 2943): Method exceeds compiler instruction limit: 25386 in java.lang.Object app.coredump.SelfTest.run(app.coredump.AppModel, kotlin.coroutines.Continuation)
